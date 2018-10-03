@@ -12,6 +12,7 @@
 
 #include "./observation2.pb.h"
 #include "logger/encoder.h"
+#include "logger/event_aggregator.h"
 #include "logger/internal_metrics.h"
 #include "logger/logger_interface.h"
 #include "logger/observation_writer.h"
@@ -37,6 +38,11 @@ class Logger : public LoggerInterface {
   // valid as long as the Logger is being used. The Logger uses this to
   // encode immediate Observations.
   //
+  // |event_aggregator| The system's singleton instance of EventAggregator.
+  // This must remain valid as long as the Logger is being used. The Logger
+  // uses this to aggregate values derived from Events and to produce locally
+  // aggregated Observations.
+  //
   // |observation_writer| An instance of ObservationWriter, used by the Logger
   // to write immediate Observations to an ObservationStore. Must remain valid
   // as long as the Logger is in use.
@@ -45,10 +51,10 @@ class Logger : public LoggerInterface {
   // Logger will log events.
   //
   // |internal_logger| An instance of LoggerInterface, used internally by the
-  // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such internal
-  // logging will be performed by this Logger.
-  Logger(const Encoder* encoder, ObservationWriter* observation_writer,
-         const ProjectContext* project,
+  // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
+  // internal logging will be performed by this Logger.
+  Logger(const Encoder* encoder, EventAggregator* event_aggregator,
+         ObservationWriter* observation_writer, const ProjectContext* project,
          LoggerInterface* internal_logger = nullptr);
 
   virtual ~Logger() = default;
@@ -80,12 +86,12 @@ class Logger : public LoggerInterface {
 
  private:
   friend class EventLogger;
+  friend class LoggerTest;
 
-  void SetClock(std::unique_ptr<util::ClockInterface> clock) {
-    clock_ = std::move(clock);
-  }
+  void SetClock(util::ClockInterface* clock) { clock_.reset(clock); }
 
   const Encoder* encoder_;
+  EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const ProjectContext* project_context_;
   std::unique_ptr<util::ClockInterface> clock_;
