@@ -124,6 +124,25 @@ metric {
     system_profile_field: ARCH
   }
 }
+
+metric {
+  metric_name: "DeviceBoots"
+  metric_type: EVENT_OCCURRED
+  customer_id: 1
+  project_id: 1
+  id: 9
+  max_event_code: 1
+  reports: {
+    report_name: "DeviceBoots_UniqueDevices"
+    id: 91
+    report_type: UNIQUE_N_DAY_ACTIVES
+    local_privacy_noise_level: SMALL
+    window_size: 1
+    system_profile_field: OS
+    system_profile_field: ARCH
+  }
+}
+
 )";
 
 bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
@@ -377,6 +396,57 @@ TEST_F(EncoderTest, EncodeCustomObservation) {
     auto obs_dimension = obs.values().at(dimension_names[i]);
     EXPECT_TRUE(MessageDifferencer::Equals(obs_dimension, values[i]));
   }
+}
+
+TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
+  const char kMetricName[] = "DeviceBoots";
+  const char kReportName[] = "DeviceBoots_UniqueDevices";
+  const uint32_t kExpectedMetricId = 9;
+  const uint32_t kExpectedReportId = 91;
+  const uint32_t kDayIndex = 111;
+  const uint32_t kEventCode = 0;
+  const uint32_t kWindowSize = 1;
+  auto pair = GetMetricAndReport(kMetricName, kReportName);
+
+  // Encode a valid UniqueActivesObservation of activity.
+  auto result_active = encoder_->EncodeUniqueActivesObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex,
+      kEventCode, true, kWindowSize);
+  CheckResult(result_active, kExpectedMetricId, kExpectedReportId, kDayIndex);
+  // In the SystemProfile only the OS and ARCH should be set.
+  CheckSystemProfile(result_active, SystemProfile::FUCHSIA,
+                     SystemProfile::ARM_64, "", "");
+  ASSERT_TRUE(result_active.observation->has_unique_actives());
+  EXPECT_EQ(kWindowSize,
+            result_active.observation->unique_actives().window_size());
+  EXPECT_EQ(kEventCode,
+            result_active.observation->unique_actives().event_code());
+  ASSERT_TRUE(
+      result_active.observation->unique_actives().has_basic_rappor_obs());
+  EXPECT_EQ(1u, result_active.observation->unique_actives()
+                    .basic_rappor_obs()
+                    .data()
+                    .size());
+
+  // Encode a valid UniqueActivesObservation of inactivity.
+  auto result_inactive = encoder_->EncodeUniqueActivesObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex,
+      kEventCode, false, kWindowSize);
+  CheckResult(result_inactive, kExpectedMetricId, kExpectedReportId, kDayIndex);
+  // In the SystemProfile only the OS and ARCH should be set.
+  CheckSystemProfile(result_inactive, SystemProfile::FUCHSIA,
+                     SystemProfile::ARM_64, "", "");
+  ASSERT_TRUE(result_inactive.observation->has_unique_actives());
+  EXPECT_EQ(kWindowSize,
+            result_inactive.observation->unique_actives().window_size());
+  EXPECT_EQ(kEventCode,
+            result_active.observation->unique_actives().event_code());
+  ASSERT_TRUE(
+      result_inactive.observation->unique_actives().has_basic_rappor_obs());
+  EXPECT_EQ(1u, result_active.observation->unique_actives()
+                    .basic_rappor_obs()
+                    .data()
+                    .size());
 }
 
 }  // namespace logger

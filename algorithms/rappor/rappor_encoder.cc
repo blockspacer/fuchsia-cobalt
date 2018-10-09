@@ -222,13 +222,12 @@ BasicRapporEncoder::~BasicRapporEncoder() {}
 
 Status BasicRapporEncoder::Encode(const ValuePart& value,
                                   BasicRapporObservation* observation_out) {
-  if (!config_->valid()) {
-    return kInvalidConfig;
+  std::string data;
+  auto status = InitializeObservationData(&data);
+  if (status != kOK) {
+    return status;
   }
-  if (!client_secret_.valid()) {
-    LOG(ERROR) << "client_secret is not valid";
-    return kInvalidConfig;
-  }
+
   auto bit_index = config_->bit_index(value);
   if (bit_index == -1) {
     LOG(ERROR)
@@ -236,20 +235,12 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
         << "the categories: " << DebugString(value);
     return kInvalidInput;
   }
-
-  uint32_t num_bits = config_->num_bits();
-  uint32_t num_bytes = (num_bits + 7) / 8;
-
   // Indexed from the right, i.e. the least-significant bit.
   uint32_t byte_index = bit_index / 8;
   uint32_t bit_in_byte_index = bit_index % 8;
 
-  // Initialize data to a string of all zero bytes.
-  // (The C++ Protocol Buffer API uses string to represent an array of bytes.)
-  std::string data(num_bytes, static_cast<char>(0));
-
   // Set the appropriate bit.
-  data[num_bytes - (byte_index + 1)] = 1 << bit_in_byte_index;
+  data[data.size() - (byte_index + 1)] = 1 << bit_in_byte_index;
 
   // TODO(rudominer) Consider supporting prr in future versions of Cobalt.
 
@@ -261,6 +252,35 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
   return kOK;
 }
 
-}  // namespace rappor
+Status BasicRapporEncoder::EncodeNullObservation(
+    BasicRapporObservation* observation_out) {
+  std::string data;
+  auto status = InitializeObservationData(&data);
+  if (status != kOK) {
+    return status;
+  }
+  // Randomly flip some of the bits based on the probabilities p and q.
+  FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
+           random_.get(), &data);
+  observation_out->set_data(data);
+  return kOK;
+}
 
+// Initialize |data| to a string of all zero bytes.
+// (The C++ Protocol Buffer API uses string to represent an array of bytes.)
+Status BasicRapporEncoder::InitializeObservationData(std::string* data) {
+  if (!config_->valid()) {
+    return kInvalidConfig;
+  }
+  if (!client_secret_.valid()) {
+    LOG(ERROR) << "client_secret is not valid";
+    return kInvalidConfig;
+  }
+  uint32_t num_bits = config_->num_bits();
+  uint32_t num_bytes = (num_bits + 7) / 8;
+  *data = std::string(num_bytes, static_cast<char>(0));
+  return kOK;
+}
+
+}  // namespace rappor
 }  // namespace cobalt

@@ -132,9 +132,20 @@ class BasicRapporEncoder {
   Status Encode(const ValuePart& value,
                 BasicRapporObservation* observation_out);
 
+  // Applies Basic RAPPOR encoding to a sequence of 0-bits whose length is equal
+  // to the number of categories in the config which was passed to the
+  // constructor. Returns kOK on success and kInvalidConfig if the config that
+  // was passed to the constructor is not valid.
+  Status EncodeNullObservation(BasicRapporObservation* observation_out);
+
  private:
   friend class BasicRapporAnalyzerTest;
   friend class BasicRapporDeterministicTest;
+
+  // Initializes |data| with a number of 0 bytes determined by the |num_bits|
+  // field of |config_| and returns |kOK|. Returns |kInvalidConfig| if |config_|
+  // or |client_secret_| is invalid.
+  Status InitializeObservationData(std::string* data);
 
   // Allows Friend classess to set a special RNG for use in tests.
   void SetRandomForTesting(std::unique_ptr<crypto::Random> random) {

@@ -132,22 +132,21 @@ message HistogramObservation {
 // of this type is created by aggregating Events on-device over
 // a rolling window of 1, 7, or 30 days.
 //
-// A UniqueActivesObservation has 2 fields: a uint32 value representing a
-// WindowSize (defined in cobalt/config/window_size.proto), which is the length
-// in days of the rolling window, and a BasicRapporObservation. In reference to
-// the |max_num_event_codes| and |event_codes| fields of a MetricDefinition of
-// type EVENT_OCCURRED, the BasicRapporObservation is the Basic RAPPOR- encoding
-// of a bit vector of length |max_num_event_codes| with the k-th bit set if the
-// event represented by the k-th element of |event_codes| occurred at least once
-// on the device during the window.
+// A UniqueActivesObservation is generated each day for each event code of the
+// associated MetricDefinition, for each window size in the associated
+// ReportDefinition. A UniqueActivesObservation generated for a given day, event
+// code, and window size encodes the occurrence or non-occurrence of at least
+// one Event with that event code during the window of that size ending on that
+// day.
 message UniqueActivesObservation {
-  // The size in days of the rolling window for which activity is being
-  // observed.
-  uint32 window_size = 1;
-
-  // A BasicRapporObservation representing indicators of event occurrences
-  // on the device over the rolling window.
-  BasicRapporObservation basic_rappor_obs = 2;
+  // A BasicRapporObservation encoding a single bit representing the occurrence
+  // or non-occurrence of |event_code| during the window associated with this
+  // Observation.
+  BasicRapporObservation basic_rappor_obs = 1;
+  // The size in days of the rolling window associated with this Observation.
+  uint32 window_size = 2;
+  // The event code associated with this Observation.
+  uint32 event_code = 3;
 };
 
 // A value for a single dimension of a Cobalt custom metric. Both CustomEvent

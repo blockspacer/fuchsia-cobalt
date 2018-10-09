@@ -10,6 +10,7 @@
 
 #include "./event.pb.h"
 #include "./observation2.pb.h"
+#include "algorithms/rappor/rappor_encoder.h"
 #include "config/metric_definition.pb.h"
 #include "config/report_definition.pb.h"
 #include "encoder/client_secret.h"
@@ -97,7 +98,7 @@ class Encoder {
   // Constructor
   //
   // client_secret: A random secret that is generated once on the client
-  //     and then persisted by the client and used repeatedly. It is used  as
+  //     and then persisted by the client and used repeatedly. It is used as
   //     an input by some of the encodings.
   //
   // system_data: Used to obtain the SystemProfile, a filtered copy of which
@@ -129,7 +130,7 @@ class Encoder {
   //
   // day_index: The day index associated with the Observation being encoded.
   //
-  // value_index: The index  to encode using Basic RAPPOR. It must be in
+  // value_index: The index to encode using Basic RAPPOR. It must be in
   // the range [0, num_categories - 1]
   //
   // num_categories: The number of categories to use in the Basic RAPPOR
@@ -244,7 +245,50 @@ class Encoder {
                                    uint32_t day_index,
                                    const std::string& str) const;
 
+  // Encodes an Observation of type UniqueActivesObservation.
+  //
+  // metric: Provides access to the names and IDs of the customer, project and
+  // metric associated with the Observation being encoded.
+  //
+  // report: The definition of the Report associated with the Observation being
+  // encoded. In addition to the common fields always required, this method also
+  // requires that the |local_privacy_noise_level| field be set. This is used to
+  // determine the p and q values for Basic RAPPOR.
+  //
+  // day_index: The day index associated with the Observation being encoded.
+  // This is the last day (inclusive) of the rolling window associated with this
+  // Observation.
+  //
+  // event_code: The event code of the Event associated with this Observation.
+  // This value should be a nonnegative integer less than or equal to the
+  // max_event_code of the MetricDefinition wrapped by |metric|, but it is the
+  // caller's responsibility to ensure this.
+  //
+  // was_active: Set to true if an event with code |event_code|
+  // occurred during the window of size |window_size| ending on |day_index|,
+  // false otherwise. If |was_active| is true, the BasicRapporObservation field
+  // of the UniqueActivesObservation is a Basic RAPPOR encoding of a 1 bit.
+  // If |was_active| is false, the BasicRapporObservation field is a Basic
+  // RAPPOR encoding of a 0 bit.
+  //
+  // window_size: The number of days in the window associated with the
+  // Observation. This should be one of the window sizes specified in |report|,
+  // but it is the caller's responsibility to ensure this.
+  Result EncodeUniqueActivesObservation(MetricRef metric,
+                                        const ReportDefinition* report,
+                                        uint32_t day_index, uint32_t event_code,
+                                        bool was_active,
+                                        uint32_t window_size) const;
+
  private:
+  // Encodes a BasicRapporObservation for a given |metric|, |report|, and
+  // |day_index| in which the data field is a Basic RAPPOR encoding of a vector
+  // of |num_categories| zero bits.
+  Result EncodeNullBasicRapporObservation(MetricRef metric,
+                                          const ReportDefinition* report,
+                                          uint32_t day_index,
+                                          uint32_t num_categories) const;
+
   // Makes an Observation and ObservationMetadata with all information that
   // is independent of which Encode*() method is being invoked.
   Result MakeObservation(MetricRef metric, const ReportDefinition* report,

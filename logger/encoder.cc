@@ -45,6 +45,30 @@ bool HashComponentNameIfNotEmpty(const std::string& component,
       reinterpret_cast<const byte*>(component.data()), component.size(),
       reinterpret_cast<byte*>(&hash_out->front()));
 }
+
+// Translates a rappor::Status |status| into a logger::Status and prints a debug
+// message if |status| is not kOK.
+Status TranslateBasicRapporEncoderStatus(MetricRef metric,
+                                         const ReportDefinition* report,
+                                         const rappor::Status& status) {
+  switch (status) {
+    case rappor::kOK:
+      return kOK;
+    case rappor::kInvalidConfig:
+      LOG(ERROR) << "BasicRapporEncoder returned kInvalidConfig for: Report "
+                 << report->report_name() << " for metric "
+                 << metric.metric_name() << " in project "
+                 << metric.ProjectDebugString() << ".";
+      return kInvalidConfig;
+    case rappor::kInvalidInput:
+      LOG(ERROR) << "BasicRapporEncoder returned kInvalidInput for: Report "
+                 << report->report_name() << " for metric "
+                 << metric.metric_name() << " in project "
+                 << metric.ProjectDebugString() << ".";
+      return kInvalidArguments;
+  }
+}
+
 }  // namespace
 
 Encoder::Encoder(ClientSecret client_secret,
@@ -72,26 +96,9 @@ Encoder::Result Encoder::EncodeBasicRapporObservation(
   BasicRapporEncoder basic_rappor_encoder(basic_rappor_config, client_secret_);
   ValuePart index_value;
   index_value.set_index_value(value_index);
-  switch (basic_rappor_encoder.Encode(index_value, basic_rappor_observation)) {
-    case rappor::kOK:
-      break;
-
-    case rappor::kInvalidConfig:
-      LOG(ERROR) << "BasicRapporEncoder returned kInvalidConfig for: Report "
-                 << report->report_name() << " for metric "
-                 << metric.metric_name() << " in project "
-                 << metric.ProjectDebugString() << ".";
-      result.status = kInvalidConfig;
-      return result;
-
-    case rappor::kInvalidInput:
-      LOG(ERROR) << "BasicRapporEncoder returned kInvalidInput for: Report "
-                 << report->report_name() << " for metric "
-                 << metric.metric_name() << " in project "
-                 << metric.ProjectDebugString() << ".";
-      result.status = kInvalidArguments;
-      return result;
-  }
+  result.status = TranslateBasicRapporEncoderStatus(
+      metric, report,
+      basic_rappor_encoder.Encode(index_value, basic_rappor_observation));
   return result;
 }
 
@@ -234,6 +241,59 @@ Encoder::Result Encoder::EncodeCustomObservation(
   auto* observation = result.observation.get();
   auto* custom_observation = observation->mutable_custom();
   custom_observation->mutable_values()->swap(*event_values);
+  return result;
+}
+
+Encoder::Result Encoder::EncodeUniqueActivesObservation(
+    MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+    uint32_t event_code, bool was_active, uint32_t window_size) const {
+  auto result = MakeObservation(metric, report, day_index);
+  Encoder::Result basic_rappor_result;
+  if (was_active) {
+    // Encode a single 1 bit
+    basic_rappor_result =
+        EncodeBasicRapporObservation(metric, report, day_index, 0u, 1u);
+  } else {
+    // Encode a single 0 bit
+    basic_rappor_result =
+        EncodeNullBasicRapporObservation(metric, report, day_index, 1u);
+  }
+  if (basic_rappor_result.status != kOK) {
+    result.status = basic_rappor_result.status;
+    return result;
+  }
+  auto* observation = result.observation.get();
+  auto* activity_observation = observation->mutable_unique_actives();
+  activity_observation->set_window_size(window_size);
+  activity_observation->set_event_code(event_code);
+  activity_observation->mutable_basic_rappor_obs()->mutable_data()->swap(*(
+      basic_rappor_result.observation->mutable_basic_rappor()->mutable_data()));
+
+  return result;
+}
+
+Encoder::Result Encoder::EncodeNullBasicRapporObservation(
+    MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+    uint32_t num_categories) const {
+  auto result = MakeObservation(metric, report, day_index);
+  auto* observation = result.observation.get();
+  auto* basic_rappor_observation = observation->mutable_basic_rappor();
+
+  BasicRapporConfig basic_rappor_config;
+  basic_rappor_config.set_prob_rr(RapporConfigHelper::kProbRR);
+  basic_rappor_config.mutable_indexed_categories()->set_num_categories(
+      num_categories);
+  float prob_bit_flip =
+      RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
+  basic_rappor_config.set_prob_0_becomes_1(prob_bit_flip);
+  basic_rappor_config.set_prob_1_stays_1(1.0 - prob_bit_flip);
+
+  // TODO(rudominer) Stop copying the client_secret_ on each Encode*()
+  // operation.
+  BasicRapporEncoder basic_rappor_encoder(basic_rappor_config, client_secret_);
+  result.status = TranslateBasicRapporEncoderStatus(
+      metric, report,
+      basic_rappor_encoder.EncodeNullObservation(basic_rappor_observation));
   return result;
 }
 

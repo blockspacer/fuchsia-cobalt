@@ -88,8 +88,8 @@ TEST(RapporConfigValidatorTest, TestConstructor) {
 }
 
 // Constructs a RapporEncoder with the given |config|, invokes
-// encode() with a dummy string, and checks that the returned status is
-// either kOK or kInvalidConfig, whichever is expected.
+// Encode() with a dummy string and EncodeNullObservation(), and checks that the
+// returned statuses are either kOK or kInvalidConfig, whichever is expected.
 void TestRapporConfig(const RapporConfig& config, Status expected_status,
                       int caller_line_number) {
   // Make a ClientSecret once and statically store the token.
@@ -236,8 +236,8 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
 }
 
 // Constructs a BasicRapporEncoder with the given |config|, invokes
-// encode() with a dummy string, and checks that the returned status is
-// either kOK or kInvalidConfig, whichever is expected.
+// Encode() with a dummy string and EncodeNullObservation(), and checks that the
+// returned statuses are either kOK or kInvalidConfig, whichever is expected.
 void TestBasicRapporConfig(const BasicRapporConfig& config,
                            Status expected_status, int caller_line_number) {
   // Make a ClientSecret once and statically store the token.
@@ -250,6 +250,9 @@ void TestBasicRapporConfig(const BasicRapporConfig& config,
   ValuePart value;
   value.set_string_value("cat");
   EXPECT_EQ(expected_status, encoder.Encode(value, &obs))
+      << "Invoked from line number: " << caller_line_number;
+  BasicRapporObservation null_obs;
+  EXPECT_EQ(expected_status, encoder.EncodeNullObservation(&null_obs))
       << "Invoked from line number: " << caller_line_number;
 }
 
@@ -323,6 +326,8 @@ TEST(RapporEncoderTest, BasicRapporConfigValidation) {
   ValuePart value;
   value.set_string_value("dummy");
   EXPECT_EQ(kInvalidConfig, encoder.Encode(value, &obs));
+  BasicRapporObservation null_obs;
+  EXPECT_EQ(kInvalidConfig, encoder.EncodeNullObservation(&null_obs));
 }
 
 // Test Config Validation with integer categories
@@ -346,9 +351,14 @@ TEST(RapporEncoderTest, BasicRapporWithIntsConfigValidation) {
   // Perform an encode with a value not equal to one of the listed categories
   value.set_int_value(2);
   EXPECT_EQ(kInvalidInput, encoder.Encode(value, &obs));
+
+  // Perform an encode of a null observation
+  BasicRapporObservation null_obs;
+  EXPECT_EQ(kOK, encoder.EncodeNullObservation(&null_obs));
 }
 
-// Performs a test of BasicRepporEncoder::Encode() in the two special cases that
+// Performs a test of BasicRapporEncoder::Encode() and
+// BasicRapporEncoder::EncodeNullObservation() in the two special cases that
 // that there is no randomness involved in the encoded string, namely
 // (a) p = 0, q = 1
 // (b) p = 1, q = 0
@@ -409,9 +419,23 @@ void DoBasicRapporNoRandomnessTest(int num_categories, bool q_is_one) {
         BuildBitPatternString(expected_num_bits, i, index_char, other_char);
     EXPECT_EQ(DataToBinaryString(obs.data()), expected_pattern);
   }
+
+  // Encode a null observation and check that the bit pattern is as expected.
+  BasicRapporObservation null_obs;
+  ASSERT_EQ(kOK, encoder.EncodeNullObservation(&null_obs))
+      << "Null observation";
+  std::vector<uint16_t> index_of_1s(0);
+  if (!q_is_one) {
+    for (uint16_t k = 0; k < expected_num_bits; k++) {
+      index_of_1s.push_back(k);
+    }
+  }
+  auto null_expected_pattern =
+      BuildBinaryString(expected_num_bits, index_of_1s);
+  EXPECT_EQ(DataToBinaryString(null_obs.data()), null_expected_pattern);
 }
 
-// Performs a test of BasicRepporEncoder::Encode() in the special case that
+// Performs a test of BasicRapporEncoder::Encode() in the special case that
 // the values of p and q are either 0 or 1 so that there is no randomness
 // involved in the encoded string.
 TEST(BasicRapporEncoderTest, NoRandomness) {
@@ -536,29 +560,109 @@ class BasicRapporDeterministicTest : public ::testing::Test {
       }
     }
   }
+
+  // Generates a Basic RAPPOR encoding of a null observation 1000 times and then
+  // performs Pearson's chi-squared test on each bit separately to check for
+  // goodness of fit to a binomial distribution with the appropriate parameter.
+  // Fails if chi-squared >= |chi_squared_threshold|.
+  //
+  // Uses DeterministicRandom in order to ensure reproducibility.
+  //
+  // The true value of each bit (before encoding) is 0, so the expected number
+  // of 1's in each bit position is prob_0_becomes_1.
+  void DoChiSquaredTestForNullObs(float prob_0_becomes_1, float prob_1_stays_1,
+                                  int num_categories,
+                                  double chi_squared_threshold) {
+    // Build the encoder.
+    // Since no bits of the true bit vector are 1, the probability that 1 stays
+    // 1 is irrelevant.
+    auto encoder =
+        BuildEncoder(prob_0_becomes_1, prob_1_stays_1, num_categories);
+
+    // Sample 1000 observations of the selected category and collect the bit
+    // counts
+    static const int kNumTrials = 1000;
+    BasicRapporObservation null_obs;
+    std::vector<int> counts(num_categories, 0);
+    for (size_t i = 0; i < kNumTrials; i++) {
+      null_obs.Clear();
+      EXPECT_EQ(kOK, encoder->EncodeNullObservation(&null_obs));
+      for (int bit_index = 0; bit_index < num_categories; bit_index++) {
+        if (IsSet(null_obs.data(), bit_index)) {
+          counts[bit_index]++;
+        }
+      }
+    }
+
+    // In the special case where prob_0_becomes_1 is 0 make sure that we got
+    // 1000 0's.
+    for (int k = 0; k < num_categories; k++) {
+      if (prob_0_becomes_1 == 0.0) {
+        EXPECT_EQ(0, counts[k]);
+      }
+    }
+
+    // This is the expected number of ones and zeroes for each bit position.
+    const double expected_1 =
+        static_cast<double>(kNumTrials) * prob_0_becomes_1;
+    const double expected_0 = static_cast<double>(kNumTrials) - expected_1;
+
+    // For each of the bit positions, perform the chi-squared test.
+    for (int bit_index = 0; bit_index < num_categories; bit_index++) {
+      if (expected_0 != 0.0 && expected_1 != 0.0) {
+        // Difference between actual 1 count and expected 1 count.
+        double delta_1 = static_cast<double>(counts[bit_index]) - expected_1;
+
+        // Difference between actual 0 count and expected 0 count.
+        double delta_0 =
+            static_cast<double>(kNumTrials - counts[bit_index]) - expected_0;
+
+        // Compute and check the Chi-Squared value.
+        double chi_squared =
+            delta_1 * delta_1 / expected_1 + delta_0 * delta_0 / expected_0;
+
+        EXPECT_TRUE(chi_squared < chi_squared_threshold)
+            << "chi_squared=" << chi_squared
+            << " chi_squared_threshold=" << chi_squared_threshold
+            << " bit_index=" << bit_index << " delta_0=" << delta_0
+            << " delta_1=" << delta_1 << " num_categories=" << num_categories
+            << " prob_0_becomes_1=" << prob_0_becomes_1;
+      }
+    }
+  }
 };
 
 TEST_F(BasicRapporDeterministicTest, ChiSquaredTest) {
   // Perform the chi-squared test for various numbers of categories and
-  // various selected categories. This gets combinatorially explosive so to
-  // keep the testing time reasonable we don't test every combination but
-  // rather step through the num_categories by 7 and use at most 3 selected
-  // categories for each num_categories.
+  // various selected categories, as well as for null observations without
+  // selected categories. This gets combinatorially explosive so to keep the
+  // testing time reasonable we don't test every combination but rather step
+  // through the num_categories by 7 and use at most 3 selected categories for
+  // each num_categories.
+  //
+  // The last parameter to DoChiSquaredTest*() is the chi-squared value to use.
+  // Notice that these values were chosen by experimentation to be as small as
+  // possible so that the test passes. They do not necessarily correspond to
+  // natural confidence intervals for the chi-squared test.
   for (int num_categories = 2; num_categories < 40; num_categories += 7) {
     for (int selected_category = 0; selected_category < num_categories;
          selected_category += (num_categories / 3 + 1)) {
-      // The first two parameters are p and q.
-      //
-      // The last parameter is the chi-squared value to use. Notice that these
-      // values were chosen by experimentation to be as small as possible so
-      // that the test passes. They do not necessarily correspond to natural
-      // confidence intervals for the chi-squared test.
+      // The first parameter is prob_0_becomes_1, and the second parameter is
+      // prob_1_stays_1.
       DoChiSquaredTest(0.01, 0.99, num_categories, selected_category, 8.2);
       DoChiSquaredTest(0.1, 0.9, num_categories, selected_category, 9.4);
       DoChiSquaredTest(0.2, 0.8, num_categories, selected_category, 11.1);
       DoChiSquaredTest(0.25, 0.75, num_categories, selected_category, 11.8);
       DoChiSquaredTest(0.3, 0.7, num_categories, selected_category, 11.8);
     }
+    // The first parameter is prob_0_becomes_1, and the second parameter is
+    // prob_1_stays_1.
+    DoChiSquaredTestForNullObs(0.0, 1.0, num_categories, 0.0);
+    DoChiSquaredTestForNullObs(0.01, 0.99, num_categories, 8.2);
+    DoChiSquaredTestForNullObs(0.1, 0.9, num_categories, 9.4);
+    DoChiSquaredTestForNullObs(0.2, 0.8, num_categories, 11.1);
+    DoChiSquaredTestForNullObs(0.25, 0.75, num_categories, 11.8);
+    DoChiSquaredTestForNullObs(0.3, 0.7, num_categories, 11.8);
   }
 }
 
