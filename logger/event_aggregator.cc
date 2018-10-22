@@ -11,6 +11,7 @@
 #include "algorithms/rappor/rappor_config_helper.h"
 #include "config/metric_definition.pb.h"
 #include "logger/project_context.h"
+#include "util/datetime_util.h"
 #include "util/proto_util.h"
 #include "util/status.h"
 
@@ -20,23 +21,37 @@ using rappor::RapporConfigHelper;
 using util::ConsistentProtoStore;
 using util::SerializeToBase64;
 using util::StatusCode;
+using util::SystemClock;
+using util::TimeToDayIndex;
 
 namespace logger {
 
 EventAggregator::EventAggregator(
     const Encoder* encoder, const ObservationWriter* observation_writer,
     ConsistentProtoStore* local_aggregate_proto_store,
-    ConsistentProtoStore* obs_history_proto_store, const size_t backfill_days)
+    ConsistentProtoStore* obs_history_proto_store, const size_t backfill_days,
+    const std::chrono::seconds aggregate_backup_interval,
+    const std::chrono::seconds generate_obs_interval,
+    const std::chrono::seconds gc_interval)
     : encoder_(encoder),
       observation_writer_(observation_writer),
       local_aggregate_proto_store_(local_aggregate_proto_store),
       obs_history_proto_store_(obs_history_proto_store) {
+  CHECK_LE(aggregate_backup_interval.count(), generate_obs_interval.count())
+      << "aggregate_backup_interval must be less than or equal to "
+         "generate_obs_interval";
+  CHECK_LE(aggregate_backup_interval.count(), gc_interval.count())
+      << "aggregate_backup_interval must be less than or equal to gc_interval";
   CHECK_LE(backfill_days, kEventAggregatorMaxAllowedBackfillDays)
       << "backfill_days must be less than or equal to "
       << kEventAggregatorMaxAllowedBackfillDays;
+  aggregate_backup_interval_ = aggregate_backup_interval;
+  generate_obs_interval_ = generate_obs_interval;
+  gc_interval_ = gc_interval;
   backfill_days_ = backfill_days;
+  auto locked = protected_aggregate_store_.lock();
   auto restore_aggregates_status =
-      local_aggregate_proto_store_->Read(&local_aggregate_store_);
+      local_aggregate_proto_store_->Read(&(locked->local_aggregate_store));
   switch (restore_aggregates_status.error_code()) {
     case StatusCode::OK: {
       VLOG(4) << "Read LocalAggregateStore from disk.";
@@ -55,7 +70,7 @@ EventAggregator::EventAggregator(
           << "\nError message: " << restore_aggregates_status.error_message()
           << "\nError details: " << restore_aggregates_status.error_details()
           << "\nProceeding with empty LocalAggregateStore.";
-      local_aggregate_store_ = LocalAggregateStore();
+      locked->local_aggregate_store = LocalAggregateStore();
     }
   }
   auto restore_history_status = obs_history_proto_store_->Read(&obs_history_);
@@ -81,6 +96,14 @@ EventAggregator::EventAggregator(
       obs_history_ = AggregatedObservationHistory();
     }
   }
+  clock_.reset(new SystemClock());
+}
+
+void EventAggregator::Start() {
+  auto locked = protected_shutdown_flag_.lock();
+  locked->shut_down = false;
+  std::thread t([this] { this->Run(); });
+  worker_thread_ = std::move(t);
 }
 
 // TODO(pesk): Have the config parser verify that each locally
@@ -90,6 +113,7 @@ EventAggregator::EventAggregator(
 // |kMaxAllowedAggregationWindowSize|.
 Status EventAggregator::UpdateAggregationConfigs(
     const ProjectContext& project_context) {
+  auto locked = protected_aggregate_store_.lock();
   std::string key;
   ReportAggregationKey key_data;
   key_data.set_customer_id(project_context.project().customer_id());
@@ -105,9 +129,9 @@ Status EventAggregator::UpdateAggregationConfigs(
               if (!SerializeToBase64(key_data, &key)) {
                 return kInvalidArguments;
               }
-              // TODO(pesk): update the EventAggregator's view of a
-              // Metric or ReportDefinition when appropriate.
-              if (local_aggregate_store_.aggregates().count(key) == 0) {
+              // TODO(pesk): update the EventAggregator's view of a Metric
+              // or ReportDefinition when appropriate.
+              if (locked->local_aggregate_store.aggregates().count(key) == 0) {
                 AggregationConfig aggregation_config;
                 *aggregation_config.mutable_project() =
                     project_context.project();
@@ -117,7 +141,7 @@ Status EventAggregator::UpdateAggregationConfigs(
                 ReportAggregates report_aggregates;
                 *report_aggregates.mutable_aggregation_config() =
                     aggregation_config;
-                (*local_aggregate_store_.mutable_aggregates())[key] =
+                (*locked->local_aggregate_store.mutable_aggregates())[key] =
                     report_aggregates;
               }
             }
@@ -149,9 +173,10 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
   if (!SerializeToBase64(key_data, &key)) {
     return kInvalidArguments;
   }
-
-  auto aggregates = local_aggregate_store_.mutable_aggregates()->find(key);
-  if (aggregates == local_aggregate_store_.mutable_aggregates()->end()) {
+  auto locked = protected_aggregate_store_.lock();
+  auto aggregates =
+      locked->local_aggregate_store.mutable_aggregates()->find(key);
+  if (aggregates == locked->local_aggregate_store.mutable_aggregates()->end()) {
     LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
     return kInvalidArguments;
   }
@@ -164,7 +189,10 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
 }
 
 Status EventAggregator::BackUpLocalAggregateStore() {
-  auto status = local_aggregate_proto_store_->Write(local_aggregate_store_);
+  // Lock, copy the LocalAggregateStore, and release the lock. Write the copy
+  // to |local_aggregate_proto_store_|.
+  auto local_aggregate_store = CopyLocalAggregateStore();
+  auto status = local_aggregate_proto_store_->Write(local_aggregate_store);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to back up the LocalAggregateStore with error code: "
                << status.error_code()
@@ -188,12 +216,107 @@ Status EventAggregator::BackUpObservationHistory() {
   return kOK;
 }
 
-Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
-  for (auto pair : local_aggregate_store_.aggregates()) {
+void EventAggregator::ShutDown() {
+  if (worker_thread_.joinable()) {
+    {
+      auto locked = protected_shutdown_flag_.lock();
+      locked->shut_down = true;
+      locked->shutdown_notifier.notify_all();
+    }
+    worker_thread_.join();
+  } else {
+    protected_shutdown_flag_.lock()->shut_down = true;
+  }
+}
+
+void EventAggregator::Run() {
+  auto current_time = clock_->now();
+  // Schedule Observation generation to happen in the first cycle.
+  next_generate_obs_ = current_time;
+  // Schedule garbage collection to happen |gc_interval_| seconds from now.
+  next_gc_ = current_time + gc_interval_;
+  // Acquire the mutex protecting the shutdown flag and condition variable.
+  auto locked = protected_shutdown_flag_.lock();
+  while (true) {
+    // If shutdown has been requested, back up the LocalAggregateStore and exit.
+    if (locked->shut_down) {
+      BackUpLocalAggregateStore();
+      return;
+    }
+    // Sleep until the next scheduled backup of the LocalAggregateStore or until
+    // notified of shutdown. Back up the LocalAggregateStore after waking.
+    auto shutdown_requested = locked.wait_for_with(
+        &(locked->shutdown_notifier), aggregate_backup_interval_,
+        [&locked]() { return locked->shut_down; });
+    BackUpLocalAggregateStore();
+    // If the worker thread was woken up by a shutdown request, exit. Otherwise,
+    // complete any scheduled Observation generation and garbage collection.
+    if (shutdown_requested) {
+      return;
+    }
+    // Check whether it is time to generate Observations or to garbage-collect
+    // the LocalAggregate store. If so, do that task and schedule the next
+    // occurrence.
+    DoScheduledTasks(clock_->now());
+  }
+}
+
+void EventAggregator::DoScheduledTasks(
+    std::chrono::system_clock::time_point current_time) {
+  auto current_time_t = std::chrono::system_clock::to_time_t(current_time);
+  auto current_day_index_utc =
+      TimeToDayIndex(current_time_t, MetricDefinition::UTC);
+  auto current_day_index_local =
+      TimeToDayIndex(current_time_t, MetricDefinition::LOCAL);
+  if (current_time >= next_generate_obs_) {
+    auto obs_status = GenerateObservations(current_day_index_utc - 1,
+                                           current_day_index_local - 1);
+    if (obs_status == kOK) {
+      BackUpObservationHistory();
+    } else {
+      LOG(ERROR) << "GenerateObservations failed with status: " << obs_status;
+    }
+    next_generate_obs_ += generate_obs_interval_;
+  }
+  if (current_time >= next_gc_) {
+    auto gc_status =
+        GarbageCollect(current_day_index_utc - 1, current_day_index_local - 1);
+    if (gc_status == kOK) {
+      BackUpLocalAggregateStore();
+    } else {
+      LOG(ERROR) << "GarbageCollect failed with status: " << gc_status;
+    }
+    next_gc_ += gc_interval_;
+  }
+}
+
+Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
+                                             uint32_t final_day_index_local) {
+  if (final_day_index_local == 0u) {
+    final_day_index_local = final_day_index_utc;
+  }
+  // Lock, copy the LocalAggregateStore, and release the lock. Use the copy to
+  // generate observations.
+  auto local_aggregate_store = CopyLocalAggregateStore();
+  for (auto pair : local_aggregate_store.aggregates()) {
     const auto& config = pair.second.aggregation_config();
 
     const auto& metric = config.metric();
     auto metric_ref = MetricRef(&config.project(), &metric);
+    uint32_t final_day_index;
+    switch (metric.time_zone_policy()) {
+      case MetricDefinition::UTC: {
+        final_day_index = final_day_index_utc;
+        break;
+      }
+      case MetricDefinition::LOCAL: {
+        final_day_index = final_day_index_local;
+        break;
+      }
+      default:
+        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
+        return kInvalidConfig;
+    }
 
     const auto& report = config.report();
     auto max_window_size = 0u;
@@ -241,10 +364,29 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
   return kOK;
 }
 
-Status EventAggregator::GarbageCollect(uint32_t day_index) {
-  for (auto pair : local_aggregate_store_.aggregates()) {
-    // Determine the largest window size in the report associated to
-    // this key-value pair.
+Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
+                                       uint32_t day_index_local) {
+  if (day_index_local == 0u) {
+    day_index_local = day_index_utc;
+  }
+  auto locked = protected_aggregate_store_.lock();
+  for (auto pair : locked->local_aggregate_store.aggregates()) {
+    uint32_t day_index;
+    switch (pair.second.aggregation_config().metric().time_zone_policy()) {
+      case MetricDefinition::UTC: {
+        day_index = day_index_utc;
+        break;
+      }
+      case MetricDefinition::LOCAL: {
+        day_index = day_index_local;
+        break;
+      }
+      default:
+        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
+        return kInvalidConfig;
+    }
+    // Determine the largest window size in the report associated to this
+    // key-value pair.
     uint32_t max_window_size = 1;
     for (uint32_t window_size :
          pair.second.aggregation_config().report().window_size()) {
@@ -270,7 +412,7 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
       for (auto day_aggregates : event_code_aggregates.second.by_day_index()) {
         if (day_aggregates.first <=
             day_index - backfill_days_ - max_window_size) {
-          local_aggregate_store_.mutable_aggregates()
+          locked->local_aggregate_store.mutable_aggregates()
               ->at(pair.first)
               .mutable_by_event_code()
               ->at(event_code_aggregates.first)
@@ -278,16 +420,15 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
               ->erase(day_aggregates.first);
         }
       }
-      // If the day index map under this event code is empty, remove the
-      // event code from the event code map under this
-      // ReportAggregationKey.
-      if (local_aggregate_store_.aggregates()
+      // If the day index map under this event code is empty, remove the event
+      // code from the event code map under this ReportAggregationKey.
+      if (locked->local_aggregate_store.aggregates()
               .at(pair.first)
               .by_event_code()
               .at(event_code_aggregates.first)
               .by_day_index()
               .empty()) {
-        local_aggregate_store_.mutable_aggregates()
+        locked->local_aggregate_store.mutable_aggregates()
             ->at(pair.first)
             .mutable_by_event_code()
             ->erase(event_code_aggregates.first);
@@ -297,13 +438,12 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
   return kOK;
 }
 
-////////// GenerateUniqueActivesObservations and helper methods
-/////////////////
+////////// GenerateUniqueActivesObservations and helper methods ////////////////
 
-// Given the set of daily aggregates for a fixed event code, and the
-// size and end date of an aggregation window, returns the first day
-// index within that window on which the event code occurred. Returns 0
-// if the event code did not occur within the window.
+// Given the set of daily aggregates for a fixed event code, and the size and
+// end date of an aggregation window, returns the first day index within that
+// window on which the event code occurred. Returns 0 if the event code did
+// not occur within the window.
 uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
                                      uint32_t obs_day_index,
                                      uint32_t window_size) {
@@ -390,10 +530,10 @@ Status EventAggregator::GenerateUniqueActivesObservations(
                         "size exceeding the maximum allowed value";
         continue;
       }
-      // Find the earliest day index for which an Observation has not
-      // yet been generated for this report, event code, and window
-      // size. If that day index is later than |final_day_index|, no
-      // Observation is generated on this invocation.
+      // Find the earliest day index for which an Observation has not yet
+      // been generated for this report, event code, and window size. If
+      // that day index is later than |final_day_index|, no Observation is
+      // generated on this invocation.
       auto last_gen =
           LastGeneratedDayIndex(report_key, event_code, window_size);
       auto first_day_index =
@@ -413,9 +553,9 @@ Status EventAggregator::GenerateUniqueActivesObservations(
         if (found_event_code) {
           // If the current value of |active_day_index| falls within the
           // window, generate an Observation of activity. If not, search
-          // forward in the window, update |active_day_index|, and
-          // generate an Observation of activity or inactivity depending
-          // on the result of the search.
+          // forward in the window, update |active_day_index|, and generate an
+          // Observation of activity or inactivity depending on the result of
+          // the search.
           if (IsActivityInWindow(active_day_index, obs_day_index,
                                  window_size)) {
             was_active = true;

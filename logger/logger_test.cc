@@ -56,8 +56,6 @@ using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
 namespace {
-// Number of seconds in an ideal day
-const int kDay = 86400;
 // Number of seconds in an ideal year
 const int kYear = kDay * 365;
 
@@ -65,7 +63,6 @@ static const uint32_t kCustomerId = 1;
 static const uint32_t kProjectId = 1;
 static const char kCustomerName[] = "Fuchsia";
 static const char kProjectName[] = "Cobalt";
-static const size_t kDefaultBackfillDays = 0;
 
 // Filenames for constructors of ConsistentProtoStores
 static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
@@ -472,8 +469,7 @@ class LoggerTest : public ::testing::Test {
         new MockConsistentProtoStore(kObsHistoryFilename));
     event_aggregator_.reset(new EventAggregator(
         encoder_.get(), observation_writer_.get(),
-        local_aggregate_proto_store_.get(), obs_history_proto_store_.get(),
-        kDefaultBackfillDays));
+        local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
     logger_.reset(new Logger(encoder_.get(), event_aggregator_.get(),
                              observation_writer_.get(),
                              project_context_.get()));
@@ -512,19 +508,27 @@ class LoggerTest : public ::testing::Test {
     update_recipient_->invocation_count = 0;
   }
 
-  std::unique_ptr<Encoder> encoder_;
+  Status GenerateAggregatedObservations(uint32_t day_index) {
+    return event_aggregator_->GenerateObservations(day_index);
+  }
+
+  Status GarbageCollectAggregateStore(uint32_t day_index) {
+    return event_aggregator_->GarbageCollect(day_index);
+  }
+
   std::unique_ptr<Logger> logger_;
+  std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<EventAggregator> event_aggregator_;
   std::unique_ptr<ObservationWriter> observation_writer_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<FakeObservationStore> observation_store_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<SystemDataInterface> system_data_;
-  IncrementingClock* mock_clock_;
+  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   ExpectedAggregationParams expected_aggregation_params_;
+  IncrementingClock* mock_clock_;
 };
 
 // Creates a Logger whose ProjectContext contains only EVENT_OCCURRED metrics,
@@ -659,7 +663,7 @@ TEST_F(LoggerTest, LogCustomEvent) {
 // Tests that the expected number of locally aggregated Observations are
 // generated when no events have been logged.
 TEST_F(LoggerTest, CheckNumAggregatedObsNoEvents) {
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(
                      CurrentDayIndex(MetricDefinition::UTC)));
   std::vector<Observation2> observations(0);
   EXPECT_TRUE(FetchAggregatedObservations(
@@ -680,7 +684,7 @@ TEST_F(LoggerTest, CheckNumAggregatedObsOneEvent) {
       FetchObservations(&immediate_observations, expected_immediate_report_ids,
                         observation_store_.get(), update_recipient_.get()));
   // Generate locally aggregated observations for the current day index.
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(
                      CurrentDayIndex(MetricDefinition::UTC)));
   // Check that the expected numbers of aggregated observations were generated.
   std::vector<Observation2> aggregated_observations;
@@ -708,7 +712,7 @@ TEST_F(LoggerTest, CheckNumAggregatedObsMultipleEvents) {
       FetchObservations(&immediate_observations, expected_immediate_report_ids,
                         observation_store_.get(), update_recipient_.get()));
   // Generate locally aggregated observations for the current day index.
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(
                      CurrentDayIndex(MetricDefinition::UTC)));
   // Check that the expected numbers of aggregated observations were
   // generated.
@@ -738,7 +742,7 @@ TEST_F(LoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEvents) {
   // Clear the FakeObservationStore.
   ResetObservationStore();
   // Generate locally aggregated observations for the current day index.
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(
                      CurrentDayIndex(MetricDefinition::UTC)));
   // Check that the expected aggregated observations were generated.
   std::vector<Observation2> observations;
@@ -752,7 +756,7 @@ TEST_F(LoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEvents) {
 TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObsValuesNoEvents) {
   auto current_day_index = CurrentDayIndex(MetricDefinition::UTC);
   // Generate locally aggregated Observations without logging any events.
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(current_day_index));
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(current_day_index));
   // Check that all generated Observations are of non-activity.
   auto expected_obs = MakeNullExpectedUniqueActivesObservations(
       expected_aggregation_params_, current_day_index);
@@ -774,7 +778,7 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObsValuesSingleDay) {
   ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 0));
   ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 1));
   // Generate locally aggregated observations for the current day index.
-  ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(current_day_index));
+  ASSERT_EQ(kOK, GenerateAggregatedObservations(current_day_index));
   // Form the expected observations for the current day index.
   auto expected_obs = MakeNullExpectedUniqueActivesObservations(
       expected_aggregation_params_, current_day_index);
@@ -895,13 +899,13 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObservationValues) {
     AdvanceDay(1);
     // Generate locally aggregated Observations for the previous day
     // index.
-    ASSERT_EQ(kOK, event_aggregator_->GenerateObservations(
+    ASSERT_EQ(kOK, GenerateAggregatedObservations(
                        CurrentDayIndex(MetricDefinition::UTC) - 1));
     // Check the generated Observations against the expectation.
     EXPECT_TRUE(CheckUniqueActivesObservations(
         expected_obs[i], observation_store_.get(), update_recipient_.get()));
     // Garbage-collect the LocalAggregateStore for the current day index.
-    ASSERT_EQ(kOK, event_aggregator_->GarbageCollect(
+    ASSERT_EQ(kOK, GarbageCollectAggregateStore(
                        CurrentDayIndex(MetricDefinition::UTC)));
   }
 }
