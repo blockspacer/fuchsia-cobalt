@@ -71,19 +71,20 @@ AggregationConfig MakeAggregationConfig(
   return config;
 }
 
-ExpectedActivity MakeNullExpectedActivity(
-    const ExpectedAggregationParams& expected_params) {
-  ExpectedActivity expected_activity;
+ExpectedUniqueActivesObservations MakeNullExpectedUniqueActivesObservations(
+    const ExpectedAggregationParams& expected_params, uint32_t day_index) {
+  ExpectedUniqueActivesObservations expected_obs;
   for (const auto& report_pair : expected_params.window_sizes) {
     for (const auto& window_size : report_pair.second) {
       for (uint32_t event_code = 0;
            event_code < expected_params.num_event_codes.at(report_pair.first);
            event_code++) {
-        expected_activity[report_pair.first][window_size].push_back(false);
+        expected_obs[{report_pair.first, day_index}][window_size].push_back(
+            false);
       }
     }
   }
-  return expected_activity;
+  return expected_obs;
 }
 
 bool FetchObservations(std::vector<Observation2>* observations,
@@ -251,25 +252,30 @@ bool CheckNumericEventObservations(
 }
 
 bool CheckUniqueActivesObservations(
-    const ExpectedActivity& expected_activity,
-    const ExpectedAggregationParams& expected_params,
+    const ExpectedUniqueActivesObservations& expected_obs,
     FakeObservationStore* observation_store,
     TestUpdateRecipient* update_recipient) {
+  // An ExpectedAggregationParams struct describing the number of Observations
+  // for each report ID which are expected to be in the FakeObservationStore
+  // when this method is called.
+  ExpectedAggregationParams expected_params;
   // A container for the strings expected to appear in the |data| field of the
   // BasicRapporObservation wrapped by the UniqueActivesObservation for a given
-  // MetricReportId, window size, and event code.
-  std::map<MetricReportId, std::map<uint32_t, std::map<uint32_t, std::string>>>
+  // MetricReportId, day index, window size, and event code.
+  std::map<std::pair<MetricReportId, uint32_t>,
+           std::map<uint32_t, std::map<uint32_t, std::string>>>
       expected_values;
-  // Form Basic RAPPOR-encoded bits from the expected activity values and
-  // populate |expected_values|.
+  // Form Basic RAPPOR-encoded bits from the expected activity
+  // indicators and populate |expected_params| and |expected_values|.
   BasicRapporConfig basic_rappor_config;
   basic_rappor_config.set_prob_0_becomes_1(0.0);
   basic_rappor_config.set_prob_1_stays_1(1.0);
   basic_rappor_config.mutable_indexed_categories()->set_num_categories(1u);
   std::unique_ptr<BasicRapporEncoder> encoder(new BasicRapporEncoder(
       basic_rappor_config, ClientSecret::GenerateNewSecret()));
-  for (const auto& id_pair : expected_activity) {
+  for (const auto& id_pair : expected_obs) {
     expected_values[id_pair.first] = {};
+    expected_params.metric_report_ids.insert(id_pair.first.first);
     for (const auto& window_pair : id_pair.second) {
       expected_values[id_pair.first][window_pair.first] = {};
       for (uint32_t event_code = 0; event_code < window_pair.second.size();
@@ -284,6 +290,8 @@ bool CheckUniqueActivesObservations(
         }
         expected_values[id_pair.first][window_pair.first][event_code] =
             basic_rappor_obs.data();
+        expected_params.num_obs_per_report[id_pair.first.first]++;
+        expected_params.daily_num_obs++;
       }
     }
   }
@@ -299,36 +307,37 @@ bool CheckUniqueActivesObservations(
     if (!observations.at(i).has_unique_actives()) {
       return false;
     }
-    auto obs_id =
+    auto obs_key = std::make_pair(
         MetricReportId(observation_store->metadata_received[i]->metric_id(),
-                       observation_store->metadata_received[i]->report_id());
-    if (expected_values.count(obs_id) == 0) {
+                       observation_store->metadata_received[i]->report_id()),
+        observation_store->metadata_received[i]->day_index());
+    if (expected_values.count(obs_key) == 0) {
       return false;
     }
     uint32_t obs_window_size =
         observations.at(i).unique_actives().window_size();
-    if (expected_values.at(obs_id).count(obs_window_size) == 0) {
+    if (expected_values.at(obs_key).count(obs_window_size) == 0) {
       return false;
     }
     uint32_t obs_event_code = observations.at(i).unique_actives().event_code();
-    if (expected_values.at(obs_id).at(obs_window_size).count(obs_event_code) ==
+    if (expected_values.at(obs_key).at(obs_window_size).count(obs_event_code) ==
         0) {
       return false;
     }
     std::string obs_data =
         observations.at(i).unique_actives().basic_rappor_obs().data();
-    if (expected_values.at(obs_id).at(obs_window_size).at(obs_event_code) !=
+    if (expected_values.at(obs_key).at(obs_window_size).at(obs_event_code) !=
         obs_data) {
       return false;
     }
     // Remove the bucket of |expected_values| corresponding to the
     // received Observation.
-    expected_values[obs_id][obs_window_size].erase(obs_event_code);
-    if (expected_values[obs_id][obs_window_size].empty()) {
-      expected_values[obs_id].erase(obs_window_size);
+    expected_values[obs_key][obs_window_size].erase(obs_event_code);
+    if (expected_values[obs_key][obs_window_size].empty()) {
+      expected_values[obs_key].erase(obs_window_size);
     }
-    if (expected_values[obs_id].empty()) {
-      expected_values.erase(obs_id);
+    if (expected_values[obs_key].empty()) {
+      expected_values.erase(obs_key);
     }
   }
   // Check that every expected Observation has been received.

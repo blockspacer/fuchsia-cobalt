@@ -4,6 +4,8 @@
 
 #include "logger/event_aggregator.h"
 
+#include <algorithm>
+#include <string>
 #include <utility>
 
 #include "algorithms/rappor/rappor_config_helper.h"
@@ -19,11 +21,22 @@ namespace logger {
 
 EventAggregator::EventAggregator(const Encoder* encoder,
                                  const ObservationWriter* observation_writer,
-                                 LocalAggregateStore* local_aggregate_store)
+                                 LocalAggregateStore* local_aggregate_store,
+                                 AggregatedObservationHistory* obs_history,
+                                 const size_t backfill_days)
     : encoder_(encoder),
       observation_writer_(observation_writer),
-      local_aggregate_store_(local_aggregate_store) {}
+      local_aggregate_store_(local_aggregate_store),
+      obs_history_(obs_history) {
+  CHECK_LE(backfill_days, kEventAggregatorMaxAllowedBackfillDays)
+      << "backfill_days must be less than or equal to "
+      << kEventAggregatorMaxAllowedBackfillDays;
+}
 
+// TODO(pesk): Have the config parser verify that each locally
+// aggregated report has at least one window size and that all window sizes
+// are <= |kMaxAllowedAggregationWindowSize|. Additionally, have this method
+// filter out any window sizes larger than |kMaxAllowedAggregationWindowSize|.
 Status EventAggregator::UpdateAggregationConfigs(
     const ProjectContext& project_context) {
   std::string key;
@@ -101,12 +114,41 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
 Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
   for (auto pair : local_aggregate_store_->aggregates()) {
     const auto& config = pair.second.aggregation_config();
-    switch (config.metric().metric_type()) {
-      case MetricDefinition::EVENT_OCCURRED:
-        switch (config.report().report_type()) {
+
+    const auto& metric = config.metric();
+    auto metric_ref = MetricRef(&config.project(), &metric);
+
+    const auto& report = config.report();
+    auto max_window_size = 0u;
+    for (uint32_t window_size : report.window_size()) {
+      if (window_size > kMaxAllowedAggregationWindowSize) {
+        LOG(WARNING)
+            << "Window size exceeding kMaxAllowedAggregationWindowSize will be "
+               "ignored by GenerateObservations";
+      } else if (window_size > max_window_size) {
+        max_window_size = window_size;
+      }
+    }
+    if (max_window_size == 0) {
+      LOG(ERROR) << "Each locally aggregated report must specify a positive "
+                    "window size.";
+      return kInvalidConfig;
+    }
+    if (final_day_index < max_window_size) {
+      LOG(ERROR) << "final_day_index must be >= max_window_size.";
+      return kInvalidArguments;
+    }
+
+    switch (metric.metric_type()) {
+      case MetricDefinition::EVENT_OCCURRED: {
+        auto num_event_codes =
+            RapporConfigHelper::BasicRapporNumCategories(metric);
+
+        switch (report.report_type()) {
           case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-            auto status =
-                GenerateUniqueActivesObservations(pair.second, final_day_index);
+            auto status = GenerateUniqueActivesObservations(
+                metric_ref, pair.first, pair.second, num_event_codes,
+                final_day_index);
             if (status != kOK) {
               return status;
             }
@@ -114,6 +156,7 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
           default:
             continue;
         }
+      }
       default:
         continue;
     }
@@ -128,17 +171,28 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
     uint32_t max_window_size = 1;
     for (uint32_t window_size :
          pair.second.aggregation_config().report().window_size()) {
-      if (window_size > max_window_size) {
+      if (window_size > max_window_size &&
+          window_size <= kMaxAllowedAggregationWindowSize) {
         max_window_size = window_size;
       }
     }
+    if (max_window_size == 0) {
+      LOG(ERROR) << "Each locally aggregated report must specify a positive "
+                    "window size.";
+      return kInvalidConfig;
+    }
+    if (day_index < backfill_days_ + max_window_size) {
+      LOG(ERROR) << "day_index must be >= backfill_days_ + max_window_size.";
+      return kInvalidArguments;
+    }
     // For each event code, iterate over the sub-map of local aggregates
     // keyed by day index. Keep buckets with day indices greater than
-    // |day_index| - |max_window_size|, and remove all buckets with smaller day
-    // indices.
+    // |day_index| - |backfill_days_| - |max_window_size|, and remove all
+    // buckets with smaller day indices.
     for (auto event_code_aggregates : pair.second.by_event_code()) {
       for (auto day_aggregates : event_code_aggregates.second.by_day_index()) {
-        if (day_aggregates.first <= day_index - max_window_size) {
+        if (day_aggregates.first <=
+            day_index - backfill_days_ - max_window_size) {
           local_aggregate_store_->mutable_aggregates()
               ->at(pair.first)
               .mutable_by_event_code()
@@ -165,82 +219,63 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
   return kOK;
 }
 
-Status EventAggregator::GenerateUniqueActivesObservations(
-    const ReportAggregates& report_aggregates, uint32_t final_day_index) const {
-  const auto& config = report_aggregates.aggregation_config();
-  auto metric_ref = MetricRef(&config.project(), &config.metric());
-  auto num_event_codes =
-      RapporConfigHelper::BasicRapporNumCategories(config.metric());
+////////// GenerateUniqueActivesObservations and helper methods //////////////
 
-  Status status;
-  for (uint32_t event_code = 0; event_code < num_event_codes; event_code++) {
-    // If no occurrences have been logged for this event code, generate
-    // a negative Observation for each window size specified in |report|.
-    if (report_aggregates.by_event_code().count(event_code) == 0) {
-      for (auto window_size : config.report().window_size()) {
-        status = GenerateSingleUniqueActivesObservation(
-            metric_ref, &config.report(), final_day_index, event_code, false,
-            window_size);
-        if (status != kOK) {
-          return status;
-        }
-      }
-    } else {
-      // If an occurrence has been logged for this event code, then
-      // for each window size, check whether a logged occurrence fell within
-      // the window and generate a positive or null Observation
-      // accordingly.
-      const auto& daily_aggregates =
-          report_aggregates.by_event_code().at(event_code).by_day_index();
-      uint32_t max_window_size = 0;
-      for (uint32_t window_size : config.report().window_size()) {
-        if (window_size > max_window_size) {
-          max_window_size = window_size;
-        }
-      }
-      if (max_window_size <= 0) {
-        LOG(ERROR) << "Maximum window size must be positive";
-        return kInvalidConfig;
-      }
-      uint32_t days_since_activity = max_window_size;
-      for (uint32_t day_index = final_day_index;
-           day_index > final_day_index - max_window_size; day_index--) {
-        if (daily_aggregates.count(day_index) > 0 &&
-            daily_aggregates.at(day_index)
-                    .activity_daily_aggregate()
-                    .activity_indicator() == true) {
-          days_since_activity = final_day_index - day_index;
-          break;
-        }
-      }
-      // If the most recent activity falls within a given window, generate an
-      // observation of activity. Otherwise, generate an observation of
-      // inactivity.
-      for (uint32_t window_size : config.report().window_size()) {
-        if (window_size > days_since_activity) {
-          status = GenerateSingleUniqueActivesObservation(
-              metric_ref, &config.report(), final_day_index, event_code,
-              /* was_active */ true, window_size);
-        } else {
-          status = GenerateSingleUniqueActivesObservation(
-              metric_ref, &config.report(), final_day_index, event_code,
-              /* was_active */ false, window_size);
-        }
-      }
-      if (status != kOK) {
-        return status;
-      }
+// Given the set of daily aggregates for a fixed event code, and the size and
+// end date of an aggregation window, returns the first day index within that
+// window on which the event code occurred. Returns 0 if the event code did not
+// occur within the window.
+uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
+                                     uint32_t obs_day_index,
+                                     uint32_t window_size) {
+  for (uint32_t day_index = obs_day_index - window_size + 1;
+       day_index <= obs_day_index; day_index++) {
+    auto day_aggregate = daily_aggregates.by_day_index().find(day_index);
+    if (day_aggregate != daily_aggregates.by_day_index().end() &&
+        day_aggregate->second.activity_daily_aggregate().activity_indicator() ==
+            true) {
+      return day_index;
     }
   }
-  return kOK;
+  return 0u;
+}
+
+// Given the day index of an event occurrence and the size and end date of an
+// aggregation window, returns true if the occurrence falls within the window
+// and false if not.
+bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
+                        uint32_t window_size) {
+  return (active_day_index <= obs_day_index &&
+          active_day_index > obs_day_index - window_size);
+}
+
+uint32_t EventAggregator::LastGeneratedDayIndex(const std::string& report_key,
+                                                uint32_t event_code,
+                                                uint32_t window_size) const {
+  auto report_history = obs_history_->by_report_key().find(report_key);
+  if (report_history == obs_history_->by_report_key().end()) {
+    return 0u;
+  }
+  auto event_code_history =
+      report_history->second.by_event_code().find(event_code);
+  if (event_code_history == report_history->second.by_event_code().end()) {
+    return 0u;
+  }
+  auto window_size_history =
+      event_code_history->second.by_window_size().find(window_size);
+  if (window_size_history ==
+      event_code_history->second.by_window_size().end()) {
+    return 0u;
+  }
+  return window_size_history->second;
 }
 
 Status EventAggregator::GenerateSingleUniqueActivesObservation(
     const MetricRef metric_ref, const ReportDefinition* report,
-    uint32_t final_day_index, uint32_t event_code, bool was_active,
-    uint32_t window_size) const {
+    uint32_t obs_day_index, uint32_t event_code, uint32_t window_size,
+    bool was_active) const {
   auto encoder_result = encoder_->EncodeUniqueActivesObservation(
-      metric_ref, report, final_day_index, event_code, was_active, window_size);
+      metric_ref, report, obs_day_index, event_code, was_active, window_size);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -254,6 +289,73 @@ Status EventAggregator::GenerateSingleUniqueActivesObservation(
       *encoder_result.observation, std::move(encoder_result.metadata));
   if (writer_status != kOK) {
     return writer_status;
+  }
+  return kOK;
+}
+
+Status EventAggregator::GenerateUniqueActivesObservations(
+    const MetricRef metric_ref, const std::string& report_key,
+    const ReportAggregates& report_aggregates, uint32_t num_event_codes,
+    uint32_t final_day_index) const {
+  for (uint32_t event_code = 0; event_code < num_event_codes; event_code++) {
+    auto daily_aggregates = report_aggregates.by_event_code().find(event_code);
+    // Have any events ever been logged for this report and event code?
+    bool found_event_code =
+        (daily_aggregates != report_aggregates.by_event_code().end());
+    for (uint32_t window_size :
+         report_aggregates.aggregation_config().report().window_size()) {
+      // Skip any window size larger than kMaxAllowedAggregationWindowSize.
+      if (window_size > kMaxAllowedAggregationWindowSize) {
+        LOG(WARNING) << "GenerateUniqueActivesObservations ignoring a window "
+                        "size exceeding the maximum allowed value";
+        continue;
+      }
+      // Find the earliest day index for which an Observation has not yet been
+      // generated for this report, event code, and window size. If that day
+      // index is later than |final_day_index|, no Observation is generated on
+      // this invocation.
+      auto last_gen =
+          LastGeneratedDayIndex(report_key, event_code, window_size);
+      auto first_day_index =
+          std::max(last_gen + 1, uint32_t(final_day_index - backfill_days_));
+      // The latest day index on which |event_type| is known to have occurred,
+      // so far. This value will be updated as we search forward from the
+      // earliest day index belonging to a window of interest.
+      uint32_t active_day_index = 0u;
+      // Iterate over the day indices |obs_day_index| for which we need to
+      // generate Observations. On each iteration, generate an Observation for
+      // the window of size |window_size| ending on |obs_day_index|.
+      for (uint32_t obs_day_index = first_day_index;
+           obs_day_index <= final_day_index; obs_day_index++) {
+        bool was_active = false;
+        if (found_event_code) {
+          // If the current value of |active_day_index| falls within the window,
+          // generate an Observation of activity. If not, search forward in the
+          // window, update |active_day_index|, and generate an Observation of
+          // activity or inactivity depending on the result of the search.
+          if (IsActivityInWindow(active_day_index, obs_day_index,
+                                 window_size)) {
+            was_active = true;
+          } else {
+            active_day_index = FirstActiveDayIndexInWindow(
+                daily_aggregates->second, obs_day_index, window_size);
+            was_active = IsActivityInWindow(active_day_index, obs_day_index,
+                                            window_size);
+          }
+        }
+        auto status = GenerateSingleUniqueActivesObservation(
+            metric_ref, &report_aggregates.aggregation_config().report(),
+            obs_day_index, event_code, window_size, was_active);
+        if (status != kOK) {
+          return status;
+        }
+        // Update |obs_history_| with the latest date of Observation generation
+        // for this report, event code, and window size.
+        (*(*(*obs_history_->mutable_by_report_key())[report_key]
+                .mutable_by_event_code())[event_code]
+              .mutable_by_window_size())[window_size] = obs_day_index;
+      }
+    }
   }
   return kOK;
 }

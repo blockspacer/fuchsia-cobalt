@@ -30,13 +30,14 @@ using util::SerializeToBase64;
 
 namespace logger {
 
-using testing::ExpectedActivity;
+using testing::CheckUniqueActivesObservations;
 using testing::ExpectedAggregationParams;
+using testing::ExpectedUniqueActivesObservations;
 using testing::FakeObservationStore;
 using testing::FetchAggregatedObservations;
 using testing::MakeAggregationConfig;
 using testing::MakeAggregationKey;
-using testing::MakeNullExpectedActivity;
+using testing::MakeNullExpectedUniqueActivesObservations;
 using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
@@ -264,9 +265,17 @@ class EventAggregatorTest : public ::testing::Test {
     encoder_.reset(
         new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
     local_aggregate_store_.reset(new LocalAggregateStore);
-    event_aggregator_.reset(new EventAggregator(encoder_.get(),
-                                                observation_writer_.get(),
-                                                local_aggregate_store_.get()));
+    history_.reset(new AggregatedObservationHistory);
+    event_aggregator_.reset(
+        new EventAggregator(encoder_.get(), observation_writer_.get(),
+                            local_aggregate_store_.get(), history_.get(), 0));
+    SetBackfillDays(0);
+  }
+
+  size_t GetBackfillDays() { return event_aggregator_->backfill_days_; }
+
+  void SetBackfillDays(size_t num_days) {
+    event_aggregator_->set_backfill_days(num_days);
   }
 
   // Clears the FakeObservationStore and resets the TestUpdateRecipient's count
@@ -300,15 +309,7 @@ class EventAggregatorTest : public ::testing::Test {
             MakeAggregationKey(project_context, metric_report_id), &key)) {
       return kInvalidArguments;
     }
-    if (logged_activity->count(key) == 0) {
-      logged_activity->insert(
-          std::make_pair(key, std::map<uint32_t, std::set<uint32_t>>({})));
-    }
-    if (logged_activity->at(key).count(event_code) == 0) {
-      logged_activity->at(key).insert(
-          std::make_pair(event_code, std::set<uint32_t>({})));
-    }
-    (logged_activity->at(key).at(event_code)).insert(day_index);
+    (*logged_activity)[key][event_code].insert(day_index);
     return status;
   }
 
@@ -332,29 +333,32 @@ class EventAggregatorTest : public ::testing::Test {
       const auto& aggregates = report_pair.second;
       // Check whether this ReportAggregationKey is in |logged_activity|. If
       // not, expect that its by_event_code map is empty.
-      if (logged_activity.count(report_key) == 0u) {
+      auto report_activity = logged_activity.find(report_key);
+      if (report_activity == logged_activity.end()) {
         EXPECT_TRUE(aggregates.by_event_code().empty());
         if (!aggregates.by_event_code().empty()) {
           return false;
         }
         break;
       }
-      auto expected_events = logged_activity.at(report_key);
+      auto expected_events = report_activity->second;
       for (const auto& event_pair : aggregates.by_event_code()) {
         // Check that this event code is in |logged_activity| under this
         // ReportAggregationKey.
         auto event_code = event_pair.first;
-        EXPECT_GT(expected_events.count(event_code), 0u);
-        if (expected_events.count(event_code) == 0u) {
+        auto event_activity = expected_events.find(event_code);
+        EXPECT_NE(event_activity, expected_events.end());
+        if (event_activity == expected_events.end()) {
           return false;
         }
-        const auto& expected_days = expected_events[event_code];
+        const auto& expected_days = event_activity->second;
         for (const auto& day_pair : event_pair.second.by_day_index()) {
           // Check that this day index is in |logged_activity| under this
           // ReportAggregationKey and event code.
           const auto& day_index = day_pair.first;
-          EXPECT_GT(expected_days.count(day_index), 0u);
-          if (expected_days.count(day_index) == 0u) {
+          auto day_activity = expected_days.find(day_index);
+          EXPECT_NE(day_activity, expected_days.end());
+          if (day_activity == expected_days.end()) {
             return false;
           }
           // Check that the day index is no earlier than is implied by the
@@ -376,25 +380,25 @@ class EventAggregatorTest : public ::testing::Test {
       const auto& logged_key = logged_pair.first;
       const auto& logged_event_map = logged_pair.second;
       // Check that this ReportAggregationKey is in the LocalAggregateStore.
-      EXPECT_GT(local_aggregate_store_->aggregates().count(logged_key), 0u);
-      if (local_aggregate_store_->aggregates().count(logged_key) == 0u) {
+      auto report_aggregates =
+          local_aggregate_store_->aggregates().find(logged_key);
+      EXPECT_NE(report_aggregates, local_aggregate_store_->aggregates().end());
+      if (report_aggregates == local_aggregate_store_->aggregates().end()) {
         return false;
       }
       for (const auto& logged_event_pair : logged_event_map) {
         const auto& logged_event_code = logged_event_pair.first;
         const auto& logged_days = logged_event_pair.second;
-        auto earliest_allowed =
-            EarliestAllowedDayIndex(local_aggregate_store_->aggregates()
-                                        .at(logged_key)
-                                        .aggregation_config());
+        auto earliest_allowed = EarliestAllowedDayIndex(
+            report_aggregates->second.aggregation_config());
         // Check whether this event code is in the LocalAggregateStore
         // under this ReportAggregationKey. If not, check that all day indices
         // for this event code are smaller than the day index of the earliest
         // allowed aggregate.
-        if (local_aggregate_store_->aggregates()
-                .at(logged_key)
-                .by_event_code()
-                .count(logged_event_code) == 0u) {
+        auto event_code_aggregates =
+            report_aggregates->second.by_event_code().find(logged_event_code);
+        if (event_code_aggregates ==
+            report_aggregates->second.by_event_code().end()) {
           for (auto day_index : logged_days) {
             EXPECT_LT(day_index, earliest_allowed);
             if (day_index >= earliest_allowed) {
@@ -409,37 +413,19 @@ class EventAggregatorTest : public ::testing::Test {
         // survived any garbage collection. Check that each aggregate has its
         // activity field set to true.
         for (const auto& logged_day_index : logged_days) {
+          auto day_aggregate =
+              event_code_aggregates->second.by_day_index().find(
+                  logged_day_index);
           if (logged_day_index >= earliest_allowed) {
-            EXPECT_GT(local_aggregate_store_->aggregates()
-                          .at(logged_key)
-                          .by_event_code()
-                          .at(logged_event_code)
-                          .by_day_index()
-                          .count(logged_day_index),
-                      0u);
-            if (local_aggregate_store_->aggregates()
-                    .at(logged_key)
-                    .by_event_code()
-                    .at(logged_event_code)
-                    .by_day_index()
-                    .count(logged_day_index) == 0u) {
+            EXPECT_NE(day_aggregate,
+                      event_code_aggregates->second.by_day_index().end());
+            if (day_aggregate ==
+                event_code_aggregates->second.by_day_index().end()) {
               return false;
             }
-            EXPECT_TRUE(local_aggregate_store_->aggregates()
-                            .at(logged_key)
-                            .by_event_code()
-                            .at(logged_event_code)
-                            .by_day_index()
-                            .at(logged_day_index)
-                            .activity_daily_aggregate()
+            EXPECT_TRUE(day_aggregate->second.activity_daily_aggregate()
                             .activity_indicator());
-            if (!local_aggregate_store_->aggregates()
-                     .at(logged_key)
-                     .by_event_code()
-                     .at(logged_event_code)
-                     .by_day_index()
-                     .at(logged_day_index)
-                     .activity_daily_aggregate()
+            if (!day_aggregate->second.activity_daily_aggregate()
                      .activity_indicator()) {
               return false;
             }
@@ -453,43 +439,54 @@ class EventAggregatorTest : public ::testing::Test {
   // Given the AggregationConfig of a locally aggregated report, returns the
   // earliest (smallest) day index for which an aggregate may exist in the
   // LocalAggregateStore for that report, accounting for garbage
-  // collection.
+  // collection and the number of backfill days.
   uint32_t EarliestAllowedDayIndex(const AggregationConfig& config) {
     // If the LocalAggregateStore has never been garbage-collected, then the
-    // earliest allowed day index is just the day when the store was created;
-    // i.e., |kStartDayIndex|.
+    // earliest allowed day index is just the day when the store was created,
+    // minus the number of backfill days.
+    auto backfill_days = GetBackfillDays();
+    EXPECT_GE(kStartDayIndex, backfill_days)
+        << "The day index of store creation must be larger than the number "
+           "of backfill days.";
     if (day_last_garbage_collected_ == 0u) {
-      return kStartDayIndex;
+      return kStartDayIndex - backfill_days;
     } else {
       // Otherwise, it is the later of:
-      // (a) The day index on which the store was created.
-      // (b) The day index for which the store was last garbage-collected,
-      // minus the largest window size in the report associated to |config|,
-      // plus 1.
+      // (a) The day index on which the store was created minus the number
+      // of backfill days.
+      // (b) The day index for which the store was last garbage-collected minus
+      // the number of backfill days, minus the largest window size in the
+      // report associated to |config|, plus 1.
+      EXPECT_GE(day_last_garbage_collected_, backfill_days)
+          << "The day index of last garbage collection must be larger than "
+             "the number of backfill days.";
       uint32_t max_window_size = 1;
       for (uint32_t window_size : config.report().window_size()) {
         if (window_size > max_window_size) {
           max_window_size = window_size;
         }
       }
-      if (day_last_garbage_collected_ < (max_window_size + 1)) {
-        return kStartDayIndex;
+      if (day_last_garbage_collected_ - backfill_days < (max_window_size + 1)) {
+        return kStartDayIndex - backfill_days;
       }
       return (kStartDayIndex <
               (day_last_garbage_collected_ - max_window_size + 1))
-                 ? (day_last_garbage_collected_ - max_window_size + 1)
-                 : kStartDayIndex;
+                 ? (day_last_garbage_collected_ - backfill_days -
+                    max_window_size + 1)
+                 : kStartDayIndex - backfill_days;
     }
   }
 
   std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
+  std::unique_ptr<AggregatedObservationHistory> history_;
   std::unique_ptr<EventAggregator> event_aggregator_;
 
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<FakeObservationStore> observation_store_;
 
-  // The day index on which the LocalAggregateStore was last garbage-collected.
-  // A value of 0 indicates that the store has never been garbage-collected.
+  // The day index on which the LocalAggregateStore was last
+  // garbage-collected. A value of 0 indicates that the store has never been
+  // garbage-collected.
   uint32_t day_last_garbage_collected_ = 0u;
 
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -513,8 +510,8 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
     event_aggregator_->UpdateAggregationConfigs(*project_context_);
   }
 
-  // Logs a UniqueActivesEvent for the MetricReportId of a locally aggregated
-  // report in |metric_string|. Overrides the method
+  // Logs a UniqueActivesEvent for the MetricReportId of a locally
+  // aggregated report in |metric_string|. Overrides the method
   // EventAggregatorTest::LogUniqueActivesEvent.
   Status LogUniqueActivesEvent(const MetricReportId& metric_report_id,
                                uint32_t day_index, uint32_t event_code,
@@ -525,8 +522,8 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   }
 
  private:
-  // A ProjectContext wrapping the MetricDefinitions passed to the constructor
-  // in |metric_string|.
+  // A ProjectContext wrapping the MetricDefinitions passed to the
+  // constructor in |metric_string|.
   std::unique_ptr<ProjectContext> project_context_;
 };
 
@@ -554,8 +551,8 @@ class NoiseFreeUniqueActivesEventAggregatorTest
   void SetUp() { EventAggregatorTestWithProjectContext::SetUp(); }
 };
 
-// Tests that an empty LocalAggregateStore is updated with ReportAggregationKeys
-// and AggregationConfigs as expected when
+// Tests that an empty LocalAggregateStore is updated with
+// ReportAggregationKeys and AggregationConfigs as expected when
 // EventAggregator::UpdateAggregationConfigs is called.
 TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
   // Check that the LocalAggregateStore is empty.
@@ -594,12 +591,12 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
 // customer ID and project ID provide configurations to the EventAggregator.
 // These assumptions are:
 // (1) If the second project provides a report with a
-// ReportAggregationKey which was not provided by the first project, then the
-// EventAggregator accepts the new report.
-// (2) If a report provided by the second project has a ReportAggregationKey
-// which was already provided by the first project, then the EventAggregator
-// rejects the new report, even if its ReportDefinition differs from that of
-// existing report with the same ReportAggregationKey.
+// ReportAggregationKey which was not provided by the first project, then
+// the EventAggregator accepts the new report. (2) If a report provided by
+// the second project has a ReportAggregationKey which was already provided
+// by the first project, then the EventAggregator rejects the new report,
+// even if its ReportDefinition differs from that of existing report with
+// the same ReportAggregationKey.
 TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // Provide the EventAggregator with |kUniqueActivesMetricDefinitions|.
   auto unique_actives_project_context =
@@ -618,8 +615,8 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
                      *noise_free_unique_actives_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
-  // now equal to the number of distinct MetricReportIds of locally aggregated
-  // reports in |kUniqueActivesMetricDefinitions| and
+  // now equal to the number of distinct MetricReportIds of locally
+  // aggregated reports in |kUniqueActivesMetricDefinitions| and
   // |kNoiseFreeUniqueActivesMetricDefinitions|.
   EXPECT_EQ(4u, local_aggregate_store_->aggregates().size());
   // The MetricReportId |kFeaturesActiveMetricReportId| appears in both
@@ -628,10 +625,10 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // ReportAggregationKeys are identical, but the AggregationConfigs are
   // different.
   //
-  // Check that the AggregationConfig stored in the LocalAggregateStore under
-  // the key associated to |kFeaturesActiveMetricReportId| is the first
-  // AggregationConfig that was provided for that key; i.e., is derived from
-  // |kUniqueActivesMetricDefinitions|.
+  // Check that the AggregationConfig stored in the LocalAggregateStore
+  // under the key associated to |kFeaturesActiveMetricReportId| is the
+  // first AggregationConfig that was provided for that key; i.e., is
+  // derived from |kUniqueActivesMetricDefinitions|.
   std::string key;
   EXPECT_TRUE(
       SerializeToBase64(MakeAggregationKey(*unique_actives_project_context,
@@ -654,17 +651,18 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
 
 // Tests that EventAggregator::LogUniqueActivesEvent returns
 // |kInvalidArguments| when passed a report ID which is not associated to a
-// key of the LocalAggregateStore, or when passed an EventRecord containing an
-// Event proto message which is not of type OccurrenceEvent.
+// key of the LocalAggregateStore, or when passed an EventRecord containing
+// an Event proto message which is not of type OccurrenceEvent.
 TEST_F(EventAggregatorTest, LogBadEvents) {
   // Provide the EventAggregator with |kUniqueActivesMetricDefinitions|.
   auto unique_actives_project_context =
       MakeProjectContext(kUniqueActivesMetricDefinitions);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
                      *unique_actives_project_context));
-  // Attempt to log a UniqueActivesEvent for |kEventsOccurredMetricReportId|,
-  // which is not in |kUniqueActivesMetricDefinitions|. Check that the result
-  // is |kInvalidArguments|.
+  // Attempt to log a UniqueActivesEvent for
+  // |kEventsOccurredMetricReportId|, which is not in
+  // |kUniqueActivesMetricDefinitions|. Check that the result is
+  // |kInvalidArguments|.
   auto noise_free_project_context =
       MakeProjectContext(kNoiseFreeUniqueActivesMetricDefinitions);
   EventRecord bad_event_record;
@@ -689,7 +687,8 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
 // Tests that the LocalAggregateStore is updated as expected when
 // EventAggregator::LogUniqueActivesEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
-// LocalAggregateStore, and with an EventRecord which wraps an OccurrenceEvent.
+// LocalAggregateStore, and with an EventRecord which wraps an
+// OccurrenceEvent.
 //
 // Logs some valid events each day for 35 days, checking the contents of the
 // LocalAggregateStore each day.
@@ -698,8 +697,8 @@ TEST_F(UniqueActivesEventAggregatorTest, LogUniqueActivesEvents) {
   uint32_t num_days = 35;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     // Log an event for the FeaturesActive_UniqueDevices report of
-    // |kUniqueActivesMetricDefinitions| with event code 0. Check the contents
-    // of the LocalAggregateStore.
+    // |kUniqueActivesMetricDefinitions| with event code 0. Check the
+    // contents of the LocalAggregateStore.
     EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
                                          kStartDayIndex + offset, 0u,
                                          &logged_activity));
@@ -710,8 +709,8 @@ TEST_F(UniqueActivesEventAggregatorTest, LogUniqueActivesEvents) {
                                          kStartDayIndex + offset, 0u,
                                          &logged_activity));
     EXPECT_TRUE(CheckAggregateStore(logged_activity, kStartDayIndex));
-    // Log several more events for various valid reports and event codes. Check
-    // the contents of the LocalAggregateStore.
+    // Log several more events for various valid reports and event codes.
+    // Check the contents of the LocalAggregateStore.
     EXPECT_EQ(kOK, LogUniqueActivesEvent(kDeviceBootsMetricReportId,
                                          kStartDayIndex + offset, 0u,
                                          &logged_activity));
@@ -727,9 +726,10 @@ TEST_F(UniqueActivesEventAggregatorTest, LogUniqueActivesEvents) {
 
 // Tests the method EventAggregator::GarbageCollect().
 //
-// For each value of N in the range [0, 34], logs some UniqueActivesEvents each
-// day for N consecutive days and then garbage-collect the LocalAggregateStore.
-// After garbage collection, verifies the contents of the LocalAggregateStore.
+// For each value of N in the range [0, 34], logs some UniqueActivesEvents
+// each day for N consecutive days and then garbage-collect the
+// LocalAggregateStore. After garbage collection, verifies the contents of
+// the LocalAggregateStore.
 TEST_F(UniqueActivesEventAggregatorTest, GarbageCollect) {
   uint32_t max_days_before_gc = 35;
   for (uint32_t days_before_gc = 0; days_before_gc < max_days_before_gc;
@@ -759,29 +759,46 @@ TEST_F(UniqueActivesEventAggregatorTest, GarbageCollect) {
   }
 }
 
-// Tests that EventAggregator::GenerateObservations() returns a positive status
-// and that the expected number of Observations is generated when no Events have
-// been logged to the EventAggregator.
+// Tests that EventAggregator::GenerateObservations() returns a positive
+// status and that the expected number of Observations is generated when no
+// Events have been logged to the EventAggregator.
 TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsNoEvents) {
   EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex));
-
   std::vector<Observation2> observations(0);
   EXPECT_TRUE(FetchAggregatedObservations(
       &observations, kUniqueActivesExpectedParams, observation_store_.get(),
       update_recipient_.get()));
 }
 
-// Tests that EventAggregator::GenerateObservations() returns a positive status
-// and that the expected number of Observations is generated after some
-// UniqueActivesEvents have been logged, without any garbage collection.
+// Tests that EventAggregator::GenerateObservations() only generates
+// Observations the first time it is called for a given day index.
+TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsTwice) {
+  // Check that Observations are generated when GenerateObservations is called
+  // for |kStartDayIndex| for the first time.
+  EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex));
+  std::vector<Observation2> observations(0);
+  EXPECT_TRUE(FetchAggregatedObservations(
+      &observations, kUniqueActivesExpectedParams, observation_store_.get(),
+      update_recipient_.get()));
+  // Check that no Observations are generated when GenerateObservations is
+  // called for |kStartDayIndex| for the second time.
+  ResetObservationStore();
+  EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex));
+  EXPECT_EQ(0u, observation_store_->messages_received.size());
+}
+
+// Tests that EventAggregator::GenerateObservations() returns a positive
+// status and that the expected number of Observations is generated after
+// some UniqueActivesEvents have been logged, without any garbage
+// collection.
 //
 // For 35 days, logs 2 events each day for the ErrorsOccurred_UniqueDevices
 // report and 2 events for the FeaturesActive_UniqueDevices report, all
-// with event type index 0.
+// with event code 0.
 //
-// Each day following the first day, calls GenerateObservations() with the day
-// index of the previous day. Checks that a positive status is returned and
-// that the FakeObservationStore has received the expected number of new
+// Each day following the first day, calls GenerateObservations() with the
+// day index of the previous day. Checks that a positive status is returned
+// and that the FakeObservationStore has received the expected number of new
 // observations for each locally aggregated report ID in
 // |kUniqueActivesMetricDefinitions|.
 TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
@@ -814,20 +831,20 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
 }
 
 // Tests that GenerateObservations() returns a positive status and that the
-// expected number of Observations is generated after some UniqueActivesEvents
-// have been logged, in the presence of daily garbage collection.
+// expected number of Observations is generated each day when Events are logged
+// for UNIQUE_N_DAY_ACTIVES reports over multiple days, and when the
+// LocalAggregateStore is garbage-collected each day.
 //
 // For 35 days, logs 2 events each day for the ErrorsOccurred_UniqueDevices
 // report and 2 events for the FeaturesActive_UniqueDevices report, all
-// with event type index 0.
+// with event code 0.
 //
 // Each day following the first day, calls GenerateObservations() and then
-// GarbageCollect() with the day index of the current day. Checks that positive
-// statuses are returned and that the FakeObservationStore has received the
-// expected number of new observations for each locally aggregated report ID in
-// |kUniqueActivesMetricDefinitions|.
-TEST_F(UniqueActivesEventAggregatorTest,
-       GenerateObservationWithGarbageCollection) {
+// GarbageCollect() with the day index of the current day. Checks that
+// positive statuses are returned and that the FakeObservationStore has
+// received the expected number of new observations for each locally
+// aggregated report ID in |kUniqueActivesMetricDefinitions|.
+TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithGc) {
   int num_days = 35;
   std::vector<Observation2> observations(0);
   for (uint32_t day_index = kStartDayIndex;
@@ -858,67 +875,204 @@ TEST_F(UniqueActivesEventAggregatorTest,
   EXPECT_EQ(kOK, event_aggregator_->GarbageCollect(kStartDayIndex + num_days));
 }
 
+// Tests that GenerateObservations() returns a positive status and that the
+// expected number of Observations is generated when events are logged over
+// multiple days and some of those days' Observations are backfilled, without
+// any garbage collection of the LocalAggregateStore.
+//
+// Sets the |backfill_days_| field of the EventAggregator to 3.
+//
+// Logging pattern:
+// For 35 days, logs 2 events each day for the SomeErrorsOccurred_UniqueDevices
+// report and 2 events for the SomeFeaturesActive_Unique_Devices report, all
+// with event code 0.
+//
+// Observation generation pattern:
+// Calls GenerateObservations() on the 1st through 5th and the 7th out of
+// every 10 days, for 35 days.
+//
+// Expected numbers of Observations:
+// It is expected that 4 days' worth of Observations are generated on
+// the first day of every 10 (the day index for which GenerateObservations() was
+// called, plus 3 days of backfill), that 1 day's worth of Observations
+// are generated on the 2nd through 5th day of every 10, that 2 days'
+// worth of Observations are generated on the 7th day of every 10 (the
+// day index for which GenerateObservations() was called, plus 1 day of
+// backfill), and that no Observations are generated on the remaining days.
+TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithBackfill) {
+  // Set |backfill_days_| to 3.
+  size_t backfill_days = 3;
+  SetBackfillDays(backfill_days);
+  // Starting on kStartDayIndex, log 2 events each day for 35 days. Call
+  // GenerateObservations() on the first 5 day indices, and the 7th, out of
+  // every 10.
+  for (uint32_t day_index = kStartDayIndex; day_index < kStartDayIndex + 35;
+       day_index++) {
+    for (int i = 0; i < 2; i++) {
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
+                                           day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
+                                           day_index, 0u));
+    }
+    auto num_obs_before = observation_store_->messages_received.size();
+    if ((day_index - kStartDayIndex) % 10 < 5 ||
+        (day_index - kStartDayIndex) % 10 == 6) {
+      EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(day_index));
+    }
+    auto num_obs_after = observation_store_->messages_received.size();
+    EXPECT_GE(num_obs_after, num_obs_before);
+    // Check that the expected daily number of Observations was generated.
+    switch ((day_index - kStartDayIndex) % 10) {
+      case 0:
+        EXPECT_EQ(
+            kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
+            num_obs_after - num_obs_before);
+        break;
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs,
+                  num_obs_after - num_obs_before);
+        break;
+      case 6:
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2,
+                  num_obs_after - num_obs_before);
+        break;
+      default:
+        EXPECT_EQ(num_obs_after, num_obs_before);
+    }
+  }
+}
+
+// Tests that GenerateObservations() returns a positive status and that the
+// expected number of Observations is generated when events are logged over
+// multiple days and some of those days' Observations are backfilled, and when
+// the LocalAggregateStore is garbage-collected after each call to
+// GenerateObservations().
+//
+// Sets the |backfill_days_| field of the EventAggregator to 3.
+//
+// Logging pattern:
+// For 35 days, logs 2 events each day for the SomeErrorsOccurred_UniqueDevices
+// report and 2 events for the SomeFeaturesActive_Unique_Devices report, all
+// with event code 0.
+//
+// Observation generation pattern:
+// Calls GenerateObservations() on the 1st through 5th and the 7th out of
+// every 10 days, for 35 days. Garbage-collects the LocalAggregateStore after
+// each call.
+//
+// Expected numbers of Observations:
+// It is expected that 4 days' worth of Observations are generated on
+// the first day of every 10 (the day index for which GenerateObservations() was
+// called, plus 3 days of backfill), that 1 day's worth of Observations
+// are generated on the 2nd through 5th day of every 10, that 2 days'
+// worth of Observations are generated on the 7th day of every 10 (the
+// day index for which GenerateObservations() was called, plus 1 day of
+// backfill), and that no Observations are generated on the remaining days.
+TEST_F(UniqueActivesEventAggregatorTest,
+       GenerateObservationsWithBackfillAndGc) {
+  // Set |backfill_days_| to 3.
+  size_t backfill_days = 3;
+  SetBackfillDays(backfill_days);
+  // Starting on kStartDayIndex, log 2 events each day for 35 days. Call
+  // GenerateObservations() on the first 5 day indices, and the 7th, out of
+  // every 10.
+  for (uint32_t day_index = kStartDayIndex; day_index < kStartDayIndex + 35;
+       day_index++) {
+    for (int i = 0; i < 2; i++) {
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
+                                           day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
+                                           day_index, 0u));
+    }
+    auto num_obs_before = observation_store_->messages_received.size();
+    if ((day_index - kStartDayIndex) % 10 < 5 ||
+        (day_index - kStartDayIndex) % 10 == 6) {
+      EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(day_index));
+      EXPECT_EQ(kOK, event_aggregator_->GarbageCollect(day_index));
+    }
+    auto num_obs_after = observation_store_->messages_received.size();
+    EXPECT_GE(num_obs_after, num_obs_before);
+    // Check that the expected daily number of Observations was generated.
+    // This expected number is some multiple of the daily_num_obs field of
+    // |kUniqueActivesExpectedParams|, depending on the number of days which
+    // should have been backfilled when GenerateObservations() was called.
+    switch ((day_index - kStartDayIndex) % 10) {
+      case 0:
+        EXPECT_EQ(
+            kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
+            num_obs_after - num_obs_before);
+        break;
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs,
+                  num_obs_after - num_obs_before);
+        break;
+      case 6:
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2,
+                  num_obs_after - num_obs_before);
+        break;
+      default:
+        EXPECT_EQ(num_obs_after, num_obs_before);
+    }
+  }
+}
+
 // Checks that UniqueActivesObservations with the expected values (i.e.,
-// non-active for all window sizes and event types) are generated when no Events
-// have been logged to the EventAggregator.
+// non-active for all UNIQUE_N_DAY_ACTIVES reports, for all window sizes and
+// event codes) are generated when no Events have been logged to the
+// EventAggregator.
 TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
        CheckObservationValuesNoEvents) {
   EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex));
-
-  auto expected_activity =
-      MakeNullExpectedActivity(kNoiseFreeUniqueActivesExpectedParams);
-
+  auto expected_obs = MakeNullExpectedUniqueActivesObservations(
+      kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex);
   EXPECT_TRUE(CheckUniqueActivesObservations(
-      expected_activity, kNoiseFreeUniqueActivesExpectedParams,
-      observation_store_.get(), update_recipient_.get()));
+      expected_obs, observation_store_.get(), update_recipient_.get()));
 }
 
 // Checks that UniqueActivesObservations with the expected values are generated
-// when some events have been logged for a UNIQUE_N_DAY_ACTIVES report for over
-// multiple days, without garbage collection.
+// when GenerateObservations() is called for a single day index after logging
+// some events for UNIQUE_N_DAY_ACTIVES reports for that day index, without any
+// garbage collection or backfill.
 //
-// Logs events for the SomeEventsOccurred_UniqueDevices report (whose parent
-// metric has max_event_type_index = 4) for 10 days, according to the following
-// pattern:
+// Logging pattern:
+// Logs 2 occurrences of event code 0 for the FeaturesActives_UniqueDevices
+// report, and 1 occurrence of event code 1 for the EventsOccurred_UniqueDevices
+// report, both for the day |kStartDayIndex|.
 //
-// * Never log event type 0.
-// * On the i-th day (0-indexed) of logging, log an event for event type k,
-// 1 <= k < 5, if 3*k divides i.
+// Observation generation pattern:
+// Calls GenerateObservations() for |kStartDayIndex| after logging all events.
 //
-// Each day following the first day, generates Observations for the previous
-// day index and check them against the expected set of Observations. Also
-// generates and check Observations for the last day of logging.
+// Expected numbers of Observations:
+// The expected number of Observations is the daily_num_obs field of
+// |kNoiseFreeUniqueActivesExpectedParams|.
 //
-// The SomeEventsOccurred_UniqueDevices report has window sizes 1 and 7, and
-// the expected pattern of those Observations' values on the i-th day is:
+// Expected Observation values:
+// All Observations should have day index |kStartDayIndex|.
 //
-// (i, window size)            true for event types
-// ------------------------------------------------------
-// (0, 1)                           1, 2, 3, 4
-// (0, 7)                           1, 2, 3, 4
-// (1, 1)                          ---
-// (1, 7)                           1, 2, 3, 4
-// (2, 1)                          ---
-// (2, 7)                           1, 2, 3, 4
-// (3, 1)                           1
-// (3, 7)                           1, 2, 3, 4
-// (4, 1)                          ---
-// (4, 7)                           1, 2, 3, 4
-// (5, 1)                          ---
-// (5, 7)                           1, 2, 3, 4
-// (6, 1)                           1, 2
-// (6, 7)                           1, 2, 3, 4
-// (7, 1)                          ---
-// (7, 7)                           1, 2
-// (8, 1)                          ---
-// (8, 7)                           1, 2
-// (9, 1)                           1, 3
-// (9, 7)                           1, 2, 3
-// All Observations for all other locally aggregated reports should be
-// observations of non-occurrence.
+// For the FeaturesActive_UniqueDevices report, expect activity indicators:
+//
+// window size        active for event codes
+// ------------------------------------------
+// 1                           0
+// 7                           0
+// 30                          0
+//
+// For the EventsOccurred_UniqueDevices report, expected activity indicators:
+// window size        active for event codes
+// ------------------------------------------
+// 1                           1
+// 7                           1
+//
+// All other Observations should be of inactivity.
 TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
        CheckObservationValuesSingleDay) {
-  // Log several events.
+  // Log several events on |kStartDayIndex|.
   EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
                                        kStartDayIndex, 0u));
   EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
@@ -928,106 +1082,50 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
   // Generate locally aggregated Observations.
   EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex));
 
-  // Form the expected activity map.
-  auto expected_activity =
-      MakeNullExpectedActivity(kNoiseFreeUniqueActivesExpectedParams);
-  expected_activity[kFeaturesActiveMetricReportId] = {
+  // Form the expected observations.
+  auto expected_obs = MakeNullExpectedUniqueActivesObservations(
+      kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex);
+  expected_obs[{kFeaturesActiveMetricReportId, kStartDayIndex}] = {
       {1, {true, false, false, false, false}},
       {7, {true, false, false, false, false}},
       {30, {true, false, false, false, false}}};
-  expected_activity[kEventsOccurredMetricReportId] = {
+  expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex}] = {
       {1, {false, true, false, false, false}},
       {7, {false, true, false, false, false}}};
 
   // Check the contents of the FakeObservationStore.
   EXPECT_TRUE(CheckUniqueActivesObservations(
-      expected_activity, kNoiseFreeUniqueActivesExpectedParams,
-      observation_store_.get(), update_recipient_.get()));
+      expected_obs, observation_store_.get(), update_recipient_.get()));
 }
 
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
-       CheckObservationValuesMultiDay) {
-  // Generate expected activity maps for the 10 days of logging.
-  uint32_t num_days = 10;
-  std::vector<ExpectedActivity> expected_activity(num_days);
-  for (uint32_t offset = 0; offset < num_days; offset++) {
-    expected_activity[offset] =
-        MakeNullExpectedActivity(kNoiseFreeUniqueActivesExpectedParams);
-  }
-  expected_activity[0][kEventsOccurredMetricReportId] = {
-      {1, {false, true, true, true, true}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[1][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[2][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[3][kEventsOccurredMetricReportId] = {
-      {1, {false, true, false, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[4][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[5][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[6][kEventsOccurredMetricReportId] = {
-      {1, {false, true, true, false, false}},
-      {7, {false, true, true, true, true}}};
-  expected_activity[7][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, false, false}}};
-  expected_activity[8][kEventsOccurredMetricReportId] = {
-      {1, {false, false, false, false, false}},
-      {7, {false, true, true, false, false}}};
-  expected_activity[9][kEventsOccurredMetricReportId] = {
-      {1, {false, true, false, true, false}},
-      {7, {false, true, true, true, false}}};
-
-  for (uint32_t offset = 0; offset < num_days; offset++) {
-    for (uint32_t event_code = 1;
-         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
-                          kEventsOccurredMetricReportId);
-         event_code++) {
-      if (offset % (3 * event_code) == 0) {
-        EXPECT_EQ(kOK,
-                  LogUniqueActivesEvent(kEventsOccurredMetricReportId,
-                                        kStartDayIndex + offset, event_code));
-      }
-    }
-    // Clear the FakeObservationStore.
-    ResetObservationStore();
-    // Generate locally aggregated Observations.
-    EXPECT_EQ(kOK,
-              event_aggregator_->GenerateObservations(kStartDayIndex + offset));
-    // Check the generated Observations against the expectation.
-    EXPECT_TRUE(CheckUniqueActivesObservations(
-        expected_activity[offset], kNoiseFreeUniqueActivesExpectedParams,
-        observation_store_.get(), update_recipient_.get()));
-  }
-}
-
-// Checks that UniqueActivesObservations with the expected values are generated
-// when some events have been logged for a UNIQUE_N_DAY_ACTIVES report for over
-// multiple days, with daily garbage collection.
+// Checks that UniqueActivesObservations with the expected values are
+// generated when some events have been logged for a UNIQUE_N_DAY_ACTIVES
+// report for over multiple days and GenerateObservations() is called each day,
+// without garbage collection or backfill.
 //
+// Logging pattern:
 // Logs events for the SomeEventsOccurred_UniqueDevices report (whose parent
-// metric has max_event_type_index = 4) for 10 days, according to the following
+// metric has max_event_code = 4) for 10 days, according to the following
 // pattern:
 //
-// * Never log event type 0.
-// * On the i-th day (0-indexed) of logging, log an event for event type k,
+// * Never log event code 0.
+// * On the i-th day (0-indexed) of logging, log an event for event code k,
 // 1 <= k < 5, if 3*k divides i.
 //
+// Observation generation pattern:
 // Each day following the first day, generates Observations for the previous
-// day index and check them against the expected set of Observations. Also
-// generates and check Observations for the last day of logging.
+// day index.
 //
+// Expected number of Observations:
+// Each call to GenerateObservations should generate a number of Observations
+// equal to the daily_num_obs field of |kNoisefreeUniqueActivesExpectedParams|.
+//
+// Expected Observation values:
 // The SomeEventsOccurred_UniqueDevices report has window sizes 1 and 7, and
-// the expected pattern of those Observations' values on the i-th day is:
+// the expected activity indicators of Observations for that report on the i-th
+// day are:
 //
-// (i, window size)            true for event types
+// (i, window size)            active for event codes
 // ------------------------------------------------------
 // (0, 1)                           1, 2, 3, 4
 // (0, 7)                           1, 2, 3, 4
@@ -1049,45 +1147,46 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // (8, 7)                           1, 2
 // (9, 1)                           1, 3
 // (9, 7)                           1, 2, 3
+//
 // All Observations for all other locally aggregated reports should be
 // observations of non-occurrence.
 TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
-       CheckObservationValuesMultiDayWithGarbageCollection) {
-  // Generate expected activity maps for the 10 days of logging.
+       CheckObservationValuesMultiDay) {
+  // Form expected Obsevations for the 10 days of logging.
   uint32_t num_days = 10;
-  std::vector<ExpectedActivity> expected_activity(num_days);
+  std::vector<ExpectedUniqueActivesObservations> expected_obs(num_days);
   for (uint32_t offset = 0; offset < num_days; offset++) {
-    expected_activity[offset] =
-        MakeNullExpectedActivity(kNoiseFreeUniqueActivesExpectedParams);
+    expected_obs[offset] = MakeNullExpectedUniqueActivesObservations(
+        kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + offset);
   }
-  expected_activity[0][kEventsOccurredMetricReportId] = {
+  expected_obs[0][{kEventsOccurredMetricReportId, kStartDayIndex}] = {
       {1, {false, true, true, true, true}},
       {7, {false, true, true, true, true}}};
-  expected_activity[1][kEventsOccurredMetricReportId] = {
+  expected_obs[1][{kEventsOccurredMetricReportId, kStartDayIndex + 1}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[2][kEventsOccurredMetricReportId] = {
+  expected_obs[2][{kEventsOccurredMetricReportId, kStartDayIndex + 2}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[3][kEventsOccurredMetricReportId] = {
+  expected_obs[3][{kEventsOccurredMetricReportId, kStartDayIndex + 3}] = {
       {1, {false, true, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[4][kEventsOccurredMetricReportId] = {
+  expected_obs[4][{kEventsOccurredMetricReportId, kStartDayIndex + 4}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[5][kEventsOccurredMetricReportId] = {
+  expected_obs[5][{kEventsOccurredMetricReportId, kStartDayIndex + 5}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[6][kEventsOccurredMetricReportId] = {
+  expected_obs[6][{kEventsOccurredMetricReportId, kStartDayIndex + 6}] = {
       {1, {false, true, true, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_activity[7][kEventsOccurredMetricReportId] = {
+  expected_obs[7][{kEventsOccurredMetricReportId, kStartDayIndex + 7}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_activity[8][kEventsOccurredMetricReportId] = {
+  expected_obs[8][{kEventsOccurredMetricReportId, kStartDayIndex + 8}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_activity[9][kEventsOccurredMetricReportId] = {
+  expected_obs[9][{kEventsOccurredMetricReportId, kStartDayIndex + 9}] = {
       {1, {false, true, false, true, false}},
       {7, {false, true, true, true, false}}};
 
@@ -1108,12 +1207,479 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
     EXPECT_EQ(kOK,
               event_aggregator_->GenerateObservations(kStartDayIndex + offset));
     // Check the generated Observations against the expectation.
-    EXPECT_TRUE(CheckUniqueActivesObservations(
-        expected_activity[offset], kNoiseFreeUniqueActivesExpectedParams,
-        observation_store_.get(), update_recipient_.get()));
-    // Garbage collect for the next day index.
+    EXPECT_TRUE(CheckUniqueActivesObservations(expected_obs[offset],
+                                               observation_store_.get(),
+                                               update_recipient_.get()));
+  }
+}
+
+// Checks that UniqueActivesObservations with the expected values are
+// generated when some events have been logged for a UNIQUE_N_DAY_ACTIVES
+// report for over multiple days and GenerateObservations() is called each day,
+// and when the LocalAggregateStore is garbage-collected after each call to
+// GenerateObservations().
+//
+// Logging pattern:
+// Logs events for the SomeEventsOccurred_UniqueDevices report (whose parent
+// metric has max_event_code = 4) for 10 days, according to the following
+// pattern:
+//
+// * Never log event code 0.
+// * On the i-th day (0-indexed) of logging, log an event for event code k,
+// 1 <= k < 5, if 3*k divides i.
+//
+// Observation generation pattern:
+// Each day following the first day, generates Observations for the previous
+// day index.
+//
+// Expected number of Observations:
+// Each call to GenerateObservations should generate a number of Observations
+// equal to the daily_num_obs field of |kNoisefreeUniqueActivesExpectedParams|.
+//
+// Expected Observation values:
+// The SomeEventsOccurred_UniqueDevices report has window sizes 1 and 7, and
+// the expected activity indicators of Observations for that report on the i-th
+// day are:
+//
+// (i, window size)            active for event codes
+// ------------------------------------------------------
+// (0, 1)                           1, 2, 3, 4
+// (0, 7)                           1, 2, 3, 4
+// (1, 1)                          ---
+// (1, 7)                           1, 2, 3, 4
+// (2, 1)                          ---
+// (2, 7)                           1, 2, 3, 4
+// (3, 1)                           1
+// (3, 7)                           1, 2, 3, 4
+// (4, 1)                          ---
+// (4, 7)                           1, 2, 3, 4
+// (5, 1)                          ---
+// (5, 7)                           1, 2, 3, 4
+// (6, 1)                           1, 2
+// (6, 7)                           1, 2, 3, 4
+// (7, 1)                          ---
+// (7, 7)                           1, 2
+// (8, 1)                          ---
+// (8, 7)                           1, 2
+// (9, 1)                           1, 3
+// (9, 7)                           1, 2, 3
+//
+// All Observations for all other locally aggregated reports should be
+// observations of non-occurrence.
+TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+       CheckObservationValuesMultiDayWithGarbageCollection) {
+  // Form expected Observations for the 10 days of logging.
+  uint32_t num_days = 10;
+  std::vector<ExpectedUniqueActivesObservations> expected_obs(num_days);
+  for (uint32_t offset = 0; offset < num_days; offset++) {
+    expected_obs[offset] = MakeNullExpectedUniqueActivesObservations(
+        kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + offset);
+  }
+  expected_obs[0][{kEventsOccurredMetricReportId, kStartDayIndex}] = {
+      {1, {false, true, true, true, true}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[1][{kEventsOccurredMetricReportId, kStartDayIndex + 1}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[2][{kEventsOccurredMetricReportId, kStartDayIndex + 2}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[3][{kEventsOccurredMetricReportId, kStartDayIndex + 3}] = {
+      {1, {false, true, false, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[4][{kEventsOccurredMetricReportId, kStartDayIndex + 4}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[5][{kEventsOccurredMetricReportId, kStartDayIndex + 5}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[6][{kEventsOccurredMetricReportId, kStartDayIndex + 6}] = {
+      {1, {false, true, true, false, false}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[7][{kEventsOccurredMetricReportId, kStartDayIndex + 7}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, false, false}}};
+  expected_obs[8][{kEventsOccurredMetricReportId, kStartDayIndex + 8}] = {
+      {1, {false, false, false, false, false}},
+      {7, {false, true, true, false, false}}};
+  expected_obs[9][{kEventsOccurredMetricReportId, kStartDayIndex + 9}] = {
+      {1, {false, true, false, true, false}},
+      {7, {false, true, true, true, false}}};
+
+  for (uint32_t offset = 0; offset < num_days; offset++) {
+    for (uint32_t event_code = 1;
+         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
+                          kEventsOccurredMetricReportId);
+         event_code++) {
+      if (offset % (3 * event_code) == 0) {
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(kEventsOccurredMetricReportId,
+                                        kStartDayIndex + offset, event_code));
+      }
+    }
+    // Clear the FakeObservationStore.
+    ResetObservationStore();
+    // Generate locally aggregated Observations.
     EXPECT_EQ(kOK,
-              event_aggregator_->GarbageCollect(kStartDayIndex + offset + 1));
+              event_aggregator_->GenerateObservations(kStartDayIndex + offset));
+    // Check the generated Observations against the expectation.
+    EXPECT_TRUE(CheckUniqueActivesObservations(expected_obs[offset],
+                                               observation_store_.get(),
+                                               update_recipient_.get()));
+    // Garbage collect for the current day index.
+    EXPECT_EQ(kOK, event_aggregator_->GarbageCollect(kStartDayIndex + offset));
+  }
+}
+
+// Tests that the expected UniqueActivesObservations are generated when events
+// are logged over multiple days and when Observations are backfilled for some
+// days during that period, without any garbage-collection of the
+// LocalAggregateStore.
+//
+// The test sets the number of backfill days to 3.
+//
+// Logging pattern:
+// Events for the EventsOccurred_UniqueDevices report are logged over the days
+// |kStartDayIndex| to |kStartDayIndex + 8| according to the following pattern:
+//
+// * For i = 0 to i = 4, log an event with event code i on day
+// |kStartDayIndex + i| and |kStartDayIndex + 2*i|.
+//
+// Observation generation pattern:
+// The test calls GenerateObservations() on day |kStartDayIndex + i| for i = 0
+// through i = 5 and for i = 8, skipping the days |kStartDayIndex + 6| and
+// |kStartDayIndex + 7|.
+//
+// Expected numbers of Observations:
+// It is expected that 4 days' worth of Observations are generated on the
+// first day (the day index for which GenerateObservations() was called, plus 3
+// days of backfill), that 1 day's worth of Observations is generated on the
+// 2nd through 6th day, that 3 days' worth of Observations are generated on the
+// 9th day (the day index for which GenerateObservations() was called, plus 2
+// days of backfill), and that no Observations are generated on the remaining
+// days.
+//
+// Expected Observation values:
+// The expected activity indicators of Observations for the
+// EventsOccurred_UniqueDevices report for the i-th day of logging are:
+//
+// (i, window size)           active for event codes
+// -------------------------------------------------------------------------
+// (0, 1)                           0
+// (0, 7)                           0
+// (1, 1)                           1
+// (1, 7)                           0, 1
+// (2, 1)                           1, 2
+// (2, 7)                           0, 1, 2
+// (3, 1)                           3
+// (3, 7)                           0, 1, 2, 3
+// (4, 1)                           2, 4
+// (4, 7)                           0, 1, 2, 3, 4
+// (5, 1)                          ---
+// (5, 7)                           0, 1, 2, 3, 4
+// (6, 1)                           3
+// (6, 7)                           0, 1, 2, 3, 4
+// (7, 1)                          ---
+// (7, 7)                           1, 2, 3, 4
+// (8, 1)                           4
+// (8, 7)                           1, 2, 3, 4
+//
+// All other Observations should be of non-activity.
+TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+       CheckObservationValuesWithBackfill) {
+  // Set |backfill_days_| to 3.
+  size_t backfill_days = 3;
+  SetBackfillDays(backfill_days);
+  // Log events for 9 days. Call GenerateObservations() on the first 6 day
+  // indices, and the 9th.
+  for (uint32_t offset = 0; offset < 9; offset++) {
+    ResetObservationStore();
+    for (uint32_t event_code = 0;
+         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
+                          kEventsOccurredMetricReportId);
+         event_code++) {
+      if (event_code == offset || (2 * event_code) == offset) {
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(kEventsOccurredMetricReportId,
+                                        kStartDayIndex + offset, event_code));
+      }
+    }
+    if (offset < 6 || offset == 8) {
+      EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex +
+                                                             offset));
+    }
+    // Make the set of Observations which are expected to be generated on
+    // |kStartDayIndex + offset| and check it against the contents of the
+    // FakeObservationStore.
+    ExpectedUniqueActivesObservations expected_obs;
+    switch (offset) {
+      case 0: {
+        for (uint32_t day_index = kStartDayIndex - backfill_days;
+             day_index <= kStartDayIndex; day_index++) {
+          for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
+                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+            expected_obs.insert(pair);
+          }
+        }
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex}] = {
+            {1, {true, false, false, false, false}},
+            {7, {true, false, false, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 1: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 1);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 1}] = {
+            {1, {false, true, false, false, false}},
+            {7, {true, true, false, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 2: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 2);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 2}] = {
+            {1, {false, true, true, false, false}},
+            {7, {true, true, true, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 3: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 3);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 3}] = {
+            {1, {false, false, false, true, false}},
+            {7, {true, true, true, true, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 4: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 4);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 4}] = {
+            {1, {false, false, true, false, true}},
+            {7, {true, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 5: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 5);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 5}] = {
+            {1, {false, false, false, false, false}},
+            {7, {true, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 8: {
+        for (uint32_t day_index = kStartDayIndex + 6;
+             day_index <= kStartDayIndex + 8; day_index++) {
+          for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
+                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+            expected_obs.insert(pair);
+          }
+        }
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 6}] = {
+            {1, {false, false, false, true, false}},
+            {7, {true, true, true, true, true}}};
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 7}] = {
+            {1, {false, false, false, false, false}},
+            {7, {false, true, true, true, true}}};
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 8}] = {
+            {1, {false, false, false, false, true}},
+            {7, {false, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      default:
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+    }
+  }
+}
+
+// Tests that the expected UniqueActivesObservations are generated when events
+// are logged over multiple days and when Observations are backfilled for some
+// days during that period, and when the LocalAggregateStore is
+// garbage-collected after each all to GenerateObservations().
+//
+// The test sets the number of backfill days to 3.
+//
+// Logging pattern:
+// Events for the EventsOccurred_UniqueDevices report are logged over the days
+// |kStartDayIndex| to |kStartDayIndex + 8| according to the following pattern:
+//
+// * For i = 0 to i = 4, log an event with event code i on day
+// |kStartDayIndex + i| and |kStartDayIndex + 2*i|.
+//
+// Observation generation pattern:
+// The test calls GenerateObservations() on day |kStartDayIndex + i| for i = 0
+// through i = 5 and for i = 8, skipping the days |kStartDayIndex + 6| and
+// |kStartDayIndex + 7|.
+//
+// Expected numbers of Observations:
+// It is expected that 4 days' worth of Observations are generated on the
+// first day (the day index for which GenerateObservations() was called, plus 3
+// days of backfill), that 1 day's worth of Observations is generated on the
+// 2nd through 6th day, that 3 days' worth of Observations are generated on the
+// 9th day (the day index for which GenerateObservations() was called, plus 2
+// days of backfill), and that no Observations are generated on the remaining
+// days.
+//
+// Expected Observation values:
+// The expected activity indicators of Observations for the
+// EventsOccurred_UniqueDevices report for the i-th day of logging are:
+//
+// (i, window size)           active for event codes
+// -------------------------------------------------------------------------
+// (0, 1)                           0
+// (0, 7)                           0
+// (1, 1)                           1
+// (1, 7)                           0, 1
+// (2, 1)                           1, 2
+// (2, 7)                           0, 1, 2
+// (3, 1)                           3
+// (3, 7)                           0, 1, 2, 3
+// (4, 1)                           2, 4
+// (4, 7)                           0, 1, 2, 3, 4
+// (5, 1)                          ---
+// (5, 7)                           0, 1, 2, 3, 4
+// (6, 1)                           3
+// (6, 7)                           0, 1, 2, 3, 4
+// (7, 1)                          ---
+// (7, 7)                           1, 2, 3, 4
+// (8, 1)                           4
+// (8, 7)                           1, 2, 3, 4
+//
+// All other Observations should be of non-activity.
+TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+       CheckObservationValuesWithBackfillAndGc) {
+  // Set |backfill_days_| to 3.
+  size_t backfill_days = 3;
+  SetBackfillDays(backfill_days);
+  // Log events for 9 days. Call GenerateObservations() on the first 6 day
+  // indices, and the 9th.
+  for (uint32_t offset = 0; offset < 8; offset++) {
+    ResetObservationStore();
+    for (uint32_t event_code = 0;
+         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
+                          kEventsOccurredMetricReportId);
+         event_code++) {
+      if (event_code == offset || (2 * event_code) == offset) {
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(kEventsOccurredMetricReportId,
+                                        kStartDayIndex + offset, event_code));
+      }
+    }
+    if (offset < 6 || offset == 9) {
+      EXPECT_EQ(kOK, event_aggregator_->GenerateObservations(kStartDayIndex +
+                                                             offset));
+      EXPECT_EQ(kOK,
+                event_aggregator_->GarbageCollect(kStartDayIndex + offset));
+    }
+    // Make the set of Observations which are expected to be generated on
+    // |kStartDayIndex + offset| and check it against the contents of the
+    // FakeObservationStore.
+    ExpectedUniqueActivesObservations expected_obs;
+    switch (offset) {
+      case 0: {
+        for (uint32_t day_index = kStartDayIndex - backfill_days;
+             day_index <= kStartDayIndex; day_index++) {
+          for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
+                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+            expected_obs.insert(pair);
+          }
+        }
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex}] = {
+            {1, {true, false, false, false, false}},
+            {7, {true, false, false, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 1: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 1);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 1}] = {
+            {1, {false, true, false, false, false}},
+            {7, {true, true, false, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 2: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 2);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 2}] = {
+            {1, {false, true, true, false, false}},
+            {7, {true, true, true, false, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 3: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 3);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 3}] = {
+            {1, {false, false, false, true, false}},
+            {7, {true, true, true, true, false}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 4: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 4);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 4}] = {
+            {1, {false, false, true, false, true}},
+            {7, {true, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 5: {
+        expected_obs = MakeNullExpectedUniqueActivesObservations(
+            kNoiseFreeUniqueActivesExpectedParams, kStartDayIndex + 5);
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 5}] = {
+            {1, {false, false, false, false, false}},
+            {7, {true, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      case 8: {
+        for (uint32_t day_index = kStartDayIndex + 6;
+             day_index <= kStartDayIndex + 8; day_index++) {
+          for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
+                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+            expected_obs.insert(pair);
+          }
+        }
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 6}] = {
+            {1, {false, false, false, true, false}},
+            {7, {true, true, true, true, true}}};
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 7}] = {
+            {1, {false, false, false, false, false}},
+            {7, {false, true, true, true, true}}};
+        expected_obs[{kEventsOccurredMetricReportId, kStartDayIndex + 8}] = {
+            {1, {false, false, false, false, true}},
+            {7, {false, true, true, true, true}}};
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+        break;
+      }
+      default:
+        EXPECT_TRUE(CheckUniqueActivesObservations(
+            expected_obs, observation_store_.get(), update_recipient_.get()));
+    }
   }
 }
 

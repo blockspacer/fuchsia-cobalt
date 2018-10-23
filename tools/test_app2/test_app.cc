@@ -24,6 +24,7 @@
 #include "glog/logging.h"
 #include "logger/encoder.h"
 #include "logger/event_aggregator.h"
+#include "logger/local_aggregation.pb.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "util/clearcut/curl_http_client.h"
@@ -101,16 +102,17 @@ void PrintHelp(std::ostream* ostream) {
   *ostream << "log <num> event_count <index> <component> <duration> <count>"
            << std::endl
            << "                         \tLog <num> independent copies of an "
-              "event that has occurred a given number of times." << std::endl
+              "event that has occurred a given number of times."
+           << std::endl
            << "                         \t- The <index> is the event_code of "
-              "the event." << std::endl
+              "the event."
+           << std::endl
            << "                         \t- The <component> is the component "
               "name.  Pass in \"\" if your metric does not use this field."
            << std::endl
            << "                         \t- The <duration> specifies the "
               "period of time over which <count> events occurred.  Pass in 0 "
-           << "if your metric does not use this field."
-           << std::endl
+           << "if your metric does not use this field." << std::endl
            << "                         \t- The <count> specifies the number "
               "of times the event occurred."
            << std::endl;
@@ -250,6 +252,7 @@ class RealLoggerFactory : public LoggerFactory {
       std::unique_ptr<MemoryObservationStore> observation_store,
       std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
       std::unique_ptr<LocalAggregateStore> local_aggregate_store,
+      std::unique_ptr<AggregatedObservationHistory> history,
       std::unique_ptr<SystemDataInterface> system_data);
 
   std::unique_ptr<LoggerInterface> NewLogger() override;
@@ -265,6 +268,7 @@ class RealLoggerFactory : public LoggerFactory {
   std::unique_ptr<MemoryObservationStore> observation_store_;
   std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
   std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
+  std::unique_ptr<AggregatedObservationHistory> history_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -278,6 +282,7 @@ RealLoggerFactory::RealLoggerFactory(
     std::unique_ptr<MemoryObservationStore> observation_store,
     std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
     std::unique_ptr<LocalAggregateStore> local_aggregate_store,
+    std::unique_ptr<AggregatedObservationHistory> history,
     std::unique_ptr<SystemDataInterface> system_data)
     : observation_encrypter_(std::move(observation_encrypter)),
       envelope_encrypter_(std::move(envelope_encrypter)),
@@ -285,6 +290,7 @@ RealLoggerFactory::RealLoggerFactory(
       observation_store_(std::move(observation_store)),
       shipping_manager_(std::move(shipping_manager)),
       local_aggregate_store_(std::move(local_aggregate_store)),
+      history_(std::move(history)),
       system_data_(std::move(system_data)) {}
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
@@ -293,8 +299,9 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
   observation_writer_.reset(
       new ObservationWriter(observation_store_.get(), shipping_manager_.get(),
                             observation_encrypter_.get()));
-  event_aggregator_.reset(new EventAggregator(
-      encoder_.get(), observation_writer_.get(), local_aggregate_store_.get()));
+  event_aggregator_.reset(
+      new EventAggregator(encoder_.get(), observation_writer_.get(),
+                          local_aggregate_store_.get(), history_.get()));
   return std::unique_ptr<LoggerInterface>(
       new Logger(encoder_.get(), event_aggregator_.get(),
                  observation_writer_.get(), project_context_.get()));
@@ -348,6 +355,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
   auto local_aggregate_store = std::make_unique<LocalAggregateStore>();
+  auto history = std::make_unique<AggregatedObservationHistory>();
 
   // By using (kMaxSeconds, 0) here we are effectively putting the
   // ShippingDispatcher in manual mode. It will never send
@@ -372,7 +380,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
       std::move(observation_encrypter), std::move(envelope_encrypter),
       std::move(project_context), std::move(observation_store),
       std::move(shipping_manager), std::move(local_aggregate_store),
-      std::move(system_data)));
+      std::move(history), std::move(system_data)));
 
   std::unique_ptr<TestApp> test_app(new TestApp(
       std::move(logger_factory), FLAGS_metric_name, mode, &std::cout));
@@ -558,11 +566,10 @@ void TestApp::LogEvent(size_t num_clients, uint32_t event_code) {
 // We know that command[0] = "log", command[1] = <num_clients>,
 // command[2] = "event_count"
 void TestApp::LogEventCount(uint64_t num_clients,
-                       const std::vector<std::string>& command) {
+                            const std::vector<std::string>& command) {
   if (command.size() != 7) {
     *ostream_ << "Malformed log event_count command. Expected 4 additional "
-              << "parameters."
-              << std::endl;
+              << "parameters." << std::endl;
     return;
   }
 
@@ -607,10 +614,8 @@ void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
     if (status != logger::kOK) {
       LOG(ERROR) << "LogEventCount() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
-                 << ". event_code=" << event_code
-                 << ". component=" << component
-                 << ". duration=" << duration
-                 << ". count=" << count;
+                 << ". event_code=" << event_code << ". component=" << component
+                 << ". duration=" << duration << ". count=" << count;
       break;
     }
   }

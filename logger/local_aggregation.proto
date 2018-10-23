@@ -72,3 +72,24 @@ message DailyAggregate {
 message ActivityDailyAggregate {
   bool activity_indicator = 1;
 }
+
+// A container used by the EventAggregator to store the latest day index for
+// which an Observation has been generated for each report, event code, and
+// window size.
+message AggregatedObservationHistory {
+  // Keyed by base64-encoded serializations of ReportAggregationKey messages.
+  map<string, HistoryByEventCode> by_report_key = 1;
+}
+
+message HistoryByEventCode {
+  // Keyed by event code.
+  map<uint32, HistoryByWindowSize> by_event_code = 1;
+}
+
+
+message HistoryByWindowSize {
+  // Keyed by window size. The value at a window size is the latest day index
+  // for which an Observation has been generated for this report, event code,
+  // and window size.
+  map<uint32, uint32> by_window_size = 1;
+}
