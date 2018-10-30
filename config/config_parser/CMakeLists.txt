@@ -47,7 +47,8 @@ set(SOURCE_GENERATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/source
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/ident.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/simple.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/cpp.go
-                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/dart.go)
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/dart.go
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/rust.go)
 
 add_custom_command(OUTPUT ${CONFIG_PARSER_BINARY}
   # Compiles config_parser_main and all its dependencies.

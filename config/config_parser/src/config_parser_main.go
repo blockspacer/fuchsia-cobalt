@@ -36,9 +36,9 @@ var (
 	customerId     = flag.Int64("customer_id", -1, "Customer Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectId      = flag.Int64("project_id", -1, "Project Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectName    = flag.String("project_name", "", "Project name for the config to be read. Must be set if and only if 'config_dir' is set.")
-	outFormat      = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) and 'dart' (a Dart library)")
+	outFormat      = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) 'dart' (a Dart library), and 'rust' (a rust crate)")
 	varName        = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
-	namespace      = flag.String("namespace", "", "When using the 'cpp' output format, this will specify the comma-separated namespace within which the config variable must be places.")
+	namespace      = flag.String("namespace", "", "When using the 'cpp' or 'rust' output format, this will specify the comma-separated namespace within which the config variable must be places.")
 	depFile        = flag.String("dep_file", "", "Generate a depfile (see gn documentation) that lists all the project configuration files. Requires -output_file and -config_dir.")
 
 	dartOutDir = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
@@ -56,6 +56,8 @@ func generateFilename(format string) string {
 			return fmt.Sprintf("%s.pb", fnameBase)
 		case "cpp":
 			return fmt.Sprintf("%s.cb.h", fnameBase)
+		case "rust":
+			return fmt.Sprintf("%s.rs", fnameBase)
 		default:
 			return fmt.Sprintf("%s.%s", fnameBase, format)
 		}
@@ -196,8 +198,17 @@ func main() {
 				glog.Exitf("Dart output can only be used with a single project config.")
 			}
 			outputFormatter = source_generator.DartOutputFactory(*varName)
+		case "rust":
+			if len(configs) > 1 {
+				glog.Exitf("Rust output can only be used with a single project config.")
+			}
+			namespaceList := []string{}
+			if *namespace != "" {
+				namespaceList = strings.Split(*namespace, ".")
+			}
+			outputFormatter = source_generator.RustOutputFactory(*varName, namespaceList)
 		default:
-			glog.Exitf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp' and 'dart' are the only valid values for out_format.", *outFormat)
+			glog.Exitf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', and 'rust' are the only valid values for out_format.", *outFormat)
 		}
 
 		// Then, we serialize the configuration.

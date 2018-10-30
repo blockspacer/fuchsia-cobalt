@@ -163,6 +163,8 @@ var cfgTests = []struct {
 	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{})},
 	{v0ProjectConfigYaml, "golden_v0.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config")},
 	{v1ProjectConfigYaml, "golden_v1.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config")},
+	{v0ProjectConfigYaml, "golden_v0.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"})},
+	{v1ProjectConfigYaml, "golden_v1.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{})},
 }
 
 func TestPrintConfig(t *testing.T) {
