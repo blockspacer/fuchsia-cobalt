@@ -86,6 +86,11 @@ class TestApp {
   void Log(const std::vector<std::string>& command);
   void LogEvent(uint64_t num_clients, const std::vector<std::string>& command);
   void LogEvent(size_t num_clients, uint32_t event_code);
+  void LogEventCount(uint64_t num_clients,
+                     const std::vector<std::string>& command);
+  void LogEventCount(size_t num_clients, uint32_t event_code,
+                     const std::string& component, int64_t duration,
+                     int64_t count);
   void LogCustomEvent(uint64_t num_clients,
                       const std::vector<std::string>& command);
   void LogCustomEvent(uint64_t num_clients,

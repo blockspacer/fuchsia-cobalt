@@ -96,6 +96,22 @@ void PrintHelp(std::ostream* ostream) {
   *ostream << "log <num> event <index>  \tLog <num> independent copies "
               "of the event with event_code = <index>"
            << std::endl;
+  *ostream << "log <num> event_count <index> <component> <duration> <count>"
+           << std::endl
+           << "                         \tLog <num> independent copies of an "
+              "event that has occurred a given number of times." << std::endl
+           << "                         \t- The <index> is the event_code of "
+              "the event." << std::endl
+           << "                         \t- The <component> is the component "
+              "name.  Pass in \"\" if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <duration> specifies the "
+              "period of time over which <count> events occurred.  Pass in 0 "
+           << "if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <count> specifies the number "
+              "of times the event occurred."
+           << std::endl;
   *ostream << "log <num> custom <part>:<val> <part>:<val>..." << std::endl;
   *ostream << "                         \tLog <num> independent copies of a "
            << "custom event." << std::endl;
@@ -475,6 +491,11 @@ void TestApp::Log(const std::vector<std::string>& command) {
     return;
   }
 
+  if (command[2] == "event_count") {
+    LogEventCount(num_clients, command);
+    return;
+  }
+
   if (command[2] == "custom") {
     LogCustomEvent(num_clients, command);
     return;
@@ -516,6 +537,68 @@ void TestApp::LogEvent(size_t num_clients, uint32_t event_code) {
       LOG(ERROR) << "LogEvent() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
                  << ". event_code=" << event_code;
+      break;
+    }
+  }
+  *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "log", command[1] = <num_clients>,
+// command[2] = "event_count"
+void TestApp::LogEventCount(uint64_t num_clients,
+                       const std::vector<std::string>& command) {
+  if (command.size() != 7) {
+    *ostream_ << "Malformed log event_count command. Expected 4 additional "
+              << "parameters."
+              << std::endl;
+    return;
+  }
+
+  int64_t event_code;
+  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+              << std::endl;
+    return;
+  }
+
+  int64_t duration;
+  if (!ParseNonNegativeInt(command[5], true, &duration)) {
+    *ostream_ << "Unable to parse <duration> from log command: " << command[5]
+              << std::endl;
+    return;
+  }
+
+  int64_t count;
+  if (!ParseNonNegativeInt(command[6], true, &count)) {
+    *ostream_ << "Unable to parse <count> from log command: " << command[6]
+              << std::endl;
+    return;
+  }
+
+  LogEventCount(num_clients, event_code, command[4], duration, count);
+}
+
+void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
+                            const std::string& component, int64_t duration,
+                            int64_t count) {
+  if (!current_metric_) {
+    *ostream_ << "Cannot LogEvent. There is no current metric set."
+              << std::endl;
+    return;
+  }
+  VLOG(6) << "TestApp::LogEventCount(" << num_clients << ", " << event_code
+          << ", " << component << ", " << duration << ", " << count << ").";
+  for (size_t i = 0; i < num_clients; i++) {
+    auto logger = logger_factory_->NewLogger();
+    auto status = logger->LogEventCount(current_metric_->id(), event_code,
+                                        component, duration, count);
+    if (status != logger::kOK) {
+      LOG(ERROR) << "LogEventCount() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code
+                 << ". component=" << component
+                 << ". duration=" << duration
+                 << ". count=" << count;
       break;
     }
   }
