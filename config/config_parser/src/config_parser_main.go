@@ -15,6 +15,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"source_generator"
 	"strings"
 	"time"
 
@@ -177,23 +178,23 @@ func main() {
 	c := config_parser.MergeConfigs(configs)
 
 	for _, format := range outFormats {
-		var outputFormatter config_parser.OutputFormatter
+		var outputFormatter source_generator.OutputFormatter
 		switch format {
 		case "bin":
-			outputFormatter = config_parser.BinaryOutput
+			outputFormatter = source_generator.BinaryOutput
 		case "b64":
-			outputFormatter = config_parser.Base64Output
+			outputFormatter = source_generator.Base64Output
 		case "cpp":
 			namespaceList := []string{}
 			if *namespace != "" {
 				namespaceList = strings.Split(*namespace, ".")
 			}
-			outputFormatter = config_parser.CppOutputFactory(*varName, namespaceList)
+			outputFormatter = source_generator.CppOutputFactory(*varName, namespaceList)
 		case "dart":
 			if len(configs) > 1 {
 				glog.Exitf("Dart output can only be used with a single project config.")
 			}
-			outputFormatter = config_parser.DartOutputFactory(*varName)
+			outputFormatter = source_generator.DartOutputFactory(*varName)
 		default:
 			glog.Exitf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp' and 'dart' are the only valid values for out_format.", *outFormat)
 		}

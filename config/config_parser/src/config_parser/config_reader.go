@@ -48,7 +48,7 @@ func ReadProjectConfigFromDir(rootDir string, customerId uint32, projectId uint3
 	for i := range l {
 		config := &l[i]
 		if config.CustomerId == customerId && config.ProjectId == projectId {
-			if err = readProjectConfig(r, config); err != nil {
+			if err = ReadProjectConfig(r, config); err != nil {
 				return c, fmt.Errorf("Error reading config for %v %v: %v", config.CustomerName, config.ProjectName, err)
 			}
 			return *config, nil
@@ -72,7 +72,7 @@ func ReadProjectConfigFromDirByName(rootDir string, customerId uint32, projectNa
 	for i := range l {
 		config := &l[i]
 		if config.CustomerId == customerId && config.ProjectName == projectName {
-			if err = readProjectConfig(r, config); err != nil {
+			if err = ReadProjectConfig(r, config); err != nil {
 				return c, fmt.Errorf("Error reading config for %v %v: %v", config.CustomerName, config.ProjectName, err)
 			}
 			return *config, nil
@@ -92,7 +92,7 @@ func ReadConfigFromYaml(yamlConfigPath string, customerId uint32, projectId uint
 
 	c.CustomerId = customerId
 	c.ProjectId = projectId
-	if err := readProjectConfig(r, &c); err != nil {
+	if err := ReadProjectConfig(r, &c); err != nil {
 		return c, err
 	}
 
@@ -249,7 +249,7 @@ func ReadConfig(r configReader, l *[]ProjectConfig) (err error) {
 	// Then, based on the customer list, we read and parse all the project configs.
 	for i, _ := range *l {
 		c := &((*l)[i])
-		if err = readProjectConfig(r, c); err != nil {
+		if err = ReadProjectConfig(r, c); err != nil {
 			return fmt.Errorf("Error reading config for %v %v: %v", c.CustomerName, c.ProjectName, err)
 		}
 	}
@@ -257,8 +257,8 @@ func ReadConfig(r configReader, l *[]ProjectConfig) (err error) {
 	return nil
 }
 
-// readProjectConfig reads the configuration of a particular project.
-func readProjectConfig(r configReader, c *ProjectConfig) (err error) {
+// ReadProjectConfig reads the configuration of a particular project.
+func ReadProjectConfig(r configReader, c *ProjectConfig) (err error) {
 	configYaml, err := r.Project(c.CustomerName, c.ProjectName)
 	if err != nil {
 		return err

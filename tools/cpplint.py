@@ -35,7 +35,7 @@ SKIP_LINT_DIRS = [
     os.path.join(SRC_ROOT_DIR, 'sysroot'),
     os.path.join(SRC_ROOT_DIR, 'third_party'),
     os.path.join(SRC_ROOT_DIR,
-                 'config/config_parser/src/config_parser/output_test_files'),
+                 'config/config_parser/src/source_generator/source_generator_test_files'),
 ]
 
 def main():

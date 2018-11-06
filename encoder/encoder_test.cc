@@ -41,10 +41,10 @@ std::shared_ptr<ProjectContext> GetTestProject() {
   // Parse the base64-encoded, serialized CobaltConfig in
   // encoder_test_config.h. This is generated from encoder_test_config.yaml.
   // Edit encoder_test_config.yaml to make changes. The variable name
-  // below, |cobalt_config_base64|, must match what is specified in the
+  // below, |kCobaltConfigBase64|, must match what is specified in the
   // invocation of generate_test_config_h() in CMakeLists.txt.
   std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltConfigBase64(cobalt_config_base64);
+      ClientConfig::CreateFromCobaltConfigBase64(kCobaltConfigBase64);
   EXPECT_NE(nullptr, client_config);
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(

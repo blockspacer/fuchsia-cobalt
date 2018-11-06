@@ -14,6 +14,7 @@ go_library("config") {
 _source_packages = [
   "config_parser",
   "config_validator",
+  "source_generator",
   "yamlpb",
 ]
 foreach(pkg, _source_packages) {

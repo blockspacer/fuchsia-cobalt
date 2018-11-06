@@ -4,68 +4,47 @@
 
 // This file implements output formatting for the cobalt config parser.
 
-package config_parser
+package source_generator
 
 import (
 	"bytes"
 	"config"
-	"encoding/base64"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/golang/protobuf/proto"
 )
+
+type outputLanguage interface {
+	getCommentPrefix() string
+
+	writeExtraHeader(so *sourceOutputter)
+	writeEnumBegin(so *sourceOutputter, name ...string)
+	writeEnumEntry(so *sourceOutputter, value uint32, name ...string)
+	writeEnumEnd(so *sourceOutputter)
+	writeEnumAlias(so *sourceOutputter, enumName, name []string)
+	writeNamespaceBegin(so *sourceOutputter, name ...string)
+	writeNamespaceEnd(so *sourceOutputter)
+	writeConstInt(so *sourceOutputter, value uint32, name ...string)
+	writeStringConstant(so *sourceOutputter, value string, name ...string)
+}
 
 type OutputFormatter func(c *config.CobaltConfig) (outputBytes []byte, err error)
 
-// Outputs the serialized proto.
-func BinaryOutput(c *config.CobaltConfig) (outputBytes []byte, err error) {
-	buf := proto.Buffer{}
-	buf.SetDeterministic(true)
-	if err := buf.Marshal(c); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// Outputs the serialized proto base64 encoded.
-func Base64Output(c *config.CobaltConfig) (outputBytes []byte, err error) {
-	configBytes, err := BinaryOutput(c)
-	if err != nil {
-		return outputBytes, err
-	}
-	encoder := base64.StdEncoding
-	outLen := encoder.EncodedLen(len(configBytes))
-
-	outputBytes = make([]byte, outLen, outLen)
-	encoder.Encode(outputBytes, configBytes)
-	return outputBytes, nil
-}
-
-type sourceOutputType int
-
-const (
-	CPP sourceOutputType = iota
-	Dart
-)
-
 type sourceOutputter struct {
 	buffer     *bytes.Buffer
-	outputType sourceOutputType
+	language   outputLanguage
 	varName    string
 	namespaces []string
 }
 
-func newSourceOutputter(outputType sourceOutputType, varName string) *sourceOutputter {
-	return newSourceOutputterWithNamespaces(outputType, varName, []string{})
+func newSourceOutputter(language outputLanguage, varName string) *sourceOutputter {
+	return newSourceOutputterWithNamespaces(language, varName, []string{})
 }
 
-func newSourceOutputterWithNamespaces(outputType sourceOutputType, varName string, namespaces []string) *sourceOutputter {
+func newSourceOutputterWithNamespaces(language outputLanguage, varName string, namespaces []string) *sourceOutputter {
 	return &sourceOutputter{
 		buffer:     new(bytes.Buffer),
-		outputType: outputType,
+		language:   language,
 		varName:    varName,
 		namespaces: namespaces,
 	}
@@ -94,39 +73,6 @@ func (so *sourceOutputter) writeGenerationWarning() {
 YAML in the cobalt_config repository. Edit the YAML there to make changes.`)
 }
 
-var (
-	wordSeparator     = regexp.MustCompile(`[ _]`)
-	validFirstChar    = regexp.MustCompile(`^[a-zA-Z_]`)
-	invalidIdentChars = regexp.MustCompile(`[^a-zA-Z0-9_]`)
-)
-
-// sanitizeIdent takes an ident and replaces all invalid characters with _.
-//
-// Examples:
-//   sanitizeIdent("0Test") = "_0Test"
-//   sanitizeIdent("THIS IS A TEST") = "THIS_IS_A_TEST"
-//   sanitizeIdent("IHopeThisWorks(DoesIt?)") = "IHopeThisWorks_DoesIT__"
-func sanitizeIdent(name string) string {
-	if !validFirstChar.MatchString(name) {
-		name = "_" + name
-	}
-
-	return invalidIdentChars.ReplaceAllString(name, "_")
-}
-
-// toIdent converts an arbitrary string into a valid ident (should be valid in
-// all supported languages).
-//
-// Examples:
-//
-//   toIdent("this is a string") = "ThisIsAString"
-//   toIdent("testing_a_string") = "TestingAString"
-//   toIdent("more word(s)") = "MoreWord_s_"
-func toIdent(name string) string {
-	capitalizedWords := strings.Title(wordSeparator.ReplaceAllString(name, " "))
-	return sanitizeIdent(strings.Join(strings.Split(capitalizedWords, " "), ""))
-}
-
 // writeIdConstants prints out a list of constants to be used in testing. It
 // uses the Name attribute of each Metric, Report, and Encoding to construct the
 // constants.
@@ -148,14 +94,7 @@ func (so *sourceOutputter) writeIdConstants(constType string, entries map[uint32
 	for _, id := range keys {
 		name := entries[id]
 		so.writeComment(name)
-		name = toIdent(name)
-		switch so.outputType {
-		case CPP:
-			so.writeLineFmt("const uint32_t k%s%sId = %d;", name, constType, id)
-		case Dart:
-			so.writeComment("ignore: constant_identifier_names")
-			so.writeLineFmt("const int k%s%sId = %d;", name, constType, id)
-		}
+		so.language.writeConstInt(so, id, name, constType, "id")
 	}
 	so.writeLine("")
 }
@@ -178,38 +117,15 @@ func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[u
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
-	enumName := fmt.Sprintf("%s%s", toIdent(prefix), toIdent(suffix))
 	so.writeCommentFmt("Enum for %s (%s)", prefix, suffix)
-	switch so.outputType {
-	case CPP:
-		so.writeLineFmt("enum class %s {", enumName)
-	case Dart:
-		so.writeLineFmt("class %s {", enumName)
-	}
+	so.language.writeEnumBegin(so, prefix, suffix)
 	for _, id := range keys {
 		name := entries[id]
-		name = toIdent(name)
-		switch so.outputType {
-		case CPP:
-			so.writeLineFmt("  %s = %d,", name, id)
-		case Dart:
-			so.writeLineFmt("  static const int %s = %d;", name, id)
-		}
+		so.language.writeEnumEntry(so, id, name)
 	}
-	switch so.outputType {
-	case CPP:
-		so.writeLine("};")
-	case Dart:
-		so.writeLine("}")
-	}
+	so.language.writeEnumEnd(so)
 	for _, id := range keys {
-		name := toIdent(entries[id])
-		switch so.outputType {
-		case CPP:
-			so.writeLineFmt("const %s %s_%s = %s::%s;", enumName, enumName, name, enumName, name)
-		case Dart:
-			so.writeLineFmt("const int %s_%s = %s::%s;", enumName, name, enumName, name)
-		}
+		so.language.writeEnumAlias(so, []string{prefix, suffix}, []string{entries[id]})
 	}
 	so.writeLine("")
 }
@@ -273,15 +189,10 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltConfig) error {
 func (so *sourceOutputter) writeFile(c *config.CobaltConfig) error {
 	so.writeGenerationWarning()
 
-	if so.outputType == CPP {
-		so.writeLine("#pragma once")
-		so.writeLine("")
-	}
+	so.language.writeExtraHeader(so)
 
-	if so.outputType == CPP {
-		for _, name := range so.namespaces {
-			so.writeLineFmt("namespace %s {", name)
-		}
+	for _, name := range so.namespaces {
+		so.language.writeNamespaceBegin(so, name)
 	}
 
 	if len(c.Customers) > 0 {
@@ -296,17 +207,10 @@ func (so *sourceOutputter) writeFile(c *config.CobaltConfig) error {
 	}
 
 	so.writeComment("The base64 encoding of the bytes of a serialized CobaltConfig proto message.")
-	switch so.outputType {
-	case CPP:
-		so.writeLineFmt("const char %s[] = \"%s\";", so.varName, b64Bytes)
-	case Dart:
-		so.writeLineFmt("const String %s = '%s';", so.varName, b64Bytes)
-	}
+	so.language.writeStringConstant(so, string(b64Bytes), so.varName)
 
-	if so.outputType == CPP {
-		for _, name := range so.namespaces {
-			so.writeLineFmt("}  // %s", name)
-		}
+	for _, _ = range so.namespaces {
+		so.language.writeNamespaceEnd(so)
 	}
 
 	return nil
@@ -317,24 +221,4 @@ func (so *sourceOutputter) getOutputFormatter() OutputFormatter {
 		err = so.writeFile(c)
 		return so.Bytes(), err
 	}
-}
-
-// Returns an output formatter that will output the contents of a C++ header
-// file that contains a variable declaration for a string literal that contains
-// the base64-encoding of the serialized proto.
-//
-// varName will be the name of the variable containing the base64-encoded serialized proto.
-// namespace is a list of nested namespaces inside of which the variable will be defined.
-func CppOutputFactory(varName string, namespace []string) OutputFormatter {
-	return newSourceOutputterWithNamespaces(CPP, varName, namespace).getOutputFormatter()
-}
-
-// Returns an output formatter that will output the contents of a Dart file
-// that contains a variable declaration for a string literal that contains
-// the base64-encoding of the serialized proto.
-//
-// varName will be the name of the variable containing the base64-encoded serialized proto.
-// namespace is a list of nested namespaces inside of which the variable will be defined.
-func DartOutputFactory(varName string) OutputFormatter {
-	return newSourceOutputter(Dart, varName).getOutputFormatter()
 }

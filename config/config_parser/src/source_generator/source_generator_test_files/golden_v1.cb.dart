@@ -3,10 +3,10 @@
 // Metric ID Constants
 // the_metric_name
 // ignore: constant_identifier_names
-const int kTheMetricNameMetricId = 238615413;
+const int theMetricNameMetricId = 238615413;
 // the_other_metric_name
 // ignore: constant_identifier_names
-const int kTheOtherMetricNameMetricId = 2739731282;
+const int theOtherMetricNameMetricId = 2739731282;
 
 // Enum for the_other_metric_name (EventCode)
 class TheOtherMetricNameEventCode {

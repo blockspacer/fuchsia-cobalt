@@ -119,7 +119,7 @@ report_configs:
       bucket: "fuchsia-cobalt-reports-p2-test-app"
 `
 
-// Tests the readProjectConfig function's basic functionality.
+// Tests the ReadProjectConfig function's basic functionality.
 func TestReadProjectConfig(t *testing.T) {
 	r := memConfigReader{}
 	r.SetProject("customer", "project", projectConfigYaml)
@@ -129,7 +129,7 @@ func TestReadProjectConfig(t *testing.T) {
 		ProjectName:  "project",
 		ProjectId:    5,
 	}
-	if err := readProjectConfig(r, &c); err != nil {
+	if err := ReadProjectConfig(r, &c); err != nil {
 		t.Errorf("Error reading project config: %v", err)
 	}
 

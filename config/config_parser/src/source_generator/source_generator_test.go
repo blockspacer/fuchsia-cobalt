@@ -1,7 +1,13 @@
-package config_parser
+// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package source_generator
 
 import (
 	"config"
+	"config_parser"
+	"fmt"
 	"io/ioutil"
 	"path"
 	"runtime"
@@ -10,6 +16,32 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 )
+
+type memConfigReader struct {
+	customers string
+	projects  map[string]string
+}
+
+func (r memConfigReader) Customers() (string, error) {
+	return r.customers, nil
+}
+
+func (r memConfigReader) Project(customerName string, projectName string) (string, error) {
+	key := customerName + "|" + projectName
+	yaml, ok := r.projects[key]
+	if !ok {
+		return yaml, fmt.Errorf("Project could not be read!")
+	}
+	return yaml, nil
+}
+
+func (r *memConfigReader) SetProject(customerName string, projectName string, yaml string) {
+	if r.projects == nil {
+		r.projects = map[string]string{}
+	}
+	key := customerName + "|" + projectName
+	r.projects[key] = yaml
+}
 
 const v0ProjectConfigYaml = `
 metric_configs:
@@ -98,7 +130,7 @@ metric_definitions:
 
 func readGoldenFile(filename string) (string, error) {
 	_, thisFname, _, _ := runtime.Caller(0)
-	goldenFname := path.Join(path.Dir(thisFname), "output_test_files", filename)
+	goldenFname := path.Join(path.Dir(thisFname), "source_generator_test_files", filename)
 	contents, err := ioutil.ReadFile(goldenFname)
 	if err != nil {
 		return "", err
@@ -106,10 +138,10 @@ func readGoldenFile(filename string) (string, error) {
 	return string(contents), nil
 }
 
-func getConfigFrom(config string, cobalt_version CobaltVersion) config.CobaltConfig {
+func getConfigFrom(config string, cobalt_version config_parser.CobaltVersion) config.CobaltConfig {
 	r := memConfigReader{}
 	r.SetProject("customer", "project", config)
-	con := ProjectConfig{
+	con := config_parser.ProjectConfig{
 		CustomerName:  "customer",
 		CustomerId:    10,
 		ProjectName:   "project",
@@ -117,20 +149,20 @@ func getConfigFrom(config string, cobalt_version CobaltVersion) config.CobaltCon
 		CobaltVersion: cobalt_version,
 	}
 
-	_ = readProjectConfig(r, &con)
-	return MergeConfigs([]ProjectConfig{con})
+	_ = config_parser.ReadProjectConfig(r, &con)
+	return config_parser.MergeConfigs([]config_parser.ProjectConfig{con})
 }
 
 var cfgTests = []struct {
 	yaml           string
 	goldenFile     string
-	cobalt_version CobaltVersion
+	cobalt_version config_parser.CobaltVersion
 	formatter      OutputFormatter
 }{
-	{v0ProjectConfigYaml, "golden_v0.cb.h", CobaltVersion0, CppOutputFactory("config", []string{"a", "b"})},
-	{v1ProjectConfigYaml, "golden_v1.cb.h", CobaltVersion1, CppOutputFactory("config", []string{})},
-	{v0ProjectConfigYaml, "golden_v0.cb.dart", CobaltVersion0, DartOutputFactory("config")},
-	{v1ProjectConfigYaml, "golden_v1.cb.dart", CobaltVersion1, DartOutputFactory("config")},
+	{v0ProjectConfigYaml, "golden_v0.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"})},
+	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{})},
+	{v0ProjectConfigYaml, "golden_v0.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config")},
+	{v1ProjectConfigYaml, "golden_v1.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config")},
 }
 
 func TestPrintConfig(t *testing.T) {
