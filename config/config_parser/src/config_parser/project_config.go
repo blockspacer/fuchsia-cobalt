@@ -77,7 +77,10 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 	for _, e := range c.ProjectConfig.MetricDefinitions {
 		e.CustomerId = c.CustomerId
 		e.ProjectId = c.ProjectId
-		e.Id = IdFromName(e.MetricName)
+		// We should generate IDs
+		if e.Id == 0 {
+			e.Id = IdFromName(e.MetricName)
+		}
 		for _, r := range e.Reports {
 			r.Id = IdFromName(r.ReportName)
 		}

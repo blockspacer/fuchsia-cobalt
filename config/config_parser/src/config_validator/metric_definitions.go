@@ -6,7 +6,6 @@ package config_validator
 
 import (
 	"config"
-	"config_parser"
 	"fmt"
 	"net/mail"
 	"regexp"
@@ -46,12 +45,8 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 		return fmt.Errorf("Invalid metric name. Metric names must match the regular expression '%v'.", validNameRegexp)
 	}
 
-	if m.Id != config_parser.IdFromName(m.MetricName) {
-		return fmt.Errorf("Metric id specified in config file. Metric ids may not be set by users.")
-	}
-
 	if m.Id == 0 {
-		return fmt.Errorf("Metric hashes to a zero metric id. This is invalid. Please change the metric name.")
+		return fmt.Errorf("Metric ID of zero is not allowed. Please specify a positive metric ID.")
 	}
 
 	if m.MetricType == config.MetricDefinition_UNSET {

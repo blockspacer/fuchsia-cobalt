@@ -80,15 +80,6 @@ func TestValidateUniqueMetricId(t *testing.T) {
 	}
 }
 
-func TestValidateCorrectMetricId(t *testing.T) {
-	m := makeValidMetric()
-	m.Id += 1
-
-	if err := validateMetricDefinition(m); err == nil {
-		t.Error("Accepted metric definition with wrong metric id.")
-	}
-}
-
 // Test that invalid names are rejected.
 func TestValidateMetricInvalidMetricName(t *testing.T) {
 	m := makeValidMetricWithName("_invalid_name")
