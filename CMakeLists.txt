@@ -34,10 +34,6 @@ enable_language(CXX)
 # logging.
 add_definitions(-DHAVE_GLOG=1)
 
-# Tell the file gtest.h that we want to use the copy of gtest in
-# //third_party/googletest.
-add_definitions(-DHAVE_GOOGLETEST=1)
-
 set(DIR_CONFIG_PARSER_TESTS "${CMAKE_BINARY_DIR}/config_parser_tests")
 set(DIR_GTESTS "${CMAKE_BINARY_DIR}/gtests")
 set(DIR_SYSROOT "${CMAKE_SOURCE_DIR}/sysroot")
