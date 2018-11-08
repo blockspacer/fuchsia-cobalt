@@ -29,7 +29,6 @@ var (
 	outFile        = flag.String("output_file", "", "File to which the serialized config should be written. Defaults to stdout. When multiple output formats are specified, it will append the format to the filename")
 	outFilename    = flag.String("out_filename", "", "The base name to use for writing files. Should not be used with output_file.")
 	outDir         = flag.String("out_dir", "", "The directory into which files should be written.")
-	dartOutDir     = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
 	addFileSuffix  = flag.Bool("add_file_suffix", false, "Append the out_format to the out_file, even if there is only one out_format specified")
 	checkOnly      = flag.Bool("check_only", false, "Only check that the configuration is valid.")
 	skipValidation = flag.Bool("skip_validation", false, "Skip validating the config, write it no matter what.")
@@ -37,10 +36,12 @@ var (
 	customerId     = flag.Int64("customer_id", -1, "Customer Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectId      = flag.Int64("project_id", -1, "Project Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectName    = flag.String("project_name", "", "Project name for the config to be read. Must be set if and only if 'config_dir' is set.")
-	outFormat      = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) and 'dart' (a Dart file...)")
+	outFormat      = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) and 'dart' (a Dart library)")
 	varName        = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
 	namespace      = flag.String("namespace", "", "When using the 'cpp' output format, this will specify the comma-separated namespace within which the config variable must be places.")
 	depFile        = flag.String("dep_file", "", "Generate a depfile (see gn documentation) that lists all the project configuration files. Requires -output_file and -config_dir.")
+
+	dartOutDir = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
 )
 
 func generateFilename(format string) string {

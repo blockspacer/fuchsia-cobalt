@@ -60,7 +60,7 @@ func (so *sourceOutputter) writeLineFmt(format string, args ...interface{}) {
 
 func (so *sourceOutputter) writeComment(comment string) {
 	for _, comment_line := range strings.Split(comment, "\n") {
-		so.writeLineFmt("// %s", strings.TrimLeft(comment_line, " "))
+		so.writeLineFmt("%s %s", so.language.getCommentPrefix(), strings.TrimLeft(comment_line, " "))
 	}
 }
 
