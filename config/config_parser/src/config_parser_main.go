@@ -75,9 +75,11 @@ func writeDepFile(formats, files []string, depFile string) error {
 	}
 	defer w.Close()
 
-	for _, format := range formats {
-		_, err = io.WriteString(w, fmt.Sprintf("%s: %s\n", generateFilename(format), strings.Join(files, " ")))
+	// Since all targets share the same dependencies, we only need to output one.
+	if len(formats) > 0 {
+		_, err = io.WriteString(w, fmt.Sprintf("%s: %s\n", generateFilename(formats[0]), strings.Join(files, " ")))
 	}
+
 	return err
 }
 
