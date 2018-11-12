@@ -7,9 +7,11 @@ package cobalt;
 
 import "observation_batch.proto";
 
-// A row of output for a report of type SimpleOccurrenceCount. Gives the total
-// daily, fleet-wide count of the number of occurrences of a single event type,
-// on a single day, considering only devices matching a single system profile.
+// A row of output for a report of type SIMPLE_OCCURRENCE_COUNT.
+//
+// Gives the total daily, fleet-wide count of the number of occurrences of an
+// event with a particular event code, on a particular day, considering only
+// devices matching a particular system profile.
 message SimpleOccurrenceCountReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
@@ -20,9 +22,10 @@ message SimpleOccurrenceCountReportRow {
   // |system_profile_field| entry in the ReportDefinition for this report.
   SystemProfile system_profile = 2;
 
-  // The name of the event type. If the event_code has not been assigned
-  // a name (in the event_codes field of the MetricDefinition) then this will
-  // be a string of the form "<index=42>".
+  // The label for the event code associated with the events that occurred. If
+  // the event_code has not been assigned a label (in the event_codes field of
+  // the MetricDefinition) then this will be a string of the form
+  // "<event-code-42>".
   string event_code = 3;
 
   // The total count of the event occurrence on the |date|, over all reporting
@@ -39,4 +42,85 @@ message SimpleOccurrenceCountReportRow {
   // because 1.96 ~= z_{.025} meaning that P(Z > 1.96) ~= 0.025 where
   // Z ~ Normal(0, 1).
   float std_err = 5;
+}
+
+// A row of output for a report of type EVENT_COMPONENT_OCCURRENCE_COUNT.
+//
+// Gives the total daily fleet-wide count of the number of occurrences of an
+// event with a particular event code, for a particular component, on a
+// particular day, considering only devices matching a particular system
+// profile.
+message EventComponentOccurrenceCountReportRow {
+  // The date on which the logged events occurred, as measured on the device.
+  // This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The label for the event code associated with the events that occurred. If
+  // the event code has not been assigned a label (in the event_codes field of
+  // the MetricDefinition) then this will be a string of the form
+  // "<event-code-42>".
+  string event_code = 3;
+
+  // The component string associated with the events that occurred. This string
+  // must have been pre-registered in the ReportDefinition (using the
+  // |candidate_list| or |candidate_file| fields). There are also two special
+  // values of |component|.
+  // "<NONE>" is the component associated with logged events that
+  // contained an empty component string.
+  // "<OTHER>" is the component associated with logged events that contained
+  // a non-empty component string that was not pre-registered.
+  string component = 4;
+
+  // The total sum of the event occurrence counts for events with the
+  // |event_code| and |component|, on the |date|, over all
+  // reporting devices with the |system_profile|.
+  int64 sum = 5;
+
+  // The count of Observations that contributed to the |sum|.
+  int64 count = 6;
+}
+
+// A row of output for a report of type INT_RANGE_HISTOGRAM.
+//
+// Gives the value for one bucket of an integer range histogram, aggregated
+// over the fleet, for a particular event code, a particular component, on a
+// particular day, considering only devices matching a particular system
+// profile.
+message IntRangeHistogramReportRow {
+  // The date on which the logged events occurred, as measured on the device.
+  // This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The label for the event code associated with the events that occurred. If
+  // the event code has not been assigned a label (in the event_codes field of
+  // the MetricDefinition) then this will be a string of the form
+  // "<event-code-42>".
+  string event_code = 3;
+
+  // The component string associated with the events that occurred. This string
+  // must have been pre-registered in the ReportDefinition (using the
+  // |candidate_list| or |candidate_file| fields). There are also two special
+  // values of |component|.
+  // "<NONE>" is the component associated with logged events that
+  // contained an empty component string.
+  // "<OTHER>" is the component associated with logged events that contained
+  // a non-empty component string that was not pre-registered.
+  string component = 4;
+
+  // String describing the interval of integers for this bucket, such as
+  // "10-15".
+  string bucket_name = 5;
+
+  // The count for this bucket.
+  int64 bucket_count = 6;
 }

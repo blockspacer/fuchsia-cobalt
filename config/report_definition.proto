@@ -70,15 +70,6 @@ message ReportDefinition {
     //   - local_privacy_noise_level # Gives Basic RAPPOR parameters
     //
     // Report row type: SimpleOccurrenceCountReportRow. (See report_row.proto)
-    //
-    // Example report:
-    //
-    // Date, SystemProfile, Event, Count, std_err
-    // ------------------------------------------
-    // 2018-7-25,<sys-prof 1>,"My Event 1", 12345, 1.3
-    // 2018-7-25,<sys-prof 1>,"My Event 2", 23456, 1.3
-    // 2018-7-25,<sys-prof 2>,"My Event 2", 34567, 1.3
-    // 2018-7-25,<sys-prof 2>,"My Event 3", 78901, 1.3
     SIMPLE_OCCURRENCE_COUNT = 1;
 
     // Gives the total, daily, fleet-wide count of the number of occurrences of
@@ -94,25 +85,8 @@ message ReportDefinition {
     //   - candidate_list # All known component names
     //   - candidate_file # File with all known component names
     //
-    // Report fields:
-    //   - date
-    //   - system_profile # One or more fields from the SystemProfile message
-    //                      type (cobalt/observation.proto) describing the
-    //                      system on which the events occurred.
-    //   - event
-    //   - component # The name of the component
-    //   - count # The total count of occurrence for that event-type, for that
-    //             component, on that date, over all reporting devices with that
-    //             system profile.
-    //
-    // Example report:
-    //
-    // Date, SystemProfile, Component, Event, Count
-    // --------------------------------------------
-    // 2018-7-25,<sys-prof 1>,"Component 1","Event 1",12345
-    // 2018-7-25,<sys-prof 2>,"Component 1","Event 2",34567
-    // 2018-7-25,<sys-prof 1>,"Component 2","Event 2",23456
-    // 2018-7-25,<sys-prof 2>,"Component 2","Event 3",78901
+    // Report row type: EventComponentOccurrenceCountReportRow.
+    // (See report_row.proto)
     EVENT_COMPONENT_OCCURRENCE_COUNT = 2;
 
     // Gives daily, fleet-wide aggregate statistics of a numerical metric of one
@@ -169,26 +143,8 @@ message ReportDefinition {
     //                 # Not used for Metric type INT_HISTOGRAM because the
     //                 # Metric already contains this field.
     //
-    // Report fields:
-    //   - date
-    //   - system_profile # One or more fields from the SystemProfile message
-    //                      type (cobalt/observation.proto) describing the
-    //                      system on which the events occurred.
-    //   - event
-    //   - component
-    //   - bucket-1, bucket-2,...
-    //         # The total count of those numeric values that fall into
-    //         # bucket n, for that event type, for that component, on that
-    //         # date, over devices with that system profile.
-    //
-    // Example report:
-    //
-    // Date, SystemProfile, Component, Event,  Bucket-1, Bucket-2, Bucket-3, ...
-    // -------------------------------------------------------------------------
-    // 2018-7-25,<sys-prof 1>,"Component 1","Event 1",123,4567,890, ...
-    // 2018-7-25,<sys-prof 2>,"Component 1","Event 2",123,4567,890, ...
-    // 2018-7-25,<sys-prof 1>,"Component 2","Event 1",123,4567,890, ...
-    // 2018-7-25,<sys-prof 2>,"Component 2","Event 3",123,4567,890, ....
+    // Report row type: IntRangeHistogramReportRow
+    // (See report_row.proto)
     INT_RANGE_HISTOGRAM = 4;
 
     // Gives the approximate distribution of the most commonly used strings in a
@@ -470,8 +426,9 @@ message ReportDefinition {
   // HIGH_FREQUENCY_STRING_COUNTS Report type.
   string candidate_file = 9;
 
-  // This field is used only with the INT_RANGE_HISTOGRAM Report type and
-  // the INT_HISTOGRAM Metric ype.
+  // This field is used only with the INT_RANGE_HISTOGRAM Report type, but
+  // not used when the Metric type is INT_HISTOGRAM because in that case the
+  // MetricDefinition already contains an instance of IntegerBuckets.
   IntegerBuckets int_buckets = 10;
 
   // This field is used only with the UNIQUE_N_DAY_ACTIVES Report type.
