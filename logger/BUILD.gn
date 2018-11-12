@@ -5,7 +5,7 @@
 import("//third_party/cobalt_config/cobalt_config.gni")
 
 cobalt_config("internal_metrics_config") {
-  output_name = "internal_metrics_config"
+  use_target_name = true
 
   customer_id = 2147483647
   project_name = "metrics"
