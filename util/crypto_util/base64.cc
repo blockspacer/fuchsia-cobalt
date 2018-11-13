@@ -15,6 +15,7 @@
 #include "util/crypto_util/base64.h"
 
 #include <openssl/base64.h>
+
 #include <algorithm>
 
 namespace cobalt {

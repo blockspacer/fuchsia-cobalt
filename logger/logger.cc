@@ -15,7 +15,8 @@
 #include "config/id.h"
 #include "config/metric_definition.pb.h"
 #include "config/report_definition.pb.h"
-#include "logger/event_record.h"
+#include "logger/project_context.h"
+#include "util/clock.h"
 #include "util/datetime_util.h"
 
 namespace cobalt {
@@ -26,6 +27,15 @@ using ::cobalt::util::ClockInterface;
 using ::cobalt::util::SystemClock;
 using ::cobalt::util::TimeToDayIndex;
 using ::google::protobuf::RepeatedPtrField;
+
+namespace {
+
+struct EventRecord {
+  const MetricDefinition* metric;
+  std::unique_ptr<Event> event = std::make_unique<Event>();
+};
+
+}  // namespace
 
 // EventLogger is an abstract interface used internally in logger.cc to
 // dispatch logging logic based on Metric type. Below we create subclasses
@@ -45,9 +55,6 @@ class EventLogger {
 
  protected:
   const Encoder* encoder() { return logger_->encoder_; }
-  const EventAggregator* event_aggregator() {
-    return logger_->event_aggregator_;
-  }
   const ProjectContext* project_context() { return logger_->project_context_; }
   Encoder::Result BadReportType(const MetricDefinition& metric,
                                 const ReportDefinition& report);
@@ -63,8 +70,8 @@ class EventLogger {
   // Given an EventRecord and a ReportDefinition, determines whether or not
   // the Event should be used to update a local aggregation and if so passes
   // the Event to the Local Aggregator.
-  virtual Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                             EventRecord* event_record);
+  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                     EventRecord* event_record);
 
   // Given an EventRecord and a ReportDefinition, determines whether or not
   // the Event should be used to generate an immediate Observation and if so
@@ -105,8 +112,6 @@ class OccurrenceEventLogger : public EventLogger {
   Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record) override;
-  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type EVENT_COUNT.
@@ -122,8 +127,8 @@ class CountEventLogger : public EventLogger {
 };
 
 // Implementation of EventLogger for all of the numerical performance metric
-// types. This is an abstract class. There are subclasses below for each
-// metric type.
+// types. This is an abstract class. There are subclasses below for each metric
+// type.
 class IntegerPerformanceEventLogger : public EventLogger {
  protected:
   explicit IntegerPerformanceEventLogger(Logger* logger)
@@ -218,11 +223,9 @@ class CustomEventLogger : public EventLogger {
 
 //////////////////// Logger method implementations ////////////////////////
 
-Logger::Logger(const Encoder* encoder, EventAggregator* event_aggregator,
-               ObservationWriter* observation_writer,
+Logger::Logger(const Encoder* encoder, ObservationWriter* observation_writer,
                const ProjectContext* project, LoggerInterface* internal_logger)
     : encoder_(encoder),
-      event_aggregator_(event_aggregator),
       observation_writer_(observation_writer),
       project_context_(project),
       clock_(new SystemClock()) {
@@ -233,10 +236,6 @@ Logger::Logger(const Encoder* encoder, EventAggregator* event_aggregator,
   } else {
     // We were not provided with a metrics logger. We must create one.
     internal_metrics_.reset(new NoOpInternalMetrics());
-  }
-  if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
-    LOG(ERROR) << "Failed to provide aggregation configurations to the "
-                  "EventAggregator.";
   }
 }
 
@@ -365,14 +364,13 @@ Status EventLogger::Log(uint32_t metric_id,
       return status;
     }
 
-    // If we are processing the final report, then we set may_invalidate
-    // to true in order to allow data to be moved out of |event_record|
-    // instead of being copied. One example where this is useful is when
-    // creating an immediate Observation of type Histogram. In that case
-    // we can move the histogram from the Event to the Observation and
-    // avoid copying. Since the |event_record| is invalidated, any other
-    // operation on the |event_record| must be performed before this for
-    // loop.
+    // If we are processing the final report, then we set may_invalidate to
+    // true in order to allow data to be moved out of |event_record| instead
+    // of being copied. One example where this is useful is when creating
+    // an immediate Observation of type Histogram. In that case we can move
+    // the histogram from the Event to the Observation and avoid copying.
+    // Since the |event_record| is invalidated, any other operation on the
+    // |event_record| must be performed before this for loop.
     bool may_invalidate = ++report_index == num_reports;
     status =
         MaybeGenerateImmediateObservation(report, may_invalidate, event_record);
@@ -416,6 +414,9 @@ Status EventLogger::ValidateEvent(const EventRecord& event_record) {
 // and returns OK.
 Status EventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                                 EventRecord* event_record) {
+  // TODO(pesk) Implement this method in subclasses of EventLoger
+  // corresponding to Metric types for which there exist Report types for
+  // which which you want to perform local aggregation.
   return kOK;
 }
 
@@ -488,34 +489,13 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
           occurrence_event.event_code(),
           RapporConfigHelper::BasicRapporNumCategories(metric));
     }
-      // Report type UNIQUE_N_DAY_ACTIVES is valid but should not result in
-      // generation of an immediate observation.
-    case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-      Encoder::Result result;
-      result.status = kOK;
-      result.observation = nullptr;
-      result.metadata = nullptr;
-      return result;
-    }
 
     default:
       return BadReportType(metric, report);
   }
 }
 
-Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(
-    const ReportDefinition& report, EventRecord* event_record) {
-  switch (report.report_type()) {
-    case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-      return event_aggregator()->LogUniqueActivesEvent(report.id(),
-                                                       event_record);
-    }
-    default:
-      return kOK;
-  }
-}
-
-///////////// CountEventLogger method implementations //////////////////////////
+/////////////// CountEventLogger method implementations ////////////////////////
 
 Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
@@ -695,7 +675,6 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
 }
 
 /////////////// StringUsedEventLogger method implementations ///////////////////
-
 Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
@@ -723,7 +702,6 @@ Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
 }
 
 /////////////// CustomEventLogger method implementations ///////////////////////
-
 Status CustomEventLogger::ValidateEvent(const EventRecord& event_record) {
   // TODO(ninai) Add proto validation.
   return kOK;

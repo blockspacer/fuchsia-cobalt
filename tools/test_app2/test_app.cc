@@ -23,7 +23,6 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "logger/encoder.h"
-#include "logger/event_aggregator.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "util/clearcut/curl_http_client.h"
@@ -40,7 +39,6 @@ using encoder::ShippingManager;
 using encoder::SystemData;
 using encoder::SystemDataInterface;
 using logger::Encoder;
-using logger::EventAggregator;
 using logger::EventValuesPtr;
 using logger::kOK;
 using logger::kOther;
@@ -249,7 +247,6 @@ class RealLoggerFactory : public LoggerFactory {
       std::unique_ptr<ProjectContext> project_context,
       std::unique_ptr<MemoryObservationStore> observation_store,
       std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-      std::unique_ptr<LocalAggregateStore> local_aggregate_store,
       std::unique_ptr<SystemDataInterface> system_data);
 
   std::unique_ptr<LoggerInterface> NewLogger() override;
@@ -264,11 +261,9 @@ class RealLoggerFactory : public LoggerFactory {
   std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<MemoryObservationStore> observation_store_;
   std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
-  std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<ObservationWriter> observation_writer_;
-  std::unique_ptr<EventAggregator> event_aggregator_;
 };
 
 RealLoggerFactory::RealLoggerFactory(
@@ -277,14 +272,12 @@ RealLoggerFactory::RealLoggerFactory(
     std::unique_ptr<ProjectContext> project_context,
     std::unique_ptr<MemoryObservationStore> observation_store,
     std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-    std::unique_ptr<LocalAggregateStore> local_aggregate_store,
     std::unique_ptr<SystemDataInterface> system_data)
     : observation_encrypter_(std::move(observation_encrypter)),
       envelope_encrypter_(std::move(envelope_encrypter)),
       project_context_(std::move(project_context)),
       observation_store_(std::move(observation_store)),
       shipping_manager_(std::move(shipping_manager)),
-      local_aggregate_store_(std::move(local_aggregate_store)),
       system_data_(std::move(system_data)) {}
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
@@ -293,11 +286,8 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
   observation_writer_.reset(
       new ObservationWriter(observation_store_.get(), shipping_manager_.get(),
                             observation_encrypter_.get()));
-  event_aggregator_.reset(new EventAggregator(
-      encoder_.get(), observation_writer_.get(), local_aggregate_store_.get()));
-  return std::unique_ptr<LoggerInterface>(
-      new Logger(encoder_.get(), event_aggregator_.get(),
-                 observation_writer_.get(), project_context_.get()));
+  return std::unique_ptr<LoggerInterface>(new Logger(
+      encoder_.get(), observation_writer_.get(), project_context_.get()));
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {
@@ -347,7 +337,6 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
       shuffler_public_key_pem, shuffler_encryption_scheme);
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
-  auto local_aggregate_store = std::make_unique<LocalAggregateStore>();
 
   // By using (kMaxSeconds, 0) here we are effectively putting the
   // ShippingDispatcher in manual mode. It will never send
@@ -371,8 +360,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   std::unique_ptr<LoggerFactory> logger_factory(new RealLoggerFactory(
       std::move(observation_encrypter), std::move(envelope_encrypter),
       std::move(project_context), std::move(observation_store),
-      std::move(shipping_manager), std::move(local_aggregate_store),
-      std::move(system_data)));
+      std::move(shipping_manager), std::move(system_data)));
 
   std::unique_ptr<TestApp> test_app(new TestApp(
       std::move(logger_factory), FLAGS_metric_name, mode, &std::cout));
@@ -761,7 +749,7 @@ bool TestApp::ParseNonNegativeInt(const std::string& str, bool complain,
         *ostream_ << "Expected non-negative integer instead of " << str << "."
                   << std::endl;
       } else {
-        LOG(ERROR) << "Expected non-negative integer instead of " << str;
+        LOG(ERROR) << "Expected non-negativea integer instead of " << str;
       }
     }
     return false;
