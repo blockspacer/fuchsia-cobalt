@@ -49,6 +49,23 @@ static_library("client_config") {
   ]
 }
 
+source_set("project_configs") {
+  sources = [
+    "project_configs.cc",
+    "project_configs.h",
+  ]
+
+  public_configs = [
+    "//third_party/cobalt:cobalt_config",
+    "//third_party/cobalt/config:proto_config",
+  ]
+
+  public_deps = [
+    "//garnet/public/lib/fxl",
+    "//third_party/cobalt/config:cobalt_config_proto",
+  ]
+}
+
 source_set("id") {
   sources = [
     "id.cc",

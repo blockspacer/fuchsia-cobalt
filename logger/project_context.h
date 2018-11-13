@@ -12,7 +12,9 @@
 
 #include "config/metric_definition.pb.h"
 #include "config/project.pb.h"
+#include "config/project_configs.h"
 #include "logger/status.h"
+#include "third_party/tensorflow_statusor/statusor.h"
 
 namespace cobalt {
 namespace logger {
@@ -54,6 +56,17 @@ class ProjectContext {
                  std::unique_ptr<MetricDefinitions> metric_definitions,
                  ReleaseStage release_stage = GA);
 
+  // ConstructWithProjectConfigs tries to extract a project for the specified
+  // customer/project name.
+  //
+  // If either the customer or the project are not found in the supplied
+  // ProjectConfigs, then this will return an INVALID_ARGUMENT error.
+  static tensorflow_statusor::StatusOr<std::unique_ptr<ProjectContext>>
+  ConstructWithProjectConfigs(
+      const std::string& customer_name, const std::string& project_name,
+      std::shared_ptr<config::ProjectConfigs> project_configs,
+      ReleaseStage release_stage = GA);
+
   const MetricDefinition* GetMetric(const std::string& metric_name) const;
   const MetricDefinition* GetMetric(const uint32_t metric_id) const;
   // Makes a MetricRef that wraps this ProjectContext's Project and the given
@@ -67,8 +80,21 @@ class ProjectContext {
   const std::string DebugString() const;
 
  private:
+  // This constructor assumes that the specified customer/project is present in
+  // the ProjectConfigs (this should be checked by ConstructWithProjcetConfigs).
+  // If no such project exists, this will CHECK fail.
+  ProjectContext(uint32_t customer_id, uint32_t project_id,
+                 const std::string& customer_name,
+                 const std::string& project_name,
+                 std::shared_ptr<config::ProjectConfigs> project_configs,
+                 ReleaseStage release_stage);
+
   Project project_;
+
+  // Exactly one of metric_definitions_ or project_configs_ will be non-null.
   const std::unique_ptr<MetricDefinitions> metric_definitions_;
+  const std::shared_ptr<config::ProjectConfigs> project_configs_;
+
   std::map<const std::string, const MetricDefinition*> metrics_by_name_;
   std::map<const uint32_t, const MetricDefinition*> metrics_by_id_;
 };

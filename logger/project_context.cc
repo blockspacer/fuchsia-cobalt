@@ -11,6 +11,9 @@
 namespace cobalt {
 namespace logger {
 
+using tensorflow_statusor::StatusOr;
+using util::StatusCode;
+
 std::string MetricDebugString(const MetricDefinition& metric) {
   std::ostringstream stream;
   stream << metric.metric_name() << " (" << metric.id() << ")";
@@ -82,6 +85,62 @@ ProjectContext::ProjectContext(
                  << "). Found customer_id=" << metric.customer_id()
                  << " project_id=" << metric.project_id();
     }
+  }
+}
+
+StatusOr<std::unique_ptr<ProjectContext>>
+ProjectContext::ConstructWithProjectConfigs(
+    const std::string& customer_name, const std::string& project_name,
+    std::shared_ptr<config::ProjectConfigs> project_configs,
+    ReleaseStage release_stage) {
+  auto customer_cfg = project_configs->GetCustomerConfig(customer_name);
+  if (!customer_cfg) {
+    return util::Status(StatusCode::INVALID_ARGUMENT,
+                        "Could not find a customer named " + customer_name +
+                            " in the provided ProjectConfigs.");
+  }
+  auto project_cfg =
+      project_configs->GetProjectConfig(customer_name, project_name);
+  if (!project_cfg) {
+    return util::Status(StatusCode::INVALID_ARGUMENT,
+                        "Could not find a project named " + project_name +
+                            " for the customer named " + customer_name +
+                            " in the provided ProjectConfigs.");
+  }
+  return std::unique_ptr<ProjectContext>(new ProjectContext(
+      customer_cfg->customer_id(), project_cfg->project_id(), customer_name,
+      project_name, project_configs, release_stage));
+}
+
+ProjectContext::ProjectContext(
+    uint32_t customer_id, uint32_t project_id, const std::string& customer_name,
+    const std::string& project_name,
+    std::shared_ptr<config::ProjectConfigs> project_configs,
+    ReleaseStage release_stage)
+    : project_configs_(project_configs) {
+  PopulateProject(customer_id, project_id, customer_name, project_name,
+                  release_stage, &project_);
+  auto project_cfg =
+      project_configs->GetProjectConfig(customer_name, project_name);
+
+  CHECK(project_cfg) << "Customer " << customer_name << " with project "
+                     << project_name << " was not found.";
+
+  for (const auto& metric : project_cfg->metrics()) {
+    if (metric.customer_id() == project_.customer_id() &&
+        metric.project_id() == project_.project_id()) {
+      metrics_by_name_[metric.metric_name()] = &metric;
+      metrics_by_id_[metric.id()] = &metric;
+    } else {
+      LOG(ERROR) << "ProjectContext constructor found a MetricDefinition "
+                    "for the wrong project. Expected customer "
+                 << project_.customer_name()
+                 << " (id=" << project_.customer_id() << "), project "
+                 << project_.project_name() << " (id=" << project_.project_id()
+                 << "). Found customer_id=" << metric.customer_id()
+                 << " project_id=" << metric.project_id();
+    }
+    metric_definitions_->add_metric()->CopyFrom(metric);
   }
 }
 

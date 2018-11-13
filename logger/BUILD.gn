@@ -36,6 +36,7 @@ source_set("project_context") {
     ":status",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/config:project_configs",
   ]
 }
 
@@ -93,8 +94,8 @@ source_set("internal_metrics") {
   public_configs = [ "//third_party/cobalt:cobalt_config" ]
 
   public_deps = [
-    ":logger_interface",
     ":internal_metrics_config_cc",
+    ":logger_interface",
     "//garnet/public/lib/fxl",
   ]
 }
@@ -117,4 +118,3 @@ source_set("logger") {
     "//third_party/cobalt/config:id",
   ]
 }
-

@@ -13,6 +13,7 @@ generate_cobalt_config_h(
 add_library(project_context
             project_context.cc)
 add_cobalt_dependencies(project_context)
+target_link_libraries(project_context project_configs tensorflow_statusor)
 
 add_library(observation_writer
             observation_writer.cc)
