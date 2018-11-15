@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/cobalt_config/cobalt_config.gni")
+import("//third_party/cobalt_config/metrics_registry.gni")
 
-cobalt_config("internal_metrics_config") {
+metrics_registry("internal_metrics_config") {
   use_target_name = true
 
   customer_id = 2147483647
