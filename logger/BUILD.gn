@@ -5,8 +5,6 @@
 import("//third_party/cobalt_config/metrics_registry.gni")
 
 metrics_registry("internal_metrics_config") {
-  use_target_name = true
-
   customer_id = 2147483647
   project_name = "metrics"
   namespace = "cobalt.logger"
