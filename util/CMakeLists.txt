@@ -21,6 +21,12 @@ target_link_libraries(pem_util
                       cobalt_crypto)
 add_cobalt_dependencies(pem_util)
 
+add_library(proto_util
+            proto_util.cc)
+target_link_libraries(proto_util
+	    cobalt_crypto)
+add_cobalt_dependencies(proto_util)
+
 add_executable(util_tests
                datetime_util_test.cc
                encrypted_message_util_test.cc

@@ -29,7 +29,7 @@ message Event {
 
   // The three-part unique numerical identifier of the Metric that this
   // Event is associated with.
-  uint32 cutomer_id = 1000;
+  uint32 customer_id = 1000;
   uint32 project_id = 1001;
   uint32 metric_id = 1002;
 

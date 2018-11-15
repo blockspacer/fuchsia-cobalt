@@ -72,3 +72,16 @@ static_library("consistent_proto_store") {
     ":status",
   ]
 }
+
+static_library("proto_util") {
+  sources = [
+    "proto_util.cc",
+    "proto_util.h",
+  ]
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+  deps = [
+    "//garnet/public/lib/fxl",
+    "//third_party/cobalt/util/crypto_util",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}

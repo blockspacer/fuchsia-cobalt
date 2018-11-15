@@ -19,7 +19,7 @@ enum Status {
   // The Cobalt config is invalid.
   kInvalidConfig = 2,
 
-  // The size of the proviced data is too large.
+  // The size of the provided data is too large.
   kTooBig = 3,
 
   // The repository being written to is full.

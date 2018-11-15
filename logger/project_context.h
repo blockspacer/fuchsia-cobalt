@@ -19,6 +19,9 @@
 namespace cobalt {
 namespace logger {
 
+// A pair (metric ID, report ID).
+typedef std::pair<uint32_t, uint32_t> MetricReportId;
+
 std::string MetricDebugString(const MetricDefinition& metric);
 
 // A reference object that gives access to the names and IDs of a Metric and
@@ -69,6 +72,7 @@ class ProjectContext {
 
   const MetricDefinition* GetMetric(const std::string& metric_name) const;
   const MetricDefinition* GetMetric(const uint32_t metric_id) const;
+
   // Makes a MetricRef that wraps this ProjectContext's Project and the given
   // metric_definition (which should have been obtained via GetMetric()).
   // The Project and MetricDefinition must remain valid as long as the returned
@@ -76,6 +80,10 @@ class ProjectContext {
   const MetricRef RefMetric(const MetricDefinition* metric_definition) const;
 
   const Project& project() const { return project_; }
+
+  const MetricDefinitions* metric_definitions() const {
+    return metric_definitions_.get();
+  }
 
   const std::string DebugString() const;
 

@@ -17,6 +17,7 @@ static_library("encoder") {
     "memory_observation_store.h",
     "observation_store.cc",
     "observation_store.h",
+    "observation_store_update_recipient.h",
     "project_context.cc",
     "project_context.h",
     "send_retryer.cc",

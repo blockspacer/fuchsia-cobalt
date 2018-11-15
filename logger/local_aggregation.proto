@@ -1,0 +1,74 @@
+// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package cobalt;
+
+import "config/metric_definition.proto";
+import "config/report_definition.proto";
+import "config/project.proto";
+
+// An identifier of a locally aggregated report.
+message ReportAggregationKey {
+  uint32 customer_id = 1;
+  uint32 project_id = 2;
+  uint32 metric_id = 3;
+  uint32 report_id = 4;
+}
+
+// A container used by the EventAggregator to store local aggregates of
+// logged events.
+message LocalAggregateStore {
+  // Keyed by base64-encoded serializations of ReportAggregationKey messages.
+  map<string, ReportAggregates> aggregates = 1;
+}
+
+message ReportAggregates {
+  // Keyed by event code.
+  map<uint32, DailyAggregates> by_event_code = 1;
+  // The configuration for the report represented by the ReportAggregationKey
+  // of this ReportAggregates.
+  AggregationConfig aggregation_config = 2;
+}
+
+// A representation of the configuration of a locally aggregated report and
+// of its parent metric.
+message AggregationConfig {
+  // A Project message.
+  Project project = 1;
+  // A MetricDefinition.
+  //
+  // TODO(pesk): When implementing handling of config changes, replace this
+  // field with a MetricDefinition with all ReportDefinitions removed, as well
+  // as all fields which should not affect the EventAggregator's handling
+  // of the MetricDefinition.
+  MetricDefinition metric = 2;
+  // A ReportDefinition message.
+  //
+  // TODO(pesk): When implementing handling of config changes, replace this
+  // field with a ReportDefinition with all WindowSizes removed, as well as
+  // all fields which should not affect the EventAggregator's handling of the
+  // ReportDefinition.
+  ReportDefinition report = 3;
+}
+
+message DailyAggregates {
+  // Keyed by day index.
+  map<uint32, DailyAggregate> by_day_index = 1;
+}
+
+// A value formed by aggregating the events logged for a single report, event
+// code, and day index.
+message DailyAggregate {
+  oneof type {
+    ActivityDailyAggregate activity_daily_aggregate = 1;
+  }
+}
+
+// A representation of the occurrence or non-occurrence of an event code on
+// a given day.
+message ActivityDailyAggregate {
+  bool activity_indicator = 1;
+}

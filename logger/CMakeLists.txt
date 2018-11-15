@@ -10,8 +10,16 @@ generate_cobalt_config_h(
   OUTPUT_FILE "${INTERNAL_METRICS_CONFIG_H}"
 )
 
+cobalt_make_protobuf_cpp_lib(local_aggregation_proto_lib
+                             LOCAL_AGGREGATION_PROTO_HDRS
+                             false
+                             local_aggregation)
+add_cobalt_dependencies(local_aggregation_proto_lib)
+
 add_library(project_context
             project_context.cc)
+target_link_libraries(project_context
+                      local_aggregation_proto_lib)
 add_cobalt_dependencies(project_context)
 target_link_libraries(project_context project_configs tensorflow_statusor)
 
@@ -24,6 +32,12 @@ add_library(internal_metrics
             "${INTERNAL_METRICS_CONFIG_H}")
 add_cobalt_dependencies(internal_metrics)
 
+add_library(event_aggregator
+            event_aggregator.cc)
+target_link_libraries(event_aggregator
+                      local_aggregation_proto_lib
+                      proto_util)
+add_cobalt_dependencies(event_aggregator)
 
 add_library(encoder2
             encoder.cc)
@@ -40,6 +54,7 @@ add_library(logger
 target_link_libraries(logger
                       encoder2
                       encrypted_message_util
+                      event_aggregator
                       observation_writer
                       project_context
                       rappor_config_helper
@@ -47,11 +62,24 @@ target_link_libraries(logger
                       config_ids)
 add_cobalt_dependencies(logger)
 
+add_library(logger_test_utils
+            logger_test_utils.cc)
+target_link_libraries(logger_test_utils
+                      encoder2
+                      encoder
+                      logger
+                      local_aggregation_proto_lib
+		      proto_util)
+add_cobalt_dependencies(logger_test_utils)
+
 add_executable(logger_tests
                encoder_test.cc
+               event_aggregator_test.cc
                logger_test.cc)
 target_link_libraries(logger_tests
                       encoder2
-                      logger)
+                      event_aggregator
+                      logger
+                      logger_test_utils)
 add_cobalt_test_dependencies(logger_tests ${DIR_GTESTS})
 add_dependencies(logger_tests build_config_parser)

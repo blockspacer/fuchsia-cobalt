@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//third_party/protobuf/proto_library.gni")
 import("//third_party/cobalt_config/metrics_registry.gni")
 
 metrics_registry("internal_metrics_config") {
@@ -13,9 +14,43 @@ metrics_registry("internal_metrics_config") {
   generate_cc = true
 }
 
+proto_library("cobalt_local_aggregation_proto") {
+  proto_in_dir = "//third_party/cobalt"
+  sources = [
+    "local_aggregation.proto",
+  ]
+  import_dirs = [ "//third_party/protobuf/src" ]
+  generate_python = false
+  cc_generator_options = "lite"
+  deps = [
+    "//third_party/cobalt/config:cobalt_config_proto",
+  ]
+
+  extra_configs = [
+    "//third_party/cobalt:cobalt_config",
+    "//third_party/cobalt/config:proto_config",
+  ]
+}
+
 source_set("status") {
   sources = [
     "status.h",
+  ]
+}
+
+source_set("event_record") {
+  sources = [
+    "event_record.h",
+  ]
+
+  public_configs = [
+    "//third_party/cobalt:cobalt_config",
+    "//third_party/cobalt/config:proto_config",
+  ]
+
+  public_deps = [
+    "//third_party/cobalt:cobalt_proto",
+    "//third_party/cobalt/config:cobalt_config_proto",
   ]
 }
 
@@ -52,6 +87,8 @@ source_set("encoder") {
     "//garnet/public/lib/fxl",
     "//third_party/abseil-cpp",
     "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/encoder",
+    "//third_party/cobalt/util/crypto_util",
   ]
 }
 
@@ -67,6 +104,33 @@ source_set("observation_writer") {
     ":status",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
+    "//third_party/cobalt/encoder",
+    "//third_party/cobalt/util:encrypted_message_util",
+  ]
+}
+
+source_set("event_aggregator") {
+  sources = [
+    "event_aggregator.cc",
+    "event_aggregator.h",
+  ]
+
+  public_configs = [
+    "//third_party/cobalt:cobalt_config",
+    "//third_party/cobalt/config:proto_config",
+  ]
+
+  public_deps = [
+    ":cobalt_local_aggregation_proto",
+    ":encoder",
+    ":event_record",
+    ":observation_writer",
+    ":status",
+    "//garnet/public/lib/fxl",
+    "//third_party/cobalt/algorithms/rappor:rappor_encoder",
+    "//third_party/cobalt:cobalt_proto",
+    "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/util:proto_util",
   ]
 }
 
@@ -108,6 +172,8 @@ source_set("logger") {
 
   public_deps = [
     ":encoder",
+    ":event_aggregator",
+    ":event_record",
     ":internal_metrics",
     ":logger_interface",
     ":observation_writer",
