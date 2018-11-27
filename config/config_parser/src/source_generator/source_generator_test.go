@@ -133,6 +133,26 @@ metric_definitions:
   reports:
   - report_name: the_report
     report_type: NUMERIC_PERF_RAW_DUMP
+- id: 300
+  metric_name: "event groups"
+  time_zone_policy: LOCAL
+  metric_type: EVENT_OCCURRED
+  metric_dimensions:
+    - dimension: "The First Group"
+      event_codes:
+        0: AnEvent
+        1: AnotherEvent
+        2: A third event
+      max_event_code: 2
+    - dimension: "A second group"
+      event_codes:
+        1: This
+        2: Is
+        3: another
+        4: Test
+  reports:
+  - report_name: the_report
+    report_type: NUMERIC_PERF_RAW_DUMP
 `
 
 func readGoldenFile(filename string) (string, error) {

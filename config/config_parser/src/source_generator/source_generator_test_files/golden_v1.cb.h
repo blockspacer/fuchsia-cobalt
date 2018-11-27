@@ -7,6 +7,8 @@
 const uint32_t kTheMetricNameMetricId = 100;
 // the_other_metric_name
 const uint32_t kTheOtherMetricNameMetricId = 200;
+// event groups
+const uint32_t kEventGroupsMetricId = 300;
 
 // Enum for the_other_metric_name (EventCode)
 enum class TheOtherMetricNameEventCode {
@@ -18,5 +20,27 @@ const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnEvent = TheOther
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode::AnotherEvent;
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
+// Enum for event groups (MetricDimensionThe First Group)
+enum class EventGroupsMetricDimensionTheFirstGroup {
+  AnEvent = 0,
+  AnotherEvent = 1,
+  AThirdEvent = 2,
+};
+const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
+const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
+const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
+
+// Enum for event groups (MetricDimensionA second group)
+enum class EventGroupsMetricDimensionASecondGroup {
+  This = 1,
+  Is = 2,
+  Another = 3,
+  Test = 4,
+};
+const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
+const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
+const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
+const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Test = EventGroupsMetricDimensionASecondGroup::Test;
+
 // The base64 encoding of the bytes of a serialized CobaltConfig proto message.
-const char kConfig[] = "KvwBCghjdXN0b21lchAKGu0BCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0";
+const char kConfig[] = "KsUDCghjdXN0b21lchAKGrYDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0GsYBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0";

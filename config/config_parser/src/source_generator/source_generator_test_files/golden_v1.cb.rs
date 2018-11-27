@@ -5,6 +5,8 @@
 pub const THE_METRIC_NAME_METRIC_ID = 100;
 // the_other_metric_name
 pub const THE_OTHER_METRIC_NAME_METRIC_ID = 200;
+// event groups
+pub const EVENT_GROUPS_METRIC_ID = 300;
 
 // Enum for the_other_metric_name (EventCode)
 pub enum TheOtherMetricNameEventCode {
@@ -13,5 +15,20 @@ pub enum TheOtherMetricNameEventCode {
   AThirdEvent = 2,
 }
 
+// Enum for event groups (MetricDimensionThe First Group)
+pub enum EventGroupsMetricDimensionTheFirstGroup {
+  AnEvent = 0,
+  AnotherEvent = 1,
+  AThirdEvent = 2,
+}
+
+// Enum for event groups (MetricDimensionA second group)
+pub enum EventGroupsMetricDimensionASecondGroup {
+  This = 1,
+  Is = 2,
+  Another = 3,
+  Test = 4,
+}
+
 // The base64 encoding of the bytes of a serialized CobaltConfig proto message.
-pub const CONFIG: &str = "KvwBCghjdXN0b21lchAKGu0BCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0";
+pub const CONFIG: &str = "KsUDCghjdXN0b21lchAKGrYDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0GsYBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0";

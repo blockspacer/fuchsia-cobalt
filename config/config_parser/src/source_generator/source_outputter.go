@@ -11,6 +11,7 @@ import (
 	"config"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -181,6 +182,20 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltConfig) error {
 			events[value] = name
 		}
 		so.writeEnum(metric.MetricName, "EventCode", events)
+
+		if len(metric.MetricDimensions) > 0 {
+			for i, md := range metric.MetricDimensions {
+				events := make(map[uint32]string)
+				for value, name := range md.EventCodes {
+					events[value] = name
+				}
+				varname := "MetricDimension" + strconv.Itoa(i)
+				if md.Dimension != "" {
+					varname = "MetricDimension" + md.Dimension
+				}
+				so.writeEnum(metric.MetricName, varname, events)
+			}
+		}
 	}
 
 	return nil
