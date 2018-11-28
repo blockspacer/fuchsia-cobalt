@@ -12,6 +12,7 @@ proto_library("cobalt_config_proto") {
   proto_in_dir = "//third_party/cobalt"
   sources = [
     "cobalt_config.proto",
+    "annotations.proto",
     "encodings.proto",
     "metric_definition.proto",
     "metrics.proto",

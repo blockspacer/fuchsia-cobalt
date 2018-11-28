@@ -8,6 +8,7 @@
 package main
 
 import (
+	"config"
 	"config_parser"
 	"config_validator"
 	"flag"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -40,6 +42,7 @@ var (
 	varName        = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
 	namespace      = flag.String("namespace", "", "When using the 'cpp' or 'rust' output format, this will specify the comma-separated namespace within which the config variable must be places.")
 	depFile        = flag.String("dep_file", "", "Generate a depfile (see gn documentation) that lists all the project configuration files. Requires -output_file and -config_dir.")
+	forClient      = flag.Bool("for_client", false, "Filters out the hide_on_client tagged fields")
 
 	dartOutDir = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
 )
@@ -181,6 +184,11 @@ func main() {
 	}
 
 	c := config_parser.MergeConfigs(configs)
+	filtered := proto.Clone(&c).(*config.CobaltConfig)
+
+	if *forClient {
+		config_parser.FilterHideOnClient(filtered)
+	}
 
 	for _, format := range outFormats {
 		var outputFormatter source_generator.OutputFormatter
@@ -214,7 +222,7 @@ func main() {
 		}
 
 		// Then, we serialize the configuration.
-		configBytes, err := outputFormatter(&c)
+		configBytes, err := outputFormatter(&c, filtered)
 		if err != nil {
 			glog.Exit(err)
 		}

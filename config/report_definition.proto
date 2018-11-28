@@ -8,6 +8,7 @@ package cobalt;
 import "config/metrics.proto";
 import "config/report_configs.proto";
 import "config/window_size.proto";
+import "config/annotations.proto";
 
 option go_package = "config";
 
@@ -416,8 +417,7 @@ message ReportDefinition {
   // should be used, not both. Used for the hashed |component_name|
   // field for several Report types and the encoded |string| field for the
   // HIGH_FREQUENCY_STRING_COUNTS Report type.
-  // ##DO_NOT_POPULATE_ON_CLIENT##
-  repeated string candidate_list = 8;
+  repeated string candidate_list = 8 [(cobalt_options).hide_on_client = true];
 
   // Simple name or full path to file containing known string values.
   // Either this or |candidate_list| should be used, not both. Used for the

@@ -1,0 +1,18 @@
+// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+syntax = "proto3";
+
+package cobalt;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "config";
+
+message CobaltOptions {
+  bool hide_on_client = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  CobaltOptions cobalt_options = 50000;
+}

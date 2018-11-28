@@ -32,7 +32,8 @@ set(CONFIG_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_list
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_config.go
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/git.go
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/config_reader.go
-                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/id.go)
+                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/id.go
+                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/filter.go)
 
 set(CONFIG_VALIDATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/validator.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/system_profile_field.go
@@ -69,7 +70,8 @@ set(CONFIG_PARSER_TEST_BIN ${GO_TESTS}/config_parser_test)
 set(CONFIG_PARSER_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_list_test.go
                             ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/config_reader_test.go
                             ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/id_test.go
-                            ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_config_test.go)
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_config_test.go
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/filter_test.go)
 
 add_custom_command(OUTPUT ${CONFIG_PARSER_TEST_BIN}
     COMMAND ${GO_BIN} test -c -o ${CONFIG_PARSER_TEST_BIN} ${CONFIG_PARSER_TEST_SRC} ${CONFIG_PARSER_SRC}

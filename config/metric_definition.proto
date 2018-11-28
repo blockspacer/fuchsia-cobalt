@@ -7,6 +7,7 @@ package cobalt;
 
 import "config/metrics.proto";
 import "config/report_definition.proto";
+import "config/annotations.proto";
 
 option go_package = "config";
 
@@ -187,12 +188,11 @@ message MetricDefinition {
   //
   // This field is used in most Metric types.
   //
-  // The keys are the numeric codes and the values are the human-readable
-  // labels for the codes. It is OK to add new elements to this map or to change
-  // the spelling of labels after data collection has started. It is not OK to
+  // The keys are the numeric codes and the values are the human-readable labels
+  // for the codes. It is OK to add new elements to this map or to change the
+  // spelling of labels after data collection has started. It is not OK to
   // change the meaning of any of the codes.
-  // ##DO_NOT_POPULATE_ON_CLIENT##
-  map<uint32, string> event_codes = 6;
+  map<uint32, string> event_codes = 6 [(cobalt_options).hide_on_client = true];
 
   // Only needed with Metrics of type EVENT_OCCURRED.
   // While additional event_codes may be added after data collection has begun,
@@ -232,12 +232,12 @@ message MetricDefinition {
     //
     // The date must be expressed in yyyy/mm/dd form.
     // It may be at most one year in the future.
-    string expiration_date = 1;
+    string expiration_date = 1 [(cobalt_options).hide_on_client = true];
 
     // Primary contacts for questions/bugs regarding this metric (may be a
     // group). This should be a fully qualified email address (e.g.
     // my-group@test.com)
-    repeated string owner = 2;
+    repeated string owner = 2 [(cobalt_options).hide_on_client = true];
 
     // Maximum ReleaseStage for which this Metric is allowed to be collected.
     ReleaseStage max_release_stage = 4;

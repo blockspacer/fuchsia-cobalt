@@ -28,7 +28,7 @@ type outputLanguage interface {
 	writeStringConstant(so *sourceOutputter, value string, name ...string)
 }
 
-type OutputFormatter func(c *config.CobaltConfig) (outputBytes []byte, err error)
+type OutputFormatter func(c, filtered *config.CobaltConfig) (outputBytes []byte, err error)
 
 type sourceOutputter struct {
 	buffer     *bytes.Buffer
@@ -186,7 +186,7 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltConfig) error {
 	return nil
 }
 
-func (so *sourceOutputter) writeFile(c *config.CobaltConfig) error {
+func (so *sourceOutputter) writeFile(c, filtered *config.CobaltConfig) error {
 	so.writeGenerationWarning()
 
 	so.language.writeExtraHeader(so)
@@ -201,7 +201,7 @@ func (so *sourceOutputter) writeFile(c *config.CobaltConfig) error {
 		so.writeLegacyConstants(c)
 	}
 
-	b64Bytes, err := Base64Output(c)
+	b64Bytes, err := Base64Output(c, filtered)
 	if err != nil {
 		return err
 	}
@@ -217,8 +217,8 @@ func (so *sourceOutputter) writeFile(c *config.CobaltConfig) error {
 }
 
 func (so *sourceOutputter) getOutputFormatter() OutputFormatter {
-	return func(c *config.CobaltConfig) (outputBytes []byte, err error) {
-		err = so.writeFile(c)
+	return func(c, filtered *config.CobaltConfig) (outputBytes []byte, err error) {
+		err = so.writeFile(c, filtered)
 		return so.Bytes(), err
 	}
 }
