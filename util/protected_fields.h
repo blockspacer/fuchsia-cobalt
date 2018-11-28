@@ -5,6 +5,8 @@
 #ifndef COBALT_UTIL_PROTECTED_FIELDS_H_
 #define COBALT_UTIL_PROTECTED_FIELDS_H_
 
+#include <chrono>
+#include <condition_variable>
 #include <mutex>
 
 namespace cobalt {
@@ -35,6 +37,48 @@ class ProtectedFields {
     Fields* operator->() { return fields_; }
     Fields& operator*() { return *fields_; }
 
+    // Calls the wait() method of a condition variable with a reference to the
+    // mutex.
+    void wait_with(std::condition_variable* cv) { return cv->wait(lock_); }
+
+    template <class Predicate>
+    void wait_with(std::condition_variable* cv, Predicate pred) {
+      return cv->wait(lock_, pred);
+    }
+
+    // Calls the wait_for() method of a condition variable with a reference to
+    // the mutex.
+    template <class Rep, class Period>
+    std::cv_status wait_for_with(
+        std::condition_variable* cv,
+        const std::chrono::duration<Rep, Period>& rel_time) {
+      return cv->wait(lock_, rel_time);
+    }
+
+    template <class Rep, class Period, class Predicate>
+    bool wait_for_with(std::condition_variable* cv,
+                       const std::chrono::duration<Rep, Period>& rel_time,
+                       Predicate pred) {
+      return cv->wait_for(lock_, rel_time, pred);
+    }
+
+    // Calls the wait_until() method of a condition variable with a reference to
+    // the mutex.
+    template <class Clock, class Duration>
+    std::cv_status wait_until_with(
+        std::condition_variable* cv,
+        const std::chrono::time_point<Clock, Duration>& timeout_time) {
+      return cv->wait_until(lock_, timeout_time);
+    }
+
+    template <class Clock, class Duration, class Predicate>
+    bool wait_until_with(
+        std::condition_variable* cv,
+        const std::chrono::time_point<Clock, Duration>& timeout_time,
+        Predicate pred) {
+      return cv->wait_until(lock_, timeout_time, pred);
+    }
+
    private:
     friend class ProtectedFields;
     LockedFieldsPtr(std::mutex* mutex, Fields* fields)
@@ -59,6 +103,48 @@ class ProtectedFields {
    public:
     const Fields* operator->() { return fields_; }
     const Fields& operator*() { return *fields_; }
+
+    // Calls the wait() method of a condition variable with a reference to the
+    // mutex.
+    void wait_with(std::condition_variable* cv) { return cv->wait(lock_); }
+
+    template <class Predicate>
+    void wait_with(std::condition_variable* cv, Predicate pred) {
+      return cv->wait(lock_, pred);
+    }
+
+    // Calls the wait_for() method of a condition variable with a reference to
+    // the mutex.
+    template <class Rep, class Period>
+    std::cv_status wait_for_with(
+        std::condition_variable* cv,
+        const std::chrono::duration<Rep, Period>& rel_time) {
+      return cv->wait(lock_, rel_time);
+    }
+
+    template <class Rep, class Period, class Predicate>
+    bool wait_for_with(std::condition_variable* cv,
+                       const std::chrono::duration<Rep, Period>& rel_time,
+                       Predicate pred) {
+      return cv->wait_for(lock_, rel_time, pred);
+    }
+
+    // Calls the wait_until() method of a condition variable with a reference to
+    // the mutex.
+    template <class Clock, class Duration>
+    std::cv_status wait_until_with(
+        std::condition_variable* cv,
+        const std::chrono::time_point<Clock, Duration>& timeout_time) {
+      return cv->wait_until(lock_, timeout_time);
+    }
+
+    template <class Clock, class Duration, class Predicate>
+    bool wait_until_with(
+        std::condition_variable* cv,
+        const std::chrono::time_point<Clock, Duration>& timeout_time,
+        Predicate pred) {
+      return cv->wait_until(lock_, timeout_time, pred);
+    }
 
    private:
     friend class ProtectedFields;
