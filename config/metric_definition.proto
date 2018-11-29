@@ -14,7 +14,7 @@ option go_package = "config";
 //
 // A Metric belongs to a Project and has a name and a type.
 //
-// When an Event is logged in Cobalt's Logger interface, a Metric name is
+// When an Event is logged in Cobalt's Logger interface, a Metric is
 // specified and the Event then belongs to that Metric.
 //
 // A MetricDefinition includes a list of ReportDefinitions. These are the
@@ -32,19 +32,14 @@ option go_package = "config";
 message MetricDefinition {
   // Unique name for this Metric within its owning project.
   // The name must obey the syntax of a C variable name and must have length
-  // at most 64. The name must not be changed once data collection has
-  // begun. Changing the name constitutes declaring a different Metric.
+  // at most 64.
   string metric_name = 1;
 
-  // These three numbers form this Metric's unique numerical ID, used internally
-  // by Cobalt. Normally an instance of MetricDefinition is created by the
-  // Cobalt config YAML parser and these three values will be set automatically.
-  // None of these three values need to be manually set in the YAML file. The
-  // customer_id and project_id are known from the context of the YAML file and
-  // the |id| is set to a hash of the |name| field above. If an instance of
-  // MetricDefinition is created by some means other than the YAML parser
-  // then these values must be set. The |id| field should be set to a number
-  // uniquely identifying this Metric within its project.
+  // These three numbers form this Metric's unique numerical ID in Cobalt. The
+  // Cobalt config YAML parser will automatically set the value of
+  // customer_id and project_id based on the context of the YAML file.
+  // The user must manually set the |id| field to  a number uniquely identifying
+  // this Metric within its project.
   uint32 customer_id = 2;
   uint32 project_id = 3;
   uint32 id = 4;
@@ -188,14 +183,14 @@ message MetricDefinition {
 
   MetricType metric_type = 5;
 
-  // The enumerated set of event types for the event_code parameter.
+  // The enumerated set of event codes.
   //
   // This field is used in most Metric types.
   //
-  // The keys are the indices and the values are the  human-readable names of
-  // the event types. It is OK to add new elements to this  map or to change
-  // the spelling of event names after data collection has
-  // started. It is not OK to change the meaning of any of the indices.
+  // The keys are the numeric codes and the values are the human-readable
+  // labels for the codes. It is OK to add new elements to this map or to change
+  // the spelling of labels after data collection has started. It is not OK to
+  // change the meaning of any of the codes.
   // ##DO_NOT_POPULATE_ON_CLIENT##
   map<uint32, string> event_codes = 6;
 
