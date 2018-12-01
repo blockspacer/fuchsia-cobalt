@@ -65,10 +65,12 @@ add_cobalt_dependencies(logger)
 add_library(logger_test_utils
             logger_test_utils.cc)
 target_link_libraries(logger_test_utils
+                      consistent_proto_store
                       encoder2
                       encoder
                       logger
                       local_aggregation_proto_lib
+                      posix_file_system
 		      proto_util)
 add_cobalt_dependencies(logger_test_utils)
 

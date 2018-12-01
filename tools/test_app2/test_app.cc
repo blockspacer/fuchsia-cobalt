@@ -28,7 +28,9 @@
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "util/clearcut/curl_http_client.h"
+#include "util/consistent_proto_store.h"
 #include "util/pem_util.h"
+#include "util/posix_file_system.h"
 
 namespace cobalt {
 
@@ -50,8 +52,10 @@ using logger::LoggerInterface;
 using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::Status;
+using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
 using util::PemUtil;
+using util::PosixFileSystem;
 
 // There are three modes of operation of the Cobalt TestClient program
 // determined by the value of this flag.
@@ -82,6 +86,13 @@ DEFINE_string(config_bin_proto_path, "",
 
 DEFINE_string(clearcut_endpoint, "https://jmt17.google.com/log",
               "The URL to send clearcut requests to.");
+
+DEFINE_string(local_aggregate_backup_file, "",
+              "Back up local aggregates of events to this file.");
+
+DEFINE_string(
+    aggregated_obs_history_backup_file, "",
+    "Back up the history of sent aggregated Observations to this file.");
 
 namespace {
 
@@ -251,8 +262,8 @@ class RealLoggerFactory : public LoggerFactory {
       std::unique_ptr<ProjectContext> project_context,
       std::unique_ptr<MemoryObservationStore> observation_store,
       std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-      std::unique_ptr<LocalAggregateStore> local_aggregate_store,
-      std::unique_ptr<AggregatedObservationHistory> history,
+      std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
+      std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
       std::unique_ptr<SystemDataInterface> system_data);
 
   std::unique_ptr<LoggerInterface> NewLogger() override;
@@ -267,8 +278,8 @@ class RealLoggerFactory : public LoggerFactory {
   std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<MemoryObservationStore> observation_store_;
   std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
-  std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
-  std::unique_ptr<AggregatedObservationHistory> history_;
+  std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<ConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -281,16 +292,16 @@ RealLoggerFactory::RealLoggerFactory(
     std::unique_ptr<ProjectContext> project_context,
     std::unique_ptr<MemoryObservationStore> observation_store,
     std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-    std::unique_ptr<LocalAggregateStore> local_aggregate_store,
-    std::unique_ptr<AggregatedObservationHistory> history,
+    std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
+    std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
     std::unique_ptr<SystemDataInterface> system_data)
     : observation_encrypter_(std::move(observation_encrypter)),
       envelope_encrypter_(std::move(envelope_encrypter)),
       project_context_(std::move(project_context)),
       observation_store_(std::move(observation_store)),
       shipping_manager_(std::move(shipping_manager)),
-      local_aggregate_store_(std::move(local_aggregate_store)),
-      history_(std::move(history)),
+      local_aggregate_proto_store_(std::move(local_aggregate_proto_store)),
+      obs_history_proto_store_(std::move(obs_history_proto_store)),
       system_data_(std::move(system_data)) {}
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
@@ -299,9 +310,9 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
   observation_writer_.reset(
       new ObservationWriter(observation_store_.get(), shipping_manager_.get(),
                             observation_encrypter_.get()));
-  event_aggregator_.reset(
-      new EventAggregator(encoder_.get(), observation_writer_.get(),
-                          local_aggregate_store_.get(), history_.get()));
+  event_aggregator_.reset(new EventAggregator(
+      encoder_.get(), observation_writer_.get(),
+      local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
   return std::unique_ptr<LoggerInterface>(
       new Logger(encoder_.get(), event_aggregator_.get(),
                  observation_writer_.get(), project_context_.get()));
@@ -354,8 +365,11 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
       shuffler_public_key_pem, shuffler_encryption_scheme);
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
-  auto local_aggregate_store = std::make_unique<LocalAggregateStore>();
-  auto history = std::make_unique<AggregatedObservationHistory>();
+  auto local_aggregate_proto_store = std::make_unique<ConsistentProtoStore>(
+      FLAGS_local_aggregate_backup_file, std::make_unique<PosixFileSystem>());
+  auto obs_history_proto_store = std::make_unique<ConsistentProtoStore>(
+      FLAGS_aggregated_obs_history_backup_file,
+      std::make_unique<PosixFileSystem>());
 
   // By using (kMaxSeconds, 0) here we are effectively putting the
   // ShippingDispatcher in manual mode. It will never send
@@ -379,8 +393,8 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   std::unique_ptr<LoggerFactory> logger_factory(new RealLoggerFactory(
       std::move(observation_encrypter), std::move(envelope_encrypter),
       std::move(project_context), std::move(observation_store),
-      std::move(shipping_manager), std::move(local_aggregate_store),
-      std::move(history), std::move(system_data)));
+      std::move(shipping_manager), std::move(local_aggregate_proto_store),
+      std::move(obs_history_proto_store), std::move(system_data)));
 
   std::unique_ptr<TestApp> test_app(new TestApp(
       std::move(logger_factory), FLAGS_metric_name, mode, &std::cout));

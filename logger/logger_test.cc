@@ -51,6 +51,7 @@ using testing::FetchAggregatedObservations;
 using testing::FetchObservations;
 using testing::FetchSingleObservation;
 using testing::MakeNullExpectedUniqueActivesObservations;
+using testing::MockConsistentProtoStore;
 using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
@@ -64,6 +65,11 @@ static const uint32_t kCustomerId = 1;
 static const uint32_t kProjectId = 1;
 static const char kCustomerName[] = "Fuchsia";
 static const char kProjectName[] = "Cobalt";
+static const size_t kDefaultBackfillDays = 0;
+
+// Filenames for constructors of ConsistentProtoStores
+static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
+static const char kObsHistoryFilename[] = "obs_history_backup";
 
 // Metric IDs
 const uint32_t kErrorOccurredMetricId = 1;
@@ -460,11 +466,14 @@ class LoggerTest : public ::testing::Test {
                               observation_encrypter_.get()));
     encoder_.reset(
         new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
-    local_aggregate_store_.reset(new LocalAggregateStore);
-    history_.reset(new AggregatedObservationHistory);
+    local_aggregate_proto_store_.reset(
+        new MockConsistentProtoStore(kAggregateStoreFilename));
+    obs_history_proto_store_.reset(
+        new MockConsistentProtoStore(kObsHistoryFilename));
     event_aggregator_.reset(new EventAggregator(
-        encoder_.get(), observation_writer_.get(), local_aggregate_store_.get(),
-        history_.get(), /* backfill_days */ 0));
+        encoder_.get(), observation_writer_.get(),
+        local_aggregate_proto_store_.get(), obs_history_proto_store_.get(),
+        kDefaultBackfillDays));
     logger_.reset(new Logger(encoder_.get(), event_aggregator_.get(),
                              observation_writer_.get(),
                              project_context_.get()));
@@ -475,6 +484,11 @@ class LoggerTest : public ::testing::Test {
     mock_clock_->set_time(
         std::chrono::system_clock::time_point(std::chrono::seconds(kYear)));
     logger_->SetClock(mock_clock_);
+  }
+
+  void TearDown() {
+    event_aggregator_.reset();
+    logger_.reset();
   }
 
   // Returns the day index of the current day according to |mock_clock_|, in
@@ -502,8 +516,8 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<Logger> logger_;
   std::unique_ptr<EventAggregator> event_aggregator_;
   std::unique_ptr<ObservationWriter> observation_writer_;
-  std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
-  std::unique_ptr<AggregatedObservationHistory> history_;
+  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<FakeObservationStore> observation_store_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;

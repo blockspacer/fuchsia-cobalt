@@ -9,34 +9,85 @@
 #include <utility>
 
 #include "algorithms/rappor/rappor_config_helper.h"
+#include "config/metric_definition.pb.h"
 #include "logger/project_context.h"
 #include "util/proto_util.h"
+#include "util/status.h"
 
 namespace cobalt {
 
 using rappor::RapporConfigHelper;
+using util::ConsistentProtoStore;
 using util::SerializeToBase64;
+using util::StatusCode;
 
 namespace logger {
 
-EventAggregator::EventAggregator(const Encoder* encoder,
-                                 const ObservationWriter* observation_writer,
-                                 LocalAggregateStore* local_aggregate_store,
-                                 AggregatedObservationHistory* obs_history,
-                                 const size_t backfill_days)
+EventAggregator::EventAggregator(
+    const Encoder* encoder, const ObservationWriter* observation_writer,
+    ConsistentProtoStore* local_aggregate_proto_store,
+    ConsistentProtoStore* obs_history_proto_store, const size_t backfill_days)
     : encoder_(encoder),
       observation_writer_(observation_writer),
-      local_aggregate_store_(local_aggregate_store),
-      obs_history_(obs_history) {
+      local_aggregate_proto_store_(local_aggregate_proto_store),
+      obs_history_proto_store_(obs_history_proto_store) {
   CHECK_LE(backfill_days, kEventAggregatorMaxAllowedBackfillDays)
       << "backfill_days must be less than or equal to "
       << kEventAggregatorMaxAllowedBackfillDays;
+  backfill_days_ = backfill_days;
+  auto restore_aggregates_status =
+      local_aggregate_proto_store_->Read(&local_aggregate_store_);
+  switch (restore_aggregates_status.error_code()) {
+    case StatusCode::OK: {
+      VLOG(4) << "Read LocalAggregateStore from disk.";
+      break;
+    }
+    case StatusCode::NOT_FOUND: {
+      VLOG(4) << "No file found for local_aggregate_proto_store. Proceeding "
+                 "with empty LocalAggregateStore. File will be created on "
+                 "first snapshot of the LocalAggregateStore.";
+      break;
+    }
+    default: {
+      LOG(ERROR)
+          << "Read to local_aggregate_proto_store failed with status code: "
+          << restore_aggregates_status.error_code()
+          << "\nError message: " << restore_aggregates_status.error_message()
+          << "\nError details: " << restore_aggregates_status.error_details()
+          << "\nProceeding with empty LocalAggregateStore.";
+      local_aggregate_store_ = LocalAggregateStore();
+    }
+  }
+  auto restore_history_status = obs_history_proto_store_->Read(&obs_history_);
+  switch (restore_history_status.error_code()) {
+    case StatusCode::OK: {
+      VLOG(4) << "Read AggregatedObservationHistory from disk.";
+      break;
+    }
+    case StatusCode::NOT_FOUND: {
+      VLOG(4)
+          << "No file found for obs_history_proto_store. Proceeding "
+             "with empty AggregatedObservationHistory. File will be created on "
+             "first snapshot of the AggregatedObservationHistory.";
+      break;
+    }
+    default: {
+      LOG(ERROR) << "Read to obs_history_proto_store failed with status code: "
+                 << restore_history_status.error_code() << "\nError message: "
+                 << restore_history_status.error_message()
+                 << "\nError details: "
+                 << restore_history_status.error_details()
+                 << "\nProceeding with empty AggregatedObservationHistory.";
+      obs_history_ = AggregatedObservationHistory();
+    }
+  }
 }
 
 // TODO(pesk): Have the config parser verify that each locally
-// aggregated report has at least one window size and that all window sizes
-// are <= |kMaxAllowedAggregationWindowSize|. Additionally, have this method
-// filter out any window sizes larger than |kMaxAllowedAggregationWindowSize|.
+// aggregated report has at least one window size and that all window
+// sizes are <= |kMaxAllowedAggregationWindowSize|. Additionally, have
+// this method filter out any window sizes larger than
+// |kMaxAllowedAggregationWindowSize|.
 Status EventAggregator::UpdateAggregationConfigs(
     const ProjectContext& project_context) {
   std::string key;
@@ -54,9 +105,9 @@ Status EventAggregator::UpdateAggregationConfigs(
               if (!SerializeToBase64(key_data, &key)) {
                 return kInvalidArguments;
               }
-              // TODO(pesk): update the EventAggregator's view of a Metric
-              // or ReportDefinition when appropriate.
-              if (local_aggregate_store_->aggregates().count(key) == 0) {
+              // TODO(pesk): update the EventAggregator's view of a
+              // Metric or ReportDefinition when appropriate.
+              if (local_aggregate_store_.aggregates().count(key) == 0) {
                 AggregationConfig aggregation_config;
                 *aggregation_config.mutable_project() =
                     project_context.project();
@@ -66,7 +117,7 @@ Status EventAggregator::UpdateAggregationConfigs(
                 ReportAggregates report_aggregates;
                 *report_aggregates.mutable_aggregation_config() =
                     aggregation_config;
-                (*local_aggregate_store_->mutable_aggregates())[key] =
+                (*local_aggregate_store_.mutable_aggregates())[key] =
                     report_aggregates;
               }
             }
@@ -83,7 +134,7 @@ Status EventAggregator::UpdateAggregationConfigs(
 }
 
 Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
-                                              EventRecord* event_record) const {
+                                              EventRecord* event_record) {
   if (!event_record->event->has_occurrence_event()) {
     LOG(ERROR) << "EventAggregator::LogUniqueActivesEvent can only "
                   "accept OccurrenceEvents.";
@@ -98,8 +149,9 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
   if (!SerializeToBase64(key_data, &key)) {
     return kInvalidArguments;
   }
-  auto aggregates = local_aggregate_store_->mutable_aggregates()->find(key);
-  if (aggregates == local_aggregate_store_->mutable_aggregates()->end()) {
+
+  auto aggregates = local_aggregate_store_.mutable_aggregates()->find(key);
+  if (aggregates == local_aggregate_store_.mutable_aggregates()->end()) {
     LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
     return kInvalidArguments;
   }
@@ -111,8 +163,33 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
   return kOK;
 }
 
+Status EventAggregator::BackUpLocalAggregateStore() {
+  auto status = local_aggregate_proto_store_->Write(local_aggregate_store_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to back up the LocalAggregateStore with error code: "
+               << status.error_code()
+               << "\nError message: " << status.error_message()
+               << "\nError details: " << status.error_details();
+    return kOther;
+  }
+  return kOK;
+}
+
+Status EventAggregator::BackUpObservationHistory() {
+  auto status = obs_history_proto_store_->Write(obs_history_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to back up the AggregatedObservationHistory. "
+                  "::cobalt::util::Status error code: "
+               << status.error_code()
+               << "\nError message: " << status.error_message()
+               << "\nError details: " << status.error_details();
+    return kOther;
+  }
+  return kOK;
+}
+
 Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
-  for (auto pair : local_aggregate_store_->aggregates()) {
+  for (auto pair : local_aggregate_store_.aggregates()) {
     const auto& config = pair.second.aggregation_config();
 
     const auto& metric = config.metric();
@@ -122,9 +199,9 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
     auto max_window_size = 0u;
     for (uint32_t window_size : report.window_size()) {
       if (window_size > kMaxAllowedAggregationWindowSize) {
-        LOG(WARNING)
-            << "Window size exceeding kMaxAllowedAggregationWindowSize will be "
-               "ignored by GenerateObservations";
+        LOG(WARNING) << "Window size exceeding "
+                        "kMaxAllowedAggregationWindowSize will be "
+                        "ignored by GenerateObservations";
       } else if (window_size > max_window_size) {
         max_window_size = window_size;
       }
@@ -165,9 +242,9 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index) {
 }
 
 Status EventAggregator::GarbageCollect(uint32_t day_index) {
-  for (auto pair : local_aggregate_store_->aggregates()) {
-    // Determine the largest window size in the report associated to this
-    // key-value pair.
+  for (auto pair : local_aggregate_store_.aggregates()) {
+    // Determine the largest window size in the report associated to
+    // this key-value pair.
     uint32_t max_window_size = 1;
     for (uint32_t window_size :
          pair.second.aggregation_config().report().window_size()) {
@@ -187,13 +264,13 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
     }
     // For each event code, iterate over the sub-map of local aggregates
     // keyed by day index. Keep buckets with day indices greater than
-    // |day_index| - |backfill_days_| - |max_window_size|, and remove all
-    // buckets with smaller day indices.
+    // |day_index| - |backfill_days_| - |max_window_size|, and remove
+    // all buckets with smaller day indices.
     for (auto event_code_aggregates : pair.second.by_event_code()) {
       for (auto day_aggregates : event_code_aggregates.second.by_day_index()) {
         if (day_aggregates.first <=
             day_index - backfill_days_ - max_window_size) {
-          local_aggregate_store_->mutable_aggregates()
+          local_aggregate_store_.mutable_aggregates()
               ->at(pair.first)
               .mutable_by_event_code()
               ->at(event_code_aggregates.first)
@@ -201,15 +278,16 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
               ->erase(day_aggregates.first);
         }
       }
-      // If the day index map under this event code is empty, remove the event
-      // code from the event code map under this ReportAggregationKey.
-      if (local_aggregate_store_->aggregates()
+      // If the day index map under this event code is empty, remove the
+      // event code from the event code map under this
+      // ReportAggregationKey.
+      if (local_aggregate_store_.aggregates()
               .at(pair.first)
               .by_event_code()
               .at(event_code_aggregates.first)
               .by_day_index()
               .empty()) {
-        local_aggregate_store_->mutable_aggregates()
+        local_aggregate_store_.mutable_aggregates()
             ->at(pair.first)
             .mutable_by_event_code()
             ->erase(event_code_aggregates.first);
@@ -219,12 +297,13 @@ Status EventAggregator::GarbageCollect(uint32_t day_index) {
   return kOK;
 }
 
-////////// GenerateUniqueActivesObservations and helper methods //////////////
+////////// GenerateUniqueActivesObservations and helper methods
+/////////////////
 
-// Given the set of daily aggregates for a fixed event code, and the size and
-// end date of an aggregation window, returns the first day index within that
-// window on which the event code occurred. Returns 0 if the event code did not
-// occur within the window.
+// Given the set of daily aggregates for a fixed event code, and the
+// size and end date of an aggregation window, returns the first day
+// index within that window on which the event code occurred. Returns 0
+// if the event code did not occur within the window.
 uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
                                      uint32_t obs_day_index,
                                      uint32_t window_size) {
@@ -240,9 +319,9 @@ uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
   return 0u;
 }
 
-// Given the day index of an event occurrence and the size and end date of an
-// aggregation window, returns true if the occurrence falls within the window
-// and false if not.
+// Given the day index of an event occurrence and the size and end date
+// of an aggregation window, returns true if the occurrence falls within
+// the window and false if not.
 bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
                         uint32_t window_size) {
   return (active_day_index <= obs_day_index &&
@@ -252,8 +331,8 @@ bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
 uint32_t EventAggregator::LastGeneratedDayIndex(const std::string& report_key,
                                                 uint32_t event_code,
                                                 uint32_t window_size) const {
-  auto report_history = obs_history_->by_report_key().find(report_key);
-  if (report_history == obs_history_->by_report_key().end()) {
+  auto report_history = obs_history_.by_report_key().find(report_key);
+  if (report_history == obs_history_.by_report_key().end()) {
     return 0u;
   }
   auto event_code_history =
@@ -296,7 +375,7 @@ Status EventAggregator::GenerateSingleUniqueActivesObservation(
 Status EventAggregator::GenerateUniqueActivesObservations(
     const MetricRef metric_ref, const std::string& report_key,
     const ReportAggregates& report_aggregates, uint32_t num_event_codes,
-    uint32_t final_day_index) const {
+    uint32_t final_day_index) {
   for (uint32_t event_code = 0; event_code < num_event_codes; event_code++) {
     auto daily_aggregates = report_aggregates.by_event_code().find(event_code);
     // Have any events ever been logged for this report and event code?
@@ -304,35 +383,39 @@ Status EventAggregator::GenerateUniqueActivesObservations(
         (daily_aggregates != report_aggregates.by_event_code().end());
     for (uint32_t window_size :
          report_aggregates.aggregation_config().report().window_size()) {
-      // Skip any window size larger than kMaxAllowedAggregationWindowSize.
+      // Skip any window size larger than
+      // kMaxAllowedAggregationWindowSize.
       if (window_size > kMaxAllowedAggregationWindowSize) {
         LOG(WARNING) << "GenerateUniqueActivesObservations ignoring a window "
                         "size exceeding the maximum allowed value";
         continue;
       }
-      // Find the earliest day index for which an Observation has not yet been
-      // generated for this report, event code, and window size. If that day
-      // index is later than |final_day_index|, no Observation is generated on
-      // this invocation.
+      // Find the earliest day index for which an Observation has not
+      // yet been generated for this report, event code, and window
+      // size. If that day index is later than |final_day_index|, no
+      // Observation is generated on this invocation.
       auto last_gen =
           LastGeneratedDayIndex(report_key, event_code, window_size);
       auto first_day_index =
           std::max(last_gen + 1, uint32_t(final_day_index - backfill_days_));
-      // The latest day index on which |event_type| is known to have occurred,
-      // so far. This value will be updated as we search forward from the
-      // earliest day index belonging to a window of interest.
+      // The latest day index on which |event_type| is known to have
+      // occurred, so far. This value will be updated as we search
+      // forward from the earliest day index belonging to a window of
+      // interest.
       uint32_t active_day_index = 0u;
-      // Iterate over the day indices |obs_day_index| for which we need to
-      // generate Observations. On each iteration, generate an Observation for
-      // the window of size |window_size| ending on |obs_day_index|.
+      // Iterate over the day indices |obs_day_index| for which we need
+      // to generate Observations. On each iteration, generate an
+      // Observation for the window of size |window_size| ending on
+      // |obs_day_index|.
       for (uint32_t obs_day_index = first_day_index;
            obs_day_index <= final_day_index; obs_day_index++) {
         bool was_active = false;
         if (found_event_code) {
-          // If the current value of |active_day_index| falls within the window,
-          // generate an Observation of activity. If not, search forward in the
-          // window, update |active_day_index|, and generate an Observation of
-          // activity or inactivity depending on the result of the search.
+          // If the current value of |active_day_index| falls within the
+          // window, generate an Observation of activity. If not, search
+          // forward in the window, update |active_day_index|, and
+          // generate an Observation of activity or inactivity depending
+          // on the result of the search.
           if (IsActivityInWindow(active_day_index, obs_day_index,
                                  window_size)) {
             was_active = true;
@@ -349,9 +432,9 @@ Status EventAggregator::GenerateUniqueActivesObservations(
         if (status != kOK) {
           return status;
         }
-        // Update |obs_history_| with the latest date of Observation generation
-        // for this report, event code, and window size.
-        (*(*(*obs_history_->mutable_by_report_key())[report_key]
+        // Update |obs_history_| with the latest date of Observation
+        // generation for this report, event code, and window size.
+        (*(*(*obs_history_.mutable_by_report_key())[report_key]
                 .mutable_by_event_code())[event_code]
               .mutable_by_window_size())[window_size] = obs_day_index;
       }

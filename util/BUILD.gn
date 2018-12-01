@@ -70,6 +70,7 @@ static_library("consistent_proto_store") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
     ":status",
+    "//third_party/protobuf:protobuf_lite",
   ]
 }
 

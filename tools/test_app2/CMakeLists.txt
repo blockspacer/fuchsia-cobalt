@@ -5,10 +5,13 @@
 # Build the test_app library.
 add_library(test_app2 test_app.cc)
 target_link_libraries(test_app2
+                      consistent_proto_store
                       curl_http_client
                       encoder
+                      event_aggregator
                       logger
                       pem_util
+                      posix_file_system
                       project_configs)
 add_cobalt_dependencies(test_app2)
 

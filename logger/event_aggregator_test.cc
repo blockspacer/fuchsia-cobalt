@@ -38,6 +38,7 @@ using testing::FetchAggregatedObservations;
 using testing::MakeAggregationConfig;
 using testing::MakeAggregationKey;
 using testing::MakeNullExpectedUniqueActivesObservations;
+using testing::MockConsistentProtoStore;
 using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
@@ -48,6 +49,11 @@ static const uint32_t kProjectId = 1;
 static const char kCustomerName[] = "Fuchsia";
 static const char kProjectName[] = "Cobalt";
 static const uint32_t kStartDayIndex = 100;
+static const size_t kDefaultBackfillDays = 0;
+
+// Filenames for constructors of ConsistentProtoStores
+static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
+static const char kObsHistoryFilename[] = "obs_history_backup";
 
 // Pairs (metric ID, report ID) for the locally aggregated reports defined in
 // |kMetricDefinitions| and |kNoiseFreeUniqueActivesMetricDefinitions|.
@@ -264,18 +270,37 @@ class EventAggregatorTest : public ::testing::Test {
                               observation_encrypter_.get()));
     encoder_.reset(
         new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
-    local_aggregate_store_.reset(new LocalAggregateStore);
-    history_.reset(new AggregatedObservationHistory);
-    event_aggregator_.reset(
-        new EventAggregator(encoder_.get(), observation_writer_.get(),
-                            local_aggregate_store_.get(), history_.get(), 0));
-    SetBackfillDays(0);
+    local_aggregate_proto_store_.reset(
+        new MockConsistentProtoStore(kAggregateStoreFilename));
+    obs_history_proto_store_.reset(
+        new MockConsistentProtoStore(kObsHistoryFilename));
+    event_aggregator_.reset(new EventAggregator(
+        encoder_.get(), observation_writer_.get(),
+        local_aggregate_proto_store_.get(), obs_history_proto_store_.get(),
+        kDefaultBackfillDays));
+  }
+
+  // Destruct the EventAggregator before destructing any other objects owned by
+  // the test class.
+  void TearDown() { event_aggregator_.reset(); }
+
+  // Returns a copy of the LocalAggregateStore.
+  LocalAggregateStore GetLocalAggregateStore() {
+    return event_aggregator_->local_aggregate_store_;
   }
 
   size_t GetBackfillDays() { return event_aggregator_->backfill_days_; }
 
   void SetBackfillDays(size_t num_days) {
-    event_aggregator_->set_backfill_days(num_days);
+    event_aggregator_->backfill_days_ = num_days;
+  }
+
+  Status BackUpLocalAggregateStore() {
+    return event_aggregator_->BackUpLocalAggregateStore();
+  }
+
+  Status BackUpObservationHistory() {
+    return event_aggregator_->BackUpObservationHistory();
   }
 
   // Clears the FakeObservationStore and resets the TestUpdateRecipient's count
@@ -326,9 +351,10 @@ class EventAggregatorTest : public ::testing::Test {
   // of reference.
   bool CheckAggregateStore(const LoggedActivity& logged_activity,
                            uint32_t current_day_index) {
+    auto local_aggregate_store = GetLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more aggregates than
     // |logged_activity| and |day_last_garbage_collected_| should imply.
-    for (const auto& report_pair : local_aggregate_store_->aggregates()) {
+    for (const auto& report_pair : local_aggregate_store.aggregates()) {
       const auto& report_key = report_pair.first;
       const auto& aggregates = report_pair.second;
       // Check whether this ReportAggregationKey is in |logged_activity|. If
@@ -381,9 +407,9 @@ class EventAggregatorTest : public ::testing::Test {
       const auto& logged_event_map = logged_pair.second;
       // Check that this ReportAggregationKey is in the LocalAggregateStore.
       auto report_aggregates =
-          local_aggregate_store_->aggregates().find(logged_key);
-      EXPECT_NE(report_aggregates, local_aggregate_store_->aggregates().end());
-      if (report_aggregates == local_aggregate_store_->aggregates().end()) {
+          local_aggregate_store.aggregates().find(logged_key);
+      EXPECT_NE(report_aggregates, local_aggregate_store.aggregates().end());
+      if (report_aggregates == local_aggregate_store.aggregates().end()) {
         return false;
       }
       for (const auto& logged_event_pair : logged_event_map) {
@@ -477,8 +503,8 @@ class EventAggregatorTest : public ::testing::Test {
     }
   }
 
-  std::unique_ptr<LocalAggregateStore> local_aggregate_store_;
-  std::unique_ptr<AggregatedObservationHistory> history_;
+  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<EventAggregator> event_aggregator_;
 
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
@@ -551,12 +577,29 @@ class NoiseFreeUniqueActivesEventAggregatorTest
   void SetUp() { EventAggregatorTestWithProjectContext::SetUp(); }
 };
 
+// Tests that the Read() method of each ConsistentProtoStore is called once
+// during construction of the EventAggregator.
+TEST_F(EventAggregatorTest, ReadProtosFromFiles) {
+  EXPECT_EQ(1, local_aggregate_proto_store_->read_count_);
+  EXPECT_EQ(1, obs_history_proto_store_->read_count_);
+}
+
+// Tests that the BackUp*() methods return a positive status, and checks that
+// the Write() method of a ConsistentProtoStore is called once when its
+// respective BackUp*() method is called.
+TEST_F(EventAggregatorTest, BackUpProtos) {
+  EXPECT_EQ(kOK, BackUpLocalAggregateStore());
+  EXPECT_EQ(kOK, BackUpObservationHistory());
+  EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
+  EXPECT_EQ(1, obs_history_proto_store_->write_count_);
+}
+
 // Tests that an empty LocalAggregateStore is updated with
 // ReportAggregationKeys and AggregationConfigs as expected when
 // EventAggregator::UpdateAggregationConfigs is called.
 TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
   // Check that the LocalAggregateStore is empty.
-  EXPECT_EQ(0u, local_aggregate_store_->aggregates().size());
+  EXPECT_EQ(0u, GetLocalAggregateStore().aggregates().size());
   // Provide |kUniqueActivesMetricDefinitions| to the EventAggregator.
   auto unique_actives_project_context =
       MakeProjectContext(kUniqueActivesMetricDefinitions);
@@ -566,7 +609,7 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
   // now equal to the number of locally aggregated reports in
   // |kUniqueActivesMetricDefinitions|.
   EXPECT_EQ(kUniqueActivesExpectedParams.metric_report_ids.size(),
-            local_aggregate_store_->aggregates().size());
+            GetLocalAggregateStore().aggregates().size());
   // Check that the LocalAggregateStore contains the expected
   // ReportAggregationKey and AggregationConfig for each locally aggregated
   // report in |kUniqueActivesMetricDefinitions|,
@@ -578,11 +621,12 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
         &key);
     auto config = MakeAggregationConfig(*unique_actives_project_context,
                                         metric_report_id);
-    EXPECT_NE(local_aggregate_store_->aggregates().end(),
-              local_aggregate_store_->aggregates().find(key));
+    auto local_aggregate_store = GetLocalAggregateStore();
+    EXPECT_NE(local_aggregate_store.aggregates().end(),
+              local_aggregate_store.aggregates().find(key));
     EXPECT_TRUE(MessageDifferencer::Equals(
         config,
-        local_aggregate_store_->aggregates().at(key).aggregation_config()));
+        local_aggregate_store.aggregates().at(key).aggregation_config()));
   }
 }
 
@@ -606,7 +650,7 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of locally aggregated reports in
   // |kUniqueActivesMetricDefinitions|.
-  EXPECT_EQ(3u, local_aggregate_store_->aggregates().size());
+  EXPECT_EQ(3u, GetLocalAggregateStore().aggregates().size());
 
   // Provide the EventAggregator with
   // |kNoiseFreeUniqueActivesMetricDefinitions|.
@@ -618,7 +662,8 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // now equal to the number of distinct MetricReportIds of locally
   // aggregated reports in |kUniqueActivesMetricDefinitions| and
   // |kNoiseFreeUniqueActivesMetricDefinitions|.
-  EXPECT_EQ(4u, local_aggregate_store_->aggregates().size());
+  auto local_aggregate_store = GetLocalAggregateStore();
+  EXPECT_EQ(4u, local_aggregate_store.aggregates().size());
   // The MetricReportId |kFeaturesActiveMetricReportId| appears in both
   // |kUniqueActivesMetricDefinitions| and
   // |kNoiseFreeUniqueActivesMetricDefinitions|. The associated
@@ -636,17 +681,17 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
                         &key));
   auto unique_actives_config = MakeAggregationConfig(
       *unique_actives_project_context, kFeaturesActiveMetricReportId);
-  EXPECT_NE(local_aggregate_store_->aggregates().end(),
-            local_aggregate_store_->aggregates().find(key));
+  EXPECT_NE(local_aggregate_store.aggregates().end(),
+            local_aggregate_store.aggregates().find(key));
   EXPECT_TRUE(MessageDifferencer::Equals(
       unique_actives_config,
-      local_aggregate_store_->aggregates().at(key).aggregation_config()));
+      local_aggregate_store.aggregates().at(key).aggregation_config()));
   auto noise_free_config =
       MakeAggregationConfig(*noise_free_unique_actives_project_context,
                             kFeaturesActiveMetricReportId);
   EXPECT_FALSE(MessageDifferencer::Equals(
       noise_free_config,
-      local_aggregate_store_->aggregates().at(key).aggregation_config()));
+      local_aggregate_store.aggregates().at(key).aggregation_config()));
 }
 
 // Tests that EventAggregator::LogUniqueActivesEvent returns

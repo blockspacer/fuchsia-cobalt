@@ -37,6 +37,8 @@ class TestConsistentProtoStore : public ConsistentProtoStore {
         fail_delete_primary_(false),
         fail_move_override_to_primary_(false) {}
 
+  ~TestConsistentProtoStore() {}
+
   void FailNextWriteToTmp() { fail_write_tmp_ = true; }
   void FailNextMoveTmpToOverride() { fail_move_tmp_ = true; }
   void FailNextDeletePrimary() { fail_delete_primary_ = true; }

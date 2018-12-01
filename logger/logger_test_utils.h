@@ -16,6 +16,9 @@
 #include "encoder/shipping_manager.h"
 #include "logger/encoder.h"
 #include "logger/local_aggregation.pb.h"
+#include "util/consistent_proto_store.h"
+#include "util/posix_file_system.h"
+#include "util/status.h"
 
 namespace cobalt {
 namespace logger {
@@ -44,6 +47,39 @@ class TestUpdateRecipient
   void NotifyObservationsAdded() override { invocation_count++; }
 
   int invocation_count = 0;
+};
+
+// A mock ConsistentProtoStore. Its Read() and Write() methods simply increment
+// counts of their invocations.
+class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
+ public:
+  explicit MockConsistentProtoStore(std::string filename)
+      : ::cobalt::util::ConsistentProtoStore(
+            filename, std::make_unique<::cobalt::util::PosixFileSystem>()) {
+    read_count_ = 0;
+    write_count_ = 0;
+  }
+
+  ~MockConsistentProtoStore() {}
+
+  ::cobalt::util::Status Write(
+      const google::protobuf::MessageLite& proto) override {
+    write_count_++;
+    return ::cobalt::util::Status::OK;
+  }
+
+  ::cobalt::util::Status Read(google::protobuf::MessageLite* proto) override {
+    read_count_++;
+    return ::cobalt::util::Status::OK;
+  }
+
+  void ResetCounts() {
+    read_count_ = 0;
+    write_count_ = 0;
+  }
+
+  int read_count_;
+  int write_count_;
 };
 
 // A container for information about the set of all locally aggregated

@@ -26,17 +26,19 @@ class ConsistentProtoStore {
   explicit ConsistentProtoStore(std::string filename,
                                 std::unique_ptr<FileSystem> fs);
 
+  virtual ~ConsistentProtoStore() {}
+
   // Writes |proto| to the store, overwriting any previously written proto.
   // Consistency is guaranteed in that if the operation fails, the previously
   // written proto will not have been corrupted and may be read via the Read()
   // method.
-  Status Write(const google::protobuf::MessageLite &proto);
+  virtual Status Write(const google::protobuf::MessageLite &proto);
 
   // Reads the previously written proto into |proto|.
   //
   // A failure either means that no proto has ever been written, or that the
   // data is corrupt (does not represent a valid protocol buffer).
-  Status Read(google::protobuf::MessageLite *proto);
+  virtual Status Read(google::protobuf::MessageLite *proto);
 
  protected:
   virtual Status WriteToTmp(const google::protobuf::MessageLite &proto);

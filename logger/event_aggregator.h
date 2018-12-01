@@ -5,6 +5,7 @@
 #ifndef COBALT_LOGGER_EVENT_AGGREGATOR_H_
 #define COBALT_LOGGER_EVENT_AGGREGATOR_H_
 
+#include <memory>
 #include <string>
 
 #include "./event.pb.h"
@@ -17,6 +18,7 @@
 #include "logger/local_aggregation.pb.h"
 #include "logger/observation_writer.h"
 #include "logger/status.h"
+#include "util/consistent_proto_store.h"
 
 namespace cobalt {
 namespace logger {
@@ -44,12 +46,13 @@ static const size_t kMaxAllowedAggregationWindowSize = 365;
 // the report.
 //
 // TODO(pesk): Write the following worker thread.
-// In the future, a worker thread will do the following on a daily schedule:
+// In the future, a worker thread will do the following on a regular schedule:
 // (1) Call GenerateObservations() with the previous day's day index to generate
 // all Observations for rolling windows ending on that day index, as well as any
 // missing Observations for a specified number of days in the past.
 // (2) Call GarbageCollect() to delete daily aggregates which are not needed to
 // compute aggregates for any windows of interest in the future.
+// (3) Back up the EventAggregator's state to disk at appropriate intervals.
 class EventAggregator {
  public:
   // Constructs an EventAggregator.
@@ -61,15 +64,13 @@ class EventAggregator {
   //
   // encoder: the singleton instance of an Encoder on the system.
   //
-  // observation_writer: the singleton instance of an ObservationWriter on the
-  // system.
+  // local_aggregate_proto_store: A ConsistentProtoStore to be used by the
+  // EventAggregator to store snapshots of its in-memory store of event
+  // aggregates.
   //
-  // local_aggregate_store: a LocalAggregateStore proto message which stores
-  // aggregates of logged Events.
-  //
-  // obs_history: an AggregatedObservationHistory proto message which stores the
-  // latest day index for which an Observation has been generated for each
-  // report, event code, and window size.
+  // obs_history_proto_store: A ConsistentProtoStore to be used by the
+  // EventAggregator to store snapshots of its in-memory history of generated
+  // Observations.
   //
   // backfill_days: the number of past days for which the EventAggregator
   // generates and sends Observations, in addition to a requested day index. See
@@ -78,9 +79,11 @@ class EventAggregator {
   // |kEventAggregatorMaxAllowedBackfillDays| is passed.
   EventAggregator(const Encoder* encoder,
                   const ObservationWriter* observation_writer,
-                  LocalAggregateStore* local_aggregate_store,
-                  AggregatedObservationHistory* obs_history,
+                  util::ConsistentProtoStore* local_aggregate_proto_store,
+                  util::ConsistentProtoStore* obs_history_proto_store,
                   const size_t backfill_days = 0);
+
+  ~EventAggregator() {}
 
   // Updates the EventAggregator's view of the set of locally aggregated report
   // configurations.
@@ -114,8 +117,7 @@ class EventAggregator {
   // aggregates associated with invalid event codes will be garbage-collected
   // together with valid aggregates when EventAggregator::GarbageCollect() is
   // called.
-  Status LogUniqueActivesEvent(uint32_t report_id,
-                               EventRecord* event_record) const;
+  Status LogUniqueActivesEvent(uint32_t report_id, EventRecord* event_record);
 
   // Generates one or more Observations for all of the registered locally
   // aggregated reports known to this EventAggregator, for rolling windows
@@ -146,11 +148,12 @@ class EventAggregator {
   friend class LoggerTest;
   friend class EventAggregatorTest;
 
-  // Sets the number of days of Observations to backfill. Increasing this number
-  // after data collection has begun will result in corrupted Observations
-  // for the number of days equal to the difference between the new value and
-  // the old value.
-  void set_backfill_days(size_t num_days) { backfill_days_ = num_days; }
+  // Write a copy of the LocalAggregateStore to |local_aggregate_proto_store_|.
+  Status BackUpLocalAggregateStore();
+
+  // Write a copy of the AggregatedObservationHistory to
+  // |obs_history_proto_store_|.
+  Status BackUpObservationHistory();
 
   // Returns the most recent day index for which an Observation was generated
   // for a given report, event code, and window size, according to
@@ -173,7 +176,7 @@ class EventAggregator {
   Status GenerateUniqueActivesObservations(
       const MetricRef metric_ref, const std::string& report_key,
       const ReportAggregates& report_aggregates, uint32_t num_event_codes,
-      uint32_t final_day_index) const;
+      uint32_t final_day_index);
 
   // Helper method called by GenerateUniqueActivesObservations() to generate and
   // write a single Observation.
@@ -186,9 +189,11 @@ class EventAggregator {
 
   const Encoder* encoder_;
   const ObservationWriter* observation_writer_;
-  LocalAggregateStore* local_aggregate_store_;
-  AggregatedObservationHistory* obs_history_;
+  LocalAggregateStore local_aggregate_store_;
+  AggregatedObservationHistory obs_history_;
   size_t backfill_days_ = 0;
+  util::ConsistentProtoStore* local_aggregate_proto_store_;
+  util::ConsistentProtoStore* obs_history_proto_store_;
 };
 
 }  // namespace logger

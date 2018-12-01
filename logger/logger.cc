@@ -45,9 +45,7 @@ class EventLogger {
 
  protected:
   const Encoder* encoder() { return logger_->encoder_; }
-  const EventAggregator* event_aggregator() {
-    return logger_->event_aggregator_;
-  }
+  EventAggregator* event_aggregator() { return logger_->event_aggregator_; }
   const ProjectContext* project_context() { return logger_->project_context_; }
   Encoder::Result BadReportType(const MetricDefinition& metric,
                                 const ReportDefinition& report);

@@ -130,6 +130,7 @@ source_set("event_aggregator") {
     "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/util:consistent_proto_store",
     "//third_party/cobalt/util:proto_util",
   ]
 }
