@@ -14,8 +14,11 @@
 
 set(CONFIG_PARSER_BINARY "${CMAKE_CURRENT_BINARY_DIR}/config_parser/config_parser")
 set(CONFIG_VALIDATOR_BINARY "${CMAKE_CURRENT_BINARY_DIR}/validation/validate")
+set(CONFIG_CHANGE_VALIDATOR_BINARY
+  "${CMAKE_CURRENT_BINARY_DIR}/config_change_validator/config_change_validator")
 
 add_subdirectory(config_parser)
+add_subdirectory(config_change_validator)
 add_subdirectory(validation)
 
 # Generate the C++ bindings for the config .proto files.

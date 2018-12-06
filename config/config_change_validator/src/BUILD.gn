@@ -1,0 +1,32 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/go/go_binary.gni")
+import("//build/go/go_library.gni")
+
+go_library("config") {
+  name = "config"
+  source_dir = "$root_gen_dir/go-proto-gen/src/third_party/cobalt/config"
+  non_go_deps = [ "//third_party/cobalt/config:cobalt_config_proto" ]
+}
+
+# This duplicates some source paths, but main needs to be relocated into a
+# package path for our go_build rules.
+go_library("main") {
+  name = "main"
+
+  # sources = ["config_change_validator_main.go"]
+  source_dir = "."
+}
+
+go_binary("bin") {
+  gopackage = "main"
+  output_name = "config_parser"
+
+  deps = [
+    ":config",
+    ":main",
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
+  ]
+}
