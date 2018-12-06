@@ -124,3 +124,53 @@ message IntRangeHistogramReportRow {
   // The count for this bucket.
   int64 bucket_count = 6;
 }
+
+// A row of output for a report of type UNIQUE_N_DAY_ACTIVES.
+//
+// Gives an estimate of the number of devices with a particular system profile
+// which experienced at least one event with a particular event code, during a
+// window of a particular number of days ending on a particular date.
+message UniqueActivesReportRow {
+  // The date of the last day of the aggregation window, as measured on the
+  // device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The label for the event code associated with the events that occurred. If
+  // the event code has not been assigned a label (in the event_codes field of
+  // the MetricDefinition) then this will be a string of the form
+  // "<event-code-42>".
+  string event_code = 3;
+
+  // The size in days of the aggregation window.
+  uint32 window_size = 4;
+
+  // The total count of active devices for the window of size |window_size|
+  // ending on |date|, over all reporting devices with the |system_profile|.
+  // Unless |local_privacy_noise_level| in the Reportdefintion is set to NONE,
+  // this value is an estimate.
+  float active_count = 5;
+
+  // An estimate of the standard error in the value of |active_count|. This will
+  // be zero if |local_privacy_noise_level| in the ReportDefintion is NONE.
+  // Multiply this value by z_{alpha/2} to obtain the radius of an approximate
+  // 100(1 - alpha)% confidence interval. For example an approximate 95%
+  // confidence interval for the count is given by
+  // (count_estimate - 1.96*std_error, count_estimate + 1.96 * std_error)
+  // because 1.96 ~= z_{.025} meaning that P(Z > 1.96) ~= 0.025 where
+  // Z ~ Normal(0, 1).
+  float std_err = 6;
+
+  // The total number of Observations received for the window of size
+  // |window_size| ending on |date|, over all reporting devices with the
+  // |system_profile|. This is equal to the total number of Fuchsia devices
+  // with |system_profile| which were awake at a time that locally aggregated
+  // Observations for this ReportDefinition and this aggregation window were
+  // created and and uploaded, whether or not |event_code| occurred on the device
+  // during the window.
+  int64 sample_size = 7;
+}

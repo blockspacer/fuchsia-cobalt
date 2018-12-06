@@ -287,45 +287,8 @@ message ReportDefinition {
     //   - local_privacy_noise_level # Gives Basic RAPPOR parameters.
     //   - window_size # A list of window sizes in days.
     //
-    // Report fields:
-    //   - date # The date on which the aggregated Observation was created, as
-    //            measured on the device. This is the last date included in the
-    //            window for this report.
-    //   - system_profile # One or more fields from the SystemProfile message
-    //                      type (cobalt/observation.proto) describing the
-    //                      system on which the events occurred.
-    //   - window_size # A WindowSize enum (cobalt/config/window_size.proto)
-    //                   specifying the time window over which to report
-    //                   activity.
-    //   - samples # The number of Observations received for the window of
-    //               this window_size ending on this date, for this
-    //               system_profile. This is equal to the number of Fuchsia
-    //               devices with that system_profile which were awake at the
-    //               time that locally aggregated Observations for this Report
-    //               Definition were created and uploaded, whether or not this
-    //               event_code occurred on the device during the window.
-    //   - event_code # The name of the event type.
-    //   - unique_actives # The number of unique devices with this
-    //                      system_profile on which this event_code occurred at
-    //                      least once during the window of size window_size
-    //                      ending on this date.
-    //                      Unless local_privacy_noise_level is set to NONE,
-    //                      this value is an estimate.
-    //   - std_err # The standard error in the value of the unique_actives
-    //               estimate.
-    //
-    // Example report:
-    //
-    // Date,SystemProfile,WindowSize,Samples,EventCode,UniqueActives,StdErr
-    // -------------------------------------------------------------------------
-    // 2018-7-25, <sys-prof-1>, MONTHLY_WINDOW, 54321, "Event 1", 4321, 1.3
-    // 2018-7-25, <sys-prof-1>, MONTHLY_WINDOW, 54321, "Event 2", 3210, 1.3
-    // 2018-7-25, <sys-prof-1>, WEEKLY_WINDOW,  65432, "Event 1", 5432, 1.1
-    // 2018-7-25, <sys-prof-1>, WEEKLY_WINDOW,  65432, "Event 2", 2109, 1.1
-    // 2018-7-25, <sys-prof-2>, MONTHLY_WINDOW, 76543, "Event 1", 5432, 1.0
-    // 2018-7-25, <sys-prof-2>, MONTHLY_WINDOW, 76543, "Event 2", 4567, 1.0
-    // 2018-7-25, <sys-prof-2>, WEEKLY_WINDOW,  87654, "Event 1", 7654, 0.9
-    // 2018-7-25, <sys-prof-2>, WEEKLY_WINDOW,  87654, "Event 2", 9876, 0.9
+    // Report row type: UniqueActivesReportRow.
+    // (see report_row.proto)
     UNIQUE_N_DAY_ACTIVES = 8;
 
     /////////////////////// Custom Raw Dump Report /////////////////////////////
