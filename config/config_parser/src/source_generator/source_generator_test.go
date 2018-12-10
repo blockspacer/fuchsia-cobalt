@@ -110,6 +110,7 @@ report_configs:
 const v1ProjectConfigYaml = `
 metric_definitions:
 - metric_name: the_metric_name
+  id: 100
   time_zone_policy: UTC
   reports:
   - report_name: the_report
@@ -117,6 +118,7 @@ metric_definitions:
   - report_name: the_other_report
     report_type: STRING_COUNTS_WITH_THRESHOLD
 - metric_name: the_other_metric_name
+  id: 200
   time_zone_policy: LOCAL
   metric_type: EVENT_OCCURRED
   event_codes:
@@ -198,7 +200,7 @@ func TestPrintConfig(t *testing.T) {
 		goldenLines := strings.Split(goldenFile, "\n")
 		generatedLines := strings.Split(generatedConfig, "\n")
 		if diff := cmp.Diff(goldenLines, generatedLines); diff != "" {
-			genFile := "/tmp/" + tt.goldenFile + ".gen"
+			genFile := "/tmp/" + tt.goldenFile
 			ioutil.WriteFile(genFile, configBytes, 0644)
 			t.Errorf("Golden file %s dosen't match the generated config (%s). Diff: %s", tt.goldenFile, genFile, diff)
 		}

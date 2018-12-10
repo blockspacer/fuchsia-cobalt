@@ -4,9 +4,9 @@
 
 // Metric ID Constants
 // the_metric_name
-const uint32_t kTheMetricNameMetricId = 238615413;
+const uint32_t kTheMetricNameMetricId = 100;
 // the_other_metric_name
-const uint32_t kTheOtherMetricNameMetricId = 2739731282;
+const uint32_t kTheOtherMetricNameMetricId = 200;
 
 // Enum for the_other_metric_name (EventCode)
 enum class TheOtherMetricNameEventCode {
@@ -19,4 +19,4 @@ const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnotherEvent = The
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
 // The base64 encoding of the bytes of a serialized CobaltConfig proto message.
-const char kConfig[] = "KtsBCghjdXN0b21lchAKGswBCgdwcm9qZWN0EAUaTQoPdGhlX21ldHJpY19uYW1lEAoYBSD19uNxYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUg0vazmgooATILCAASB0FuRXZlbnQyEAgBEgxBbm90aGVyRXZlbnQyEQgCEg1BIHRoaXJkIGV2ZW50OMgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgH";
+const char kConfig[] = "KtUBCghjdXN0b21lchAKGsYBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGm0KFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATILCAASB0FuRXZlbnQyEAgBEgxBbm90aGVyRXZlbnQyEQgCEg1BIHRoaXJkIGV2ZW50OMgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgH";

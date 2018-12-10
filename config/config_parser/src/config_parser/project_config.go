@@ -77,9 +77,8 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 	for _, e := range c.ProjectConfig.MetricDefinitions {
 		e.CustomerId = c.CustomerId
 		e.ProjectId = c.ProjectId
-		// We should generate IDs
 		if e.Id == 0 {
-			e.Id = IdFromName(e.MetricName)
+			return fmt.Errorf("Metric named '%v' does not have a metric id specified.", e.MetricName)
 		}
 		for _, r := range e.Reports {
 			r.Id = IdFromName(r.ReportName)

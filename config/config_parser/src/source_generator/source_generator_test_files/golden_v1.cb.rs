@@ -2,9 +2,9 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 // Metric ID Constants
 // the_metric_name
-pub const THE_METRIC_NAME_METRIC_ID = 238615413;
+pub const THE_METRIC_NAME_METRIC_ID = 100;
 // the_other_metric_name
-pub const THE_OTHER_METRIC_NAME_METRIC_ID = 2739731282;
+pub const THE_OTHER_METRIC_NAME_METRIC_ID = 200;
 
 // Enum for the_other_metric_name (EventCode)
 pub enum TheOtherMetricNameEventCode {
@@ -14,4 +14,4 @@ pub enum TheOtherMetricNameEventCode {
 }
 
 // The base64 encoding of the bytes of a serialized CobaltConfig proto message.
-pub const CONFIG: &str = "KtsBCghjdXN0b21lchAKGswBCgdwcm9qZWN0EAUaTQoPdGhlX21ldHJpY19uYW1lEAoYBSD19uNxYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUg0vazmgooATILCAASB0FuRXZlbnQyEAgBEgxBbm90aGVyRXZlbnQyEQgCEg1BIHRoaXJkIGV2ZW50OMgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgH";
+pub const CONFIG: &str = "KtUBCghjdXN0b21lchAKGsYBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGm0KFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATILCAASB0FuRXZlbnQyEAgBEgxBbm90aGVyRXZlbnQyEQgCEg1BIHRoaXJkIGV2ZW50OMgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgH";

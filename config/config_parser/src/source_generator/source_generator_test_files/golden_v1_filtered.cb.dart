@@ -3,10 +3,10 @@
 // Metric ID Constants
 // the_metric_name
 // ignore: constant_identifier_names
-const int theMetricNameMetricId = 238615413;
+const int theMetricNameMetricId = 100;
 // the_other_metric_name
 // ignore: constant_identifier_names
-const int theOtherMetricNameMetricId = 2739731282;
+const int theOtherMetricNameMetricId = 200;
 
 // Enum for the_other_metric_name (EventCode)
 class TheOtherMetricNameEventCode {
@@ -19,4 +19,4 @@ const int TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode
 const int TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
 // The base64 encoding of the bytes of a serialized CobaltConfig proto message.
-const String config = 'KqkBCghjdXN0b21lchAKGpoBCgdwcm9qZWN0EAUaTQoPdGhlX21ldHJpY19uYW1lEAoYBSD19uNxYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGj4KFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUg0vazmgooATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBw==';
+const String config = 'KqMBCghjdXN0b21lchAKGpQBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBw==';

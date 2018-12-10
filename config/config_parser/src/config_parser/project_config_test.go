@@ -114,6 +114,7 @@ func TestParseProjectConfigV1Project(t *testing.T) {
 	y := `
 metric_definitions:
 - metric_name: the_metric_name
+  id: 1
   time_zone_policy: UTC
   reports:
   - report_name: the_report
@@ -121,6 +122,7 @@ metric_definitions:
   - report_name: the_other_report
     report_type: STRING_COUNTS_WITH_THRESHOLD
 - metric_name: the_other_metric_name
+  id: 2
   time_zone_policy: LOCAL
   reports:
   - report_name: the_report
@@ -142,7 +144,7 @@ metric_definitions:
 				CustomerId:     1,
 				ProjectId:      10,
 				MetricName:     "the_metric_name",
-				Id:             IdFromName("the_metric_name"),
+				Id:             1,
 				TimeZonePolicy: config.MetricDefinition_UTC,
 				Reports: []*config.ReportDefinition{
 					&config.ReportDefinition{
@@ -161,7 +163,7 @@ metric_definitions:
 				CustomerId:     1,
 				ProjectId:      10,
 				MetricName:     "the_other_metric_name",
-				Id:             IdFromName("the_other_metric_name"),
+				Id:             2,
 				TimeZonePolicy: config.MetricDefinition_LOCAL,
 				Reports: []*config.ReportDefinition{
 					&config.ReportDefinition{
