@@ -280,7 +280,7 @@ Status Logger::LogEventCount(uint32_t metric_id, uint32_t event_code,
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEventCount);
   EventRecord event_record;
   auto* count_event = event_record.event->mutable_count_event();
-  count_event->set_event_code(event_code);
+  count_event->add_event_code(event_code);
   count_event->set_component(component);
   count_event->set_period_duration_micros(period_duration_micros);
   count_event->set_count(count);
@@ -295,7 +295,7 @@ Status Logger::LogElapsedTime(uint32_t metric_id, uint32_t event_code,
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogElapsedTime);
   EventRecord event_record;
   auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
-  elapsed_time_event->set_event_code(event_code);
+  elapsed_time_event->add_event_code(event_code);
   elapsed_time_event->set_component(component);
   elapsed_time_event->set_elapsed_micros(elapsed_micros);
   auto event_logger = std::make_unique<ElapsedTimeEventLogger>(this);
@@ -308,7 +308,7 @@ Status Logger::LogFrameRate(uint32_t metric_id, uint32_t event_code,
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogFrameRate);
   EventRecord event_record;
   auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
-  frame_rate_event->set_event_code(event_code);
+  frame_rate_event->add_event_code(event_code);
   frame_rate_event->set_component(component);
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
   auto event_logger = std::make_unique<FrameRateEventLogger>(this);
@@ -321,7 +321,7 @@ Status Logger::LogMemoryUsage(uint32_t metric_id, uint32_t event_code,
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogMemoryUsage);
   EventRecord event_record;
   auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
-  memory_usage_event->set_event_code(event_code);
+  memory_usage_event->add_event_code(event_code);
   memory_usage_event->set_component(component);
   memory_usage_event->set_bytes(bytes);
   auto event_logger = std::make_unique<MemoryUsageEventLogger>(this);
@@ -335,7 +335,7 @@ Status Logger::LogIntHistogram(uint32_t metric_id, uint32_t event_code,
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogIntHistogram);
   EventRecord event_record;
   auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
-  int_histogram_event->set_event_code(event_code);
+  int_histogram_event->add_event_code(event_code);
   int_histogram_event->set_component(component);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
   auto event_logger = std::make_unique<IntHistogramEventLogger>(this);
@@ -373,30 +373,49 @@ std::string EventLogger::TraceEvent(Event* event) {
   } else if (event->has_count_event()) {
     auto e = event->count_event();
     ss << "CountEvent:" << std::endl;
-    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+    ss << "EventCodes:";
+    for (const auto& code : e.event_code()) {
+      ss << " " << code;
+    }
+    ss << ", Component: " << e.component()
        << ", PeriodDurationMicros: " << e.period_duration_micros()
        << ", Count: " << e.count() << std::endl;
   } else if (event->has_elapsed_time_event()) {
     auto e = event->elapsed_time_event();
     ss << "ElapsedTimeEvent:" << std::endl;
-    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+    ss << "EventCodes:";
+    for (const auto& code : e.event_code()) {
+      ss << " " << code;
+    }
+    ss << ", Component: " << e.component()
        << ", ElapsedMicros: " << e.elapsed_micros() << std::endl;
   } else if (event->has_frame_rate_event()) {
     auto e = event->frame_rate_event();
     ss << "FrameRateEvent:" << std::endl;
-    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+    ss << "EventCodes:";
+    for (const auto& code : e.event_code()) {
+      ss << " " << code;
+    }
+    ss << ", Component: " << e.component()
        << ", FramesPer1000Seconds: " << e.frames_per_1000_seconds()
        << std::endl;
   } else if (event->has_memory_usage_event()) {
     auto e = event->memory_usage_event();
     ss << "MemoryUsageEvent:" << std::endl;
-    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
-       << ", Bytes: " << e.bytes() << std::endl;
+    ss << "EventCodes:";
+    for (const auto& code : e.event_code()) {
+      ss << " " << code;
+    }
+    ss << ", Component: " << e.component() << ", Bytes: " << e.bytes()
+       << std::endl;
   } else if (event->has_int_histogram_event()) {
     auto e = event->int_histogram_event();
     ss << "IntHistogramEvent:" << std::endl;
-    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
-       << std::endl;
+    ss << "EventCodes:";
+    for (const auto& code : e.event_code()) {
+      ss << " " << code;
+    }
+    ss << ", Component: " << e.component() << std::endl;
     for (const auto& bucket : e.buckets()) {
       ss << "| " << bucket.index() << " = " << bucket.count() << std::endl;
     }
@@ -587,6 +606,7 @@ Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
 
 /////////////// OccurrenceEventLogger method implementations ///////////////////
 
+// TODO(zmbush): Validate dimensions (for all subclasses of EventLogger).
 Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_occurrence_event());
   const auto& occurrence_event = event_record.event->occurrence_event();
@@ -666,7 +686,8 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT: {
       return encoder()->EncodeIntegerEventObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          count_event.event_code(), count_event.component(),
+          // TODO(zmbush): Pass all event_codes, not just the first.
+          count_event.event_code(0), count_event.component(),
           count_event.count());
     }
 
@@ -703,7 +724,8 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
 
 uint32_t ElapsedTimeEventLogger::EventCode(const Event& event) {
   CHECK(event.has_elapsed_time_event());
-  return event.elapsed_time_event().event_code();
+  // TODO(zmbush): Pass all event_codes, not just the first.
+  return event.elapsed_time_event().event_code(0);
 }
 
 std::string ElapsedTimeEventLogger::Component(const Event& event) {
@@ -720,7 +742,8 @@ int64_t ElapsedTimeEventLogger::IntValue(const Event& event) {
 
 uint32_t FrameRateEventLogger::EventCode(const Event& event) {
   CHECK(event.has_frame_rate_event());
-  return event.frame_rate_event().event_code();
+  // TODO(zmbush): Pass all event_codes, not just the first.
+  return event.frame_rate_event().event_code(0);
 }
 
 std::string FrameRateEventLogger::Component(const Event& event) {
@@ -736,7 +759,8 @@ int64_t FrameRateEventLogger::IntValue(const Event& event) {
 ////////////// MemoryUsageEventLogger method implementations ///////////////////
 uint32_t MemoryUsageEventLogger::EventCode(const Event& event) {
   CHECK(event.has_memory_usage_event());
-  return event.memory_usage_event().event_code();
+  // TODO(zmbush): Pass all event_codes, not just the first.
+  return event.memory_usage_event().event_code(0);
 }
 
 std::string MemoryUsageEventLogger::Component(const Event& event) {
@@ -821,7 +845,8 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
       }
       return encoder()->EncodeHistogramObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          int_histogram_event->event_code(), int_histogram_event->component(),
+          // TODO(zmbush): Pass all event_codes, not just the first.
+          int_histogram_event->event_code(0), int_histogram_event->component(),
           std::move(histogram));
     }
 

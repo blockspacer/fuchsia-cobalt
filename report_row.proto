@@ -60,11 +60,12 @@ message EventComponentOccurrenceCountReportRow {
   // |system_profile_field| entry in the ReportDefinition for this report.
   SystemProfile system_profile = 2;
 
-  // The label for the event code associated with the events that occurred. If
-  // the event code has not been assigned a label (in the event_codes field of
-  // the MetricDefinition) then this will be a string of the form
-  // "<event-code-42>".
-  string event_code = 3;
+  // The labels for the event codes associated with the events that occurred.
+  // There is one label for each metric_dimension in the metric definition. If
+  // an event code has not been assigned a label this will be a string of the
+  // form "<event-code-0-42>" where 0 is the dimension index, and 42 is the
+  // event code.
+  repeated string event_code = 3;
 
   // The component string associated with the events that occurred. This string
   // must have been pre-registered in the ReportDefinition (using the
@@ -101,11 +102,12 @@ message IntRangeHistogramReportRow {
   // |system_profile_field| entry in the ReportDefinition for this report.
   SystemProfile system_profile = 2;
 
-  // The label for the event code associated with the events that occurred. If
-  // the event code has not been assigned a label (in the event_codes field of
-  // the MetricDefinition) then this will be a string of the form
-  // "<event-code-42>".
-  string event_code = 3;
+  // The labels for the event codes associated with the events that occurred.
+  // There is one label for each metric_dimension in the metric definition. If
+  // an event code has not been assigned a label this will be a string of the
+  // form "<event-code-0-42>" where 0 is the dimension index, and 42 is the
+  // event code.
+  repeated string event_code = 3;
 
   // The component string associated with the events that occurred. This string
   // must have been pre-registered in the ReportDefinition (using the
@@ -140,11 +142,12 @@ message UniqueActivesReportRow {
   // |system_profile_field| entry in the ReportDefinition for this report.
   SystemProfile system_profile = 2;
 
-  // The label for the event code associated with the events that occurred. If
-  // the event code has not been assigned a label (in the event_codes field of
-  // the MetricDefinition) then this will be a string of the form
-  // "<event-code-42>".
-  string event_code = 3;
+  // The labels for the event codes associated with the events that occurred.
+  // There is one label for each metric_dimension in the metric definition. If
+  // an event code has not been assigned a label this will be a string of the
+  // form "<event-code-0-42>" where 0 is the dimension index, and 42 is the
+  // event code.
+  repeated string event_code = 3;
 
   // The size in days of the aggregation window.
   uint32 window_size = 4;
@@ -170,8 +173,8 @@ message UniqueActivesReportRow {
   // |system_profile|. This is equal to the total number of Fuchsia devices
   // with |system_profile| which were awake at a time that locally aggregated
   // Observations for this ReportDefinition and this aggregation window were
-  // created and and uploaded, whether or not |event_code| occurred on the device
-  // during the window.
+  // created and and uploaded, whether or not |event_code| occurred on the
+  // device during the window.
   int64 sample_size = 7;
 }
 

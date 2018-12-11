@@ -31,7 +31,7 @@ option go_package = "config";
 //
 // A MetricDefinition is used to define a Metric.
 //
-// Next ID: 16
+// Next ID: 17
 message MetricDefinition {
   // Unique name for this Metric within its owning project.
   // The name must obey the syntax of a C variable name and must have length
@@ -60,10 +60,14 @@ message MetricDefinition {
     // Records that an event has occurred.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - uint32 event_code # The event_code for the event that occurred.
     //
     // MetricDefinition fields:
     // - event_codes # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes. (For metrics of type EVENT_OCCURRED there
+    //                       must be exactly one).
     // - max_num_event_codes # Upper bound on future growth of event_codes
     //
     // Compatible report types:
@@ -73,13 +77,19 @@ message MetricDefinition {
     // Records that an event occurred a number of times.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - repeated uint32 event_code # The event codes for the event that
+    //                                occurred. There must be one event code
+    //                                given for each dimension specified in the
+    //                                metric definition.
     // - string component # The associated system component
     // - int64 period_duration_micros # Time over which the count was taken
     // - uint32 count # The number of times the event occurred.
     //
     // MetricDefinition fields:
     // - event_codes  # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes.
     //
     // Compatible report types:
     // - EVENT_COMPONENT_OCCURRENCE_COUNT
@@ -88,12 +98,18 @@ message MetricDefinition {
     // Records an elapsed time.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - repeated uint32 event_code # The event codes for the event that
+    //                                occurred. There must be one event code
+    //                                given for each dimension specified in the
+    //                                metric definition.
     // - string component # The associated system component
     // - int64 elapsed_micros # The elapsed time in microseconds.
     //
     // MetricDefinition fields:
     // - event_codes # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes.
     //
     // Compatible report types:
     // - NUMERIC_AGGREGATION
@@ -104,12 +120,18 @@ message MetricDefinition {
     // Records a frame-rate.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - repeated uint32 event_code # The event codes for the event that
+    //                                occurred. There must be one event code
+    //                                given for each dimension specified in the
+    //                                metric definition.
     // - string component # The associated system component
     // - int32 frame_rate # round(frames-per-second * 1000)
     //
     // MetricDefinition fields:
     // - event_codes  # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes.
     //
     // Compatible report types:
     // - NUMERIC_AGGREGATION
@@ -120,12 +142,18 @@ message MetricDefinition {
     // Records a memory-usage.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - repeated uint32 event_code # The event codes for the event that
+    //                                occurred. There must be one event code
+    //                                given for each dimension specified in the
+    //                                metric definition.
     // - string component # The associated system component
     // - int64 bytes # Memory usage in bytes.
     //
     // MetricDefinition fields:
     // - event_codes  # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes.
     //
     // Compatible report types:
     // - NUMERIC_AGGREGATION
@@ -143,13 +171,19 @@ message MetricDefinition {
     // *in-process*, prior to submitting the data to Cobalt.
     //
     // Event fields:
-    // - uint32 event_code # The index of the event type that occurred.
+    // - repeated uint32 event_code # The event codes for the event that
+    //                                occurred. There must be one event code
+    //                                given for each dimension specified in the
+    //                                metric definition.
     // - string component # The associated system component
     // - vector<HistogramBucket> histogram # The histogram being logged.
     //
     // MetricDefinition fields:
     // - int_buckets # The definition of the buckets
     // - event_codes  # Enumerated list of all possible event types
+    // - metric_dimensions # Extra user-defined dimensions for this metric. Each
+    //                       dimension consists of an enumerated set of event
+    //                       codes.
     //
     // Compatible report types:
     // - INT_RANGE_HISTOGRAM
@@ -192,6 +226,41 @@ message MetricDefinition {
 
   MetricType metric_type = 5;
 
+  // A container for enumerated sets of event codes.
+  message MetricDimension {
+    string dimension = 1;
+
+    // The enumerated set of event codes for this dimension.
+    //
+    // The keys are the numeric codes and the values are the
+    // human-readable labels for the codes. It is OK to add new elements to this
+    // map or to change the spelling of labels after data collection has
+    // started. It is not OK to change the meaning of any of the codes.
+    map<uint32, string> event_codes = 2
+        [(cobalt_options).hide_on_client = true];
+
+    // max_event_code is the maximal value for any event in this dimension.
+    // Subject to the following rules:
+    //
+    // 1. If you specify max_event_code, you cannot use a value greater than
+    //    that.
+    // 2. If you do not specify max_event_code, you can only use one of the
+    //    explicitly registered values (event_codes).
+    // 3. For the purposes of validation, each dimension is assigned a number
+    //    which is equal to max_event_code+1 if max_event_code is set, or else
+    //    equal to the number of registered values (+1 if there is no zero
+    //    value). The product of all of these values must not exceed 1024.
+    // 4. Adding, removing, or changing max_event_code is allowed so long as the
+    //    above rules are not violated.
+    // 5. For metrics of the type EVENT_OCCURRED, there may be only 1 dimension.
+    uint32 max_event_code = 3;
+  }
+
+  // A list of MetricDimensions.
+  //
+  // This field is used in most Metric types.
+  repeated MetricDimension metric_dimensions = 16;
+
   // The enumerated set of event codes.
   //
   // This field is used in most Metric types.
@@ -200,7 +269,8 @@ message MetricDefinition {
   // for the codes. It is OK to add new elements to this map or to change the
   // spelling of labels after data collection has started. It is not OK to
   // change the meaning of any of the codes.
-  map<uint32, string> event_codes = 6 [(cobalt_options).hide_on_client = true];
+  map<uint32, string> event_codes = 6
+      [(cobalt_options).hide_on_client = true, deprecated = true];
 
   // Only needed with Metrics of type EVENT_OCCURRED.
   // While additional event_codes may be added after data collection has begun,

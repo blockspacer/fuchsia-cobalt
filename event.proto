@@ -39,14 +39,15 @@ message Event {
 
 // Records that an event has occurred.
 message OccurrenceEvent {
-  // The index of the event type that occurred.
+  // The event code for the event that occurred.
   uint32 event_code = 1;
 }
 
 // Records that an event occurred a number of times.
 message CountEvent {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The associated system component
   string component = 2;
   // Time over which the count was taken, in microseconds.
@@ -57,8 +58,9 @@ message CountEvent {
 
 // Records that an event occurred a number of times.
 message ElapsedTimeEvent {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The associated system component
   string component = 2;
   // The elapsed time in microseconds.
@@ -67,8 +69,9 @@ message ElapsedTimeEvent {
 
 // Records a frame-rate.
 message FrameRateEvent {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The associated system component
   string component = 2;
   // round(frames-per-second * 1000)
@@ -77,8 +80,9 @@ message FrameRateEvent {
 
 // Records a memory-usage.
 message MemoryUsageEvent {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The associated system component
   string component = 2;
   // Memory usage in bytes.
@@ -90,8 +94,9 @@ message MemoryUsageEvent {
 // numerical values of the buckets is specified in the |int_buckets|
 // field of the MetricDefinition.
 message IntHistogramEvent {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The associated system component
   string component = 2;
 

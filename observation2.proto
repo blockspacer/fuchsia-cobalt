@@ -85,8 +85,9 @@ message Observation2 {
 //     NUMERIC_PERF_RAW_DUMP. In this case the Observation again is
 //     immediate. The |value| field contains the number of bytes.
 message IntegerEventObservation {
-  // The index of the event type that occurred.
-  uint32 event_code = 1;
+  // The event codes for each of the metric_dimensions of this observation.
+  // Multiple event codes are packed together into the bits of this value.
+  uint64 event_code = 1;
 
   // A hash of the component name. If component_name is empty then this field
   // will be empty. Otherwise this field will contain the 32-byte SHA256
@@ -116,8 +117,9 @@ message HistogramBucket {
 // it is generated directly from a single INT_HISTOGRAM Event as soon as
 // the Event is logged.
 message HistogramObservation {
-  // The index of the event that occurred.
-  uint32 event_code = 1;
+  // The event codes for each of the metric_dimensions of this observation.
+  // Multiple event codes are packed together into the bits of this value.
+  uint64 event_code = 1;
 
   // A hash of the component name. If component_name is empty then this field
   // will be empty. Otherwise this field will contain the 32-byte SHA256
@@ -147,8 +149,9 @@ message UniqueActivesObservation {
   BasicRapporObservation basic_rappor_obs = 1;
   // The size in days of the rolling window associated with this Observation.
   uint32 window_size = 2;
-  // The event code associated with this Observation.
-  uint32 event_code = 3;
+  // The event codes for each of the metric_dimensions of this observation.
+  // Multiple event codes are packed together into the bits of this value.
+  uint64 event_code = 3;
 };
 
 // Observations of type PerDeviceCountObservation are used when a
