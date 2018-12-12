@@ -14,5 +14,5 @@ message CobaltOptions {
 }
 
 extend google.protobuf.FieldOptions {
-  CobaltOptions cobalt_options = 50000;
+  CobaltOptions cobalt_options = 225077165;
 }
