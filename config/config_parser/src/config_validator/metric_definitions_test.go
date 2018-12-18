@@ -150,6 +150,23 @@ func TestValidatePartsSetOnlyForCustom(t *testing.T) {
 	m.Parts = map[string]*config.MetricPart{"hello": nil}
 	m.MetricType = config.MetricDefinition_CUSTOM
 	m.EventCodes = map[uint32]string{}
+	if err := validateMetricDefinition(m); err != nil {
+		t.Errorf("Rejected valid CUSTOM metric definition: %v", err)
+	}
+	for _, mt := range metricTypesExcept(config.MetricDefinition_CUSTOM) {
+		m.MetricType = mt
+		if err := validateMetricDefinition(m); err == nil {
+			t.Errorf("Accepted metric definition with type %s with parts set.", mt)
+		}
+	}
+}
+
+// Test that parts can only be set if the metric type is CUSTOM.
+func TestValidateProtoSetOnlyForCustom(t *testing.T) {
+	m := makeValidMetric()
+	m.ProtoName = "$team_name.test.ProtoName"
+	m.MetricType = config.MetricDefinition_CUSTOM
+	m.EventCodes = map[uint32]string{}
 
 	if err := validateMetricDefinition(m); err != nil {
 		t.Errorf("Rejected valid CUSTOM metric definition: %v", err)
@@ -158,7 +175,7 @@ func TestValidatePartsSetOnlyForCustom(t *testing.T) {
 	for _, mt := range metricTypesExcept(config.MetricDefinition_CUSTOM) {
 		m.MetricType = mt
 		if err := validateMetricDefinition(m); err == nil {
-			t.Errorf("Accepted metric definition with type %s with parts set.", mt)
+			t.Errorf("Accepted metric definition with type %s with proto_name set.", mt)
 		}
 	}
 }
@@ -288,9 +305,18 @@ func TestValidateStringUsedEventCodesSet(t *testing.T) {
 	}
 }
 
-func TestValidateCustomEventCodesSet(t *testing.T) {
+func TestValidateCustomEventCodesSetOld(t *testing.T) {
 	m := makeValidMetric()
 	m.Parts = map[string]*config.MetricPart{"hello": nil}
+	m.EventCodes = map[uint32]string{1: "hello"}
+	if err := validateCustom(m); err == nil {
+		t.Error("Accepted CUSTOM metric with event_codes set.")
+	}
+}
+
+func TestValidateCustomEventCodesSet(t *testing.T) {
+	m := makeValidMetric()
+	m.ProtoName = "test.ProtoName"
 	m.EventCodes = map[uint32]string{1: "hello"}
 
 	if err := validateCustom(m); err == nil {
@@ -302,7 +328,6 @@ func TestValidateCustomNoParts(t *testing.T) {
 	m := makeValidMetric()
 	m.EventCodes = map[uint32]string{}
 	m.Parts = map[string]*config.MetricPart{}
-
 	if err := validateCustom(m); err == nil {
 		t.Error("Accepted CUSTOM metric with no parts.")
 	}
@@ -312,8 +337,26 @@ func TestValidateCustomInvalidPartName(t *testing.T) {
 	m := makeValidMetric()
 	m.EventCodes = map[uint32]string{}
 	m.Parts = map[string]*config.MetricPart{"_invalid_name": nil}
-
 	if err := validateCustom(m); err == nil {
 		t.Error("Accepted CUSTOM metric with invalid part name.")
+	}
+}
+
+func TestValidateCustomNoProtoName(t *testing.T) {
+	m := makeValidMetric()
+	m.Parts = map[string]*config.MetricPart{}
+
+	if err := validateCustom(m); err == nil {
+		t.Error("Accepted CUSTOM metric with no proto_name.")
+	}
+}
+
+func TestValidateCustomInvalidProtoName(t *testing.T) {
+	m := makeValidMetric()
+	m.EventCodes = map[uint32]string{}
+	m.ProtoName = "_invalid.ProtoName"
+
+	if err := validateCustom(m); err == nil {
+		t.Error("Accepted CUSTOM metric with invalid proto_name.")
 	}
 }

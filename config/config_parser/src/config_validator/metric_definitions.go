@@ -22,6 +22,11 @@ const dateFormat = "2006/01/02"
 // as a C variable name.
 var validNameRegexp = regexp.MustCompile("^[a-zA-Z][_a-zA-Z0-9]{1,65}$")
 
+// Valid proto names are 1-64 characters long. They have the same syntactic
+// requirements as a C variable name with the exceptions that they can include
+// '.' for package names and '$' for '$team_name'.
+var validProtoNameRegexp = regexp.MustCompile("^[$a-zA-Z][_.$a-zA-Z0-9]{1,64}[a-zA-Z0-9]$")
+
 // Validate a list of MetricDefinitions.
 func validateConfiguredMetricDefinitions(metrics []*config.MetricDefinition) (err error) {
 	metricIds := map[uint32]int{}
@@ -69,8 +74,13 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 		return fmt.Errorf("Metric %s has int_buckets set. int_buckets can only be set for metrics for metric type INT_HISTOGRAM.", m.MetricName)
 	}
 
+	// TODO(ninai): Remove when we have migrated metrics from using parts.
 	if len(m.Parts) > 0 && m.MetricType != config.MetricDefinition_CUSTOM {
 		return fmt.Errorf("Metric %s has parts set. parts can only be set for metrics for metric type CUSTOM.", m.MetricName)
+	}
+
+	if m.ProtoName != "" && m.MetricType != config.MetricDefinition_CUSTOM {
+		return fmt.Errorf("Metric %s has proto_name set. proto_name can only be set for metrics for metric type CUSTOM.", m.MetricName)
 	}
 
 	if err := validateMetricDefinitionForType(m); err != nil {
@@ -185,21 +195,39 @@ func validateStringUsed(m config.MetricDefinition) error {
 	return nil
 }
 
-func validateCustom(m config.MetricDefinition) error {
+// TODO(ninai): remove this function when Cobalt 1.0 is done.
+func validateCustomOld(m config.MetricDefinition) error {
 	if len(m.EventCodes) > 0 {
 		return fmt.Errorf("event_codes must not be set for metrics of type CUSTOM")
 	}
-
 	if len(m.Parts) == 0 {
 		return fmt.Errorf("No parts specified for metric of type CUSTOM.")
 	}
-
 	for n := range m.Parts {
 		if !validNameRegexp.MatchString(n) {
 			return fmt.Errorf("Invalid part name '%s'. Part names must match the regular expression '%v'", n, validNameRegexp)
 		}
-
 		// TODO(azani): Validate the MetricPart itself.
 	}
+	return nil
+}
+
+func validateCustom(m config.MetricDefinition) error {
+	if err := validateCustomOld(m); err == nil {
+		return nil
+	}
+
+	if len(m.EventCodes) > 0 {
+		return fmt.Errorf("event_types must not be set for metrics of type CUSTOM")
+	}
+
+	if m.ProtoName == "" {
+		return fmt.Errorf("Missing proto_name. Proto names are required for metrics of type CUSTOM.")
+	}
+
+	if !validProtoNameRegexp.MatchString(m.ProtoName) {
+		return fmt.Errorf("Invalid proto_name. Proto names must match the regular expression '%v'.", validProtoNameRegexp)
+	}
+
 	return nil
 }

@@ -83,6 +83,7 @@ func validateReportDefinition(r config.ReportDefinition) error {
 	if r.Id == 0 {
 		return fmt.Errorf("Report hashes to a zero report id. This is invalid. Please change the report name.")
 	}
+
 	return nil
 }
 
