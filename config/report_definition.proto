@@ -400,6 +400,10 @@ message ReportDefinition {
   // WindowSize specified.
   repeated WindowSize window_size = 11;
 
+  // This field is used only with CUSTOM_RAW_DUMP Report type. Used to
+  // specify the path to the location the metrics should be written to.
+  string output_location = 12;
+
   ///////////////////  Fields used by all metric types ///////////////////
 
   // The list of SystemProfileFields to include in each row of the report.

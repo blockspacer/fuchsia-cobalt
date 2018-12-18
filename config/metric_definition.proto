@@ -207,8 +207,12 @@ message MetricDefinition {
   IntegerBuckets int_buckets = 8;
 
   // Used only with metric_type = CUSTOM
-  // The keys are the names of the parts.
-  map<string, MetricPart> parts = 9;
+  // The keys are the names of the parts. 
+  map<string, MetricPart> parts = 9 [deprecated = true];
+
+  // Used only with metric_type = CUSTOM
+  // The fully qualified name of the underlying proto used for custom metrics.
+  string proto_name = 13;
 
   /////////// The rest of the fields are used with all Metric types ///////////
 
