@@ -30,6 +30,8 @@ option go_package = "config";
 // purpose of generating the Report.
 //
 // A MetricDefinition is used to define a Metric.
+//
+// Next ID: 14
 message MetricDefinition {
   // Unique name for this Metric within its owning project.
   // The name must obey the syntax of a C variable name and must have length
@@ -46,6 +48,7 @@ message MetricDefinition {
   uint32 id = 4;
 
   // A Metric has one of the following types.
+  // Next ID: 8
   enum MetricType {
     UNSET = 0;
 

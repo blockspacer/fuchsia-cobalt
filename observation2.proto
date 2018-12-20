@@ -34,7 +34,7 @@ import "observation.proto";
 // the |ciphertext| field of an EncryptedMessage. Many encrypted Observations
 // are transmitted together inside of an ObservationBatch.
 message Observation2 {
-  // Next observation_type ID: 6
+  // Next observation_type ID: 7
   // Next general ID: 1002;
 
   // An Observation has one of the following types.
