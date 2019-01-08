@@ -31,12 +31,17 @@ option go_package = "config";
 //
 // A MetricDefinition is used to define a Metric.
 //
-// Next ID: 14
+// Next ID: 16
 message MetricDefinition {
   // Unique name for this Metric within its owning project.
   // The name must obey the syntax of a C variable name and must have length
   // at most 64.
   string metric_name = 1;
+
+  // The Cobalt config YAML parser will automatically set the values of
+  // customer_name and project_name based on the context of the YAML file.
+  string customer_name = 14 [(cobalt_options).hide_on_client = true];
+  string project_name = 15 [(cobalt_options).hide_on_client = true];
 
   // These three numbers form this Metric's unique numerical ID in Cobalt. The
   // Cobalt config YAML parser will automatically set the value of

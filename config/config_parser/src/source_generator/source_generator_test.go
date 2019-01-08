@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Compares the generated source files to a list of golden files.
+// If the test fails due to a change in the config protos, you can find the
+// new golden files in your /tmp directory.
+
 package source_generator
 
 import (

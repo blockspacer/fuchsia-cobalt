@@ -131,6 +131,8 @@ metric_definitions:
 	c := ProjectConfig{
 		CustomerId:    1,
 		ProjectId:     10,
+		CustomerName:  "customer_name",
+		ProjectName:   "project_name",
 		CobaltVersion: CobaltVersion1,
 	}
 
@@ -143,6 +145,8 @@ metric_definitions:
 			&config.MetricDefinition{
 				CustomerId:     1,
 				ProjectId:      10,
+				CustomerName:   "customer_name",
+				ProjectName:    "project_name",
 				MetricName:     "the_metric_name",
 				Id:             1,
 				TimeZonePolicy: config.MetricDefinition_UTC,
@@ -162,6 +166,8 @@ metric_definitions:
 			&config.MetricDefinition{
 				CustomerId:     1,
 				ProjectId:      10,
+				CustomerName:   "customer_name",
+				ProjectName:    "project_name",
 				MetricName:     "the_other_metric_name",
 				Id:             2,
 				TimeZonePolicy: config.MetricDefinition_LOCAL,
