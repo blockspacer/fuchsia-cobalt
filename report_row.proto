@@ -174,3 +174,71 @@ message UniqueActivesReportRow {
   // during the window.
   int64 sample_size = 7;
 }
+
+// A row of output for a report of type PER_DEVICE_COUNT_STATS.
+//
+// Gives statistics over all devices of the number of occurrences on each
+// device, over a particular time window, of a particular event.
+message PerDeviceCountStatsReportRow {
+  // The date of the last day of the on-device aggregation window, as measured
+  // on the device, using the time zone policy of the report's parent metric.
+  // This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The label for the event code associated with the events that occurred. If
+  // the event code has not been assigned a label (in the event_codes field of
+  // the MetricDefinition) then this will be a string of the form
+  // "<event-code-42>".
+  string event_code = 3;
+
+  // The component string associated with the events that occurred. This string
+  // must have been pre-registered in the ReportDefinition (using the
+  // |candidate_list| or |candidate_file| fields). There are also two special
+  // values of |component|:
+  // "<NONE>" is the component associated with logged events that
+  // contained an empty component string.
+  // "<OTHER>" is the component associated with logged events that contained
+  // a non-empty component string that was not pre-registered.
+  string component = 4;
+
+  // The size in days of the aggregation window.
+  uint32 window_size = 5;
+
+  // The mean of the counts contributing to this report row.
+  float mean = 6;
+
+  // Percentiles: the value of |percentile_N| is the smallest count k
+  // contributed by a device to this report row such that at least N percent
+  // of devices reported an occurrence count less than or equal to k.
+
+  // 1st percentile.
+  int64 percentile_1 = 101;
+
+  // 5th percentile.
+  int64 percentile_5 = 105;
+
+  // 25th percentile.
+  int64 percentile_25 = 125;
+
+  // 50th percentile.
+  int64 percentile_50 = 150;
+
+  // 75th percentile.
+  int64 percentile_75 = 175;
+
+  // 95th percentile.
+  int64 percentile_90 = 190;
+
+  // 99th percentile.
+  int64 percentile_99 = 199;
+
+  // The number of unique devices that contributed to this report row. This is
+  // equal to the number of ReportDeviceCountObservations received by
+  // the ReportGenerator for this report, window size, and date.
+  int64 sample_size = 200;
+}

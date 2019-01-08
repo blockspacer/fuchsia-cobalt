@@ -271,7 +271,7 @@ message ReportDefinition {
     // window. Supports the use of local differential privacy with Basic RAPPOR.
     //
     // Each device sends an observation each day for each window size registered
-    // in a Report Definition of this type, whether or not any of the associated
+    // in a ReportDefinition of this type, whether or not any of the associated
     // events occurred in the window ending on that day.
     //
     // Supported Input Types:
@@ -290,6 +290,25 @@ message ReportDefinition {
     // Report row type: UniqueActivesReportRow.
     // (see report_row.proto)
     UNIQUE_N_DAY_ACTIVES = 8;
+
+    // For each of a set of events, for each of a set of component labels, for
+    // a rolling window of a particular number of days, gives summary statistics
+    // of the number of occurrences on individual devices of that event, with
+    // that component, during the window.
+    //
+    // Supported Input Types:
+    //    - Metric type: EVENT_COUNT
+    //    - Encoding: component name is hashed
+    //    - Observation type: PerDeviceCountObservation
+    //
+    // ReportDefinition fields particular to this type:
+    //    - candidate_list # All known component names.
+    //    - candidate_file # File with all known component names.
+    //    - window_size # A list of window sizes in days
+    //
+    // Report row type: PerDeviceCountStatsReportRow.
+    // (See report_row.proto)
+    PER_DEVICE_COUNT_STATS = 9;
 
     /////////////////////// Custom Raw Dump Report /////////////////////////////
 

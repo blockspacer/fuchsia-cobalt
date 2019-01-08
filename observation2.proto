@@ -34,7 +34,7 @@ import "observation.proto";
 // the |ciphertext| field of an EncryptedMessage. Many encrypted Observations
 // are transmitted together inside of an ObservationBatch.
 message Observation2 {
-  // Next observation_type ID: 7
+  // Next observation_type ID: 8
   // Next general ID: 1002;
 
   // An Observation has one of the following types.
@@ -45,7 +45,9 @@ message Observation2 {
     RapporObservation string_rappor = 4;
     ForculusObservation forculus = 5;
     UniqueActivesObservation unique_actives = 6;
+    PerDeviceCountObservation per_device_count = 7;
     CustomObservation custom = 1000;
+    ReportDeviceCountObservation report_device_count = 10000;
   }
 
   // A quasi-unique identifier for this observation. This is randomly generated
@@ -60,7 +62,7 @@ message Observation2 {
 // by its index, a component specified by its hash, and an integer value.
 // This type of Observation is used in the following cases:
 //
-// (a) A Metric of type EVENT_COUT and a Report of type
+// (a) A Metric of type EVENT_COUNT and a Report of type
 //     EVENT_COMPONENT_OCCURRENCE_COUNT.
 //     In this case the Observation is *immediate* meaning it is generated
 //     directly from a single Event as soon as the Event is logged. The |value|
@@ -149,6 +151,27 @@ message UniqueActivesObservation {
   uint32 event_code = 3;
 };
 
+// Observations of type PerDeviceCountObservation are used when a
+// MetricDefinition of type EVENT_COUNT is reported with a ReportDefinition
+// of type PER_DEVICE_COUNT_STATS. An Observation of this type is created by
+// aggregating CountEvents on-device over a rolling window of 1, 7, or 30 days.
+//
+// A PerDeviceCountObservation is generated each day, for each aggregation
+// window size of the ReportDefinition, for each pair (component, event code)
+// for which an event occurrence was logged during the window. In addition, each
+// day and for each window size, each device generates one
+// ReportDeviceCountObservation containing that window size. The number
+// of those Observations is used by the ReportGenerator to compute the number of
+// devices on which each pair (component, event code) was *not* logged during
+// the window.
+message PerDeviceCountObservation {
+  // An IntegerEventObservation containing the event code, component,
+  // and occurrence count associated with this Observation.
+  IntegerEventObservation integer_event_obs = 1;
+  // The size in days of the rolling window associated with this Observation.
+  uint32 window_size = 2;
+};
+
 // A value for a single dimension of a Cobalt custom metric. Both CustomEvent
 // (the object logged to the Cobalt client on the device) and CustomObservation
 // (transmitted from the Cobalt client device to the server) contain a
@@ -190,4 +213,16 @@ message CustomObservation {
   // The keys are the names of the metric dimensions to which each
   // CustomDimensionValue is associated.
   map<string, CustomDimensionValue> values = 1;
+}
+
+// Observations of this type are produced by the EventAggregator and consumed
+// by the ReportGenerator for reports of type PER_DEVICE_COUNT_STATS. For each
+// report of that type, for each window size of the report, each device sends
+// one Observation of this type per day. The ReportGenerator uses the number
+// of such Observations to compute the number of devices in the fleet on which
+// a given pair (component, event code) did *not* occur during the aggregation
+// window.
+message ReportDeviceCountObservation {
+  // The size of the aggregation window.
+  uint32 window_size = 1;
 }
