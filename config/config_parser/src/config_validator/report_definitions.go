@@ -16,6 +16,7 @@ import (
 var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.ReportDefinition_ReportType]bool{
 	config.MetricDefinition_EVENT_OCCURRED: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT: true,
+		config.ReportDefinition_UNIQUE_N_DAY_ACTIVES:    true,
 	},
 	config.MetricDefinition_EVENT_COUNT: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_EVENT_COMPONENT_OCCURRENCE_COUNT: true,
