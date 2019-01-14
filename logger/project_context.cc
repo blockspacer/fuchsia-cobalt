@@ -166,13 +166,18 @@ const MetricRef ProjectContext::RefMetric(
     const MetricDefinition* metric_definition) const {
   return MetricRef(&project_, metric_definition);
 }
-
-const std::string ProjectContext::DebugString() const {
+std::string ProjectContext::DebugString() const {
 #ifdef PROTO_LITE
   return project_.project_name();
 #else
   return project_.DebugString();
 #endif
+}
+
+std::string ProjectContext::FullyQualifiedName() const {
+  std::ostringstream stream;
+  stream << project_.customer_name() << "." << project_.project_name();
+  return stream.str();
 }
 
 }  // namespace logger

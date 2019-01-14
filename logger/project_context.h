@@ -85,7 +85,10 @@ class ProjectContext {
     return metric_definitions_.get();
   }
 
-  const std::string DebugString() const;
+  std::string DebugString() const;
+
+  // Returns the string <customer_name>.<project_name>
+  std::string FullyQualifiedName() const;
 
  private:
   // This constructor assumes that the specified customer/project is present in

@@ -136,6 +136,8 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   SendEnvelopeToBackend(
       std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) = 0;
 
+  virtual std::string name() const = 0;
+
   UploadScheduler upload_scheduler_;
 
   // Variables accessed only by the worker thread. These are not
@@ -275,7 +277,10 @@ class LegacyShippingManager : public ShippingManager {
   SendRetryerInterface* send_retryer_;  // not owned
 
   std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send);
+      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send)
+      override;
+
+  std::string name() const override { return "LegacyShippingManager"; }
 };
 
 class ClearcutV1ShippingManager : public ShippingManager {
@@ -288,7 +293,10 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
  private:
   std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send);
+      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send)
+      override;
+
+  std::string name() const override { return "ClearcutV1ShippingManager"; }
 
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;

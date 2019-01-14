@@ -19,8 +19,12 @@ InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
 }
 
 void InternalMetricsImpl::LoggerCalled(LoggerCallsMadeEventCode event_code) {
-  logger_->LogEvent(kLoggerCallsMadeMetricId,
-                    static_cast<uint32_t>(event_code));
+  auto status = logger_->LogEvent(kLoggerCallsMadeMetricId,
+                                  static_cast<uint32_t>(event_code));
+  if (status != kOK) {
+    VLOG(1) << "InternalMetricsImpl::LoggerCalled: LogEvent() returned status="
+            << status;
+  }
 }
 
 }  // namespace logger

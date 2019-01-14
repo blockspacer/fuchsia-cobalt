@@ -77,7 +77,7 @@ class FileObservationStore : public ObservationStore {
     std::set<std::string> file_names_;
     bool envelope_read_;
     Envelope envelope_;
-    size_t cached_file_size_;
+    size_t cached_file_size_ = 0;
   };
 
   // |fs|. An implementation of FileSystem used to interact with the system's
@@ -85,10 +85,14 @@ class FileObservationStore : public ObservationStore {
   //
   // |root_directory|. The absolute path to the directory where the observation
   // files should be written. (e.g. /system/data/cobalt_legacy)
+  //
+  // |name| is used in log messages to distinguish this instance of
+  // FileObservationStore.
   FileObservationStore(size_t max_bytes_per_observation,
                        size_t max_bytes_per_envelope, size_t max_bytes_total,
                        std::unique_ptr<util::FileSystem> fs,
-                       const std::string &root_directory);
+                       std::string root_directory,
+                       std::string name = "FileObservationStore");
 
   StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
@@ -155,6 +159,7 @@ class FileObservationStore : public ObservationStore {
   const std::string active_file_name_;
   mutable std::random_device random_dev_;
   mutable std::uniform_int_distribution<uint32_t> random_int_;
+  const std::string name_;
 };
 
 }  // namespace encoder

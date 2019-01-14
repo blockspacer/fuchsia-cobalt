@@ -32,13 +32,15 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
                                            size_t max_bytes_per_envelope,
                                            size_t max_bytes_total,
                                            std::unique_ptr<FileSystem> fs,
-                                           const std::string &root_directory)
+                                           std::string root_directory,
+                                           std::string name)
     : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope,
                        max_bytes_total),
       fs_(std::move(fs)),
-      root_directory_(root_directory),
+      root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
-      random_int_(1000000, 9999999) {
+      random_int_(1000000, 9999999),
+      name_(std::move(name)) {
   CHECK(fs_);
 
   // Check if root_directory_ already exists.
@@ -65,7 +67,6 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
     // For simplicity's sake, we attempt to the active_file_name_ while ignoring
     // the result. If the operation succeeds, then we rescued the active file.
     // Otherwise, there probably was no active file in the first place.
-    VLOG(4) << "Attempting to rename a (potentially nonexistant) file";
     FinalizeActiveFile(&fields);
   }
 }
@@ -88,22 +89,27 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     return kObservationTooBig;
   }
 
-  size_t new_num_bytes = active_file->ByteCount() + obs_size;
-  VLOG(4) << "new_num_bytes(" << new_num_bytes << ") > max_bytes_total_("
-          << max_bytes_total_ << ")";
-  if (new_num_bytes > max_bytes_total_) {
-    VLOG(4) << "The observation store is full.";
+  VLOG(6) << name_ << ": AddEncryptedObservation() metric=("
+          << metadata->customer_id() << "," << metadata->project_id() << ","
+          << metadata->metric_id() << "), size=" << obs_size << ".";
+
+  size_t estimated_new_byte_count = active_file->ByteCount() + obs_size;
+  if (estimated_new_byte_count > max_bytes_total_) {
+    VLOG(4) << name_
+            << ": The observation store is full. estimated_new_byte_count="
+            << estimated_new_byte_count << " > " << max_bytes_total_ << ".";
     return kStoreFull;
   }
 
   if (!fields->metadata_written ||
       metadata_str != fields->last_written_metadata) {
+    VLOG(5) << name_ << ": Writing observation metadata.";
     ObservationStoreRecord stored_metadata;
     stored_metadata.mutable_meta_data()->Swap(metadata.get());
     if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(
             stored_metadata, active_file)) {
-      LOG(WARNING) << "Unable to write metadata to `" << active_file_name_
-                   << "`";
+      LOG(WARNING) << name_ << ": Unable to write metadata to `"
+                   << active_file_name_ << "`";
       return kWriteFailed;
     }
     fields->metadata_written = true;
@@ -120,7 +126,8 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   }
 
   if (active_file->ByteCount() >= (int64_t)max_bytes_per_envelope_) {
-    VLOG(4) << "In-progress file contains " << active_file->ByteCount()
+    VLOG(4) << name_ << ": In-progress file contains "
+            << active_file->ByteCount()
             << " bytes (>= " << max_bytes_per_envelope_ << "). Finalizing it.";
 
     if (!FinalizeActiveFile(&fields)) {
@@ -134,6 +141,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
 
 bool FileObservationStore::FinalizeActiveFile(
     util::ProtectedFields<Fields>::LockedFieldsPtr *fields) {
+  VLOG(6) << name_ << ": FinalizeActiveFile()";
   auto &f = *fields;
 
   // Close the current file (if it is open).
@@ -282,10 +290,13 @@ void FileObservationStore::ReturnEnvelopeHolder(
 size_t FileObservationStore::Size() const {
   auto fields = protected_fields_.const_lock();
   auto bytes = fields->finalized_bytes;
+  VLOG(4) << name_ << "::Size(): finalized_bytes=" << bytes;
   if (fields->active_file) {
     bytes += fields->active_file->ByteCount();
+  } else {
+    VLOG(4) << name_ << "::Size(): there is no active file.";
   }
-  VLOG(4) << "Size(): " << bytes;
+  VLOG(4) << name_ << "::Size(): total_bytes=" << bytes;
   return bytes;
 }
 
@@ -374,7 +385,7 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
 }
 
 size_t FileObservationStore::FileEnvelopeHolder::Size() {
-  if (cached_file_size_ > 0) {
+  if (cached_file_size_ != 0) {
     return cached_file_size_;
   }
 

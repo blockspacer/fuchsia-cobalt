@@ -51,7 +51,7 @@ ShippingManager::~ShippingManager() {
     return;
   }
   ShutDown();
-  VLOG(4) << "ShippingManager waiting for worker thread to exit...";
+  VLOG(4) << "ShippingManager destructor: waiting for worker thread to exit...";
   worker_thread_.join();
 }
 
@@ -73,7 +73,8 @@ void ShippingManager::NotifyObservationsAdded() {
   auto locked = lock();
 
   if (locked->fields->observation_store->IsAlmostFull()) {
-    VLOG(4) << "NotifyObservationsAdded(): observation_store "
+    VLOG(4) << name()
+            << ": NotifyObservationsAdded(): observation_store "
                "IsAlmostFull.";
     RequestSendSoonLockHeld(locked->fields);
   }
@@ -88,7 +89,7 @@ void ShippingManager::NotifyObservationsAdded() {
 
 // The caller must hold a lock on mutex_.
 void ShippingManager::RequestSendSoonLockHeld(MutexProtectedFields* fields) {
-  VLOG(5) << "ShippingManager::RequestSendSoonLockHeld()";
+  VLOG(5) << name() << ":RequestSendSoonLockHeld()";
   fields->expedited_send_requested = true;
   fields->expedited_send_notifier.notify_all();
   // We set waiting_for_schedule_ false here so that if the calling thread
@@ -101,7 +102,7 @@ void ShippingManager::RequestSendSoonLockHeld(MutexProtectedFields* fields) {
 void ShippingManager::RequestSendSoon() { RequestSendSoon(SendCallback()); }
 
 void ShippingManager::RequestSendSoon(SendCallback send_callback) {
-  VLOG(4) << "ShippingManager: Expedited send requested.";
+  VLOG(4) << name() << ": Expedited send requested.";
   auto locked = lock();
   RequestSendSoonLockHeld(locked->fields);
 
@@ -111,6 +112,9 @@ void ShippingManager::RequestSendSoon(SendCallback send_callback) {
       // If the ObservationStore is empty and the ShippingManager is idle. Then
       // we can safely invoke the SendCallback immediately.
       locked->fields->expedited_send_requested = false;
+      VLOG(5) << name()
+              << "::RequestSendSoon. Not waiting because there are no "
+                 "observations. Invoking callback(true) now.";
       send_callback(true);
     } else {
       // Otherwise, we should put the callback into the send callback queue.
@@ -132,7 +136,7 @@ void ShippingManager::ShutDown() {
     locked->fields->idle_notifier.notify_all();
     locked->fields->waiting_for_schedule_notifier.notify_all();
   }
-  VLOG(4) << "ShippingManager: shut-down requested.";
+  VLOG(4) << name() << ": shut-down requested.";
 }
 
 size_t ShippingManager::num_send_attempts() {
@@ -163,12 +167,12 @@ void ShippingManager::Run() {
     // upload_scheduler_.MinInterval() period.
 
     // Sleep for upload_scheduler_.MinInterval() or until shut_down_.
-    VLOG(4) << "ShippingManager worker: sleeping for "
+    VLOG(4) << name() << " worker: sleeping for "
             << upload_scheduler_.MinInterval().count() << " seconds.";
     locked->fields->shutdown_notifier.wait_for(
         locked->lock, upload_scheduler_.MinInterval(),
         [&locked] { return (locked->fields->shut_down); });
-    VLOG(4) << "ShippingManager worker: waking up from sleep. shut_down_="
+    VLOG(4) << name() << " worker: waking up from sleep. shut_down_="
             << locked->fields->shut_down;
     if (locked->fields->shut_down) {
       return;
@@ -177,7 +181,8 @@ void ShippingManager::Run() {
     if (locked->fields->observation_store->Empty()) {
       // There are no Observations at all in the observation_store_. Wait
       // forever until notified that one arrived or shut down.
-      VLOG(5) << "ShippingManager worker: waiting for an Observation to "
+      VLOG(5) << name()
+              << " worker: waiting for an Observation to "
                  "be added.";
       // If we are about to leave idle, we should make sure that we invoke all
       // of the SendCallbacks so they don't have to wait until the next time
@@ -189,16 +194,18 @@ void ShippingManager::Run() {
         return (locked->fields->shut_down ||
                 !locked->fields->observation_store->Empty());
       });
-      VLOG(5) << "ShippingManager worker: Waking up because an Observation was "
+      VLOG(5) << name()
+              << " worker: Waking up because an Observation was "
                  "added.";
       locked->fields->idle = false;
     } else {
       auto now = std::chrono::system_clock::now();
-      VLOG(4) << "now: " << ToString(now) << " next_scheduled_send_time_: "
+      VLOG(4) << name() << ": now: " << ToString(now)
+              << " next_scheduled_send_time_: "
               << ToString(next_scheduled_send_time_);
       if (next_scheduled_send_time_ <= now ||
           locked->fields->expedited_send_requested) {
-        VLOG(4) << "ShippingManager worker: time to send now.";
+        VLOG(4) << name() << " worker: time to send now.";
         locked->fields->expedited_send_requested = false;
         locked->lock.unlock();
         SendAllEnvelopes();
@@ -210,7 +217,7 @@ void ShippingManager::Run() {
         // a new request for an expedited send or we are shut down.
         auto time =
             std::chrono::system_clock::to_time_t(next_scheduled_send_time_);
-        VLOG(4) << "ShippingManager worker: waiting until " << std::ctime(&time)
+        VLOG(4) << name() << " worker: waiting until " << std::ctime(&time)
                 << " for next scheduled send.";
         locked->fields->waiting_for_schedule = true;
         locked->fields->waiting_for_schedule_notifier.notify_all();
@@ -226,7 +233,7 @@ void ShippingManager::Run() {
 }
 
 void ShippingManager::SendAllEnvelopes() {
-  VLOG(5) << "ShippingManager: SendAllEnvelopes().";
+  VLOG(5) << name() << ": SendAllEnvelopes().";
   bool success = true;
   size_t failures_without_success = 0;
   // Loop through all envelopes in the ObservationStore.
@@ -250,7 +257,7 @@ void ShippingManager::SendAllEnvelopes() {
     }
 
     if (failures_without_success >= kMaxFailuresWithoutSuccess) {
-      VLOG(4) << "ShippingManager::SendAllEnvelopes(): failed too many times ("
+      VLOG(4) << name() << "::SendAllEnvelopes(): failed too many times ("
               << failures_without_success << "). Stopping uploads.";
       break;
     }
@@ -268,6 +275,7 @@ void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields,
   std::vector<SendCallback> callbacks_to_invoke;
   callbacks_to_invoke.swap(fields->send_callback_queue);
   for (SendCallback& callback : callbacks_to_invoke) {
+    VLOG(5) << name() << ": Invoking send callback(" << success << ") now.";
     callback(success);
   }
 }
@@ -293,7 +301,7 @@ std::unique_ptr<EnvelopeHolder> LegacyShippingManager::SendEnvelopeToBackend(
     // Drop on floor.
     return nullptr;
   }
-  VLOG(5) << "ShippingManager worker: Sending Envelope of size "
+  VLOG(5) << name() << " worker: Sending Envelope of size "
           << envelope_to_send->Size() << " bytes to legacy backend.";
   auto status = send_retryer_->SendToShuffler(
       send_retryer_params_.initial_rpc_deadline_,
@@ -308,12 +316,12 @@ std::unique_ptr<EnvelopeHolder> LegacyShippingManager::SendEnvelopeToBackend(
     locked->fields->last_send_status = status;
   }
   if (status.ok()) {
-    VLOG(4) << "ShippingManager::SendOneEnvelope: OK";
+    VLOG(4) << name() << "::SendOneEnvelope: OK";
     return nullptr;
   }
 
-  VLOG(4) << "Cobalt send to Shuffler failed: (" << status.error_code() << ") "
-          << status.error_message()
+  VLOG(4) << name() << ": Cobalt send to Shuffler failed: ("
+          << status.error_code() << ") " << status.error_message()
           << ". Observations have been re-enqueued for later.";
   return envelope_to_send;
 }
@@ -337,7 +345,7 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
     // Drop on floor.
     return nullptr;
   }
-  VLOG(5) << "ShippingManager worker: Sending Envelope of size "
+  VLOG(5) << name() << " worker: Sending Envelope of size "
           << envelope_to_send->Size() << " bytes to clearcut.";
 
   clearcut::LogRequest request;
@@ -359,12 +367,12 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
     locked->fields->last_send_status = CobaltStatusToGrpcStatus(status);
   }
   if (status.ok()) {
-    VLOG(4) << "ShippingManager::SendEnvelopeToBackend: OK";
+    VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
     return nullptr;
   }
 
-  VLOG(4) << "Cobalt send to Shuffler failed: (" << status.error_code() << ") "
-          << status.error_message()
+  VLOG(4) << name() << ": Cobalt send to Shuffler failed: ("
+          << status.error_code() << ") " << status.error_message()
           << ". Observations have been re-enqueued for later.";
   return envelope_to_send;
 }

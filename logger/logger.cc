@@ -256,6 +256,8 @@ Logger::Logger(const Encoder* encoder, ObservationWriter* observation_writer,
 }
 
 Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
+  VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
+          << ") project=" << project_context_->FullyQualifiedName();
   EventRecord event_record;
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEvent);
   auto* occurrence_event = event_record.event->mutable_occurrence_event();

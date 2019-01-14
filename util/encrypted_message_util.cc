@@ -54,13 +54,17 @@ bool EncryptedMessageMaker::Encrypt(
   if (encryption_scheme_ == EncryptedMessage::NONE) {
     encrypted_message->set_scheme(EncryptedMessage::NONE);
     encrypted_message->set_ciphertext(serialized_message);
+    VLOG(5) << "EncryptedMessage: encryption_scheme=NONE.";
     return true;
   }
 
   if (encryption_scheme_ != EncryptedMessage::HYBRID_ECDH_V1) {
     // HYBRID_ECDH_V1 is the only other scheme we know about.
+    VLOG(5) << "EncryptedMessage: encryption_scheme != HYBRID_ECDH_V1.";
     return false;
   }
+
+  VLOG(5) << "EncryptedMessage: encryption_scheme=HYBRID_ECDH_V1.";
 
   if (!cipher_) {
     return false;
@@ -75,7 +79,6 @@ bool EncryptedMessageMaker::Encrypt(
       new std::string((const char*)ciphertext.data(), ciphertext.size()));
   encrypted_message->set_scheme(EncryptedMessage::HYBRID_ECDH_V1);
   byte fingerprint[HybridCipher::PUBLIC_KEY_FINGERPRINT_SIZE];
-  VLOG(5) << "Using encryption.";
   if (!cipher_->public_key_fingerprint(fingerprint)) {
     return false;
   }
