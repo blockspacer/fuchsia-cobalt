@@ -56,6 +56,8 @@ using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
 namespace {
+// Number of seconds in a day
+const int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
 const int kYear = kDay * 365;
 

@@ -90,23 +90,24 @@ class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
   int write_count_;
 };
 
-// A container for information about the set of all locally aggregated
-// reports in a configuration. This is used by tests to check the output of the
+// A container for information about the locally aggregated Observations which
+// should be generated for a given day, for all locally aggregated reports in a
+// configuration. This is used by tests to check the output of the
 // EventAggregator.
 typedef struct ExpectedAggregationParams {
   // The total number of locally aggregated Observations which should be
-  // generated each day.
+  // generated for the day.
   size_t daily_num_obs = 0;
   // The MetricReportIds of the locally aggregated reports in this
   // configuration.
   std::set<MetricReportId> metric_report_ids;
   // Keys are the MetricReportIds of all locally aggregated reports in a config.
   // The value at a key is the number of Observations which should be generated
-  // each day for that report.
+  // for that report, for the day.
   std::map<MetricReportId, size_t> num_obs_per_report;
-  // Keys are the MetricReportIds of all locally aggregated reports in a config.
-  // The value at a key is the number of event codes for that report's
-  // parent MetricDefinition.
+  // Keys are the MetricReportIds of the UNIQUE_N_DAY_ACTIVES reports in the
+  // config. The value at a MetricReportId is the number of event codes for that
+  // report's parent metric.
   std::map<MetricReportId, size_t> num_event_codes;
   // Keys are the MetricReportIds of all locally aggregated reports in a config.
   // The value at a key is the set of window sizes of that report.

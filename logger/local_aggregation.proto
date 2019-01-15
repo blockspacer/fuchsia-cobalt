@@ -22,15 +22,59 @@ message ReportAggregationKey {
 // logged events.
 message LocalAggregateStore {
   // Keyed by base64-encoded serializations of ReportAggregationKey messages.
-  map<string, ReportAggregates> aggregates = 1;
+  map<string, ReportAggregates> by_report_key = 1;
 }
 
 message ReportAggregates {
-  // Keyed by event code.
-  map<uint32, DailyAggregates> by_event_code = 1;
+  // A collection of aggregates whose form depends on the report type.
+  oneof type {
+    UniqueActivesReportAggregates unique_actives_aggregates = 1;
+    PerDeviceCountReportAggregates count_aggregates = 2;
+  }
   // The configuration for the report represented by the ReportAggregationKey
   // of this ReportAggregates.
-  AggregationConfig aggregation_config = 2;
+  AggregationConfig aggregation_config = 100;
+}
+
+message UniqueActivesReportAggregates {
+  // Keyed by event code.
+  map<uint32, DailyAggregates> by_event_code = 1;
+}
+
+message PerDeviceCountReportAggregates {
+  // Keyed by component string.
+  map<string, EventCodeAggregates> by_component = 1;
+}
+
+message EventCodeAggregates {
+  // Keyed by event code.
+  map<uint32, DailyAggregates> by_event_code = 1;
+}
+
+message DailyAggregates {
+  // Keyed by day index.
+  map<uint32, DailyAggregate> by_day_index = 1;
+}
+
+// A value formed by aggregating the events logged for a single report, event
+// code, and day index.
+message DailyAggregate {
+  oneof type {
+    ActivityDailyAggregate activity_daily_aggregate = 1;
+    CountDailyAggregate count_daily_aggregate = 2;
+  }
+}
+
+// A representation of the occurrence or non-occurrence of an event code on
+// a given day.
+message ActivityDailyAggregate {
+  bool activity_indicator = 1;
+}
+
+// A representation of the number of occurrences of a particular event code,
+// with a particular component label, on a given day.
+message CountDailyAggregate {
+  int64 count = 1;
 }
 
 // A representation of the configuration of a locally aggregated report and
@@ -54,38 +98,24 @@ message AggregationConfig {
   ReportDefinition report = 3;
 }
 
-message DailyAggregates {
-  // Keyed by day index.
-  map<uint32, DailyAggregate> by_day_index = 1;
-}
-
-// A value formed by aggregating the events logged for a single report, event
-// code, and day index.
-message DailyAggregate {
-  oneof type {
-    ActivityDailyAggregate activity_daily_aggregate = 1;
-  }
-}
-
-// A representation of the occurrence or non-occurrence of an event code on
-// a given day.
-message ActivityDailyAggregate {
-  bool activity_indicator = 1;
-}
-
 // A container used by the EventAggregator to store the latest day index for
 // which an Observation has been generated for each report, event code, and
 // window size.
-message AggregatedObservationHistory {
+message AggregatedObservationHistoryStore {
   // Keyed by base64-encoded serializations of ReportAggregationKey messages.
-  map<string, HistoryByEventCode> by_report_key = 1;
+  map<string, AggregatedObservationHistory> by_report_key = 1;
 }
 
-message HistoryByEventCode {
+message AggregatedObservationHistory {
+  oneof type {
+    UniqueActivesObservationHistory unique_actives_history = 1;
+  }
+}
+
+message UniqueActivesObservationHistory {
   // Keyed by event code.
   map<uint32, HistoryByWindowSize> by_event_code = 1;
 }
-
 
 message HistoryByWindowSize {
   // Keyed by window size. The value at a window size is the latest day index

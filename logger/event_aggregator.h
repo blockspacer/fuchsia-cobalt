@@ -27,17 +27,6 @@
 namespace cobalt {
 namespace logger {
 
-// Maximum value of |backfill_days| allowed by the constructor of
-// EventAggregator.
-static const size_t kEventAggregatorMaxAllowedBackfillDays = 1000;
-// EventAggregator::GenerateObservations() ignores all aggregation window
-// sizes larger than this value.
-static const size_t kMaxAllowedAggregationWindowSize = 365;
-// The number of seconds in an hour.
-static const size_t kHour = 3600;
-// The number of seconds in a day.
-static const size_t kDay = kHour * 24;
-
 // The EventAggregator class manages an in-memory store of aggregated values
 // of Events logged for locally aggregated report types. For each day, this
 // LocalAggregateStore contains an aggregate of the values of logged Events of
@@ -64,6 +53,12 @@ static const size_t kDay = kHour * 24;
 // needed to compute aggregates for any windows of interest in the future.
 class EventAggregator {
  public:
+  // Maximum value of |backfill_days| allowed by the constructor.
+  static const size_t kMaxAllowedBackfillDays = 1000;
+  // GenerateObservations() ignores all aggregation window sizes larger than
+  // this value.
+  static const size_t kMaxAllowedAggregationWindowSize = 365;
+
   // Constructs an EventAggregator.
   //
   // An EventAggregator maintains daily aggregates of Events in a
@@ -110,10 +105,9 @@ class EventAggregator {
       util::ConsistentProtoStore* obs_history_proto_store,
       const size_t backfill_days = 0,
       const std::chrono::seconds aggregate_backup_interval =
-          std::chrono::seconds(60),
-      const std::chrono::seconds generate_obs_interval =
-          std::chrono::seconds(kHour),
-      const std::chrono::seconds gc_interval = std::chrono::seconds(kDay));
+          std::chrono::minutes(1),
+      const std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
+      const std::chrono::seconds gc_interval = std::chrono::hours(24));
 
   // Shut down the worker thread before destructing the EventAggregator.
   ~EventAggregator() { ShutDown(); }
@@ -154,6 +148,23 @@ class EventAggregator {
   // together with valid aggregates when EventAggregator::GarbageCollect() is
   // called.
   Status LogUniqueActivesEvent(uint32_t report_id, EventRecord* event_record);
+
+  // Logs an Event associated to a report of type
+  // PER_DEVICE_COUNT_STATS to the EventAggregator.
+  //
+  // report_id: the ID of the report associated to the logged Event.
+  //
+  // event_record: an EventRecord wrapping an Event of type CountEvent
+  // and the MetricDefinition for which the Event is to be logged.
+  //
+  // Returns kOK if the LocalAggregateStore was successfully updated, and
+  // kInvalidArguments if either a lookup key corresponding to |report_id| was
+  // not found in the LocalAggregateStore, or if the Event wrapped by
+  // EventRecord is not of type CountEvent.
+  //
+  // Currently compatible only with EVENT_COUNT metrics with a single event code
+  // dimension. TODO(pesk, zmbush): support multiple event codes.
+  Status LogPerDeviceCountEvent(uint32_t report_id, EventRecord* event_record);
 
   // Checks that the worker thread is shut down, and if so, calls the private
   // method GenerateObservations() and returns its result. Returns kOther if the
@@ -248,12 +259,12 @@ class EventAggregator {
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u);
 
   // Returns the most recent day index for which an Observation was generated
-  // for a given report, event code, and window size, according to
-  // |obs_history_|. Returns 0 if no Observation has been generated for the
-  // given arguments.
-  uint32_t LastGeneratedDayIndex(const std::string& report_key,
-                                 uint32_t event_code,
-                                 uint32_t window_size) const;
+  // for a given UNIQUE_N_DAY_ACTIVES report, event code, and window size,
+  // according to |obs_history_|. Returns 0 if no Observation has been generated
+  // for the given arguments.
+  uint32_t UniqueActivesLastGeneratedDayIndex(const std::string& report_key,
+                                              uint32_t event_code,
+                                              uint32_t window_size) const;
 
   // For a fixed report of type UNIQUE_N_DAY_ACTIVES, generates an Observation
   // for each event code of the parent metric, for each window size of the
@@ -305,7 +316,7 @@ class EventAggregator {
   util::ConsistentProtoStore* obs_history_proto_store_;
   util::ProtectedFields<AggregateStoreFields> protected_aggregate_store_;
   // Not protected by a mutex. Should only be accessed by |worker_thread_|.
-  AggregatedObservationHistory obs_history_;
+  AggregatedObservationHistoryStore obs_history_;
   size_t backfill_days_ = 0;
 
   std::thread worker_thread_;
