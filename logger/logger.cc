@@ -51,10 +51,10 @@ class EventLogger {
                                 const ReportDefinition& report);
 
  private:
-  // Sets up |event_record| with initial data.
-  Status InitializeEvent(uint32_t metric_id,
-                         MetricDefinition::MetricType expected_type,
-                         EventRecord* event_record);
+  // Finishes setting up and then validates |event_record|.
+  Status FinalizeEvent(uint32_t metric_id,
+                       MetricDefinition::MetricType expected_type,
+                       EventRecord* event_record);
 
   virtual Status ValidateEvent(const EventRecord& event_record);
 
@@ -362,7 +362,7 @@ Status EventLogger::Log(uint32_t metric_id,
                         EventRecord* event_record) {
   // TODO(rudominer) Check the ReleaseStage of the Metric against the
   // ReleaseStage of the project.
-  auto status = InitializeEvent(metric_id, expected_metric_type, event_record);
+  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
   if (status != kOK) {
     return status;
   }
@@ -401,9 +401,9 @@ Status EventLogger::Log(uint32_t metric_id,
   return kOK;
 }
 
-Status EventLogger::InitializeEvent(uint32_t metric_id,
-                                    MetricDefinition::MetricType expected_type,
-                                    EventRecord* event_record) {
+Status EventLogger::FinalizeEvent(uint32_t metric_id,
+                                  MetricDefinition::MetricType expected_type,
+                                  EventRecord* event_record) {
   event_record->metric = project_context()->GetMetric(metric_id);
   if (event_record->metric == nullptr) {
     LOG(ERROR) << "There is no metric with ID '" << metric_id << "' registered "
