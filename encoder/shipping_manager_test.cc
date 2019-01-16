@@ -195,7 +195,7 @@ class ShippingManagerTest : public ::testing::Test {
     CHECK(num_bytes > kNoOpEncodingByteOverhead) << " num_bytes=" << num_bytes;
     Encoder::Result result = encoder_.EncodeString(
         metric_id, kNoOpEncodingId,
-        std::string("x", num_bytes - kNoOpEncodingByteOverhead));
+        std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
     auto message = std::make_unique<EncryptedMessage>();
     EXPECT_TRUE(
         encrypt_to_analyzer_.Encrypt(*result.observation, message.get()));

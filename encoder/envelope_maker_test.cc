@@ -407,7 +407,7 @@ TEST_F(EnvelopeMakerTest, ObservationTooBig) {
   ResetEnvelopeMaker(105);
 
   // Build an input string of length 75 bytes.
-  std::string value("x", 75);
+  std::string value(75, 'x');
 
   size_t expected_observation_num_bytes = 75 + kNoOpEncodingByteOverhead;
 
@@ -421,7 +421,7 @@ TEST_F(EnvelopeMakerTest, ObservationTooBig) {
                        ObservationStore::kOk);
 
   // Build an input string of length 101 bytes.
-  value = std::string("x", 101);
+  value = std::string(101, 'x');
   // We expect the Observation to not be added to the Envelope and so for
   // the Envelope size to not change.
   expected_observation_num_bytes = 0;
@@ -433,7 +433,7 @@ TEST_F(EnvelopeMakerTest, ObservationTooBig) {
                        ObservationStore::kObservationTooBig);
 
   // Build an input string of length 75 bytes again.
-  value = std::string("x", 75);
+  value = std::string(75, 'x');
   expected_observation_num_bytes = 75 + kNoOpEncodingByteOverhead;
   expected_this_batch_size = 2;
   // Invoke AddStringObservation() and expect kOk.
@@ -453,7 +453,7 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
   size_t expected_this_batch_index = 0;
   for (int i = 0; i < 19; i++) {
     // Build an input string of length 20 bytes.
-    std::string value("x", 20);
+    std::string value(20, 'x');
     size_t expected_observation_num_bytes = 20 + kNoOpEncodingByteOverhead;
 
     // Invoke AddStringObservation() and expect kOk
@@ -466,7 +466,7 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
 
   // If we try to add an observation of more than 100 bytes we should
   // get kObservationTooBig.
-  std::string value("x", 101);
+  std::string value(101, 'x');
   // We expect the Observation to not be added to the Envelope and so for
   // the Envelope size to not change.
   size_t expected_observation_num_bytes = 0;
@@ -477,7 +477,7 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
 
   // If we try to add an observation of 65 bytes we should
   // get kStoreFull
-  value = std::string("x", 65);
+  value = std::string(65, 'x');
   AddStringObservation(
       value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
       expected_this_batch_index, expected_this_batch_size++,
