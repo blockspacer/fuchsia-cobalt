@@ -27,6 +27,8 @@ using ::cobalt::util::SystemClock;
 using ::cobalt::util::TimeToDayIndex;
 using ::google::protobuf::RepeatedPtrField;
 
+constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
+
 // EventLogger is an abstract interface used internally in logger.cc to
 // dispatch logging logic based on Metric type. Below we create subclasses
 // of EventLogger for each of several Metric types.
@@ -88,6 +90,11 @@ class EventLogger {
   virtual Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record);
+
+  std::string TraceEvent(Event* event);
+  void TraceLogFailure(const Status& status, EventRecord* event_record,
+                       const ReportDefinition& report);
+  void TraceLogSuccess(EventRecord* event_record);
 
   Logger* logger_;
 };
@@ -357,6 +364,108 @@ Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
 
 //////////////////// EventLogger method implementations ////////////////////////
 
+std::string EventLogger::TraceEvent(Event* event) {
+  std::stringstream ss;
+  ss << "Day index: " << event->day_index() << std::endl;
+  if (event->has_occurrence_event()) {
+    auto e = event->occurrence_event();
+    ss << "OccurrenceEvent: " << e.event_code() << std::endl;
+  } else if (event->has_count_event()) {
+    auto e = event->count_event();
+    ss << "CountEvent:" << std::endl;
+    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+       << ", PeriodDurationMicros: " << e.period_duration_micros()
+       << ", Count: " << e.count() << std::endl;
+  } else if (event->has_elapsed_time_event()) {
+    auto e = event->elapsed_time_event();
+    ss << "ElapsedTimeEvent:" << std::endl;
+    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+       << ", ElapsedMicros: " << e.elapsed_micros() << std::endl;
+  } else if (event->has_frame_rate_event()) {
+    auto e = event->frame_rate_event();
+    ss << "FrameRateEvent:" << std::endl;
+    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+       << ", FramesPer1000Seconds: " << e.frames_per_1000_seconds()
+       << std::endl;
+  } else if (event->has_memory_usage_event()) {
+    auto e = event->memory_usage_event();
+    ss << "MemoryUsageEvent:" << std::endl;
+    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+       << ", Bytes: " << e.bytes() << std::endl;
+  } else if (event->has_int_histogram_event()) {
+    auto e = event->int_histogram_event();
+    ss << "IntHistogramEvent:" << std::endl;
+    ss << "EventCode: " << e.event_code() << ", Component: " << e.component()
+       << std::endl;
+    for (const auto& bucket : e.buckets()) {
+      ss << "| " << bucket.index() << " = " << bucket.count() << std::endl;
+    }
+  } else if (event->has_string_used_event()) {
+    auto e = event->string_used_event();
+    ss << "StringUsedEvent: " << e.str() << std::endl;
+  } else if (event->has_custom_event()) {
+    auto e = event->custom_event();
+    ss << "CustomEvent:";
+    if (e.values().empty()) {
+      ss << " (Empty)";
+    }
+    ss << std::endl;
+    for (const auto& entry : e.values()) {
+      switch (entry.second.data_case()) {
+        ss << "| " << entry.first << " = ";
+        case CustomDimensionValue::kStringValue:
+          ss << entry.second.string_value();
+          break;
+        case CustomDimensionValue::kIntValue:
+          ss << entry.second.int_value();
+          break;
+        case CustomDimensionValue::kBlobValue:
+          ss << "Blob";
+          break;
+        case CustomDimensionValue::kIndexValue:
+          ss << entry.second.index_value();
+          break;
+        case CustomDimensionValue::kDoubleValue:
+          ss << entry.second.double_value();
+          break;
+        default:
+          ss << "No dimension value";
+          break;
+      }
+      ss << std::endl;
+    }
+  }
+
+  return ss.str();
+}
+
+void EventLogger::TraceLogFailure(const Status& status,
+                                  EventRecord* event_record,
+                                  const ReportDefinition& report) {
+  if (!event_record->metric->meta_data().also_log_locally()) {
+    return;
+  }
+
+  LOG(INFO)
+      << TRACE_PREFIX << "("
+      << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
+      << "): Error (" << status << ")" << std::endl
+      << TraceEvent(event_record->event.get())
+      << "While trying to send report: " << report.report_name() << std::endl;
+}
+
+void EventLogger::TraceLogSuccess(EventRecord* event_record) {
+  if (!event_record->metric->meta_data().also_log_locally()) {
+    return;
+  }
+
+  LOG(INFO)
+      << TRACE_PREFIX << "("
+      << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
+      << "):" << std::endl
+      << TraceEvent(event_record->event.get());
+}
+
 Status EventLogger::Log(uint32_t metric_id,
                         MetricDefinition::MetricType expected_metric_type,
                         EventRecord* event_record) {
@@ -379,6 +488,7 @@ Status EventLogger::Log(uint32_t metric_id,
   for (const auto& report : event_record->metric->reports()) {
     status = MaybeUpdateLocalAggregation(report, event_record);
     if (status != kOK) {
+      TraceLogFailure(status, event_record, report);
       return status;
     }
 
@@ -394,10 +504,12 @@ Status EventLogger::Log(uint32_t metric_id,
     status =
         MaybeGenerateImmediateObservation(report, may_invalidate, event_record);
     if (status != kOK) {
+      TraceLogFailure(status, event_record, report);
       return status;
     }
   }
 
+  TraceLogSuccess(event_record);
   return kOK;
 }
 

@@ -215,7 +215,7 @@ message MetricDefinition {
   IntegerBuckets int_buckets = 8;
 
   // Used only with metric_type = CUSTOM
-  // The keys are the names of the parts. 
+  // The keys are the names of the parts.
   map<string, MetricPart> parts = 9 [deprecated = true];
 
   // Used only with metric_type = CUSTOM
@@ -253,6 +253,10 @@ message MetricDefinition {
 
     // Maximum ReleaseStage for which this Metric is allowed to be collected.
     ReleaseStage max_release_stage = 4;
+
+    // If 'also_log_locally' is true, Cobalt will log it when it receives events
+    // associated with this metric.
+    bool also_log_locally = 5;
   }
   Metadata meta_data = 11;
 
