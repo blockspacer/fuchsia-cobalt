@@ -385,8 +385,8 @@ class EventAggregatorTest : public ::testing::Test {
 
   Status GenerateObservations(uint32_t final_day_index_utc,
                               uint32_t final_day_index_local = 0u) {
-    return event_aggregator_->GenerateObservations(final_day_index_utc,
-                                                   final_day_index_local);
+    return event_aggregator_->GenerateObservationsNoWorker(
+        final_day_index_utc, final_day_index_local);
   }
 
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
@@ -2043,6 +2043,16 @@ TEST_F(EventAggregatorWorkerTest, LogEvents) {
   EXPECT_TRUE(CheckAggregateStore(logged_activity, day_index));
   ShutDownWorkerThread();
   EXPECT_GE(local_aggregate_proto_store_->write_count_, 1);
+}
+
+// Tests that GenerateObservationsNoWorker returns the error status kOther if
+// called while the worker thread is running.
+TEST_F(EventAggregatorWorkerTest, GenerateObservationsNoWorker) {
+  event_aggregator_->Start();
+  ASSERT_TRUE(in_run_state());
+  EXPECT_EQ(kOther,
+            event_aggregator_->GenerateObservationsNoWorker(CurrentDayIndex()));
+  ShutDownWorkerThread();
 }
 
 }  // namespace logger

@@ -155,6 +155,16 @@ class EventAggregator {
   // called.
   Status LogUniqueActivesEvent(uint32_t report_id, EventRecord* event_record);
 
+  // Checks that the worker thread is shut down, and if so, calls the private
+  // method GenerateObservations() and returns its result. Returns kOther if the
+  // worker thread is joinable. See the documentation on GenerateObservations()
+  // for a description of the parameters.
+  //
+  // This method is intended for use in tests which require a single thread to
+  // both log events to and generate Observations from an EventAggregator.
+  Status GenerateObservationsNoWorker(uint32_t final_day_index_utc,
+                                      uint32_t final_day_index_local = 0u);
+
  private:
   friend class LoggerTest;
   friend class EventAggregatorTest;
@@ -294,6 +304,7 @@ class EventAggregator {
   util::ConsistentProtoStore* local_aggregate_proto_store_;
   util::ConsistentProtoStore* obs_history_proto_store_;
   util::ProtectedFields<AggregateStoreFields> protected_aggregate_store_;
+  // Not protected by a mutex. Should only be accessed by |worker_thread_|.
   AggregatedObservationHistory obs_history_;
   size_t backfill_days_ = 0;
 

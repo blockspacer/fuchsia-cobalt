@@ -509,7 +509,7 @@ class LoggerTest : public ::testing::Test {
   }
 
   Status GenerateAggregatedObservations(uint32_t day_index) {
-    return event_aggregator_->GenerateObservations(day_index);
+    return event_aggregator_->GenerateObservationsNoWorker(day_index);
   }
 
   Status GarbageCollectAggregateStore(uint32_t day_index) {

@@ -188,6 +188,16 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
   return kOK;
 }
 
+Status EventAggregator::GenerateObservationsNoWorker(
+    uint32_t final_day_index_utc, uint32_t final_day_index_local) {
+  if (worker_thread_.joinable()) {
+    LOG(ERROR) << "GenerateObservationsNoWorker() was called while "
+                  "worker thread was running.";
+    return kOther;
+  }
+  return GenerateObservations(final_day_index_utc, final_day_index_local);
+}
+
 Status EventAggregator::BackUpLocalAggregateStore() {
   // Lock, copy the LocalAggregateStore, and release the lock. Write the copy
   // to |local_aggregate_proto_store_|.
