@@ -40,6 +40,14 @@ class ObservationStoreWriterInterface {
   virtual StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
       std::unique_ptr<ObservationMetadata> metadata) = 0;
+
+  // Returns the number of Observations that have been added to the
+  // ObservationStore.
+  virtual size_t num_observations_added() = 0;
+
+  // Resets the count of Observations that have been added to the
+  // ObservationStore.
+  virtual void ResetObservationCounter() = 0;
 };
 
 // ObservationStore is an abstract interface to an underlying store of encrypted

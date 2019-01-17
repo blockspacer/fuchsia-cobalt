@@ -33,11 +33,19 @@ class FakeObservationStore
       std::unique_ptr<ObservationMetadata> metadata) override {
     messages_received.emplace_back(std::move(message));
     metadata_received.emplace_back(std::move(metadata));
+    num_observations_added_++;
     return kOk;
   }
 
   std::vector<std::unique_ptr<EncryptedMessage>> messages_received;
   std::vector<std::unique_ptr<ObservationMetadata>> metadata_received;
+
+  size_t num_observations_added() override { return num_observations_added_; }
+
+  void ResetObservationCounter() override { num_observations_added_ = 0; }
+
+ private:
+  size_t num_observations_added_ = 0;
 };
 
 // A mock ObservationStoreUpdateRecipient.

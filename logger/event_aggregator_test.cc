@@ -400,11 +400,12 @@ class EventAggregatorTest : public ::testing::Test {
     event_aggregator_->DoScheduledTasks(current_time);
   }
 
-  // Clears the FakeObservationStore and resets the TestUpdateRecipient's count
-  // of received observations.
+  // Clears the FakeObservationStore and resets the counts of Observations
+  // received by the FakeObservationStore and the TestUpdateRecipient.
   void ResetObservationStore() {
     observation_store_->messages_received.clear();
     observation_store_->metadata_received.clear();
+    observation_store_->ResetObservationCounter();
     update_recipient_->invocation_count = 0;
   }
 
@@ -954,7 +955,7 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsTwice) {
   // called for the currentday index for the second time.
   ResetObservationStore();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
-  EXPECT_EQ(0u, observation_store_->messages_received.size());
+  EXPECT_EQ(0u, observation_store_->num_observations_added());
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
@@ -1079,32 +1080,30 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithBackfill) {
       EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
                                            day_index, 0u));
     }
-    auto num_obs_before = observation_store_->messages_received.size();
+    observation_store_->ResetObservationCounter();
     if (offset % 10 < 5 || offset % 10 == 6) {
       EXPECT_EQ(kOK, GenerateObservations(day_index));
     }
-    auto num_obs_after = observation_store_->messages_received.size();
-    EXPECT_GE(num_obs_after, num_obs_before);
+    auto num_new_obs = observation_store_->num_observations_added();
+    EXPECT_GE(num_new_obs, 0u);
     // Check that the expected daily number of Observations was generated.
     switch (offset % 10) {
       case 0:
         EXPECT_EQ(
             kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
-            num_obs_after - num_obs_before);
+            num_new_obs);
         break;
       case 1:
       case 2:
       case 3:
       case 4:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs,
-                  num_obs_after - num_obs_before);
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs, num_new_obs);
         break;
       case 6:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2,
-                  num_obs_after - num_obs_before);
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2, num_new_obs);
         break;
       default:
-        EXPECT_EQ(num_obs_after, num_obs_before);
+        EXPECT_EQ(0u, num_new_obs);
     }
     AdvanceClock(kDay);
   }
@@ -1152,13 +1151,13 @@ TEST_F(UniqueActivesEventAggregatorTest,
       EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
                                            day_index, 0u));
     }
-    auto num_obs_before = observation_store_->messages_received.size();
+    observation_store_->ResetObservationCounter();
     if (offset % 10 < 5 || offset % 10 == 6) {
       EXPECT_EQ(kOK, GenerateObservations(day_index));
       EXPECT_EQ(kOK, GarbageCollect(day_index));
     }
-    auto num_obs_after = observation_store_->messages_received.size();
-    EXPECT_GE(num_obs_after, num_obs_before);
+    auto num_new_obs = observation_store_->num_observations_added();
+    EXPECT_GE(num_new_obs, 0u);
     // Check that the expected daily number of Observations was generated.
     // This expected number is some multiple of the daily_num_obs field of
     // |kUniqueActivesExpectedParams|, depending on the number of days which
@@ -1167,21 +1166,19 @@ TEST_F(UniqueActivesEventAggregatorTest,
       case 0:
         EXPECT_EQ(
             kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
-            num_obs_after - num_obs_before);
+            num_new_obs);
         break;
       case 1:
       case 2:
       case 3:
       case 4:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs,
-                  num_obs_after - num_obs_before);
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs, num_new_obs);
         break;
       case 6:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2,
-                  num_obs_after - num_obs_before);
+        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2, num_new_obs);
         break;
       default:
-        EXPECT_EQ(num_obs_after, num_obs_before);
+        EXPECT_EQ(0u, num_new_obs);
     }
     AdvanceClock(kDay);
   }

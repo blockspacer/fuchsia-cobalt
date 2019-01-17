@@ -500,11 +500,12 @@ class LoggerTest : public ::testing::Test {
     mock_clock_->increment_by(std::chrono::seconds(kDay) * num_days);
   }
 
-  // Clears the FakeObservationStore and resets the TestUpdateRecipient's
-  // count.
+  // Clears the FakeObservationStore and resets counts of Observations received
+  // by the FakeObservationStore and the TestUpdateRecipient.
   void ResetObservationStore() {
     observation_store_->messages_received.clear();
     observation_store_->metadata_received.clear();
+    observation_store_->ResetObservationCounter();
     update_recipient_->invocation_count = 0;
   }
 

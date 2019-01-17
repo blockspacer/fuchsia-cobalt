@@ -40,7 +40,8 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
       random_int_(1000000, 9999999),
-      name_(std::move(name)) {
+      name_(std::move(name)),
+      num_observations_added_(0) {
   CHECK(fs_);
 
   // Check if root_directory_ already exists.
@@ -136,6 +137,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     }
   }
 
+  num_observations_added_++;
   return kOk;
 }
 
@@ -301,6 +303,14 @@ size_t FileObservationStore::Size() const {
 }
 
 bool FileObservationStore::Empty() const { return Size() == 0; }
+
+size_t FileObservationStore::num_observations_added() {
+  return num_observations_added_;
+}
+
+void FileObservationStore::ResetObservationCounter() {
+  num_observations_added_ = 0;
+}
 
 void FileObservationStore::Delete() {
   auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});

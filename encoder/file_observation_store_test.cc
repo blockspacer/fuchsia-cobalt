@@ -106,6 +106,33 @@ class FileObservationStoreTest : public ::testing::Test {
 
 }  // namespace
 
+// Adds some small Observations and checks that the count of received
+// Observations is incremented correctly. Checks that ResetObservationCount()
+// zeros the count.
+TEST_F(FileObservationStoreTest, UpdateObservationCount) {
+  EXPECT_EQ(store_->num_observations_added(), 0u);
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+  EXPECT_EQ(store_->num_observations_added(), 1u);
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+  EXPECT_EQ(store_->num_observations_added(), 2u);
+  store_->ResetObservationCounter();
+  EXPECT_EQ(store_->num_observations_added(), 0u);
+  EXPECT_EQ(
+      ObservationStore::kObservationTooBig,
+      AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+  EXPECT_EQ(store_->num_observations_added(), 0u);
+}
+
+// Adds a too-big Observation. Checks that a |kObservationTooBig| status is
+// returned and that the count of received Observations is not incremented.
+TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
+  ASSERT_EQ(store_->num_observations_added(), 0u);
+  EXPECT_EQ(
+      ObservationStore::kObservationTooBig,
+      AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+  EXPECT_EQ(store_->num_observations_added(), 0u);
+}
+
 TEST_F(FileObservationStoreTest, AddRetrieveSingleObservation) {
   EXPECT_EQ(ObservationStore::kOk, AddObservation(50));
   auto envelope = store_->TakeNextEnvelopeHolder();

@@ -96,6 +96,7 @@ bool FetchObservations(std::vector<Observation2>* observations,
   CHECK(expected_report_ids.size() == expected_num_received);
   auto num_received = observation_store->messages_received.size();
   EXPECT_EQ(num_received, observation_store->metadata_received.size());
+  EXPECT_EQ(num_received, observation_store->num_observations_added());
   if (num_received != observation_store->metadata_received.size()) {
     return false;
   }

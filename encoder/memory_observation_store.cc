@@ -18,7 +18,8 @@ MemoryObservationStore::MemoryObservationStore(size_t max_bytes_per_observation,
       envelope_send_threshold_size_(size_t(0.6 * max_bytes_per_envelope_)),
       current_envelope_(
           new EnvelopeMaker(max_bytes_per_observation, max_bytes_per_envelope)),
-      finalized_envelopes_size_(0) {}
+      finalized_envelopes_size_(0),
+      num_observations_added_(0) {}
 
 ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     std::unique_ptr<EncryptedMessage> message,
@@ -32,9 +33,9 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     return kStoreFull;
   }
 
-  auto status = current_envelope_->CanAddObservation(*message);
+  auto status_peek = current_envelope_->CanAddObservation(*message);
 
-  if (status == kStoreFull) {
+  if (status_peek == kStoreFull) {
     VLOG(4) << "MemoryObservationStore::AddEncryptedObservation(): Current "
                "envelope would return kStoreFull. Swapping it out for "
                "a new EnvelopeMaker";
@@ -42,8 +43,12 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     current_envelope_ = NewEnvelopeMaker();
   }
 
-  return current_envelope_->AddEncryptedObservation(std::move(message),
-                                                    std::move(metadata));
+  auto status = current_envelope_->AddEncryptedObservation(std::move(message),
+                                                           std::move(metadata));
+  if (status == kOk) {
+    num_observations_added_++;
+  }
+  return status;
 }
 
 std::unique_ptr<EnvelopeMaker> MemoryObservationStore::NewEnvelopeMaker() {
@@ -117,6 +122,14 @@ size_t MemoryObservationStore::Size() const {
 bool MemoryObservationStore::Empty() const {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
   return current_envelope_->Empty() && finalized_envelopes_.empty();
+}
+
+size_t MemoryObservationStore::num_observations_added() {
+  return num_observations_added_;
+}
+
+void MemoryObservationStore::ResetObservationCounter() {
+  num_observations_added_ = 0;
 }
 
 }  // namespace encoder

@@ -102,6 +102,8 @@ class FileObservationStore : public ObservationStore {
 
   size_t Size() const override;
   bool Empty() const override;
+  size_t num_observations_added() override;
+  void ResetObservationCounter() override;
 
   // Delete removes all of the files associated with this FileObservationStore.
   // This is useful for cleaning up after testing.
@@ -160,6 +162,7 @@ class FileObservationStore : public ObservationStore {
   mutable std::random_device random_dev_;
   mutable std::uniform_int_distribution<uint32_t> random_int_;
   const std::string name_;
+  size_t num_observations_added_;
 };
 
 }  // namespace encoder
