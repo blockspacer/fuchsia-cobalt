@@ -31,8 +31,8 @@ var validProtoNameRegexp = regexp.MustCompile("^[$a-zA-Z][_.$a-zA-Z0-9]{1,64}[a-
 func validateConfiguredMetricDefinitions(metrics []*config.MetricDefinition) (err error) {
 	metricIds := map[uint32]int{}
 	for i, metric := range metrics {
-		if ci, ok := metricIds[metric.Id]; ok {
-			return fmt.Errorf("Metrics named '%s' and '%s' hash to the same metric ids. One must be renamed.", metric.MetricName, metrics[ci].MetricName)
+		if _, ok := metricIds[metric.Id]; ok {
+			return fmt.Errorf("There are two metrics with id=%v.", metric.Id)
 		}
 		metricIds[metric.Id] = i
 
