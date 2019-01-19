@@ -17,6 +17,7 @@
 #include "logger/logger.h"
 #include "logger/project_context.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "util/clock.h"
 
 namespace cobalt {
 
@@ -24,9 +25,20 @@ class LoggerFactory {
  public:
   virtual ~LoggerFactory() = default;
 
-  virtual std::unique_ptr<logger::LoggerInterface> NewLogger() = 0;
+  // Creates a new Logger. If a nonzero day index is provided, then the Logger
+  // will log events with that day index.
+  virtual std::unique_ptr<logger::LoggerInterface> NewLogger(
+      uint32_t day_index = 0) = 0;
 
   virtual const logger::ProjectContext* project_context() = 0;
+
+  virtual size_t ObservationCount() = 0;
+
+  virtual void ResetObservationCount() = 0;
+
+  virtual void ResetLocalAggregation() = 0;
+
+  virtual bool GenerateAggregatedObservations(uint32_t day_index) = 0;
 
   virtual bool SendAccumulatedObservations() = 0;
 };
@@ -37,9 +49,9 @@ class TestApp {
   static std::unique_ptr<TestApp> CreateFromFlagsOrDie(int argc, char* argv[]);
 
   // Modes of operation of the Cobalt test application. An instance of
-  // TestApp is in interactive mode unless set_mode() is invoked. set_mode()
-  // is invoked from CreateFromFlagsOrDie() in order to set the mode to the
-  // one specified by the -mode flag.
+  // TestApp is in interactive mode unless set_mode() is invoked.
+  // set_mode() is invoked from CreateFromFlagsOrDie() in order to set the
+  // mode to the one specified by the -mode flag.
   enum Mode {
     // In this mode the TestApp is controlled via an interactive command-line
     // loop.
@@ -75,6 +87,9 @@ class TestApp {
   // Returns false if an only if the specified command is "quit".
   bool ProcessCommandLine(const std::string command_line);
 
+  // Returns the current day index in UTC according to the test app's clock.
+  uint32_t CurrentDayIndex();
+
  private:
   // Implements interactive mode.
   void CommandLoop();
@@ -89,12 +104,13 @@ class TestApp {
 
   void Log(const std::vector<std::string>& command);
   void LogEvent(uint64_t num_clients, const std::vector<std::string>& command);
-  void LogEvent(size_t num_clients, uint32_t event_code);
+  void LogEvent(size_t num_clients, uint32_t event_code,
+                uint32_t day_index = 0u);
   void LogEventCount(uint64_t num_clients,
                      const std::vector<std::string>& command);
   void LogEventCount(size_t num_clients, uint32_t event_code,
                      const std::string& component, int64_t duration,
-                     int64_t count);
+                     int64_t count, uint32_t day_index = 0u);
   void LogElapsedTime(uint64_t num_clients,
                       const std::vector<std::string>& command);
   void LogElapsedTime(uint64_t num_clients, uint32_t event_code,
@@ -118,6 +134,13 @@ class TestApp {
                       const std::vector<std::string>& metric_parts,
                       const std::vector<std::string>& values);
 
+  // Generates all aggregated observations for a day index specified by
+  // |command|.
+  void GenerateAggregatedObservations(const std::vector<std::string>& command);
+
+  // Deletes the local aggregates and the history of aggregated observations.
+  void ResetLocalAggregation();
+
   void ListParameters();
 
   void SetParameter(const std::vector<std::string>& command);
@@ -132,12 +155,23 @@ class TestApp {
 
   bool ParseIndex(const std::string& str, uint32_t* index);
 
+  // Parses strings of the following forms:
+  // day=today
+  // day=today+N, where N is a nonnegative number
+  // day=today-N, where N is a nonnegative number <= the current day index
+  // day=K, where K is a day index
+  // Computes the day index of that day in UTC, using |clock_| to get the
+  // current day index if |str| begins with "day=today", and writes it to
+  // |day_index|.
+  bool ParseDay(const std::string& str, uint32_t* day_index);
+
   bool ParseNonNegativeInt(const std::string& str, bool complain, int64_t* x);
 
   FRIEND_TEST(TestAppTest, ParseInt);
   FRIEND_TEST(TestAppTest, ParseFloat);
   FRIEND_TEST(TestAppTest, ParseIndex);
   FRIEND_TEST(TestAppTest, ParseNonNegativeInt);
+  FRIEND_TEST(TestAppTest, ParseDay);
 
   // Parses a string of the form <part>:<value> and writes <part> into
   // |part_name| and <value> into |value|.
@@ -151,12 +185,20 @@ class TestApp {
       std::vector<std::string> dimension_names,
       std::vector<std::string> values);
 
+  void GenerateAggregatedObservationsAndSend(uint32_t day_index);
+
+  void ResetLocalAggregateStore();
+
+  void ResetAggregatedObservationHistory();
+
   const MetricDefinition* current_metric_;
   // The TestApp is in interactive mode unless set_mode() is invoked.
   Mode mode_ = kInteractive;
   std::unique_ptr<LoggerFactory> logger_factory_;
   std::ostream* ostream_;
+  util::ClockInterface* clock_;
 };
 
 }  // namespace cobalt
+
 #endif  // COBALT_TOOLS_TEST_APP2_TEST_APP_H_

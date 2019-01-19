@@ -21,6 +21,13 @@
 #include "util/clock.h"
 
 namespace cobalt {
+
+namespace internal {
+
+class RealLoggerFactory;
+
+}  // namespace internal
+
 namespace logger {
 
 // Concrete implementation of LoggerInterface.
@@ -97,6 +104,7 @@ class Logger : public LoggerInterface {
  private:
   friend class EventLogger;
   friend class LoggerTest;
+  friend class cobalt::internal::RealLoggerFactory;
 
   void SetClock(util::ClockInterface* clock) { clock_.reset(clock); }
 

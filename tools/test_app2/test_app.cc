@@ -29,9 +29,12 @@
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "util/clearcut/curl_http_client.h"
+#include "util/clock.h"
 #include "util/consistent_proto_store.h"
+#include "util/datetime_util.h"
 #include "util/pem_util.h"
 #include "util/posix_file_system.h"
+#include "util/status.h"
 
 namespace cobalt {
 
@@ -55,10 +58,15 @@ using logger::LoggerInterface;
 using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::Status;
+using util::ClockInterface;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
+using util::IncrementingClock;
 using util::PemUtil;
 using util::PosixFileSystem;
+using util::StatusCode;
+using util::SystemClock;
+using util::TimeToDayIndex;
 
 // There are three modes of operation of the Cobalt TestClient program
 // determined by the value of this flag.
@@ -110,26 +118,51 @@ void PrintHelp(std::ostream* ostream) {
   *ostream << "----------------------------------" << std::endl;
   *ostream << "help                     \tPrint this help message."
            << std::endl;
-  *ostream << "log <num> event <index>  \tLog <num> independent copies "
-              "of an EVENT_OCCURRED event with event_code = <index>"
-           << std::endl;
-  *ostream << "log <num> event_count <index> <component> <duration> <count>"
-           << std::endl
-           << "                         \tLog <num> independent copies of an "
-              "EVENT_COUNT event."
+  *ostream << "log <num> event <index> <day> \tLog <num> independent copies "
+              "of an EVENT_OCCURRED event."
            << std::endl
            << "                         \t- The <index> is the event_code of "
-              "the EVENT_COUNT event."
+              "the EVENT_OCCURRED event."
            << std::endl
-           << "                         \t- The <component> is the component "
-              "name.  Pass in \"\" if your metric does not use this field."
+           << "                         \t- The optional argument <day> is the "
+              "day for which the event should be logged."
            << std::endl
-           << "                         \t- The <duration> specifies the "
-              "period of time over which <count> EVENT_COUNT events occurred.  "
-           << "Pass in 0 if your metric does not use this field." << std::endl
-           << "                         \t- The <count> specifies the number "
-              "of times an EVENT_COUNT event occurred."
+           << "                         \t  If provided, it "
+              "should be of the form \"day=<day index>\", \"day=today\", "
+              "\"day=today+<number of days>\", or \"day=today-<number of "
+              "days>\"."
+           << std::endl
+           << "                         \t  The default day is the current day."
            << std::endl;
+
+  *ostream
+      << "log <num> event_count <index> <component> <duration> <count> <day>"
+      << std::endl
+      << "                         \tLog <num> independent copies of an "
+         "EVENT_COUNT event."
+      << std::endl
+      << "                         \t- The <index> is the event_code of "
+         "the EVENT_COUNT event."
+      << std::endl
+      << "                         \t- The <component> is the component "
+         "name.  Pass in \"\" if your metric does not use this field."
+      << std::endl
+      << "                         \t- The <duration> specifies the "
+         "period of time over which <count> EVENT_COUNT events occurred.  "
+      << "Pass in 0 if your metric does not use this field." << std::endl
+      << "                         \t- The <count> specifies the number "
+         "of times an EVENT_COUNT event occurred."
+      << std::endl
+      << "                         \t- The optional argument <day> is the "
+         "day for which the event should be logged."
+      << std::endl
+      << "                         \t  If provided, it "
+         "should be of the form \"day=<day index>\", \"day=today\", "
+         "\"day=today+<number of days>\", or \"day=today-<number of "
+         "days>\"."
+      << std::endl
+      << "                         \t  The default day is the current day."
+      << std::endl;
   *ostream << "log <num> elapsed_time <index> <component> <elapsed_micros>"
            << std::endl
            << "                         \tLog <num> independent copies of an "
@@ -144,8 +177,7 @@ void PrintHelp(std::ostream* ostream) {
            << "                         \t- The <elapsed_micros> specifies how "
               "many microseconds have elapsed for the given ELAPSED_TIME event."
            << std::endl;
-  *ostream << "log <num> frame_rate <index> <component> <fps>"
-           << std::endl
+  *ostream << "log <num> frame_rate <index> <component> <fps>" << std::endl
            << "                         \tLog <num> independent copies of a "
               "FRAME_RATE event."
            << std::endl
@@ -157,8 +189,7 @@ void PrintHelp(std::ostream* ostream) {
            << std::endl
            << "                         \t- The <fps> specifies the frame rate."
            << std::endl;
-  *ostream << "log <num> memory_usage <index> <component> <bytes>"
-           << std::endl
+  *ostream << "log <num> memory_usage <index> <component> <bytes>" << std::endl
            << "                         \tLog <num> independent copies of a "
               "MEMORY_USAGE event."
            << std::endl
@@ -196,6 +227,14 @@ void PrintHelp(std::ostream* ostream) {
   *ostream << "                         \t- Each <val> is an int or string "
               "value or an index <n> if <val>='index=<n>'."
            << std::endl;
+  *ostream << "generate <day>                 \tGenerate and send observations "
+              "for <day> for all locally aggregated reports. <day> may be a "
+              "day index, \'today\', \'today+N\', or \'today-N\'."
+           << std::endl;
+  *ostream
+      << "reset-aggregation              \tDelete all state related to local "
+         "aggregation."
+      << std::endl;
   *ostream << "ls                       \tList current values of "
               "parameters."
            << std::endl;
@@ -313,6 +352,13 @@ std::vector<std::string> Tokenize(const std::string& line) {
   return tokens;
 }
 
+}  // namespace
+
+namespace internal {
+
+// The number of seconds in a day.
+static const int kDay = 86400;
+
 class RealLoggerFactory : public LoggerFactory {
  public:
   virtual ~RealLoggerFactory() = default;
@@ -327,7 +373,11 @@ class RealLoggerFactory : public LoggerFactory {
       std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
       std::unique_ptr<SystemDataInterface> system_data);
 
-  std::unique_ptr<LoggerInterface> NewLogger() override;
+  std::unique_ptr<LoggerInterface> NewLogger(uint32_t day_index = 0u) override;
+  size_t ObservationCount() override;
+  void ResetObservationCount() override;
+  void ResetLocalAggregation() override;
+  bool GenerateAggregatedObservations(uint32_t day_index) override;
   bool SendAccumulatedObservations() override;
   const ProjectContext* project_context() override {
     return project_context_.get();
@@ -363,9 +413,7 @@ RealLoggerFactory::RealLoggerFactory(
       shipping_manager_(std::move(shipping_manager)),
       local_aggregate_proto_store_(std::move(local_aggregate_proto_store)),
       obs_history_proto_store_(std::move(obs_history_proto_store)),
-      system_data_(std::move(system_data)) {}
-
-std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
+      system_data_(std::move(system_data)) {
   encoder_.reset(
       new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
   observation_writer_.reset(
@@ -374,9 +422,43 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger() {
   event_aggregator_.reset(new EventAggregator(
       encoder_.get(), observation_writer_.get(),
       local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
-  return std::unique_ptr<LoggerInterface>(
-      new Logger(encoder_.get(), event_aggregator_.get(),
-                 observation_writer_.get(), project_context_.get()));
+}
+
+std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(
+    uint32_t day_index) {
+  std::unique_ptr<Logger> logger = std::make_unique<Logger>(
+      encoder_.get(), event_aggregator_.get(), observation_writer_.get(),
+      project_context_.get());
+  if (day_index != 0u) {
+    auto mock_clock = new IncrementingClock();
+    mock_clock->set_time(std::chrono::system_clock::time_point(
+        std::chrono::seconds(kDay * day_index)));
+    logger->SetClock(mock_clock);
+  }
+  return std::move(logger);
+}
+
+size_t RealLoggerFactory::ObservationCount() {
+  return observation_store_->num_observations_added();
+}
+
+void RealLoggerFactory::ResetObservationCount() {
+  observation_store_->ResetObservationCounter();
+}
+
+// TODO(pesk): also clear the contents of the ConsistentProtoStores if we
+// implement a mode which uses them.
+void RealLoggerFactory::ResetLocalAggregation() {
+  event_aggregator_.reset(new EventAggregator(
+      encoder_.get(), observation_writer_.get(),
+      local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
+}
+
+bool RealLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
+  if (kOK == event_aggregator_->GenerateObservationsNoWorker(day_index)) {
+    return true;
+  }
+  return false;
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {
@@ -386,7 +468,7 @@ bool RealLoggerFactory::SendAccumulatedObservations() {
   return status.ok();
 }
 
-}  // namespace
+}  // namespace internal
 
 std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   std::string config_bin_proto_path = FLAGS_config_bin_proto_path;
@@ -451,7 +533,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
           std::make_unique<util::clearcut::CurlHTTPClient>()));
   shipping_manager->Start();
 
-  std::unique_ptr<LoggerFactory> logger_factory(new RealLoggerFactory(
+  std::unique_ptr<LoggerFactory> logger_factory(new internal::RealLoggerFactory(
       std::move(observation_encrypter), std::move(envelope_encrypter),
       std::move(project_context), std::move(observation_store),
       std::move(shipping_manager), std::move(local_aggregate_proto_store),
@@ -472,6 +554,7 @@ TestApp::TestApp(std::unique_ptr<LoggerFactory> logger_factory,
   CHECK(logger_factory_->project_context());
   CHECK(ostream_);
   CHECK(SetMetric(initial_metric_name));
+  clock_ = new SystemClock();
 }
 
 bool TestApp::SetMetric(const std::string& metric_name) {
@@ -480,6 +563,8 @@ bool TestApp::SetMetric(const std::string& metric_name) {
     (*ostream_) << "There is no metric named '" << metric_name
                 << "' in  project "
                 << logger_factory_->project_context()->DebugString() << "."
+                << std::endl
+                << "You may need to run `./cobaltb.py update_config`."
                 << std::endl;
     return false;
   }
@@ -524,6 +609,16 @@ bool TestApp::ProcessCommand(const std::vector<std::string>& command) {
 
   if (command[0] == "log") {
     Log(command);
+    return true;
+  }
+
+  if (command[0] == "generate") {
+    GenerateAggregatedObservations(command);
+    return true;
+  }
+
+  if (command[0] == "reset-aggregation") {
+    ResetLocalAggregation();
     return true;
   }
 
@@ -620,12 +715,22 @@ void TestApp::Log(const std::vector<std::string>& command) {
   return;
 }
 
+uint32_t TestApp::CurrentDayIndex() {
+  return TimeToDayIndex(std::chrono::system_clock::to_time_t(clock_->now()),
+                        MetricDefinition::UTC);
+}
+
 // We know that command[0] = "log", command[1] = <num_clients>
 void TestApp::LogEvent(uint64_t num_clients,
                        const std::vector<std::string>& command) {
-  if (command.size() != 4) {
-    *ostream_ << "Malformed log event command. Expected exactly one more "
+  auto command_size = command.size();
+  if (command_size < 4) {
+    *ostream_ << "Malformed log event command. Expected one more "
                  "argument for <event_code>."
+              << std::endl;
+    return;
+  } else if (command_size > 5) {
+    *ostream_ << "Malformed log event command: too many arguments."
               << std::endl;
     return;
   }
@@ -635,23 +740,32 @@ void TestApp::LogEvent(uint64_t num_clients,
     return;
   }
 
-  LogEvent(num_clients, event_code);
+  uint32_t day_index = 0;
+  if (command_size == 5 && !ParseDay(command[4], &day_index)) {
+    *ostream_ << "Unable to parse <day> from log command: " << command[4]
+              << std::endl;
+    return;
+  }
+  LogEvent(num_clients, event_code, day_index);
 }
 
-void TestApp::LogEvent(size_t num_clients, uint32_t event_code) {
+void TestApp::LogEvent(size_t num_clients, uint32_t event_code,
+                       uint32_t day_index) {
   if (!current_metric_) {
     *ostream_ << "Cannot LogEvent. There is no current metric set."
               << std::endl;
     return;
   }
-  VLOG(6) << "TestApp::LogEvents(" << num_clients << ", " << event_code << ").";
+  VLOG(6) << "TestApp::LogEvents(" << num_clients << ", " << event_code << ", "
+          << day_index << ").";
   for (size_t i = 0; i < num_clients; i++) {
-    auto logger = logger_factory_->NewLogger();
+    auto logger = logger_factory_->NewLogger(day_index);
     auto status = logger->LogEvent(current_metric_->id(), event_code);
     if (status != logger::kOK) {
       LOG(ERROR) << "LogEvent() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
-                 << ". event_code=" << event_code;
+                 << ". event_code=" << event_code
+                 << ". day_index=" << day_index;
       break;
     }
   }
@@ -659,13 +773,19 @@ void TestApp::LogEvent(size_t num_clients, uint32_t event_code) {
 }
 
 // We know that command[0] = "log", command[1] = <num_clients>,
-// command[2] = "event_count"
+// command[2] = "event_count".
 void TestApp::LogEventCount(uint64_t num_clients,
                             const std::vector<std::string>& command) {
-  if (command.size() != 7) {
-    *ostream_ << "Malformed log event_count command. Expected 4 additional "
-              << "parameters." << std::endl;
+  auto command_size = command.size();
+  if (command_size < 7) {
+    *ostream_ << "Malformed log event_count command: missing at least one "
+                 "required argument."
+              << std::endl;
     return;
+  }
+  if (command_size > 8) {
+    *ostream_ << "Malformed log event_count command: too many arguments."
+              << std::endl;
   }
 
   int64_t event_code;
@@ -688,29 +808,38 @@ void TestApp::LogEventCount(uint64_t num_clients,
               << std::endl;
     return;
   }
+  uint32_t day_index = 0u;
+  if (command_size == 8 && !ParseDay(command[7], &day_index)) {
+    *ostream_ << "Unable to parse <day> from log command: " << command[7]
+              << std::endl;
+    return;
+  }
 
-  LogEventCount(num_clients, event_code, command[4], duration, count);
+  LogEventCount(num_clients, event_code, command[4], duration, count,
+                day_index);
 }
 
 void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
                             const std::string& component, int64_t duration,
-                            int64_t count) {
+                            int64_t count, uint32_t day_index) {
   if (!current_metric_) {
     *ostream_ << "Cannot LogEventCount. There is no current metric set."
               << std::endl;
     return;
   }
   VLOG(6) << "TestApp::LogEventCount(" << num_clients << ", " << event_code
-          << ", " << component << ", " << duration << ", " << count << ").";
+          << ", " << component << ", " << duration << ", " << count << ", "
+          << day_index << ").";
   for (size_t i = 0; i < num_clients; i++) {
-    auto logger = logger_factory_->NewLogger();
+    auto logger = logger_factory_->NewLogger(day_index);
     auto status = logger->LogEventCount(current_metric_->id(), event_code,
                                         component, duration, count);
     if (status != logger::kOK) {
       LOG(ERROR) << "LogEventCount() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
                  << ". event_code=" << event_code << ". component=" << component
-                 << ". duration=" << duration << ". count=" << count;
+                 << ". duration=" << duration << ". count=" << count
+                 << ". day_index=" << day_index;
       break;
     }
   }
@@ -789,8 +918,8 @@ void TestApp::LogFrameRate(uint64_t num_clients,
 
   float fps;
   if (!ParseFloat(command[5], true, &fps)) {
-    *ostream_ << "Unable to parse <fps> from log command: "
-              << command[5] << std::endl;
+    *ostream_ << "Unable to parse <fps> from log command: " << command[5]
+              << std::endl;
     return;
   }
 
@@ -809,8 +938,8 @@ void TestApp::LogFrameRate(uint64_t num_clients, uint32_t event_code,
           << ", " << component << ", " << fps << ").";
   for (size_t i = 0; i < num_clients; i++) {
     auto logger = logger_factory_->NewLogger();
-    auto status = logger->LogFrameRate(current_metric_->id(), event_code,
-                                       component, fps);
+    auto status =
+        logger->LogFrameRate(current_metric_->id(), event_code, component, fps);
     if (status != logger::kOK) {
       LOG(ERROR) << "LogFrameRate() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
@@ -841,8 +970,8 @@ void TestApp::LogMemoryUsage(uint64_t num_clients,
 
   int64_t bytes;
   if (!ParseNonNegativeInt(command[5], true, &bytes)) {
-    *ostream_ << "Unable to parse <bytes> from log command: "
-              << command[5] << std::endl;
+    *ostream_ << "Unable to parse <bytes> from log command: " << command[5]
+              << std::endl;
     return;
   }
 
@@ -862,7 +991,7 @@ void TestApp::LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
   for (size_t i = 0; i < num_clients; i++) {
     auto logger = logger_factory_->NewLogger();
     auto status = logger->LogMemoryUsage(current_metric_->id(), event_code,
-                                       component, bytes);
+                                         component, bytes);
     if (status != logger::kOK) {
       LOG(ERROR) << "LogMemoryUsage() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
@@ -893,15 +1022,15 @@ void TestApp::LogIntHistogram(uint64_t num_clients,
 
   int64_t bucket;
   if (!ParseNonNegativeInt(command[5], true, &bucket)) {
-    *ostream_ << "Unable to parse <bucket> from log command: "
-              << command[5] << std::endl;
+    *ostream_ << "Unable to parse <bucket> from log command: " << command[5]
+              << std::endl;
     return;
   }
 
   int64_t count;
   if (!ParseNonNegativeInt(command[6], true, &count)) {
-    *ostream_ << "Unable to parse <count> from log command: "
-              << command[6] << std::endl;
+    *ostream_ << "Unable to parse <count> from log command: " << command[6]
+              << std::endl;
     return;
   }
 
@@ -909,7 +1038,8 @@ void TestApp::LogIntHistogram(uint64_t num_clients,
 }
 
 void TestApp::LogIntHistogram(uint64_t num_clients, uint32_t event_code,
-      const std::string& component, int64_t bucket, int64_t count) {
+                              const std::string& component, int64_t bucket,
+                              int64_t count) {
   if (!current_metric_) {
     *ostream_ << "Cannot LogIntHistogram. There is no current metric set."
               << std::endl;
@@ -928,7 +1058,7 @@ void TestApp::LogIntHistogram(uint64_t num_clients, uint32_t event_code,
 
     auto logger = logger_factory_->NewLogger();
     auto status = logger->LogIntHistogram(current_metric_->id(), event_code,
-                                         component, std::move(histogram_ptr));
+                                          component, std::move(histogram_ptr));
     if (status != logger::kOK) {
       LOG(ERROR) << "LogIntHistogram() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
@@ -990,6 +1120,49 @@ void TestApp::LogCustomEvent(uint64_t num_clients,
     }
   }
   *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "generate"
+void TestApp::GenerateAggregatedObservations(
+    const std::vector<std::string>& command) {
+  if (command.size() > 2) {
+    *ostream_ << "Malformed generate command: too many arguments." << std::endl;
+    return;
+  }
+  uint32_t day_index;
+  if (command.size() < 2) {
+    day_index = CurrentDayIndex();
+  } else if (!ParseDay(command[1], &day_index)) {
+    *ostream_ << "Could not parse argument " << command[1] << " to a day index"
+              << std::endl;
+    return;
+  }
+  GenerateAggregatedObservationsAndSend(day_index);
+  return;
+}
+
+void TestApp::GenerateAggregatedObservationsAndSend(uint32_t day_index) {
+  logger_factory_->NewLogger();
+  logger_factory_->ResetObservationCount();
+  if (logger_factory_->GenerateAggregatedObservations(day_index)) {
+    *ostream_ << "Generated " << logger_factory_->ObservationCount()
+              << " locally aggregated observations for day index " << day_index
+              << std::endl;
+  } else {
+    *ostream_
+        << "Failed to generate locally aggregated observations for day index "
+        << day_index << std::endl;
+    return;
+  }
+  if (!logger_factory_->SendAccumulatedObservations()) {
+    *ostream_ << "Failed to send locally aggregated observations" << std::endl;
+  }
+}
+
+void TestApp::ResetLocalAggregation() {
+  logger_factory_->NewLogger();
+  logger_factory_->ResetLocalAggregation();
+  *ostream_ << "Reset local aggregation." << std::endl;
 }
 
 void TestApp::ListParameters() {
@@ -1156,6 +1329,66 @@ bool TestApp::ParseIndex(const std::string& str, uint32_t* index) {
     return false;
   }
   *index = possible_index;
+  return true;
+}
+
+bool TestApp::ParseDay(const std::string& str, uint32_t* day_index) {
+  CHECK(index);
+  if (str.size() < 5 || str.substr(0, 4) != "day=") {
+    *ostream_ << "Expected prefix 'day='." << std::endl;
+    return false;
+  }
+  auto day_string = str.substr(4);
+
+  // Handle the case where |day_string| is "today", "today+N", or "today-N".
+  if (day_string.size() >= 5 && day_string.substr(0, 5) == "today") {
+    auto current_day_index = CurrentDayIndex();
+    if (day_string.size() == 5) {
+      *day_index = current_day_index;
+      return true;
+    }
+
+    if (day_string.size() > 6) {
+      int64_t offset;
+      if (!ParseNonNegativeInt(day_string.substr(6), true, &offset)) {
+        return false;
+      }
+      auto modifier = day_string.substr(5, 1);
+      if (modifier == "+") {
+        *day_index = (current_day_index + offset);
+        return true;
+      } else if (modifier == "-") {
+        if (offset > current_day_index) {
+          *ostream_
+              << "Negative offset cannot be larger than the current day index."
+              << std::endl;
+          return false;
+        }
+        *day_index = (current_day_index - offset);
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  // Handle the case where |day_string| is an integer.
+  std::istringstream iss(day_string);
+  int64_t possible_day_index;
+  iss >> possible_day_index;
+  char c;
+  if (iss.fail() || iss.get(c) || possible_day_index < 0 ||
+      possible_day_index > UINT32_MAX) {
+    if (mode_ == kInteractive) {
+      *ostream_ << "Expected small non-negative integer instead of "
+                << day_string << "." << std::endl;
+    } else {
+      LOG(ERROR) << "Expected small non-negative integer instead of  "
+                 << day_string;
+    }
+    return false;
+  }
+  *day_index = possible_day_index;
   return true;
 }
 
