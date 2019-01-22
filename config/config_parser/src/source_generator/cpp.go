@@ -14,16 +14,25 @@ func (_ CPP) writeExtraHeader(so *sourceOutputter) {
 	so.writeLine("")
 }
 
+func enumNamespace(name ...string) string {
+	name = append(name, "scope")
+	return toSnakeCase(name...)
+}
+
 func (_ CPP) writeEnumBegin(so *sourceOutputter, name ...string) {
-	so.writeLineFmt("enum class %s {", toPascalCase(name...))
+	so.writeLineFmt("namespace %s {", enumNamespace(name...))
+	so.writeLine("enum Enum {")
 }
 
 func (_ CPP) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) {
 	so.writeLineFmt("  %s = %d,", toPascalCase(name...), value)
 }
 
-func (_ CPP) writeEnumEnd(so *sourceOutputter) {
-	so.writeLineFmt("};")
+func (_ CPP) writeEnumEnd(so *sourceOutputter, name ...string) {
+	so.writeLine("};")
+	so.writeLineFmt("}  // %s", enumNamespace(name...))
+
+	so.writeLineFmt("typedef %s::Enum %s;", enumNamespace(name...), toPascalCase(name...))
 }
 
 func (_ CPP) writeEnumAlias(so *sourceOutputter, enumName, name []string) {

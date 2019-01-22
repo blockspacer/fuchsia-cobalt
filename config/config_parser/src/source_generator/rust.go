@@ -19,7 +19,7 @@ func (_ Rust) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) 
 	so.writeLineFmt("  %s = %d,", toPascalCase(name...), value)
 }
 
-func (_ Rust) writeEnumEnd(so *sourceOutputter) {
+func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("}")
 }
 

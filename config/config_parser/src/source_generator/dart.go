@@ -19,7 +19,7 @@ func (_ Dart) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) 
 	so.writeLineFmt("  static const int %s = %d;", toPascalCase(name...), value)
 }
 
-func (_ Dart) writeEnumEnd(so *sourceOutputter) {
+func (_ Dart) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("}")
 }
 

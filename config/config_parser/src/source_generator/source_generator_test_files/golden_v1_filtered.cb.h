@@ -11,32 +11,41 @@ const uint32_t kTheOtherMetricNameMetricId = 200;
 const uint32_t kEventGroupsMetricId = 300;
 
 // Enum for the_other_metric_name (EventCode)
-enum class TheOtherMetricNameEventCode {
+namespace the_other_metric_name_event_code_scope {
+enum Enum {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 };
+}  // the_other_metric_name_event_code_scope
+typedef the_other_metric_name_event_code_scope::Enum TheOtherMetricNameEventCode;
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnEvent = TheOtherMetricNameEventCode::AnEvent;
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode::AnotherEvent;
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
 // Enum for event groups (MetricDimensionThe First Group)
-enum class EventGroupsMetricDimensionTheFirstGroup {
+namespace event_groups_metric_dimension_the_first_group_scope {
+enum Enum {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 };
+}  // event_groups_metric_dimension_the_first_group_scope
+typedef event_groups_metric_dimension_the_first_group_scope::Enum EventGroupsMetricDimensionTheFirstGroup;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
 
 // Enum for event groups (MetricDimensionA second group)
-enum class EventGroupsMetricDimensionASecondGroup {
+namespace event_groups_metric_dimension_a_second_group_scope {
+enum Enum {
   This = 1,
   Is = 2,
   Another = 3,
   Test = 4,
 };
+}  // event_groups_metric_dimension_a_second_group_scope
+typedef event_groups_metric_dimension_a_second_group_scope::Enum EventGroupsMetricDimensionASecondGroup;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;

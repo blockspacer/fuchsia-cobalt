@@ -21,7 +21,7 @@ type outputLanguage interface {
 	writeExtraHeader(so *sourceOutputter)
 	writeEnumBegin(so *sourceOutputter, name ...string)
 	writeEnumEntry(so *sourceOutputter, value uint32, name ...string)
-	writeEnumEnd(so *sourceOutputter)
+	writeEnumEnd(so *sourceOutputter, name ...string)
 	writeEnumAlias(so *sourceOutputter, enumName, name []string)
 	writeNamespaceBegin(so *sourceOutputter, name ...string)
 	writeNamespaceEnd(so *sourceOutputter)
@@ -124,7 +124,7 @@ func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[u
 		name := entries[id]
 		so.language.writeEnumEntry(so, id, name)
 	}
-	so.language.writeEnumEnd(so)
+	so.language.writeEnumEnd(so, prefix, suffix)
 	for _, id := range keys {
 		so.language.writeEnumAlias(so, []string{prefix, suffix}, []string{entries[id]})
 	}
