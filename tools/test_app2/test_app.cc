@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "./observation2.pb.h"
 #include "config/cobalt_config.pb.h"
 #include "config/metric_definition.pb.h"
 #include "config/project_configs.h"
@@ -42,9 +43,11 @@ using encoder::ObservationStoreWriterInterface;
 using encoder::ShippingManager;
 using encoder::SystemData;
 using encoder::SystemDataInterface;
+using google::protobuf::RepeatedPtrField;
 using logger::Encoder;
 using logger::EventAggregator;
 using logger::EventValuesPtr;
+using logger::HistogramPtr;
 using logger::kOK;
 using logger::kOther;
 using logger::Logger;
@@ -108,24 +111,82 @@ void PrintHelp(std::ostream* ostream) {
   *ostream << "help                     \tPrint this help message."
            << std::endl;
   *ostream << "log <num> event <index>  \tLog <num> independent copies "
-              "of the event with event_code = <index>"
+              "of an EVENT_OCCURRED event with event_code = <index>"
            << std::endl;
   *ostream << "log <num> event_count <index> <component> <duration> <count>"
            << std::endl
            << "                         \tLog <num> independent copies of an "
-              "event that has occurred a given number of times."
+              "EVENT_COUNT event."
            << std::endl
            << "                         \t- The <index> is the event_code of "
-              "the event."
+              "the EVENT_COUNT event."
            << std::endl
            << "                         \t- The <component> is the component "
               "name.  Pass in \"\" if your metric does not use this field."
            << std::endl
            << "                         \t- The <duration> specifies the "
-              "period of time over which <count> events occurred.  Pass in 0 "
-           << "if your metric does not use this field." << std::endl
+              "period of time over which <count> EVENT_COUNT events occurred.  "
+           << "Pass in 0 if your metric does not use this field." << std::endl
            << "                         \t- The <count> specifies the number "
-              "of times the event occurred."
+              "of times an EVENT_COUNT event occurred."
+           << std::endl;
+  *ostream << "log <num> elapsed_time <index> <component> <elapsed_micros>"
+           << std::endl
+           << "                         \tLog <num> independent copies of an "
+              "ELAPSED_TIME event."
+           << std::endl
+           << "                         \t- The <index> is the event_code of "
+              "the ELAPSED_TIME event."
+           << std::endl
+           << "                         \t- The <component> is the component "
+              "name.  Pass in \"\" if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <elapsed_micros> specifies how "
+              "many microseconds have elapsed for the given ELAPSED_TIME event."
+           << std::endl;
+  *ostream << "log <num> frame_rate <index> <component> <fps>"
+           << std::endl
+           << "                         \tLog <num> independent copies of a "
+              "FRAME_RATE event."
+           << std::endl
+           << "                         \t- The <index> is the event_code of "
+              "the FRAME_RATE event."
+           << std::endl
+           << "                         \t- The <component> is the component "
+              "name.  Pass in \"\" if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <fps> specifies the frame rate."
+           << std::endl;
+  *ostream << "log <num> memory_usage <index> <component> <bytes>"
+           << std::endl
+           << "                         \tLog <num> independent copies of a "
+              "MEMORY_USAGE event."
+           << std::endl
+           << "                         \t- The <index> is the event_code of "
+              "the MEMORY_USAGE event."
+           << std::endl
+           << "                         \t- The <component> is the component "
+              "name.  Pass in \"\" if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <bytes> specifies the memory "
+              "usage in bytes."
+           << std::endl;
+  *ostream << "log <num> int_histogram <index> <component> <bucket> <count>"
+           << std::endl
+           << "                         \tLog <num> independent copies of an "
+              "INT_HISTOGRAM event."
+           << std::endl
+           << "                         \t- The <index> is the event_code of "
+              "the INT_HISTOGRAM event."
+           << std::endl
+           << "                         \t- The <component> is the component "
+              "name.  Pass in \"\" if your metric does not use this field."
+           << std::endl
+           << "                         \t- The <bucket> specifies the bucket "
+              "index for this sample."
+           << std::endl
+           << "                         \t- The <count> specifies the count "
+              "for this specific bucket."
            << std::endl;
   *ostream << "log <num> custom <part>:<val> <part>:<val>..." << std::endl;
   *ostream << "                         \tLog <num> independent copies of a "
@@ -530,6 +591,26 @@ void TestApp::Log(const std::vector<std::string>& command) {
     return;
   }
 
+  if (command[2] == "elapsed_time") {
+    LogElapsedTime(num_clients, command);
+    return;
+  }
+
+  if (command[2] == "frame_rate") {
+    LogFrameRate(num_clients, command);
+    return;
+  }
+
+  if (command[2] == "memory_usage") {
+    LogMemoryUsage(num_clients, command);
+    return;
+  }
+
+  if (command[2] == "int_histogram") {
+    LogIntHistogram(num_clients, command);
+    return;
+  }
+
   if (command[2] == "custom") {
     LogCustomEvent(num_clients, command);
     return;
@@ -615,7 +696,7 @@ void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
                             const std::string& component, int64_t duration,
                             int64_t count) {
   if (!current_metric_) {
-    *ostream_ << "Cannot LogEvent. There is no current metric set."
+    *ostream_ << "Cannot LogEventCount. There is no current metric set."
               << std::endl;
     return;
   }
@@ -630,6 +711,229 @@ void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
                  << ". metric=" << current_metric_->metric_name()
                  << ". event_code=" << event_code << ". component=" << component
                  << ". duration=" << duration << ". count=" << count;
+      break;
+    }
+  }
+  *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "log", command[1] = <num_clients>,
+// command[2] = "elapsed_time"
+void TestApp::LogElapsedTime(uint64_t num_clients,
+                             const std::vector<std::string>& command) {
+  if (command.size() != 6) {
+    *ostream_ << "Malformed log elapsed_time command. Expected 3 additional "
+              << "parameters." << std::endl;
+    return;
+  }
+
+  int64_t event_code;
+  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+              << std::endl;
+    return;
+  }
+
+  int64_t elapsed_micros;
+  if (!ParseNonNegativeInt(command[5], true, &elapsed_micros)) {
+    *ostream_ << "Unable to parse <elapsed_micros> from log command: "
+              << command[5] << std::endl;
+    return;
+  }
+
+  LogElapsedTime(num_clients, event_code, command[4], elapsed_micros);
+}
+
+void TestApp::LogElapsedTime(uint64_t num_clients, uint32_t event_code,
+                             const std::string& component,
+                             int64_t elapsed_micros) {
+  if (!current_metric_) {
+    *ostream_ << "Cannot LogElapsedTime. There is no current metric set."
+              << std::endl;
+    return;
+  }
+
+  VLOG(6) << "TestApp::LogElapsedTime(" << num_clients << ", " << event_code
+          << ", " << component << ", " << elapsed_micros << ").";
+  for (size_t i = 0; i < num_clients; i++) {
+    auto logger = logger_factory_->NewLogger();
+    auto status = logger->LogElapsedTime(current_metric_->id(), event_code,
+                                         component, elapsed_micros);
+    if (status != logger::kOK) {
+      LOG(ERROR) << "LogElapsedTime() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code << ". component=" << component
+                 << ". elapsed_micros=" << elapsed_micros;
+      break;
+    }
+  }
+  *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "log", command[1] = <num_clients>,
+// command[2] = "frame_rate"
+void TestApp::LogFrameRate(uint64_t num_clients,
+                           const std::vector<std::string>& command) {
+  if (command.size() != 6) {
+    *ostream_ << "Malformed log frame_rate command. Expected 3 additional "
+              << "parameters." << std::endl;
+    return;
+  }
+
+  int64_t event_code;
+  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+              << std::endl;
+    return;
+  }
+
+  float fps;
+  if (!ParseFloat(command[5], true, &fps)) {
+    *ostream_ << "Unable to parse <fps> from log command: "
+              << command[5] << std::endl;
+    return;
+  }
+
+  LogFrameRate(num_clients, event_code, command[4], fps);
+}
+
+void TestApp::LogFrameRate(uint64_t num_clients, uint32_t event_code,
+                           const std::string& component, float fps) {
+  if (!current_metric_) {
+    *ostream_ << "Cannot LogFrameRate. There is no current metric set."
+              << std::endl;
+    return;
+  }
+
+  VLOG(6) << "TestApp::LogFrameRate(" << num_clients << ", " << event_code
+          << ", " << component << ", " << fps << ").";
+  for (size_t i = 0; i < num_clients; i++) {
+    auto logger = logger_factory_->NewLogger();
+    auto status = logger->LogFrameRate(current_metric_->id(), event_code,
+                                       component, fps);
+    if (status != logger::kOK) {
+      LOG(ERROR) << "LogFrameRate() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code << ". component=" << component
+                 << ". fps=" << fps;
+      break;
+    }
+  }
+  *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "log", command[1] = <num_clients>,
+// command[2] = "memory_usage"
+void TestApp::LogMemoryUsage(uint64_t num_clients,
+                             const std::vector<std::string>& command) {
+  if (command.size() != 6) {
+    *ostream_ << "Malformed log memory_usage command. Expected 3 additional "
+              << "parameters." << std::endl;
+    return;
+  }
+
+  int64_t event_code;
+  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+              << std::endl;
+    return;
+  }
+
+  int64_t bytes;
+  if (!ParseNonNegativeInt(command[5], true, &bytes)) {
+    *ostream_ << "Unable to parse <bytes> from log command: "
+              << command[5] << std::endl;
+    return;
+  }
+
+  LogMemoryUsage(num_clients, event_code, command[4], bytes);
+}
+
+void TestApp::LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
+                             const std::string& component, int64_t bytes) {
+  if (!current_metric_) {
+    *ostream_ << "Cannot LogMemoryUsage. There is no current metric set."
+              << std::endl;
+    return;
+  }
+
+  VLOG(6) << "TestApp::LogMemoryUsage(" << num_clients << ", " << event_code
+          << ", " << component << ", " << bytes << ").";
+  for (size_t i = 0; i < num_clients; i++) {
+    auto logger = logger_factory_->NewLogger();
+    auto status = logger->LogMemoryUsage(current_metric_->id(), event_code,
+                                       component, bytes);
+    if (status != logger::kOK) {
+      LOG(ERROR) << "LogMemoryUsage() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code << ". component=" << component
+                 << ". bytes=" << bytes;
+      break;
+    }
+  }
+  *ostream_ << "Done." << std::endl;
+}
+
+// We know that command[0] = "log", command[1] = <num_clients>,
+// command[2] = "int_histogram"
+void TestApp::LogIntHistogram(uint64_t num_clients,
+                              const std::vector<std::string>& command) {
+  if (command.size() != 7) {
+    *ostream_ << "Malformed log int_histogram command. Expected 4 additional "
+              << "parameters." << std::endl;
+    return;
+  }
+
+  int64_t event_code;
+  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+              << std::endl;
+    return;
+  }
+
+  int64_t bucket;
+  if (!ParseNonNegativeInt(command[5], true, &bucket)) {
+    *ostream_ << "Unable to parse <bucket> from log command: "
+              << command[5] << std::endl;
+    return;
+  }
+
+  int64_t count;
+  if (!ParseNonNegativeInt(command[6], true, &count)) {
+    *ostream_ << "Unable to parse <count> from log command: "
+              << command[6] << std::endl;
+    return;
+  }
+
+  LogIntHistogram(num_clients, event_code, command[4], bucket, count);
+}
+
+void TestApp::LogIntHistogram(uint64_t num_clients, uint32_t event_code,
+      const std::string& component, int64_t bucket, int64_t count) {
+  if (!current_metric_) {
+    *ostream_ << "Cannot LogIntHistogram. There is no current metric set."
+              << std::endl;
+    return;
+  }
+
+  VLOG(6) << "TestApp::LogIntHistogram(" << num_clients << ", " << event_code
+          << ", " << component << ", " << bucket << ", " << count << ").";
+
+  for (size_t i = 0; i < num_clients; i++) {
+    HistogramPtr histogram_ptr =
+        std::make_unique<RepeatedPtrField<HistogramBucket>>();
+    auto* histogram = histogram_ptr->Add();
+    histogram->set_index(bucket);
+    histogram->set_count(count);
+
+    auto logger = logger_factory_->NewLogger();
+    auto status = logger->LogIntHistogram(current_metric_->id(), event_code,
+                                         component, std::move(histogram_ptr));
+    if (status != logger::kOK) {
+      LOG(ERROR) << "LogIntHistogram() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code << ". component=" << component
+                 << ". histogram=" << histogram_ptr->Get(0).DebugString();
       break;
     }
   }
@@ -668,7 +972,7 @@ void TestApp::LogCustomEvent(uint64_t num_clients,
   CHECK_EQ(metric_parts.size(), values.size());
 
   if (!current_metric_) {
-    *ostream_ << "Cannot LogEvent. There is no current metric set."
+    *ostream_ << "Cannot LogCustomEvent. There is no current metric set."
               << std::endl;
     return;
   }
@@ -774,7 +1078,7 @@ bool TestApp::ParseNonNegativeInt(const std::string& str, bool complain,
   *x = -1;
   iss >> *x;
   char c;
-  if (*x == -1 || iss.fail() || iss.get(c)) {
+  if (*x <= -1 || iss.fail() || iss.get(c)) {
     if (complain) {
       if (mode_ == kInteractive) {
         *ostream_ << "Expected non-negative integer instead of " << str << "."
@@ -801,6 +1105,25 @@ bool TestApp::ParseInt(const std::string& str, bool complain, int64_t* x) {
                   << std::endl;
       } else {
         LOG(ERROR) << "Expected positive integer instead of " << str;
+      }
+    }
+    return false;
+  }
+  return true;
+}
+
+bool TestApp::ParseFloat(const std::string& str, bool complain, float* x) {
+  CHECK(x);
+  std::istringstream iss(str);
+  *x = 0;
+  iss >> *x;
+  char c;
+  if (iss.fail() || iss.get(c)) {
+    if (complain) {
+      if (mode_ == kInteractive) {
+        *ostream_ << "Expected float instead of " << str << "." << std::endl;
+      } else {
+        LOG(ERROR) << "Expected float instead of " << str;
       }
     }
     return false;

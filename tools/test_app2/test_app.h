@@ -5,14 +5,18 @@
 #ifndef COBALT_TOOLS_TEST_APP2_TEST_APP_H_
 #define COBALT_TOOLS_TEST_APP2_TEST_APP_H_
 
+#include <stdint.h>
+
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "./observation2.pb.h"
 #include "logger/logger.h"
 #include "logger/project_context.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 
@@ -91,6 +95,23 @@ class TestApp {
   void LogEventCount(size_t num_clients, uint32_t event_code,
                      const std::string& component, int64_t duration,
                      int64_t count);
+  void LogElapsedTime(uint64_t num_clients,
+                      const std::vector<std::string>& command);
+  void LogElapsedTime(uint64_t num_clients, uint32_t event_code,
+                      const std::string& component, int64_t elapsed_micros);
+  void LogFrameRate(uint64_t num_clients,
+                    const std::vector<std::string>& command);
+  void LogFrameRate(uint64_t num_clients, uint32_t event_code,
+                    const std::string& component, float fps);
+  void LogMemoryUsage(uint64_t num_clients,
+                      const std::vector<std::string>& command);
+  void LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
+                      const std::string& component, int64_t bytes);
+  void LogIntHistogram(uint64_t num_clients,
+                       const std::vector<std::string>& command);
+  void LogIntHistogram(uint64_t num_clients, uint32_t event_code,
+                       const std::string& component, int64_t bucket,
+                       int64_t count);
   void LogCustomEvent(uint64_t num_clients,
                       const std::vector<std::string>& command);
   void LogCustomEvent(uint64_t num_clients,
@@ -107,9 +128,16 @@ class TestApp {
 
   bool ParseInt(const std::string& str, bool complain, int64_t* x);
 
+  bool ParseFloat(const std::string& str, bool complain, float* x);
+
   bool ParseIndex(const std::string& str, uint32_t* index);
 
   bool ParseNonNegativeInt(const std::string& str, bool complain, int64_t* x);
+
+  FRIEND_TEST(TestAppTest, ParseInt);
+  FRIEND_TEST(TestAppTest, ParseFloat);
+  FRIEND_TEST(TestAppTest, ParseIndex);
+  FRIEND_TEST(TestAppTest, ParseNonNegativeInt);
 
   // Parses a string of the form <part>:<value> and writes <part> into
   // |part_name| and <value> into |value|.

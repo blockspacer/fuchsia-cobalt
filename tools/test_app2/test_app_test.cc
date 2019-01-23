@@ -60,6 +60,85 @@ metric {
   }
 }
 
+metric {
+  metric_name: "update_duration"
+  metric_type: ELAPSED_TIME
+  customer_id: 1
+  project_id: 1
+  id: 3
+  reports: {
+    report_name: "update_duration_report"
+    report_type: INT_RANGE_HISTOGRAM
+    int_buckets: {
+      exponential: {
+        floor: 0
+        num_buckets: 10
+        initial_step: 1
+        step_multiplier: 2
+      }
+    }
+  }
+}
+
+metric {
+  metric_name: "game_frame_rate"
+  metric_type: FRAME_RATE
+  customer_id: 1
+  project_id: 1
+  id: 4
+  reports: {
+    report_name: "game_frame_rate_histograms"
+    report_type: INT_RANGE_HISTOGRAM
+    int_buckets: {
+      exponential: {
+        floor: 0
+        num_buckets: 10
+        initial_step: 1000
+        step_multiplier: 2
+      }
+    }
+  }
+}
+
+metric {
+  metric_name: "application_memory"
+  metric_type: MEMORY_USAGE
+  customer_id: 1
+  project_id: 1
+  id: 5
+  reports: {
+    report_name: "application_memory_histograms"
+    report_type: INT_RANGE_HISTOGRAM
+    int_buckets: {
+      exponential: {
+        floor: 0
+        num_buckets: 10
+        initial_step: 1000
+        step_multiplier: 2
+      }
+    }
+  }
+}
+
+metric {
+  metric_name: "power_usage"
+  metric_type: INT_HISTOGRAM
+  customer_id: 1
+  project_id: 1
+  id: 6
+  int_buckets: {
+    linear: {
+      floor: 0
+      num_buckets: 50
+      step_size: 2
+    }
+  }
+  reports: {
+    report_name: "power_usage_histograms"
+    report_type: INT_RANGE_HISTOGRAM
+  }
+}
+
 )";
 
 bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
@@ -142,6 +221,143 @@ class TestAppTest : public ::testing::Test {
 // Tests of interactive mode.
 /////////////////////////////////////
 
+// Tests ParseInt utility function.
+TEST_F(TestAppTest, ParseInt) {
+  int64_t x;
+  // Test basic valid inputs.
+  EXPECT_TRUE(test_app_->ParseInt("1", true, &x));
+  EXPECT_EQ(x, 1);
+  EXPECT_TRUE(test_app_->ParseInt("-3", true, &x));
+  EXPECT_EQ(x, -3);
+  EXPECT_TRUE(test_app_->ParseInt("503", true, &x));
+  EXPECT_EQ(x, 503);
+  EXPECT_TRUE(test_app_->ParseInt("1534", true, &x));
+  EXPECT_EQ(x, 1534);
+  ClearOutput();
+
+  // Input should only contain one number.
+  EXPECT_FALSE(test_app_->ParseInt("1 2", true, &x));
+  EXPECT_TRUE(OutputContains("Expected positive integer instead of 1 2"));
+  ClearOutput();
+
+  // Input shouldn't contain non-numeric characters or floats.
+  EXPECT_FALSE(test_app_->ParseInt("1.5asdf", true, &x));
+  EXPECT_TRUE(OutputContains("Expected positive integer instead of 1.5asdf"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseInt("$10#%", true, &x));
+  EXPECT_TRUE(OutputContains("Expected positive integer instead of $10#%"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseInt("10.0", true, &x));
+  EXPECT_TRUE(OutputContains("Expected positive integer instead of 10.0"));
+  ClearOutput();
+}
+
+// Tests ParseNonNegativeInt utility function.
+TEST_F(TestAppTest, ParseNonNegativeInt) {
+  int64_t x;
+  // Test basic valid inputs.
+  EXPECT_TRUE(test_app_->ParseNonNegativeInt("1", true, &x));
+  EXPECT_EQ(x, 1);
+  EXPECT_TRUE(test_app_->ParseNonNegativeInt("503", true, &x));
+  EXPECT_EQ(x, 503);
+  EXPECT_TRUE(test_app_->ParseNonNegativeInt("1534", true, &x));
+  EXPECT_EQ(x, 1534);
+  EXPECT_TRUE(test_app_->ParseNonNegativeInt("0", true, &x));
+  EXPECT_EQ(x, 0);
+  ClearOutput();
+
+  // Negative numbers should return an error.
+  EXPECT_FALSE(test_app_->ParseNonNegativeInt("-3", true, &x));
+  EXPECT_TRUE(OutputContains("Expected non-negative integer instead of -3"));
+  ClearOutput();
+
+  // Input should only contain one number.
+  EXPECT_FALSE(test_app_->ParseNonNegativeInt("1 2", true, &x));
+  EXPECT_TRUE(OutputContains("Expected non-negative integer instead of 1 2"));
+  ClearOutput();
+
+  // Input shouldn't contain non-numeric characters or floats.
+  EXPECT_FALSE(test_app_->ParseNonNegativeInt("1.5asdf", true, &x));
+  EXPECT_TRUE(
+      OutputContains("Expected non-negative integer instead of 1.5asdf"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseNonNegativeInt("$10#%", true, &x));
+  EXPECT_TRUE(OutputContains("Expected non-negative integer instead of $10#%"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseNonNegativeInt("10.0", true, &x));
+  EXPECT_TRUE(OutputContains("Expected non-negative integer instead of 10.0"));
+  ClearOutput();
+}
+
+// Tests ParseFloat utility function.
+TEST_F(TestAppTest, ParseFloat) {
+  float f;
+  // Test basic valid inputs.
+  EXPECT_TRUE(test_app_->ParseFloat("1.5", true, &f));
+  EXPECT_EQ(f, static_cast<float>(1.5));
+  EXPECT_TRUE(test_app_->ParseFloat("-2.3", true, &f));
+  EXPECT_EQ(f, static_cast<float>(-2.3));
+  EXPECT_TRUE(test_app_->ParseFloat("503.9", true, &f));
+  EXPECT_EQ(f, static_cast<float>(503.9));
+  EXPECT_TRUE(test_app_->ParseFloat("1534.0", true, &f));
+  EXPECT_EQ(f, static_cast<float>(1534.0));
+  EXPECT_TRUE(test_app_->ParseFloat("0", true, &f));
+  EXPECT_EQ(f, static_cast<float>(0));
+  EXPECT_TRUE(test_app_->ParseFloat("100", true, &f));
+  EXPECT_EQ(f, static_cast<float>(100));
+  ClearOutput();
+
+  // Input should only contain one number.
+  EXPECT_FALSE(test_app_->ParseFloat("1.5 2.0", true, &f));
+  EXPECT_TRUE(OutputContains("Expected float instead of 1.5 2.0"));
+  ClearOutput();
+
+  // Input shouldn't contain non-numeric characters.
+  EXPECT_FALSE(test_app_->ParseFloat("1.5asdf", true, &f));
+  EXPECT_TRUE(OutputContains("Expected float instead of 1.5asdf"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseFloat("$10#%", true, &f));
+  EXPECT_TRUE(OutputContains("Expected float instead of $10#%"));
+  ClearOutput();
+}
+
+// Tests ParseIndex utility function.
+TEST_F(TestAppTest, ParseIndex) {
+  uint32_t x;
+  // Test basic valid inputs.
+  EXPECT_TRUE(test_app_->ParseIndex("index=1", &x));
+  EXPECT_EQ(x, (uint32_t) 1);
+  EXPECT_TRUE(test_app_->ParseIndex("index=503", &x));
+  EXPECT_EQ(x, (uint32_t) 503);
+  EXPECT_TRUE(test_app_->ParseIndex("index=1534", &x));
+  EXPECT_EQ(x, (uint32_t) 1534);
+  ClearOutput();
+
+  // Input should contain 'index='.
+  EXPECT_FALSE(test_app_->ParseIndex("1", &x));
+  ClearOutput();
+
+  // Input should only contain one element.
+  EXPECT_FALSE(test_app_->ParseIndex("index=1 2", &x));
+  EXPECT_TRUE(
+      OutputContains("Expected small non-negative integer instead of 1 2"));
+  ClearOutput();
+
+  // Input shouldn't contain non-numeric characters or floats.
+  EXPECT_FALSE(test_app_->ParseIndex("index=1.5asdf", &x));
+  EXPECT_TRUE(
+      OutputContains("Expected small non-negative integer instead of 1.5asdf"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseIndex("index=$10#%", &x));
+  EXPECT_TRUE(
+      OutputContains("Expected small non-negative integer instead of $10#%"));
+  ClearOutput();
+  EXPECT_FALSE(test_app_->ParseIndex("index=10.0", &x));
+  EXPECT_TRUE(
+      OutputContains("Expected small non-negative integer instead of 10.0"));
+  ClearOutput();
+}
+
 // Tests processing a bad command line.
 TEST_F(TestAppTest, ProcessCommandLineBad) {
   EXPECT_TRUE(test_app_->ProcessCommandLine("this is not a command"));
@@ -190,6 +406,38 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
   EXPECT_TRUE(OutputContains("Metric: 'CacheMiss'"));
   EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
   ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric update_duration"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
+  EXPECT_TRUE(OutputContains("Metric: 'update_duration'"));
+  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric game_frame_rate"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
+  EXPECT_TRUE(OutputContains("Metric: 'game_frame_rate'"));
+  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric application_memory"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
+  EXPECT_TRUE(OutputContains("Metric: 'application_memory'"));
+  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric power_usage"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
+  EXPECT_TRUE(OutputContains("Metric: 'power_usage'"));
+  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  ClearOutput();
 }
 
 // Tests processing a bad show command line.
@@ -224,6 +472,47 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndShowConfig) {
   EXPECT_TRUE(OutputContains("metric_type: EVENT_COUNT"));
   EXPECT_TRUE(OutputContains("report_name: \"CacheMissCounts\""));
   EXPECT_TRUE(OutputContains("report_type: EVENT_COMPONENT_OCCURRENCE_COUNT"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric update_duration"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("show config"));
+  EXPECT_TRUE(OutputContains("metric_name: \"update_duration\""));
+  EXPECT_TRUE(OutputContains("metric_type: ELAPSED_TIME"));
+  EXPECT_TRUE(OutputContains("report_name: \"update_duration_report\""));
+  EXPECT_TRUE(OutputContains("report_type: INT_RANGE_HISTOGRAM"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric game_frame_rate"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("show config"));
+  EXPECT_TRUE(OutputContains("metric_name: \"game_frame_rate\""));
+  EXPECT_TRUE(OutputContains("metric_type: FRAME_RATE"));
+  EXPECT_TRUE(OutputContains("report_name: \"game_frame_rate_histograms\""));
+  EXPECT_TRUE(OutputContains("report_type: INT_RANGE_HISTOGRAM"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric application_memory"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("show config"));
+  EXPECT_TRUE(OutputContains("metric_name: \"application_memory\""));
+  EXPECT_TRUE(OutputContains("metric_type: MEMORY_USAGE"));
+  EXPECT_TRUE(OutputContains("report_name: \"application_memory_histograms\""));
+  EXPECT_TRUE(OutputContains("report_type: INT_RANGE_HISTOGRAM"));
+  ClearOutput();
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric power_usage"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  EXPECT_TRUE(test_app_->ProcessCommandLine("show config"));
+  EXPECT_TRUE(OutputContains("metric_name: \"power_usage\""));
+  EXPECT_TRUE(OutputContains("metric_type: INT_HISTOGRAM"));
+  EXPECT_TRUE(OutputContains("report_name: \"power_usage_histograms\""));
+  EXPECT_TRUE(OutputContains("report_type: INT_RANGE_HISTOGRAM"));
+  ClearOutput();
 }
 
 // Tests processing a bad log command line.
@@ -272,6 +561,46 @@ TEST_F(TestAppTest, ProcessCommandLineEncodeBad) {
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 event foo"));
   EXPECT_TRUE(OutputContains("Expected non-negative integer instead of foo."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric update_duration"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 elapsed_time foo bar"));
+  EXPECT_TRUE(
+      OutputContains("Malformed log elapsed_time command. Expected 3 "
+                     "additional parameters."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric game_frame_rate"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 frame_rate foo bar"));
+  EXPECT_TRUE(
+      OutputContains("Malformed log frame_rate command. Expected 3 "
+                     "additional parameters."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric application_memory"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 memory_usage foo bar"));
+  EXPECT_TRUE(
+      OutputContains("Malformed log memory_usage command. Expected 3 "
+                     "additional parameters."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("set metric power_usage"));
+  EXPECT_TRUE(OutputContains("Metric set."));
+
+  ClearOutput();
+  EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 int_histogram foo bar"));
+  EXPECT_TRUE(
+      OutputContains("Malformed log int_histogram command. Expected 4 "
+                     "additional parameters."));
 }
 
 // Tests processing a bad send command line.
