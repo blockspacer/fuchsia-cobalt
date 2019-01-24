@@ -100,7 +100,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 1
-  max_event_code: 100
+  metric_dimensions: {
+    max_event_code: 100
+  }
   reports: {
     report_name: "ErrorCountsByCode"
     id: 123
@@ -112,6 +114,12 @@ metric {
 metric {
   metric_name: "ReadCacheHits"
   metric_type: EVENT_COUNT
+  metric_dimensions: {
+    event_codes: {
+      key: 43
+      value: "CODE"
+    }
+  }
   customer_id: 1
   project_id: 1
   id: 2
@@ -125,6 +133,12 @@ metric {
 metric {
   metric_name: "ModuleLoadTime"
   metric_type: ELAPSED_TIME
+  metric_dimensions: {
+    event_codes: {
+      key: 44
+      value: "CODE"
+    }
+  }
   customer_id: 1
   project_id: 1
   id: 3
@@ -148,6 +162,12 @@ metric {
 metric {
   metric_name: "LoginModuleFrameRate"
   metric_type: FRAME_RATE
+  metric_dimensions: {
+    event_codes: {
+      key: 45
+      value: "CODE"
+    }
+  }
   customer_id: 1
   project_id: 1
   id: 4
@@ -171,6 +191,12 @@ metric {
 metric {
   metric_name: "LedgerMemoryUsage"
   metric_type: MEMORY_USAGE
+  metric_dimensions: {
+    event_codes: {
+      key: 46
+      value: "CODE"
+    }
+  }
   customer_id: 1
   project_id: 1
   id: 5
@@ -189,6 +215,12 @@ metric {
 metric {
   metric_name: "FileSystemWriteTimes"
   metric_type: INT_HISTOGRAM
+  metric_dimensions: {
+    event_codes: {
+      key: 47
+      value: "CODE"
+    }
+  }
   int_buckets: {
     linear: {
       floor: 0
@@ -247,7 +279,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 9
-  max_event_code: 1
+  metric_dimensions: {
+    max_event_code: 1
+  }
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
     id: 91
@@ -263,7 +297,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 10
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "FeaturesActive_UniqueDevices"
     id: 201
@@ -281,7 +317,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 11
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "SomeEventsOccurred_SimpleCount"
     id: 301
@@ -334,7 +372,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 9
-  max_event_code: 1
+  metric_dimensions: {
+    max_event_code: 1
+  }
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
     id: 91
@@ -350,7 +390,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 10
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "SomeFeaturesActive_UniqueDevices"
     id: 201
@@ -368,7 +410,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 11
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "SomeEventsOccurred_SimpleCount"
     id: 301

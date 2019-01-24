@@ -25,6 +25,7 @@ using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::util::ClockInterface;
 using ::cobalt::util::SystemClock;
 using ::cobalt::util::TimeToDayIndex;
+using ::google::protobuf::RepeatedField;
 using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
@@ -51,6 +52,8 @@ class EventLogger {
   const ProjectContext* project_context() { return logger_->project_context_; }
   Encoder::Result BadReportType(const MetricDefinition& metric,
                                 const ReportDefinition& report);
+  virtual Status ValidateEventCodes(const EventRecord& event_record,
+                                    const RepeatedField<uint32_t>& event_codes);
 
  private:
   // Finishes setting up and then validates |event_record|.
@@ -124,6 +127,7 @@ class CountEventLogger : public EventLogger {
   Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record) override;
+  Status ValidateEvent(const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for all of the numerical performance metric
@@ -155,6 +159,7 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
   uint32_t EventCode(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
+  Status ValidateEvent(const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type FRAME_RATE.
@@ -168,6 +173,7 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
   uint32_t EventCode(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
+  Status ValidateEvent(const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type MEMORY_USAGE.
@@ -181,6 +187,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
   uint32_t EventCode(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
+  Status ValidateEvent(const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type INT_HISTOGRAM.
@@ -274,13 +281,16 @@ Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
                            &event_record);
 }
 
-Status Logger::LogEventCount(uint32_t metric_id, uint32_t event_code,
+Status Logger::LogEventCount(uint32_t metric_id,
+                             std::vector<uint32_t> event_codes,
                              const std::string& component,
                              int64_t period_duration_micros, uint32_t count) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEventCount);
   EventRecord event_record;
   auto* count_event = event_record.event->mutable_count_event();
-  count_event->add_event_code(event_code);
+  for (auto event_code : event_codes) {
+    count_event->add_event_code(event_code);
+  }
   count_event->set_component(component);
   count_event->set_period_duration_micros(period_duration_micros);
   count_event->set_count(count);
@@ -289,13 +299,16 @@ Status Logger::LogEventCount(uint32_t metric_id, uint32_t event_code,
                            &event_record);
 }
 
-Status Logger::LogElapsedTime(uint32_t metric_id, uint32_t event_code,
+Status Logger::LogElapsedTime(uint32_t metric_id,
+                              std::vector<uint32_t> event_codes,
                               const std::string& component,
                               int64_t elapsed_micros) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogElapsedTime);
   EventRecord event_record;
   auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
-  elapsed_time_event->add_event_code(event_code);
+  for (auto event_code : event_codes) {
+    elapsed_time_event->add_event_code(event_code);
+  }
   elapsed_time_event->set_component(component);
   elapsed_time_event->set_elapsed_micros(elapsed_micros);
   auto event_logger = std::make_unique<ElapsedTimeEventLogger>(this);
@@ -303,12 +316,15 @@ Status Logger::LogElapsedTime(uint32_t metric_id, uint32_t event_code,
                            &event_record);
 }
 
-Status Logger::LogFrameRate(uint32_t metric_id, uint32_t event_code,
+Status Logger::LogFrameRate(uint32_t metric_id,
+                            std::vector<uint32_t> event_codes,
                             const std::string& component, float fps) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogFrameRate);
   EventRecord event_record;
   auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
-  frame_rate_event->add_event_code(event_code);
+  for (auto event_code : event_codes) {
+    frame_rate_event->add_event_code(event_code);
+  }
   frame_rate_event->set_component(component);
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
   auto event_logger = std::make_unique<FrameRateEventLogger>(this);
@@ -316,12 +332,15 @@ Status Logger::LogFrameRate(uint32_t metric_id, uint32_t event_code,
                            &event_record);
 }
 
-Status Logger::LogMemoryUsage(uint32_t metric_id, uint32_t event_code,
+Status Logger::LogMemoryUsage(uint32_t metric_id,
+                              std::vector<uint32_t> event_codes,
                               const std::string& component, int64_t bytes) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogMemoryUsage);
   EventRecord event_record;
   auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
-  memory_usage_event->add_event_code(event_code);
+  for (auto event_code : event_codes) {
+    memory_usage_event->add_event_code(event_code);
+  }
   memory_usage_event->set_component(component);
   memory_usage_event->set_bytes(bytes);
   auto event_logger = std::make_unique<MemoryUsageEventLogger>(this);
@@ -329,13 +348,16 @@ Status Logger::LogMemoryUsage(uint32_t metric_id, uint32_t event_code,
                            &event_record);
 }
 
-Status Logger::LogIntHistogram(uint32_t metric_id, uint32_t event_code,
+Status Logger::LogIntHistogram(uint32_t metric_id,
+                               std::vector<uint32_t> event_codes,
                                const std::string& component,
                                HistogramPtr histogram) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogIntHistogram);
   EventRecord event_record;
   auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
-  int_histogram_event->add_event_code(event_code);
+  for (auto event_code : event_codes) {
+    int_histogram_event->add_event_code(event_code);
+  }
   int_histogram_event->set_component(component);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
   auto event_logger = std::make_unique<IntHistogramEventLogger>(this);
@@ -560,6 +582,63 @@ Status EventLogger::ValidateEvent(const EventRecord& event_record) {
   return kOK;
 }
 
+Status EventLogger::ValidateEventCodes(
+    const EventRecord& event_record,
+    const RepeatedField<uint32_t>& event_codes) {
+  if (event_record.metric->metric_dimensions_size() != event_codes.size()) {
+    LOG(ERROR) << "The number of event_codes (" << event_codes.size()
+               << ") specified does not match the "
+                  "number of metric_dimensions ("
+               << event_record.metric->metric_dimensions_size()
+               << ") for Metric " << MetricDebugString(*event_record.metric)
+               << ", in project " << project_context()->DebugString() << ".";
+    return kInvalidArguments;
+  }
+  for (int i = 0; i < event_codes.size(); i++) {
+    auto dim = event_record.metric->metric_dimensions(i);
+    auto code = event_codes.Get(i);
+
+    // This verifies the two possible validation modes for a metric_dimension.
+    //
+    // 1. If it has a max_event_code, then all we do is verify that the supplied
+    //    code is <= that value
+    //
+    // 2. If no max_event_code is specified, we verify that the supplied code
+    //    maps to one of the values in the event_code map.
+    if (dim.max_event_code() > 0) {
+      if (code > dim.max_event_code()) {
+        LOG(ERROR) << "The event_code " << code << " exceeds "
+                   << dim.max_event_code() << ", the max_event_code for Metric "
+                   << MetricDebugString(*event_record.metric) << ", dimension "
+                   << i << ", in project " << project_context()->DebugString()
+                   << ".";
+        return kInvalidArguments;
+      }
+    } else {
+      bool valid = false;
+      for (const auto& event_code : dim.event_codes()) {
+        if (event_code.first == code) {
+          valid = true;
+          break;
+        }
+      }
+
+      if (!valid) {
+        LOG(ERROR) << "The event_code " << i
+                   << " received a code of value: " << code
+                   << " which is not a valid event code for this dimension."
+                   << " Metric " << MetricDebugString(*event_record.metric)
+                   << ", in project " << project_context()->DebugString()
+                   << ". You must either add an entry for this event code into "
+                      "the metric_dimension, or set a max_event_code >= "
+                   << code;
+        return kInvalidArguments;
+      }
+    }
+  }
+  return kOK;
+}
+
 // The default implementation of MaybeUpdateLocalAggregation does nothing
 // and returns OK.
 Status EventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
@@ -609,8 +688,17 @@ Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
 // TODO(zmbush): Validate dimensions (for all subclasses of EventLogger).
 Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_occurrence_event());
+  if (event_record.metric->metric_dimensions_size() != 1) {
+    LOG(ERROR) << "The Metric " << MetricDebugString(*event_record.metric)
+               << " in project " << project_context()->DebugString()
+               << " has the wrong number of metric_dimensions. A metric of "
+                  "type EVENT_OCCURRED must have exactly one metric_dimension.";
+    return kInvalidConfig;
+  }
+
   const auto& occurrence_event = event_record.event->occurrence_event();
-  if (occurrence_event.event_code() > event_record.metric->max_event_code()) {
+  if (occurrence_event.event_code() >
+      event_record.metric->metric_dimensions(0).max_event_code()) {
     LOG(ERROR) << "The event_code " << occurrence_event.event_code()
                << " exceeds " << event_record.metric->max_event_code()
                << ", the max_event_code for Metric "
@@ -696,6 +784,11 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
+Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
+  return ValidateEventCodes(event_record,
+                            event_record.event->count_event().event_code());
+}
+
 /////////////// IntegerPerformanceEventLogger method implementations ///////////
 
 Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
@@ -738,6 +831,11 @@ int64_t ElapsedTimeEventLogger::IntValue(const Event& event) {
   return event.elapsed_time_event().elapsed_micros();
 }
 
+Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
+  return ValidateEventCodes(
+      event_record, event_record.event->elapsed_time_event().event_code());
+}
+
 ////////////// FrameRateEventLogger method implementations /////////////////
 
 uint32_t FrameRateEventLogger::EventCode(const Event& event) {
@@ -754,6 +852,11 @@ std::string FrameRateEventLogger::Component(const Event& event) {
 int64_t FrameRateEventLogger::IntValue(const Event& event) {
   CHECK(event.has_frame_rate_event());
   return event.frame_rate_event().frames_per_1000_seconds();
+}
+
+Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
+  return ValidateEventCodes(
+      event_record, event_record.event->frame_rate_event().event_code());
 }
 
 ////////////// MemoryUsageEventLogger method implementations ///////////////////
@@ -773,12 +876,24 @@ int64_t MemoryUsageEventLogger::IntValue(const Event& event) {
   return event.memory_usage_event().bytes();
 }
 
+Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
+  return ValidateEventCodes(
+      event_record, event_record.event->memory_usage_event().event_code());
+}
+
 /////////////// IntHistogramEventLogger method implementations /////////////////
 
 Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_int_histogram_event());
   const auto& int_histogram_event = event_record.event->int_histogram_event();
   const auto& metric = *(event_record.metric);
+
+  auto status =
+      ValidateEventCodes(event_record, int_histogram_event.event_code());
+  if (status != kOK) {
+    return status;
+  }
+
   if (!metric.has_int_buckets()) {
     LOG(ERROR) << "Invalid Cobalt config: Metric " << MetricDebugString(metric)
                << " in project " << project_context()->DebugString()
