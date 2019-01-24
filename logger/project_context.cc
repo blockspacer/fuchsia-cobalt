@@ -93,6 +93,10 @@ ProjectContext::ConstructWithProjectConfigs(
     const std::string& customer_name, const std::string& project_name,
     std::shared_ptr<config::ProjectConfigs> project_configs,
     ReleaseStage release_stage) {
+  if (!project_configs) {
+    return util::Status(StatusCode::INVALID_ARGUMENT,
+                        "The project_configs argument was null.");
+  }
   auto customer_cfg = project_configs->GetCustomerConfig(customer_name);
   if (!customer_cfg) {
     return util::Status(StatusCode::INVALID_ARGUMENT,
@@ -117,7 +121,8 @@ ProjectContext::ProjectContext(
     const std::string& project_name,
     std::shared_ptr<config::ProjectConfigs> project_configs,
     ReleaseStage release_stage)
-    : project_configs_(project_configs) {
+    : metric_definitions_(new MetricDefinitions()),
+      project_configs_(project_configs) {
   PopulateProject(customer_id, project_id, customer_name, project_name,
                   release_stage, &project_);
   auto project_cfg =

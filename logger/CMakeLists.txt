@@ -77,7 +77,8 @@ add_cobalt_dependencies(logger_test_utils)
 add_executable(logger_tests
                encoder_test.cc
                event_aggregator_test.cc
-               logger_test.cc)
+               logger_test.cc
+               project_context_test.cc)
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator
