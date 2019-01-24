@@ -16,7 +16,8 @@ metric_definitions:
 - id: 1
   metric_name: "ErrorOccurred"
   metric_type: EVENT_OCCURRED
-  max_event_code: 100
+  metric_dimensions:
+    - max_event_code: 100
   reports:
     # Report ID: 3131160301
     - report_name: "ErrorCountsByCode"
@@ -26,7 +27,8 @@ metric_definitions:
 - id: 2
   metric_name: "ReadCacheHits"
   metric_type: EVENT_COUNT
-  max_event_code: 111
+  metric_dimensions:
+    - max_event_code: 111
   reports:
     # Report ID: 2845948340
     - report_name: "ReadCacheHitCounts"
@@ -35,6 +37,9 @@ metric_definitions:
 - id: 3
   metric_name: "ModuleLoadTime"
   metric_type: ELAPSED_TIME
+  metric_dimensions:
+    - event_codes:
+        44: CODE
   reports:
     # Report ID: 643534882
     - report_name: "ModuleLoadTime_Aggregated"
@@ -49,6 +54,9 @@ metric_definitions:
 - id: 4
   metric_name: "LoginModuleFrameRate"
   metric_type: FRAME_RATE
+  metric_dimensions:
+    - event_codes:
+        45: CODE
   reports:
     # Report ID: 1444372300
     - report_name: "LoginModuleFrameRate_Aggregated"
@@ -63,6 +71,9 @@ metric_definitions:
 - id: 5
   metric_name: "LedgerMemoryUsage"
   metric_type: MEMORY_USAGE
+  metric_dimensions:
+    - event_codes:
+        46: CODE
   reports:
     # Report ID: 4291656504
     - report_name: "LedgerMemoryUsage_Aggregated"
@@ -74,6 +85,9 @@ metric_definitions:
 - id: 6
   metric_name: "FileSystemWriteTimes"
   metric_type: INT_HISTOGRAM
+  metric_dimensions:
+    - event_codes:
+        47: CODE
   int_buckets:
      linear:
        floor: 0
@@ -110,7 +124,8 @@ metric_definitions:
 - id: 9
   metric_name: "DeviceBoots"
   metric_type: EVENT_OCCURRED
-  max_event_code: 1
+  metric_dimensions:
+    - max_event_code: 1
   reports:
     # Report ID: 131134909
     - report_name: "DeviceBoots_UniqueDevices"
@@ -122,7 +137,8 @@ metric_definitions:
 - id: 10
   metric_name: "FeaturesActive"
   metric_type: EVENT_OCCURRED
-  max_event_code: 4
+  metric_dimensions:
+    - max_event_code: 4
   reports:
     # Report ID: 635837989
     - report_name: "FeaturesActive_UniqueDevices"
@@ -136,7 +152,8 @@ metric_definitions:
 - id: 11
   metric_name: "EventsOccurred"
   metric_type: EVENT_OCCURRED
-  max_event_code: 4
+  metric_dimensions:
+    - max_event_code: 4
   reports:
     # Report ID: 1203991176
     - report_name: "EventsOccurred_GlobalCount"

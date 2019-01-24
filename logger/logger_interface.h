@@ -42,9 +42,9 @@ class LoggerInterface {
   // be one of the Metrics from the ProjectContext passed to the constructor,
   // and it must be of type EVENT_COUNT.
   //
-  // |event_code| The index of the event type that occurred. The indexed
-  // set of all event types is specified in the Metric definition. Use 0
-  // if there is no natural notion of event type.
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
   //
   // |component| Optionally, a component associated with the event may also be
   // logged. Use the empty string if there is no natural notion of component.
@@ -58,10 +58,19 @@ class LoggerInterface {
   // always set this value to 1 and always set |period_duration_micros| to 0
   // in order to achieve a semantics similar to the LogEventOccurred() method,
   // but with a |component|.
-  virtual Status LogEventCount(uint32_t metric_id, uint32_t event_code,
+  virtual Status LogEventCount(uint32_t metric_id,
+                               std::vector<uint32_t> event_codes,
                                const std::string& component,
                                int64_t period_duration_micros,
                                uint32_t count) = 0;
+
+  // DEPRECATED. TODO(zmbush): Remove
+  Status LogEventCount(uint32_t metric_id, uint32_t event_code,
+                       const std::string& component,
+                       int64_t period_duration_micros, uint32_t count) {
+    return LogEventCount(metric_id, (std::vector<uint32_t>){event_code},
+                         component, period_duration_micros, count);
+  }
 
   // Logs that an event lasted a given amount of time.
   //
@@ -69,18 +78,26 @@ class LoggerInterface {
   // be one of the Metrics from the ProjectContext passed to the constructor,
   // and it must be of type ELAPSED_TIME.
   //
-  // |event_code| The index of the event type that occurred. The indexed
-  // set of all event types is specified in the Metric definition. Use 0
-  // if there is no natural notion of event type.
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
   //
   // |component| Optionally, a component associated with the event may also be
   // logged. Use the empty string if there is no natural notion of component.
   //
   // |elapsed_micros| The elapsed time of the event, specified as a number
   // of microseconds.
-  virtual Status LogElapsedTime(uint32_t metric_id, uint32_t event_code,
+  virtual Status LogElapsedTime(uint32_t metric_id,
+                                std::vector<uint32_t> event_codes,
                                 const std::string& component,
                                 int64_t elapsed_micros) = 0;
+
+  // DEPRECATED. TODO(zmbush): Remove
+  Status LogElapsedTime(uint32_t metric_id, uint32_t event_code,
+                        const std::string& component, int64_t elapsed_micros) {
+    return LogElapsedTime(metric_id, (std::vector<uint32_t>){event_code},
+                          component, elapsed_micros);
+  }
 
   // Logs a measured average frame rate.
   //
@@ -88,33 +105,50 @@ class LoggerInterface {
   // be one of the Metrics from the ProjectContext passed to the constructor,
   // and it must be of type FRAME_RATE.
   //
-  // |event_code| The index of the event type that occurred. The indexed
-  // set of all event types is specified in the Metric definition. Use 0
-  // if there is no natural notion of event type.
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
   //
   // |component| Optionally, a component associated with the event may also be
   // logged. Use the empty string if there is no natural notion of component.
   //
   // |fps| The average-frame rate in frames-per-second.
-  virtual Status LogFrameRate(uint32_t metric_id, uint32_t event_code,
+  virtual Status LogFrameRate(uint32_t metric_id,
+                              std::vector<uint32_t> event_codes,
                               const std::string& component, float fps) = 0;
+
+  // DEPRECATED. TODO(zmbush): Remove
+  Status LogFrameRate(uint32_t metric_id, uint32_t event_code,
+                      const std::string& component, float fps) {
+    return LogFrameRate(metric_id, (std::vector<uint32_t>){event_code},
+                        component, fps);
+  }
+
   // Logs a measured memory usage.
   //
   // |metric_id| ID of the Metric the logged Event will belong to. It must
   // be one of the Metrics from the ProjectContext passed to the constructor,
   // and it must be of type MEMORY_USAGE.
   //
-  // |event_code| The index of the event type that occurred. The indexed
-  // set of all event types is specified in the Metric definition. Use 0
-  // if there is no natural notion of event type.
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
   //
   // |component| Optionally, a component associated with the event may also be
   // logged. Use the empty string if there is no natural notion of component.
   //
   // |bytes| The memory used, in bytes.
-  virtual Status LogMemoryUsage(uint32_t metric_id, uint32_t event_code,
+  virtual Status LogMemoryUsage(uint32_t metric_id,
+                                std::vector<uint32_t> event_codes,
                                 const std::string& component,
                                 int64_t bytes) = 0;
+
+  // DEPRECATED. TODO(zmbush): Remove
+  Status LogMemoryUsage(uint32_t metric_id, uint32_t event_code,
+                        const std::string& component, int64_t bytes) {
+    return LogMemoryUsage(metric_id, (std::vector<uint32_t>){event_code},
+                          component, bytes);
+  }
 
   // Logs a histogram over a set of integer buckets. The meaning of the
   // Metric and the buckets is specified in the Metric definition.
@@ -123,9 +157,9 @@ class LoggerInterface {
   // be one of the Metrics from the ProjectContext passed to the constructor,
   // and it must be of type INT_HISTOGRAM.
   //
-  // |event_code| The index of the event type that occurred. The indexed
-  // set of all event types is specified in the Metric definition. Use 0
-  // if there is no natural notion of event type.
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
   //
   // |component| Optionally, a component associated with the event may also be
   // logged. Use the empty string if there is no natural notion of component.
@@ -133,9 +167,17 @@ class LoggerInterface {
   // |histogram| The histogram to log. Each HistogramBucket gives the count
   //  for one bucket of the histogram. The definitions of the buckets is
   //  given in the Metric definition.
-  virtual Status LogIntHistogram(uint32_t metric_id, uint32_t event_code,
+  virtual Status LogIntHistogram(uint32_t metric_id,
+                                 std::vector<uint32_t> event_codes,
                                  const std::string& component,
                                  HistogramPtr histogram) = 0;
+
+  // DEPRECATED. TODO(zmbush): Remove
+  Status LogIntHistogram(uint32_t metric_id, uint32_t event_code,
+                         const std::string& component, HistogramPtr histogram) {
+    return LogIntHistogram(metric_id, (std::vector<uint32_t>){event_code},
+                           component, std::move(histogram));
+  }
 
   // Logs the fact that a given string was used, in a specific context.
   // The semantics of the context and the string is specified in the

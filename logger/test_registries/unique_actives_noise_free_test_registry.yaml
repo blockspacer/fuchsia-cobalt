@@ -16,7 +16,8 @@ metric_definitions:
 - id: 1
   metric_name: "DeviceBoots"
   metric_type: EVENT_OCCURRED
-  max_event_code: 1
+  metric_dimensions:
+    - max_event_code: 1
   reports:
     # Report ID: 131134909
     - report_name: "DeviceBoots_UniqueDevices"
@@ -28,7 +29,8 @@ metric_definitions:
 - id: 2
   metric_name: "FeaturesActive"
   metric_type: EVENT_OCCURRED
-  max_event_code: 4
+  metric_dimensions:
+    - max_event_code: 4
   reports:
     # Report ID: 635837989
     - report_name: "FeaturesActive_UniqueDevices"
@@ -42,7 +44,8 @@ metric_definitions:
 - id: 3
   metric_name: "EventsOccurred"
   metric_type: EVENT_OCCURRED
-  max_event_code: 4
+  metric_dimensions:
+    - max_event_code: 4
   reports:
     # Report ID: 1534862846
     - report_name: "EventsOccurred_GlobalCount"
