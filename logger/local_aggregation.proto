@@ -98,21 +98,54 @@ message AggregationConfig {
   ReportDefinition report = 3;
 }
 
-// A container used by the EventAggregator to store the latest day index for
-// which an Observation has been generated for each report, event code, and
-// window size.
+// A container used by the EventAggregator to store the history of generated
+// Observations, indexed by report.
 message AggregatedObservationHistoryStore {
   // Keyed by base64-encoded serializations of ReportAggregationKey messages.
   map<string, AggregatedObservationHistory> by_report_key = 1;
 }
 
+// A container for the history of Observations that have been generated for a
+// single report.
 message AggregatedObservationHistory {
+  // If this is a locally aggregated report, then AggregatedObservationHistory
+  // has one of the following types.
   oneof type {
+    // A container for the history of UniqueActivesObservations generated
+    // for a UNIQUE_N_DAY_ACTIVES report.
     UniqueActivesObservationHistory unique_actives_history = 1;
+    // A container for the history of PerDeviceCountObservations generated
+    // for a PER_DEVICE_COUNT_STATS report.
+    PerDeviceCountObservationHistory per_device_count_history = 2;
   }
+  // A container for the history of ReportParticipationObservations generated
+  // for this report. Unset if ReportParticipationObservations should not be
+  // generated for this report.
+  ReportParticipationObservationHistory report_participation_history = 100;
 }
 
 message UniqueActivesObservationHistory {
+  // Keyed by event code.
+  map<uint32, HistoryByWindowSize> by_event_code = 1;
+}
+
+message PerDeviceCountObservationHistory {
+  // The history of PerDeviceCount Observations. Keyed by component string.
+  map<string, HistoryByEventCode> by_component = 1;
+}
+
+message ReportParticipationObservationHistory {
+  // The last day index for which a ReportParticipationObservation was
+  // generated for this report.
+  //
+  // TODO(pesk): if ReportParticipationObservation has a window_size
+  // field in the future, consider changing this to a repeated field
+  // where the k-th last_generated field holds the value for window
+  // size k.
+  uint32 last_generated = 1;
+}
+
+message HistoryByEventCode {
   // Keyed by event code.
   map<uint32, HistoryByWindowSize> by_event_code = 1;
 }

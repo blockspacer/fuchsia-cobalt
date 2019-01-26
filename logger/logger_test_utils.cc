@@ -24,6 +24,8 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
+using crypto::byte;
+using crypto::hash::DIGEST_SIZE;
 using encoder::ClientSecret;
 using rappor::BasicRapporEncoder;
 using rappor::RapporConfigHelper;
@@ -32,6 +34,27 @@ using util::MessageDecrypter;
 
 namespace logger {
 namespace testing {
+
+namespace {
+// Populates |*hash_out| with the SHA256 of |component|, unless |component|
+// is empty in which case *hash_out is set to the empty string also. An
+// empty string indicates that the component_name feature is not being used.
+// We expect this to be a common case and in this case there is no point
+// in using 32 bytes to represent the empty string. Returns true on success
+// and false on failure (unexpected).
+bool HashComponentNameIfNotEmpty(const std::string& component,
+                                 std::string* hash_out) {
+  CHECK(hash_out);
+  if (component.empty()) {
+    hash_out->resize(0);
+    return true;
+  }
+  hash_out->resize(DIGEST_SIZE);
+  return cobalt::crypto::hash::Hash(
+      reinterpret_cast<const byte*>(component.data()), component.size(),
+      reinterpret_cast<byte*>(&hash_out->front()));
+}
+}  // namespace
 
 bool PopulateMetricDefinitions(const char metric_string[],
                                MetricDefinitions* metric_definitions) {
@@ -83,6 +106,17 @@ ExpectedUniqueActivesObservations MakeNullExpectedUniqueActivesObservations(
             false);
       }
     }
+  }
+  return expected_obs;
+}
+
+ExpectedReportParticipationObservations
+MakeExpectedReportParticipationObservations(
+    const ExpectedAggregationParams& expected_params, uint32_t day_index) {
+  ExpectedReportParticipationObservations expected_obs;
+
+  for (const auto& report_pair : expected_params.window_sizes) {
+    expected_obs.insert({report_pair.first, day_index});
   }
   return expected_obs;
 }
@@ -261,8 +295,8 @@ bool CheckUniqueActivesObservations(
   // when this method is called.
   ExpectedAggregationParams expected_params;
   // A container for the strings expected to appear in the |data| field of the
-  // BasicRapporObservation wrapped by the UniqueActivesObservation for a given
-  // MetricReportId, day index, window size, and event code.
+  // BasicRapporObservation wrapped by the UniqueActivesObservation for a
+  // given MetricReportId, day index, window size, and event code.
   std::map<std::pair<MetricReportId, uint32_t>,
            std::map<uint32_t, std::map<uint32_t, std::string>>>
       expected_values;
@@ -345,6 +379,123 @@ bool CheckUniqueActivesObservations(
   if (!expected_values.empty()) {
     return false;
   }
+  return true;
+}
+
+bool CheckPerDeviceCountObservations(
+    ExpectedPerDeviceCountObservations expected_per_device_count_obs,
+    ExpectedReportParticipationObservations expected_report_participation_obs,
+    FakeObservationStore* observation_store,
+    TestUpdateRecipient* update_recipient) {
+  // An ExpectedAggregationParams struct describing the number of
+  // Observations for each report ID which are expected to be
+  // in the FakeObservationStore when this method is called.
+  ExpectedAggregationParams expected_params;
+  std::map<std::string, std::string> component_hashes;
+  for (const auto& id_pair : expected_report_participation_obs) {
+    expected_params.daily_num_obs++;
+    expected_params.num_obs_per_report[id_pair.first]++;
+    expected_params.metric_report_ids.insert(id_pair.first);
+  }
+  for (const auto& id_pair : expected_per_device_count_obs) {
+    for (const auto& window_size_pair : id_pair.second) {
+      auto window_size = window_size_pair.first;
+      expected_params.window_sizes[id_pair.first.first].insert(window_size);
+      for (const auto& expected_obs : window_size_pair.second) {
+        expected_params.daily_num_obs++;
+        expected_params.num_obs_per_report[id_pair.first.first]++;
+        std::string component = std::get<0>(expected_obs);
+        std::string component_hash;
+        HashComponentNameIfNotEmpty(component, &component_hash);
+        component_hashes[component_hash] = component;
+      }
+    }
+  }
+  // Fetch the contents of the ObservationStore and check that each
+  // received Observation corresponds to an element of |expected_values|.
+  std::vector<Observation2> observations;
+  if (!FetchAggregatedObservations(&observations, expected_params,
+                                   observation_store, update_recipient)) {
+    return false;
+  }
+  std::vector<Observation2> report_participation_obs;
+  std::vector<ObservationMetadata> report_participation_metadata;
+  std::vector<Observation2> per_device_count_obs;
+  std::vector<ObservationMetadata> per_device_count_metadata;
+  for (size_t i = 0; i < observations.size(); i++) {
+    if (observations.at(i).has_report_participation()) {
+      report_participation_obs.push_back(observations.at(i));
+      report_participation_metadata.push_back(
+          *observation_store->metadata_received[i]);
+    } else if (observations.at(i).has_per_device_count()) {
+      per_device_count_obs.push_back(observations.at(i));
+      per_device_count_metadata.push_back(
+          *observation_store->metadata_received[i]);
+    } else {
+      return false;
+    }
+  }
+  // Check the received PerDeviceCountObservations
+  for (size_t i = 0; i < per_device_count_obs.size(); i++) {
+    auto obs_key =
+        std::make_pair(MetricReportId(per_device_count_metadata[i].metric_id(),
+                                      per_device_count_metadata[i].report_id()),
+                       per_device_count_metadata[i].day_index());
+    auto report_iter = expected_per_device_count_obs.find(obs_key);
+    if (report_iter == expected_per_device_count_obs.end()) {
+      return false;
+    }
+    auto obs = per_device_count_obs.at(i);
+    uint32_t obs_window_size = obs.per_device_count().window_size();
+    auto window_iter = report_iter->second.find(obs_window_size);
+    if (window_iter == report_iter->second.end()) {
+      return false;
+    }
+    std::string obs_component_hash =
+        obs.per_device_count().integer_event_obs().component_name_hash();
+    std::string obs_component;
+    auto hash_iter = component_hashes.find(obs_component_hash);
+    if (hash_iter == component_hashes.end()) {
+      return false;
+    } else {
+      obs_component = component_hashes[obs_component_hash];
+    }
+    auto obs_tuple = std::make_tuple(
+        obs_component, obs.per_device_count().integer_event_obs().event_code(),
+        obs.per_device_count().integer_event_obs().value());
+    auto obs_iter = window_iter->second.find(obs_tuple);
+    if (obs_iter == window_iter->second.end()) {
+      return false;
+    }
+    expected_per_device_count_obs.at(obs_key)
+        .at(obs_window_size)
+        .erase(obs_tuple);
+    if (expected_per_device_count_obs.at(obs_key).at(obs_window_size).empty()) {
+      expected_per_device_count_obs.at(obs_key).erase(obs_window_size);
+    }
+    if (expected_per_device_count_obs.at(obs_key).empty()) {
+      expected_per_device_count_obs.erase(obs_key);
+    }
+  }
+  if (!expected_per_device_count_obs.empty()) {
+    return false;
+  }
+
+  // Check the received ReportParticipationObservations
+  for (size_t i = 0; i < report_participation_obs.size(); i++) {
+    auto obs_key = std::make_pair(
+        MetricReportId(report_participation_metadata[i].metric_id(),
+                       report_participation_metadata[i].report_id()),
+        report_participation_metadata[i].day_index());
+    if (expected_report_participation_obs.count(obs_key) == 0) {
+      return false;
+    }
+    expected_report_participation_obs.erase(obs_key);
+  }
+  if (!expected_report_participation_obs.empty()) {
+    return false;
+  }
+
   return true;
 }
 

@@ -27,20 +27,19 @@
 namespace cobalt {
 namespace logger {
 
-// The EventAggregator class manages an in-memory store of aggregated values
-// of Events logged for locally aggregated report types. For each day, this
-// LocalAggregateStore contains an aggregate of the values of logged Events of
-// a given event code over that day. These daily aggregates are used to
-// produce Observations of values aggregated over a rolling window of size
-// specified in the ReportDefinition.
+// The EventAggregator manages an in-memory store of aggregated Event values,
+// indexed by report, day index, and other dimensions specific to the report
+// type (e.g. event code). Periodically, this data is used to generate
+// Observations representing aggregates of Event values over a day, week, month,
+// etc.
 //
 // Each Logger interacts with the EventAggregator in the following way:
 // (1) When the Logger is created, it calls UpdateAggregationConfigs() to
-// provide the EventAggregator with the configurations of its locally
-// aggregated reports.
-// (2) When logging an Event for a locally aggregated report, a Logger calls an
-// Update*Aggregation() method with the Event and the ReportAggregationKey of
-// the report.
+// provide the EventAggregator with its view of Cobalt's metric and report
+// registry.
+// (2) When logging an Event for a locally aggregated report, a Logger
+// calls an Update*Aggregation() method with the Event and the
+// ReportAggregationKey of the report.
 //
 // A worker thread does the following tasks at intervals specified in the
 // EventAggregator's constructor:
@@ -115,8 +114,8 @@ class EventAggregator {
   // Start the worker thread.
   void Start();
 
-  // Updates the EventAggregator's view of the set of locally aggregated
-  // report configurations.
+  // Updates the EventAggregator's view of the Cobalt metric and report
+  // registry.
   //
   // This method may be called multiple times during the EventAggregator's
   // lifetime. If the EventAggregator is provided with a report whose tuple
@@ -266,6 +265,22 @@ class EventAggregator {
                                               uint32_t event_code,
                                               uint32_t window_size) const;
 
+  // Returns the most recent day index for which an Observation was generated
+  // for a given PER_DEVICE_COUNT_STATS report, component, event code,
+  // and window size, according to |obs_history_|. Returns 0 if no Observation
+  // has been generated for the given arguments.
+  uint32_t PerDeviceCountLastGeneratedDayIndex(const std::string& report_key,
+                                               const std::string& component,
+                                               uint32_t event_code,
+                                               uint32_t window_size) const;
+
+  // Returns the most recent day index for which a
+  // ReportParticipationObservation was generated for a given report, according
+  // to |obs_history_|. Returns 0 if no Observation has been generated for the
+  // given arguments.
+  uint32_t ReportParticipationLastGeneratedDayIndex(
+      const std::string& report_key) const;
+
   // For a fixed report of type UNIQUE_N_DAY_ACTIVES, generates an Observation
   // for each event code of the parent metric, for each window size of the
   // report, for the window of that size ending on |final_day_index|, unless
@@ -289,6 +304,40 @@ class EventAggregator {
                                                 uint32_t event_code,
                                                 uint32_t window_size,
                                                 bool was_active) const;
+
+  // For a fixed report of type PER_DEVICE_COUNT_STATS, generates a
+  // PerDeviceCountObservation for each tuple (component, event code, window
+  // size) for which a positive number of events with that event code occurred
+  // with that component during the window of that size ending on
+  // |final_day_index|, unless an Observation with those parameters has been
+  // generated in the past. Also generates PerDeviceCountObservations for days
+  // in the backfill period if needed.
+  //
+  // In addition to PerDeviceCountObservations, generates a
+  // ReportParticipationObservation for |final_day_index| and any needed days in
+  // the backfill period. These ReportParticipationObservations are used by the
+  // PerDeviceCount report generator to infer the fleet-wide number of devices
+  // for which the event count associated to each tuple (component, event code,
+  // window size) was zero.
+  //
+  // Observations are not generated for aggregation windows larger than
+  // |kMaxAllowedAggregationWindowSize|.
+  Status GeneratePerDeviceCountObservations(
+      const MetricRef metric_ref, const std::string& report_key,
+      const ReportAggregates& report_aggregates, uint32_t final_day_index);
+
+  // Helper method called by GeneratePerDeviceCountObservations() to generate
+  // and write a single PerDeviceCountObservation.
+  Status GenerateSinglePerDeviceCountObservation(
+      const MetricRef metric_ref, const ReportDefinition* report,
+      uint32_t obs_day_index, const std::string& component, uint32_t event_code,
+      uint32_t window_size, int64_t count) const;
+
+  // Helper method called by GeneratePerDeviceCountObservations() to generate
+  // and write a single ReportParticipationObservation.
+  Status GenerateSingleReportParticipationObservation(
+      const MetricRef metric_ref, const ReportDefinition* report,
+      uint32_t obs_day_index) const;
 
   // Returns a copy of the LocalAggregateStore. Does not assume that the
   // caller holds the mutex of |protected_aggregate_store_|.
