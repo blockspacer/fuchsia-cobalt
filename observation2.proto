@@ -47,7 +47,7 @@ message Observation2 {
     UniqueActivesObservation unique_actives = 6;
     PerDeviceCountObservation per_device_count = 7;
     CustomObservation custom = 1000;
-    ReportDeviceCountObservation report_device_count = 10000;
+    ReportParticipationObservation report_participation = 10000;
   }
 
   // A quasi-unique identifier for this observation. This is randomly generated
@@ -218,14 +218,20 @@ message CustomObservation {
   map<string, CustomDimensionValue> values = 1;
 }
 
-// Observations of this type are produced by the EventAggregator and consumed
-// by the ReportGenerator for reports of type PER_DEVICE_COUNT_STATS. For each
-// report of that type, for each window size of the report, each device sends
-// one Observation of this type per day. The ReportGenerator uses the number
-// of such Observations to compute the number of devices in the fleet on which
-// a given pair (component, event code) did *not* occur during the aggregation
-// window.
-message ReportDeviceCountObservation {
-  // The size of the aggregation window.
-  uint32 window_size = 1;
-}
+// Observations of this type are used to signal that a given device was
+// collecting data for a given report, over some window of time. This
+// Observation type has no required fields, although the size of an
+// aggregation window may be provided. Observations are generated and
+// rate-limited by the EventAggregator.
+//
+// Current usage:
+// ReportParticipationObservations are produced by the EventAggregator and
+// consumed by the ReportGenerator for reports of type PER_DEVICE_COUNT_STATS.
+// For each report of that type, each device sends one Observation of this type
+// per day, along with a PerDeviceCountObservation for tuple (component, event
+// code, window size) for which at least one event with that code occurred
+// during the window of that size, with that component. The ReportGenerator
+// uses the number of each of the two kinds of Observations to compute the
+// number of devices in the fleet on which a given pair (component, event
+// code) did *not* occur during the aggregation window.
+message ReportParticipationObservation {}

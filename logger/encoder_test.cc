@@ -143,6 +143,23 @@ metric {
   }
 }
 
+metric {
+  metric_name: "ConnectionFailures"
+  metric_type: EVENT_COUNT
+  customer_id: 1
+  project_id: 1
+  id: 10
+  reports: {
+    report_name: "ConnectionFailures_PerDeviceCount"
+    id: 101
+    report_type: PER_DEVICE_COUNT_STATS
+    window_size: 7
+    window_size: 30
+    system_profile_field: OS
+    system_profile_field: ARCH
+  }
+}
+
 )";
 
 bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
@@ -447,6 +464,51 @@ TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
                     .basic_rappor_obs()
                     .data()
                     .size());
+}
+
+TEST_F(EncoderTest, EncodePerDeviceCountObservation) {
+  const char kMetricName[] = "ConnectionFailures";
+  const char kReportName[] = "ConnectionFailures_PerDeviceCount";
+  const uint32_t kExpectedMetricId = 10;
+  const uint32_t kExpectedReportId = 101;
+  const uint32_t kDayIndex = 111;
+  const char kComponent[] = "Some Component";
+  const uint32_t kEventCode = 0;
+  const int64_t kCount = 1728;
+  const uint32_t kWindowSize = 7;
+  auto pair = GetMetricAndReport(kMetricName, kReportName);
+
+  auto result = encoder_->EncodePerDeviceCountObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex,
+      kComponent, kEventCode, kCount, kWindowSize);
+  CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
+  // In the SystemProfile only the OS and ARCH should be set.
+  CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "",
+                     "");
+  ASSERT_TRUE(result.observation->has_per_device_count());
+  EXPECT_EQ(kWindowSize, result.observation->per_device_count().window_size());
+  ASSERT_TRUE(result.observation->per_device_count().has_integer_event_obs());
+  auto integer_obs = result.observation->per_device_count().integer_event_obs();
+  EXPECT_EQ(kEventCode, integer_obs.event_code());
+  EXPECT_EQ(32u, integer_obs.component_name_hash().size());
+  EXPECT_EQ(kCount, integer_obs.value());
+}
+
+TEST_F(EncoderTest, EncodeReportParticipationObservation) {
+  const char kMetricName[] = "ConnectionFailures";
+  const char kReportName[] = "ConnectionFailures_PerDeviceCount";
+  const uint32_t kExpectedMetricId = 10;
+  const uint32_t kExpectedReportId = 101;
+  const uint32_t kDayIndex = 111;
+  auto pair = GetMetricAndReport(kMetricName, kReportName);
+
+  auto result = encoder_->EncodeReportParticipationObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
+  // In the SystemProfile only the OS and ARCH should be set.
+  CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "",
+                     "");
+  ASSERT_TRUE(result.observation->has_report_participation());
 }
 
 }  // namespace logger

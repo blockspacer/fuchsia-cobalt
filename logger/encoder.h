@@ -280,6 +280,49 @@ class Encoder {
                                         bool was_active,
                                         uint32_t window_size) const;
 
+  // Encodes an Observation of type PerDeviceCountObservation.
+  //
+  // metric: Provides access to the names and IDs of the customer, project and
+  // metric associated with the Observation being encoded.
+  //
+  // report: The definition of the Report associated with the Observation being
+  // encoded.
+  //
+  // day_index: The day index associated with the Observation being encoded.
+  // This is the last day (inclusive) of the rolling window associated with this
+  // Observation.
+  //
+  // component: The component associated with this Observation. The hash of this
+  // value will populate the Observation's |component_name_hash| field.
+  //
+  // event_code: The event code of the Event associated with this Observation.
+  //
+  // count: This will populate the |value| field of the the
+  // IntegerEventObservation wrapped by the PerDeviceCountObservation.
+  //
+  // window_size: The number of days in the window associated with the
+  // Observation. This should be one of the window sizes specified in |report|,
+  // but it is the caller's responsibility to ensure this.
+  Result EncodePerDeviceCountObservation(MetricRef metric,
+                                         const ReportDefinition* report,
+                                         uint32_t day_index,
+                                         const std::string component,
+                                         uint32_t event_code, int64_t count,
+                                         uint32_t window_size) const;
+
+  // Encodes an Observation of type ReportParticipationObservation.
+  //
+  // metric: Provides access to the names and IDs of the customer, project, and
+  // metric associated with the Observation being encoded.
+  //
+  // report: The definition of the Report associated with the Observation being
+  // encoded.
+  //
+  // day_index: The day index associated with the Observation being encoded.
+  Result EncodeReportParticipationObservation(MetricRef metric,
+                                              const ReportDefinition* report,
+                                              uint32_t day_index) const;
+
  private:
   // Encodes a BasicRapporObservation for a given |metric|, |report|, and
   // |day_index| in which the data field is a Basic RAPPOR encoding of a vector

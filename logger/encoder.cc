@@ -272,6 +272,28 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(
   return result;
 }
 
+Encoder::Result Encoder::EncodePerDeviceCountObservation(
+    MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+    const std::string component, uint32_t event_code, int64_t count,
+    uint32_t window_size) const {
+  auto result = EncodeIntegerEventObservation(metric, report, day_index,
+                                              event_code, component, count);
+  auto* integer_event_observation = result.observation->release_numeric_event();
+  auto* count_observation = result.observation->mutable_per_device_count();
+  count_observation->set_allocated_integer_event_obs(integer_event_observation);
+  count_observation->set_window_size(window_size);
+  return result;
+}
+
+Encoder::Result Encoder::EncodeReportParticipationObservation(
+    MetricRef metric, const ReportDefinition* report,
+    uint32_t day_index) const {
+  auto result = MakeObservation(metric, report, day_index);
+  auto* observation = result.observation.get();
+  observation->mutable_report_participation();
+  return result;
+}
+
 Encoder::Result Encoder::EncodeNullBasicRapporObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
     uint32_t num_categories) const {
