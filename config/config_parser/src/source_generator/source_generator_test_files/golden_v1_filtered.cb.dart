@@ -21,6 +21,16 @@ const int TheOtherMetricNameEventCode_AnEvent = TheOtherMetricNameEventCode::AnE
 const int TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode::AnotherEvent;
 const int TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
+// Enum for the_other_metric_name (Metric Dimension 0)
+class TheOtherMetricNameMetricDimension0 {
+  static const int AnEvent = 0;
+  static const int AnotherEvent = 1;
+  static const int AThirdEvent = 2;
+}
+const int TheOtherMetricNameMetricDimension0_AnEvent = TheOtherMetricNameMetricDimension0::AnEvent;
+const int TheOtherMetricNameMetricDimension0_AnotherEvent = TheOtherMetricNameMetricDimension0::AnotherEvent;
+const int TheOtherMetricNameMetricDimension0_AThirdEvent = TheOtherMetricNameMetricDimension0::AThirdEvent;
+
 // Enum for event groups (Metric Dimension The First Group)
 class EventGroupsMetricDimensionTheFirstGroup {
   static const int AnEvent = 0;
@@ -54,4 +64,4 @@ const int EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo
 const int EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const String config = 'KoACCghjdXN0b21lchAKGvEBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpbCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cIIBAA==';
+const String config = 'KrkDCghjdXN0b21lchAKGqoDCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnMKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGtsBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCASUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1l';

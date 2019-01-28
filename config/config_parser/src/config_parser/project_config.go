@@ -85,6 +85,21 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 		for _, r := range e.Reports {
 			r.Id = IdFromName(r.ReportName)
 		}
+
+		// TODO(zmbush): Remove once EventCodes are fully deprecated
+		if len(e.EventCodes) > 0 {
+			e.MetricDimensions = []*config.MetricDefinition_MetricDimension{
+				&config.MetricDefinition_MetricDimension{
+					EventCodes:   e.EventCodes,
+					MaxEventCode: e.MaxEventCode,
+				},
+			}
+
+			// TODO(zmbush): To test this change:
+			// e.EventCodes = nil
+			// e.MaxEventCode = 0
+			// e.MetricDimensions[0].AlsoTreatAsLegacy: true,
+		}
 	}
 
 	return nil

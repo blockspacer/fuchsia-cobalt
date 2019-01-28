@@ -685,7 +685,6 @@ Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
 
 /////////////// OccurrenceEventLogger method implementations ///////////////////
 
-// TODO(zmbush): Validate dimensions (for all subclasses of EventLogger).
 Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_occurrence_event());
   if (event_record.metric->metric_dimensions_size() != 1) {
@@ -700,7 +699,8 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   if (occurrence_event.event_code() >
       event_record.metric->metric_dimensions(0).max_event_code()) {
     LOG(ERROR) << "The event_code " << occurrence_event.event_code()
-               << " exceeds " << event_record.metric->max_event_code()
+               << " exceeds "
+               << event_record.metric->metric_dimensions(0).max_event_code()
                << ", the max_event_code for Metric "
                << MetricDebugString(*event_record.metric) << " in project "
                << project_context()->DebugString() << ".";

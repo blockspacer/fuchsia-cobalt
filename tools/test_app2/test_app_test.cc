@@ -40,7 +40,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 1
-  max_event_code: 100
+  metric_dimensions: {
+    max_event_code: 100
+  }
   reports: {
     report_name: "ErrorCountsByType"
     id: 123

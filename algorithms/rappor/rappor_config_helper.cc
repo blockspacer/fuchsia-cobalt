@@ -127,7 +127,7 @@ float RapporConfigHelper::ProbBitFlip(const ReportDefinition& report_definition,
 // Calculates the number of categories based on the metric_definition.
 //
 // - If there are no metric_dimensions, returns max_event_code() + 1 (this
-//   assumes an old registry.
+//   assumes an old registry)
 //
 // - If there is exactly 1 metric_dimensions, return
 //   metric_dimensions[0].max_event_code() + 1 (this is the new registry).

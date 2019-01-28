@@ -150,7 +150,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 10
-  max_event_code: 1
+  metric_dimensions: {
+    max_event_code: 1
+  }
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
     id: 101
@@ -166,7 +168,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 20
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "FeaturesActive_UniqueDevices"
     id: 201
@@ -183,7 +187,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 30
-  max_event_code: 2
+  metric_dimensions: {
+    max_event_code: 2
+  }
   reports: {
     report_name: "ErrorsOccurred_SimpleCount"
     id: 301
@@ -236,7 +242,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 10
-  max_event_code: 1
+  metric_dimensions: {
+    max_event_code: 1
+  }
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
     id: 101
@@ -252,7 +260,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 20
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "FeaturesActive_UniqueDevices"
     id: 201
@@ -270,7 +280,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 40
-  max_event_code: 4
+  metric_dimensions: {
+    max_event_code: 4
+  }
   reports: {
     report_name: "EventsOccurred_SimpleCount"
     id: 401
@@ -376,7 +388,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 10
-  max_event_code: 2
+  metric_dimensions: {
+    max_event_code: 2
+  }
   time_zone_policy: LOCAL
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
@@ -393,7 +407,9 @@ metric {
   customer_id: 1
   project_id: 1
   id: 20
-  max_event_code: 2
+  metric_dimensions: {
+    max_event_code: 2
+  }
   time_zone_policy: UTC
   reports: {
     report_name: "FeaturesActive_UniqueDevices"
