@@ -209,15 +209,20 @@ message MetricDefinition {
     // - STRING_COUNTS_WITH_THRESHOLD
     STRING_USED = 7;
 
-    // Allows users of Cobalt to define custom Metrics with custom semantics
-    // and multiple parts each with their own data type. The semantics of the
-    // Metric as a whole and of each part must be specified in comments.
+    // Allows users of Cobalt to define custom Metrics with custom semantics and
+    // multiple parts, each with their own data type. A metric of this type is
+    // associated with a protocol buffer definition and proto messages of that
+    // type will be populated with the data logged for this metric. The
+    // semantics of the Metric and its parts should be specified in the .proto
+    // file. Each event logged for this Metric must have parts with names and
+    // types that corresponding to the fields of the associated proto.
     //
     // Event fields:
     //   vector<CustomEventValue> event_values # Named, typed values
     //
     // MetricDefinition fields:
-    // - parts # The definition of the names and types of the parts.
+    // - proto_name # The fully qualified name of the protobuf associated with
+    //                this Metric.
     //
     // Compatible report types:
     // - CUSTOM_RAW_DUMP
