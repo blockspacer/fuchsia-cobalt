@@ -30,5 +30,5 @@ pub enum EventGroupsMetricDimensionASecondGroup {
   Test = 4,
 }
 
-// The base64 encoding of the bytes of a serialized CobaltConfig proto message.
+// The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 pub const CONFIG: &str = "Kv0BCghjdXN0b21lchAKGu4BCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpYCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cA==";

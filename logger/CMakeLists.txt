@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 set(INTERNAL_METRICS_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/internal_metrics_config.cb.h")
-generate_cobalt_config_h(
+generate_cobalt_registry_h(
   CUSTOMER_ID 2147483647
   PROJECT_NAME metrics
   NAMESPACE cobalt.logger

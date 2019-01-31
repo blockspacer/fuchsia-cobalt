@@ -45,7 +45,7 @@ std::string PartName(int part_num) {
   return kPartNames[part_num - 1];
 }
 
-const char kCobaltConfigText[] = R"(
+const char kCobaltRegistryText[] = R"(
 encoding_configs {
   customer_id: 1
   project_id: 1
@@ -218,7 +218,7 @@ class RawDumpReportRowIteratorTest : public testing::Test {
     ASSERT_EQ(store::kOK, data_store_->DeleteAllRows(DataStore::kObservations));
 
     analyzer_config_ =
-        AnalyzerConfig::CreateFromCobaltConfigProtoText(kCobaltConfigText);
+        AnalyzerConfig::CreateFromCobaltRegistryProtoText(kCobaltRegistryText);
   }
 
   // Initializes |iterator_| using our fixed customer_id, project_id, day

@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "./logging.h"
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "config/encoding_config.h"
 #include "config/encodings.pb.h"
 #include "config/metric_config.h"
@@ -40,24 +40,24 @@ std::string ErrorMessage(Status status) {
 }
 }  // namespace
 
-std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltConfigBase64(
-    const std::string& cobalt_config_base64) {
+std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBase64(
+    const std::string& cobalt_registry_base64) {
   std::string cobalt_config_bytes;
-  if (!crypto::Base64Decode(cobalt_config_base64, &cobalt_config_bytes)) {
+  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_config_bytes)) {
     LOG(ERROR) << "Unable to parse the provided string as base-64";
     return nullptr;
   }
-  return CreateFromCobaltConfigBytes(cobalt_config_bytes);
+  return CreateFromCobaltRegistryBytes(cobalt_config_bytes);
 }
 
-std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltConfigBytes(
+std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBytes(
     const std::string& cobalt_config_bytes) {
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   if (!cobalt_config.ParseFromString(cobalt_config_bytes)) {
-    LOG(ERROR) << "Unable to parse a CobaltConfig from the provided bytes.";
+    LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
     return nullptr;
   }
-  return CreateFromCobaltConfig(&cobalt_config);
+  return CreateFromCobaltRegistry(&cobalt_config);
 }
 
 template <class Config>
@@ -80,9 +80,9 @@ ClientConfig::CreateFromCobaltProjectConfigBytes(
   uint32_t customer_id = 0;
   uint32_t project_id = 0;
 
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   if (!cobalt_config.ParseFromString(cobalt_config_bytes)) {
-    LOG(ERROR) << "Unable to parse a CobaltConfig from the provided bytes.";
+    LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
     return std::make_pair(nullptr, project_id);
   }
 
@@ -118,11 +118,11 @@ ClientConfig::CreateFromCobaltProjectConfigBytes(
     return std::make_pair(nullptr, project_id);
   }
 
-  return std::make_pair(CreateFromCobaltConfig(&cobalt_config), project_id);
+  return std::make_pair(CreateFromCobaltRegistry(&cobalt_config), project_id);
 }
 
-std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltConfig(
-    CobaltConfig* cobalt_config) {
+std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistry(
+    CobaltRegistry* cobalt_config) {
   if (cobalt_config->customers_size() > 0) {
     auto customer = std::make_unique<CustomerConfig>();
     cobalt_config->mutable_customers(0)->Swap(customer.get());

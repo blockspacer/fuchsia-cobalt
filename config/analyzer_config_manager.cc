@@ -16,7 +16,7 @@
 #include <utility>
 
 #include "config/analyzer_config.h"
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "util/log_based_metrics.h"
@@ -24,8 +24,8 @@
 namespace cobalt {
 namespace config {
 
-DEFINE_string(cobalt_config_proto_path, "",
-              "Location on disk of the serialized CobaltConfig proto from "
+DEFINE_string(cobalt_registry_proto_path, "",
+              "Location on disk of the serialized CobaltRegistry proto from "
               "which the Report Master's configuration is to be read.");
 DEFINE_string(config_update_repository_url, "",
               "URL to a git repository containing a cobalt configuration in "
@@ -39,16 +39,16 @@ DEFINE_string(config_parser_bin_path, "/usr/local/bin/config_parser",
 // Stackdriver metric constants
 namespace {
 const char kUpdateFailure[] = "analyzer-config-manager-update-failure";
-const char kReadConfigFromCobaltConfigFileFailure[] =
+const char kReadConfigFromCobaltRegistryFileFailure[] =
     "analyzer-config-manager-read-config-from-cobalt-config-file-failure";
 }  // namespace
 
 AnalyzerConfigManager::AnalyzerConfigManager(
     std::shared_ptr<AnalyzerConfig> config,
-    std::string cobalt_config_proto_path,
+    std::string cobalt_registry_proto_path,
     std::string config_update_repository_url,
     std::string config_parser_bin_path)
-    : cobalt_config_proto_path_(cobalt_config_proto_path),
+    : cobalt_registry_proto_path_(cobalt_registry_proto_path),
       update_repository_path_(config_update_repository_url),
       config_parser_bin_path_(config_parser_bin_path) {
   ptr_ = config;
@@ -66,16 +66,16 @@ std::shared_ptr<AnalyzerConfig> AnalyzerConfigManager::GetCurrent() {
 
 std::shared_ptr<AnalyzerConfigManager>
 AnalyzerConfigManager::CreateFromFlagsOrDie() {
-  if (FLAGS_cobalt_config_proto_path.empty()) {
+  if (FLAGS_cobalt_registry_proto_path.empty()) {
     auto config = AnalyzerConfig::CreateFromFlagsOrDie();
     return std::shared_ptr<AnalyzerConfigManager>(
         new AnalyzerConfigManager(std::move(config)));
   }
 
-  // If a file containing a serialized CobaltConfig is specified, we load the
+  // If a file containing a serialized CobaltRegistry is specified, we load the
   // initial configuration from that file.
-  auto config =
-      ReadConfigFromSerializedCobaltConfigFile(FLAGS_cobalt_config_proto_path);
+  auto config = ReadConfigFromSerializedCobaltRegistryFile(
+      FLAGS_cobalt_registry_proto_path);
   if (!config) {
     LOG(FATAL) << "Could not load the initial configuration.";
   }
@@ -83,7 +83,7 @@ AnalyzerConfigManager::CreateFromFlagsOrDie() {
 
   auto manager =
       std::shared_ptr<AnalyzerConfigManager>(new AnalyzerConfigManager(
-          std::move(config), FLAGS_cobalt_config_proto_path,
+          std::move(config), FLAGS_cobalt_registry_proto_path,
           FLAGS_config_update_repository_url, FLAGS_config_parser_bin_path));
   manager->Update(120);
   return manager;
@@ -99,10 +99,10 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
 
   std::string timeout_seconds_str = std::to_string(timeout_seconds);
   const char* argv[] = {
-      config_parser_bin_path_.c_str(),   "-repo_url",
-      update_repository_path_.c_str(),   "-output_file",
-      cobalt_config_proto_path_.c_str(), "-git_timeout",
-      timeout_seconds_str.c_str(),       nullptr,
+      config_parser_bin_path_.c_str(),     "-repo_url",
+      update_repository_path_.c_str(),     "-output_file",
+      cobalt_registry_proto_path_.c_str(), "-git_timeout",
+      timeout_seconds_str.c_str(),         nullptr,
   };
   pid_t pid;
   posix_spawnattr_t spawnattr;
@@ -152,7 +152,7 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
             << update_repository_path_;
 
   auto config =
-      ReadConfigFromSerializedCobaltConfigFile(cobalt_config_proto_path_);
+      ReadConfigFromSerializedCobaltRegistryFile(cobalt_registry_proto_path_);
   std::lock_guard<std::mutex> lock(m_);
   ptr_.reset(config.release());
 
@@ -161,26 +161,29 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
 }
 
 std::unique_ptr<AnalyzerConfig>
-AnalyzerConfigManager::ReadConfigFromSerializedCobaltConfigFile(
+AnalyzerConfigManager::ReadConfigFromSerializedCobaltRegistryFile(
     std::string config_path) {
   std::ifstream config_file_stream;
   config_file_stream.open(config_path);
   if (!config_file_stream) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltConfigFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
+                                 kReadConfigFromCobaltRegistryFileFailure)
         << "Could not open config proto: " << config_path;
     return nullptr;
   }
 
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   if (!cobalt_config.ParseFromIstream(&config_file_stream)) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltConfigFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
+                                 kReadConfigFromCobaltRegistryFileFailure)
         << "Could not parse config proto: " << config_path;
     return nullptr;
   }
 
-  auto config = AnalyzerConfig::CreateFromCobaltConfigProto(&cobalt_config);
+  auto config = AnalyzerConfig::CreateFromCobaltRegistryProto(&cobalt_config);
   if (!config) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltConfigFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
+                                 kReadConfigFromCobaltRegistryFileFailure)
         << "Error creating AnalyzerConfig: " << config_path;
     return nullptr;
   }

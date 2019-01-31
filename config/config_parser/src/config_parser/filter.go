@@ -11,7 +11,7 @@ import (
 	descriptor_pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
-func FilterHideOnClient(c *config.CobaltConfig) {
+func FilterHideOnClient(c *config.CobaltRegistry) {
 	filterReflectedValue(reflect.ValueOf(c))
 }
 

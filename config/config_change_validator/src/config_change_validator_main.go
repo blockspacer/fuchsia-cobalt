@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file contains a program that compares two binary encoded CobaltConfig,
+// This file contains a program that compares two binary encoded CobaltRegistry,
 // and validates that the changes between them are backwards compatible.
 package main
 
@@ -34,8 +34,8 @@ func main() {
 		glog.Exit("Both 'old_config' and 'new_config' are required")
 	}
 
-	old := config.CobaltConfig{}
-	n := config.CobaltConfig{}
+	old := config.CobaltRegistry{}
+	n := config.CobaltRegistry{}
 
 	data, err := ioutil.ReadFile(*oldCfg)
 	check(err)
@@ -48,7 +48,7 @@ func main() {
 	check(CompareConfigs(&old, &n))
 }
 
-func CompareConfigs(oldCfg, newCfg *config.CobaltConfig) error {
+func CompareConfigs(oldCfg, newCfg *config.CobaltRegistry) error {
 	oldCustomers := map[string]*config.CustomerConfig{}
 	newCustomers := map[string]*config.CustomerConfig{}
 

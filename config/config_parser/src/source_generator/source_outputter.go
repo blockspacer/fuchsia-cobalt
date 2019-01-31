@@ -29,7 +29,7 @@ type outputLanguage interface {
 	writeStringConstant(so *sourceOutputter, value string, name ...string)
 }
 
-type OutputFormatter func(c, filtered *config.CobaltConfig) (outputBytes []byte, err error)
+type OutputFormatter func(c, filtered *config.CobaltRegistry) (outputBytes []byte, err error)
 
 type sourceOutputter struct {
 	buffer     *bytes.Buffer
@@ -135,7 +135,7 @@ func (so *sourceOutputter) Bytes() []byte {
 	return so.buffer.Bytes()
 }
 
-func (so *sourceOutputter) writeLegacyConstants(c *config.CobaltConfig) {
+func (so *sourceOutputter) writeLegacyConstants(c *config.CobaltRegistry) {
 	metrics := make(map[uint32]string)
 	for _, metric := range c.MetricConfigs {
 		if metric.Name != "" {
@@ -164,7 +164,7 @@ func (so *sourceOutputter) writeLegacyConstants(c *config.CobaltConfig) {
 	so.writeIdConstants("Encoding", encodings)
 }
 
-func (so *sourceOutputter) writeV1Constants(c *config.CobaltConfig) error {
+func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	metrics := make(map[uint32]string)
 	if len(c.Customers) > 1 || len(c.Customers[0].Projects) > 1 {
 		return fmt.Errorf("Cobalt v1.0 output can only be used with a single project config.")
@@ -201,7 +201,7 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltConfig) error {
 	return nil
 }
 
-func (so *sourceOutputter) writeFile(c, filtered *config.CobaltConfig) error {
+func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	so.writeGenerationWarning()
 
 	so.language.writeExtraHeader(so)
@@ -221,7 +221,7 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltConfig) error {
 		return err
 	}
 
-	so.writeComment("The base64 encoding of the bytes of a serialized CobaltConfig proto message.")
+	so.writeComment("The base64 encoding of the bytes of a serialized CobaltRegistry proto message.")
 	so.language.writeStringConstant(so, string(b64Bytes), so.varName)
 
 	for _, _ = range so.namespaces {
@@ -232,7 +232,7 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltConfig) error {
 }
 
 func (so *sourceOutputter) getOutputFormatter() OutputFormatter {
-	return func(c, filtered *config.CobaltConfig) (outputBytes []byte, err error) {
+	return func(c, filtered *config.CobaltRegistry) (outputBytes []byte, err error) {
 		err = so.writeFile(c, filtered)
 		return so.Bytes(), err
 	}

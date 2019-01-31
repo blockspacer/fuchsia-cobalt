@@ -28,7 +28,7 @@ static_library("datetime_util") {
   ]
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
-    "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/config:cobalt_registry_proto",
   ]
 }
 

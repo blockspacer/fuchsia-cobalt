@@ -11,34 +11,34 @@
 #include <tuple>
 #include <utility>
 
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 
 namespace cobalt {
 namespace config {
 
-// ProjectConfigs wraps a CobaltConfig and offers convenient and efficient
+// ProjectConfigs wraps a CobaltRegistry and offers convenient and efficient
 // methods for looking up a project.
 class ProjectConfigs {
  public:
   // Constructs and returns an instance of ProjectConfigs by first parsing
-  // a CobaltConfig proto message from |cobalt_config_base64|, which should
+  // a CobaltRegistry proto message from |cobalt_registry_base64|, which should
   // contain the Base64 encoding of the bytes of the binary serialization of
   // such a message.
-  static std::unique_ptr<ProjectConfigs> CreateFromCobaltConfigBase64(
-      const std::string& cobalt_config_base64);
+  static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryBase64(
+      const std::string& cobalt_registry_base64);
 
   // Constructs and returns an instance of ProjectConfigs by first parsing
-  // a CobaltConfig proto message from |cobalt_config_bytes|, which should
+  // a CobaltRegistry proto message from |cobalt_config_bytes|, which should
   // contain the bytes of the binary serialization of such a message.
-  static std::unique_ptr<ProjectConfigs> CreateFromCobaltConfigBytes(
+  static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryBytes(
       const std::string& cobalt_config_bytes);
 
   // Constructs and returns and instance of ProjectConfigs from |cobalt_config|.
-  static std::unique_ptr<ProjectConfigs> CreateFromCobaltConfigProto(
-      std::unique_ptr<CobaltConfig> cobalt_config);
+  static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryProto(
+      std::unique_ptr<CobaltRegistry> cobalt_config);
 
   // Constructs a ProjectConfigs that wraps the given |cobalt_config|.
-  explicit ProjectConfigs(std::unique_ptr<CobaltConfig> cobalt_config);
+  explicit ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_config);
 
   // Returns the CustomerConfig for the customer with the given name, or
   // nullptr if there is no such customer.
@@ -74,7 +74,7 @@ class ProjectConfigs {
                                               uint32_t report_id) const;
 
  private:
-  std::unique_ptr<CobaltConfig> cobalt_config_;
+  std::unique_ptr<CobaltRegistry> cobalt_config_;
 
   std::map<std::string, const CustomerConfig*> customers_by_name_;
 

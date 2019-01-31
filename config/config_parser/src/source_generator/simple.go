@@ -14,7 +14,7 @@ import (
 )
 
 // Outputs the serialized proto.
-func BinaryOutput(_, filtered *config.CobaltConfig) (outputBytes []byte, err error) {
+func BinaryOutput(_, filtered *config.CobaltRegistry) (outputBytes []byte, err error) {
 	buf := proto.Buffer{}
 	buf.SetDeterministic(true)
 	if err := buf.Marshal(filtered); err != nil {
@@ -24,7 +24,7 @@ func BinaryOutput(_, filtered *config.CobaltConfig) (outputBytes []byte, err err
 }
 
 // Outputs the serialized proto base64 encoded.
-func Base64Output(c, filtered *config.CobaltConfig) (outputBytes []byte, err error) {
+func Base64Output(c, filtered *config.CobaltRegistry) (outputBytes []byte, err error) {
 	configBytes, err := BinaryOutput(c, filtered)
 	if err != nil {
 		return outputBytes, err

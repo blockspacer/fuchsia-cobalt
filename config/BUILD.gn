@@ -8,10 +8,10 @@ config("proto_config") {
   defines = [ "PROTO_LITE" ]
 }
 
-proto_library("cobalt_config_proto") {
+proto_library("cobalt_registry_proto") {
   proto_in_dir = "//third_party/cobalt"
   sources = [
-    "cobalt_config.proto",
+    "cobalt_registry.proto",
     "annotations.proto",
     "encodings.proto",
     "metric_definition.proto",
@@ -44,7 +44,7 @@ static_library("client_config") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
 
   deps = [
-    ":cobalt_config_proto",
+    ":cobalt_registry_proto",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
   ]
@@ -63,7 +63,7 @@ source_set("project_configs") {
 
   public_deps = [
     "//garnet/public/lib/fxl",
-    "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/config:cobalt_registry_proto",
   ]
 }
 

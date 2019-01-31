@@ -18,19 +18,19 @@ set_source_files_properties(${CLEARCUT_EXTENSIONS_PROTO_HDRS} PROPERTIES GENERAT
 
 set(ENCODER_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/encoder_test_config.h")
 generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/encoder_test_config.yaml
-      ${ENCODER_TEST_CONFIG_H} 1 1 "cobalt_config_base64")
+      ${ENCODER_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
 
 set(ENVELOPE_MAKER_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/envelope_maker_test_config.h")
 generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/envelope_maker_test_config.yaml
-      ${ENVELOPE_MAKER_TEST_CONFIG_H} 1 1 "cobalt_config_base64")
+      ${ENVELOPE_MAKER_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
 
 set(SHIPPING_MANAGER_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/shipping_manager_test_config.h")
 generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/shipping_manager_test_config.yaml
-      ${SHIPPING_MANAGER_TEST_CONFIG_H} 1 1 "cobalt_config_base64")
+      ${SHIPPING_MANAGER_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
 
 set(FILE_OBSERVATION_STORE_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/file_observation_store_test_config.h")
 generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/file_observation_store_test_config.yaml
-      ${FILE_OBSERVATION_STORE_TEST_CONFIG_H} 1 1 "cobalt_config_base64")
+      ${FILE_OBSERVATION_STORE_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
 
 # client_secret library
 add_library(client_secret client_secret.cc)

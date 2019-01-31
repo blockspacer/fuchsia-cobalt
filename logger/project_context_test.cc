@@ -29,7 +29,7 @@ const uint32_t kProjectA1Id = 234;
 const char kMetricA1a[] = "MetricA1a";
 const uint32_t kMetricA1aId = 1;
 
-const char kCobaltConfig[] = R"(
+const char kCobaltRegistry[] = R"(
 customers {
   customer_name: "CustomerA"
   customer_id: 123
@@ -80,9 +80,9 @@ customers {
 
 )";
 
-bool PopulateCobaltConfig(CobaltConfig* cobalt_config) {
+bool PopulateCobaltRegistry(CobaltRegistry* cobalt_config) {
   google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(kCobaltConfig, cobalt_config);
+  return parser.ParseFromString(kCobaltRegistry, cobalt_config);
 }
 
 }  // namespace
@@ -90,12 +90,12 @@ bool PopulateCobaltConfig(CobaltConfig* cobalt_config) {
 class ProjectContextTest : public ::testing::Test {
  protected:
   void SetUp() {
-    // We create a ProjectConfigs by first creating a CobaltConfig from
+    // We create a ProjectConfigs by first creating a CobaltRegistry from
     // the ASCII proto above.
-    auto cobalt_config = std::make_unique<CobaltConfig>();
-    ASSERT_TRUE(PopulateCobaltConfig(cobalt_config.get()));
+    auto cobalt_config = std::make_unique<CobaltRegistry>();
+    ASSERT_TRUE(PopulateCobaltRegistry(cobalt_config.get()));
     auto project_configs =
-        ProjectConfigs::CreateFromCobaltConfigProto(std::move(cobalt_config));
+        ProjectConfigs::CreateFromCobaltRegistryProto(std::move(cobalt_config));
     project_configs_.reset(project_configs.release());
   }
 

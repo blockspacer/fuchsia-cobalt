@@ -10,32 +10,32 @@
 namespace cobalt {
 namespace config {
 
-std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltConfigBase64(
-    const std::string& cobalt_config_base64) {
+std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBase64(
+    const std::string& cobalt_registry_base64) {
   std::string cobalt_config_bytes;
-  if (!crypto::Base64Decode(cobalt_config_base64, &cobalt_config_bytes)) {
+  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_config_bytes)) {
     LOG(ERROR) << "Unable to parse the provided string as base-64";
     return nullptr;
   }
-  return CreateFromCobaltConfigBytes(cobalt_config_bytes);
+  return CreateFromCobaltRegistryBytes(cobalt_config_bytes);
 }
 
-std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltConfigBytes(
+std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBytes(
     const std::string& cobalt_config_bytes) {
-  auto cobalt_config = std::make_unique<CobaltConfig>();
+  auto cobalt_config = std::make_unique<CobaltRegistry>();
   if (!cobalt_config->ParseFromString(cobalt_config_bytes)) {
-    LOG(ERROR) << "Unable to parse a CobaltConfig from the provided bytes.";
+    LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
     return nullptr;
   }
-  return CreateFromCobaltConfigProto(std::move(cobalt_config));
+  return CreateFromCobaltRegistryProto(std::move(cobalt_config));
 }
 
-std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltConfigProto(
-    std::unique_ptr<CobaltConfig> cobalt_config) {
+std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryProto(
+    std::unique_ptr<CobaltRegistry> cobalt_config) {
   return std::make_unique<ProjectConfigs>(std::move(cobalt_config));
 }
 
-ProjectConfigs::ProjectConfigs(std::unique_ptr<CobaltConfig> cobalt_config)
+ProjectConfigs::ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_config)
     : cobalt_config_(std::move(cobalt_config)) {
   for (const auto& customer : cobalt_config_->customers()) {
     customers_by_id_[customer.customer_id()] = &customer;

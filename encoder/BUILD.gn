@@ -49,7 +49,7 @@ static_library("encoder") {
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:client_config",
-    "//third_party/cobalt/config:cobalt_config_proto",
+    "//third_party/cobalt/config:cobalt_registry_proto",
     "//third_party/cobalt/shuffler:shuffler_service",
     "//third_party/cobalt/third_party/clearcut:clearcut",
     "//third_party/cobalt/util:clock",

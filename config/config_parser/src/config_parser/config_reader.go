@@ -297,7 +297,7 @@ func cmpConfigEntry(i, j interface{}) bool {
 // MergeConfigs accepts a list of ProjectConfigFile protos each of which contains the
 // encoding, metric and report configs for a particular project and aggregates
 // all those into a single ProjectConfigFile proto.
-func MergeConfigs(l []ProjectConfig) (s config.CobaltConfig) {
+func MergeConfigs(l []ProjectConfig) (s config.CobaltRegistry) {
 	for _, c := range l {
 		s.EncodingConfigs = append(s.EncodingConfigs, c.ProjectConfig.EncodingConfigs...)
 		s.MetricConfigs = append(s.MetricConfigs, c.ProjectConfig.MetricConfigs...)
@@ -321,8 +321,8 @@ func MergeConfigs(l []ProjectConfig) (s config.CobaltConfig) {
 	return s
 }
 
-// appendV1Configs appends the version 1.0 configurations from l in CobaltConfig.
-func appendV1Configs(l []ProjectConfig, s *config.CobaltConfig) {
+// appendV1Configs appends the version 1.0 configurations from l in CobaltRegistry.
+func appendV1Configs(l []ProjectConfig, s *config.CobaltRegistry) {
 	customers := map[uint32]int{}
 
 	for _, c := range l {

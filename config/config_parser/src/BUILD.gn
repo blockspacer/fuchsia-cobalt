@@ -8,7 +8,7 @@ import("//build/go/go_library.gni")
 go_library("config") {
   name = "config"
   source_dir = "$root_gen_dir/go-proto-gen/src/third_party/cobalt/config"
-  non_go_deps = [ "//third_party/cobalt/config:cobalt_config_proto" ]
+  non_go_deps = [ "//third_party/cobalt/config:cobalt_registry_proto" ]
 }
 
 _source_packages = [

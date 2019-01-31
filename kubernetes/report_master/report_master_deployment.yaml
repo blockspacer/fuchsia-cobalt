@@ -58,7 +58,7 @@ spec:
           - $$BIGTABLE_PROJECT_NAME$$
           - '-bigtable_instance_id'
           - $$BIGTABLE_INSTANCE_ID$$
-          - '-cobalt_config_proto_path'
+          - '-cobalt_registry_proto_path'
           # This path must match the path to where the binproto config file is
           # copied in Dockerfile.
           - '/etc/cobalt/cobalt_config.binproto'

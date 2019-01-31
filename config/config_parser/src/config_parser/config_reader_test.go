@@ -198,10 +198,10 @@ func TestAppendV1Config(t *testing.T) {
 		},
 	}
 
-	s := config.CobaltConfig{}
+	s := config.CobaltRegistry{}
 	appendV1Configs(l, &s)
 
-	expected := config.CobaltConfig{
+	expected := config.CobaltRegistry{
 		Customers: []*config.CustomerConfig{
 			&config.CustomerConfig{
 				CustomerName: "customer2",

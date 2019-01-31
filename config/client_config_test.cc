@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "./logging.h"
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "config/encoding_config.h"
 #include "config/encodings.pb.h"
 #include "config/metric_config.h"
@@ -22,33 +22,33 @@ namespace config {
 
 namespace {
 void AddMetric(int customer_id, int project_id, int id,
-               CobaltConfig* cobalt_config) {
+               CobaltRegistry* cobalt_config) {
   Metric* metric = cobalt_config->add_metric_configs();
   metric->set_customer_id(customer_id);
   metric->set_project_id(project_id);
   metric->set_id(id);
 }
 
-void AddMetric(int id, CobaltConfig* cobalt_config) {
+void AddMetric(int id, CobaltRegistry* cobalt_config) {
   AddMetric(id, id, id, cobalt_config);
 }
 
 void AddEncodingConfig(int customer_id, int project_id, int id,
-                       CobaltConfig* cobalt_config) {
+                       CobaltRegistry* cobalt_config) {
   EncodingConfig* encoding_config = cobalt_config->add_encoding_configs();
   encoding_config->set_customer_id(customer_id);
   encoding_config->set_project_id(project_id);
   encoding_config->set_id(id);
 }
 
-void AddEncodingConfig(int id, CobaltConfig* cobalt_config) {
+void AddEncodingConfig(int id, CobaltRegistry* cobalt_config) {
   AddEncodingConfig(id, id, id, cobalt_config);
 }
 
 }  // namespace
 
 TEST(ClientConfigTest, ValidateSingleProjectConfig) {
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   AddMetric(1, 1, 42, &cobalt_config);
   AddMetric(1, 1, 43, &cobalt_config);
   AddEncodingConfig(1, 1, 42, &cobalt_config);
@@ -73,7 +73,7 @@ TEST(ClientConfigTest, ValidateSingleProjectConfig) {
 
 TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesValidConfig) {
   std::string cobalt_config_bytes;
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   AddMetric(1, 1, 42, &cobalt_config);
   AddMetric(1, 1, 43, &cobalt_config);
   AddEncodingConfig(1, 1, 42, &cobalt_config);
@@ -94,7 +94,7 @@ TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesValidConfig) {
 
 TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesInvalidConfig) {
   std::string cobalt_config_bytes;
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   AddMetric(1, 1, 42, &cobalt_config);
   AddMetric(1, 1, 43, &cobalt_config);
   AddEncodingConfig(1, 2, 42, &cobalt_config);
@@ -106,16 +106,16 @@ TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesInvalidConfig) {
   ASSERT_EQ(nullptr, client_config);
 }
 
-TEST(ClientConfigTest, CreateFromCobaltConfigBytes) {
+TEST(ClientConfigTest, CreateFromCobaltRegistryBytes) {
   std::string cobalt_config_bytes;
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   AddMetric(42, &cobalt_config);
   AddMetric(43, &cobalt_config);
   AddEncodingConfig(42, &cobalt_config);
   AddEncodingConfig(43, &cobalt_config);
   ASSERT_TRUE(cobalt_config.SerializeToString(&cobalt_config_bytes));
   auto client_config =
-      ClientConfig::CreateFromCobaltConfigBytes(cobalt_config_bytes);
+      ClientConfig::CreateFromCobaltRegistryBytes(cobalt_config_bytes);
   ASSERT_NE(nullptr, client_config);
   EXPECT_EQ(nullptr, client_config->EncodingConfig(41, 41, 41));
   EXPECT_NE(nullptr, client_config->EncodingConfig(42, 42, 42));
@@ -125,18 +125,18 @@ TEST(ClientConfigTest, CreateFromCobaltConfigBytes) {
   EXPECT_NE(nullptr, client_config->Metric(43, 43, 43));
 }
 
-TEST(ClientConfigTest, CreateFromCobaltConfigBase64) {
+TEST(ClientConfigTest, CreateFromCobaltRegistryBase64) {
   std::string cobalt_config_bytes;
-  CobaltConfig cobalt_config;
+  CobaltRegistry cobalt_config;
   AddMetric(42, &cobalt_config);
   AddMetric(43, &cobalt_config);
   AddEncodingConfig(42, &cobalt_config);
   AddEncodingConfig(43, &cobalt_config);
   ASSERT_TRUE(cobalt_config.SerializeToString(&cobalt_config_bytes));
-  std::string cobalt_config_base64;
-  crypto::Base64Encode(cobalt_config_bytes, &cobalt_config_base64);
+  std::string cobalt_registry_base64;
+  crypto::Base64Encode(cobalt_config_bytes, &cobalt_registry_base64);
   auto client_config =
-      ClientConfig::CreateFromCobaltConfigBase64(cobalt_config_base64);
+      ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   ASSERT_NE(nullptr, client_config);
   EXPECT_EQ(nullptr, client_config->EncodingConfig(41, 41, 41));
   EXPECT_NE(nullptr, client_config->EncodingConfig(42, 42, 42));

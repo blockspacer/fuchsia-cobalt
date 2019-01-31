@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // This file contains a program that reads cobalt configuration in a YAML format
-// and outputs it as a CobaltConfig serialized protocol buffer.
+// and outputs it as a CobaltRegistry serialized protocol buffer.
 
 package main
 
@@ -184,7 +184,7 @@ func main() {
 	}
 
 	c := config_parser.MergeConfigs(configs)
-	filtered := proto.Clone(&c).(*config.CobaltConfig)
+	filtered := proto.Clone(&c).(*config.CobaltRegistry)
 
 	if *forClient {
 		config_parser.FilterHideOnClient(filtered)

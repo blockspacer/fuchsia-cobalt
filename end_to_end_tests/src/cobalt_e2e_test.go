@@ -355,7 +355,7 @@ var (
 	observationQuerierPath = flag.String("observation_querier_path", "", "The full path to the Observation querier binary")
 	testAppPath            = flag.String("test_app_path", "", "The full path to the Cobalt test app binary")
 	bigtableToolPath       = flag.String("bigtable_tool_path", "", "The full path to the Cobalt bigtable_tool binary")
-	configBinProtoPath     = flag.String("config_bin_proto_path", "", "The full path to the serialized CobaltConfig proto from which the configuration is to be read.")
+	configBinProtoPath     = flag.String("config_bin_proto_path", "", "The full path to the serialized CobaltRegistry proto from which the configuration is to be read.")
 
 	reportMasterUri = flag.String("report_master_uri", "", "The URI of the Report Master")
 	shufflerUri     = flag.String("shuffler_uri", "", "The URI of the Shuffler")

@@ -165,7 +165,7 @@ func readGoldenFile(filename string) (string, error) {
 	return string(contents), nil
 }
 
-func getConfigFrom(config string, cobalt_version config_parser.CobaltVersion) config.CobaltConfig {
+func getConfigFrom(config string, cobalt_version config_parser.CobaltVersion) config.CobaltRegistry {
 	r := memConfigReader{}
 	r.SetProject("customer", "project", config)
 	con := config_parser.ProjectConfig{
@@ -207,7 +207,7 @@ var cfgTests = []struct {
 func TestPrintConfig(t *testing.T) {
 	for _, tt := range cfgTests {
 		c := getConfigFrom(tt.yaml, tt.cobalt_version)
-		filtered := proto.Clone(&c).(*config.CobaltConfig)
+		filtered := proto.Clone(&c).(*config.CobaltRegistry)
 		if tt.hideOnClient {
 			config_parser.FilterHideOnClient(filtered)
 		}

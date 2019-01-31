@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "./observation2.pb.h"
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "config/metric_definition.pb.h"
 #include "config/project_configs.h"
 #include "encoder/memory_observation_store.h"
@@ -84,7 +84,7 @@ DEFINE_string(shuffler_pk_pem_file, "",
               "not specified then no encryption will be used.");
 
 DEFINE_string(config_bin_proto_path, "",
-              "Path to the serialized CobaltConfig proto from which the "
+              "Path to the serialized CobaltRegistry proto from which the "
               "configuration is to be read. (Optional)");
 
 DEFINE_string(clearcut_endpoint, "https://jmt17.google.com/log",
@@ -212,7 +212,7 @@ void PrintHelp(std::ostream* ostream) {
 
 // Returns the path to the standard Cobalt configuration based on the presumed
 // location of this binary.
-std::string FindCobaltConfigProto(char* argv[]) {
+std::string FindCobaltRegistryProto(char* argv[]) {
   char path[PATH_MAX], path2[PATH_MAX];
 
   // Get the directory of this binary.
@@ -226,7 +226,7 @@ std::string FindCobaltConfigProto(char* argv[]) {
 
   // Get the absolute path to the registry.
   if (!realpath(path2, path)) {
-    LOG(FATAL) << "Computed path to serialized CobaltConfig is invalid: "
+    LOG(FATAL) << "Computed path to serialized CobaltRegistry is invalid: "
                << path;
   }
 
@@ -259,7 +259,7 @@ bool ReadPublicKeyPem(const std::string& pem_file, std::string* pem_out) {
   return false;
 }
 
-// Reads the specified serialized CobaltConfig proto. Returns a ProjectContext
+// Reads the specified serialized CobaltRegistry proto. Returns a ProjectContext
 // containing the read config and the values of the -customer and
 // -project flags.
 std::unique_ptr<ProjectContext> LoadProjectContext(
@@ -272,7 +272,7 @@ std::unique_ptr<ProjectContext> LoadProjectContext(
       << "Could not open cobalt config proto file: " << config_bin_proto_path;
 
   // Parse the cobalt config file.
-  auto cobalt_config = std::make_unique<cobalt::CobaltConfig>();
+  auto cobalt_config = std::make_unique<cobalt::CobaltRegistry>();
   CHECK(cobalt_config->ParseFromIstream(&config_file_stream))
       << "Could not parse the cobalt config proto file: "
       << config_bin_proto_path;
@@ -392,7 +392,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   std::string config_bin_proto_path = FLAGS_config_bin_proto_path;
   // If no path is given, try to deduce it from the binary location.
   if (config_bin_proto_path == "") {
-    config_bin_proto_path = FindCobaltConfigProto(argv);
+    config_bin_proto_path = FindCobaltRegistryProto(argv);
   }
 
   std::unique_ptr<ProjectContext> project_context =

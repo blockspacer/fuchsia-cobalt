@@ -56,13 +56,13 @@ const std::chrono::seconds kMaxSeconds = UploadScheduler::kMaxSeconds;
 // Returns a ProjectContext obtained by parsing the configuration specified
 // in shipping_manager_test_config.yaml
 std::shared_ptr<ProjectContext> GetTestProject() {
-  // Parse the base64-encoded, serialized CobaltConfig in
+  // Parse the base64-encoded, serialized CobaltRegistry in
   // shipping_manager_test_config.h. This is generated from
   // shipping_manager_test_config.yaml. Edit that yaml file to make changes. The
-  // variable name below, |kCobaltConfigBase64|, must match what is
+  // variable name below, |kCobaltRegistryBase64|, must match what is
   // specified in the build files.
   std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltConfigBase64(kCobaltConfigBase64);
+      ClientConfig::CreateFromCobaltRegistryBase64(kCobaltRegistryBase64);
   EXPECT_NE(nullptr, client_config);
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(

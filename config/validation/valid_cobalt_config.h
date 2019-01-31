@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "third_party/tensorflow_statusor/statusor.h"
 
 namespace cobalt {
@@ -16,24 +16,24 @@ namespace validation {
 
 using tensorflow_statusor::StatusOr;
 
-// This represents a validated CobaltConfig object. If the StatusOr returned
-// from GetValidCobaltConfig is a ValidCobaltConfig then the provided
-// CobaltConfig is guaranteed to be valid.
-class ValidCobaltConfig {
+// This represents a validated CobaltRegistry object. If the StatusOr returned
+// from GetValidCobaltRegistry is a ValidCobaltRegistry then the provided
+// CobaltRegistry is guaranteed to be valid.
+class ValidCobaltRegistry {
  public:
-  // GetValidCobaltConfig attempts to construct a ValidCobaltConfig object using
-  // the supplied CobaltConfig (|cfg|). If it runs into any validation errors,
-  // it returns a util::Status with the validation error, otherwise it returns
-  // the ValidCobaltConfig object.
-  static StatusOr<ValidCobaltConfig> GetValidCobaltConfig(
-      std::unique_ptr<CobaltConfig> cfg);
+  // GetValidCobaltRegistry attempts to construct a ValidCobaltRegistry object
+  // using the supplied CobaltRegistry (|cfg|). If it runs into any validation
+  // errors, it returns a util::Status with the validation error, otherwise it
+  // returns the ValidCobaltRegistry object.
+  static StatusOr<ValidCobaltRegistry> GetValidCobaltRegistry(
+      std::unique_ptr<CobaltRegistry> cfg);
 
-  const std::unique_ptr<CobaltConfig> &config() const { return config_; }
+  const std::unique_ptr<CobaltRegistry> &config() const { return config_; }
 
  private:
-  explicit ValidCobaltConfig(std::unique_ptr<CobaltConfig> cfg);
+  explicit ValidCobaltRegistry(std::unique_ptr<CobaltRegistry> cfg);
 
-  std::unique_ptr<CobaltConfig> config_;
+  std::unique_ptr<CobaltRegistry> config_;
 };
 
 }  // namespace validation

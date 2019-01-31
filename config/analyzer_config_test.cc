@@ -72,8 +72,8 @@ TEST(AnalyzerConfigTest, DuplicateRegistrationDeathTest) {
                "Duplicate ID found in file");
 }
 
-TEST(AnalyzerConfigTest, ValidCobaltConfigProto) {
-  CobaltConfig cobalt_config;
+TEST(AnalyzerConfigTest, ValidCobaltRegistryProto) {
+  CobaltRegistry cobalt_config;
 
   EncodingConfig *encoding;
   encoding = cobalt_config.add_encoding_configs();
@@ -108,7 +108,7 @@ TEST(AnalyzerConfigTest, ValidCobaltConfigProto) {
   report->set_project_id(1);
   report->set_id(3);
 
-  auto config = AnalyzerConfig::CreateFromCobaltConfigProto(&cobalt_config);
+  auto config = AnalyzerConfig::CreateFromCobaltRegistryProto(&cobalt_config);
 
   EXPECT_NE(nullptr, config->EncodingConfig(1, 1, 3));
   EXPECT_NE(nullptr, config->EncodingConfig(1, 1, 4));

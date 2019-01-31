@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 
-#include "config/cobalt_config.pb.h"
+#include "config/cobalt_registry.pb.h"
 #include "config/encoding_config.h"
 #include "config/encodings.pb.h"
 #include "config/metric_config.h"
@@ -40,15 +40,15 @@ class AnalyzerConfig {
 
   // Constructs and returns an instance of AnalyzerConfig by swapping all of
   // the datat out of |config|.
-  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltConfigProto(
-      CobaltConfig* config);
+  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltRegistryProto(
+      CobaltRegistry* config);
 
   // Constructs and returns an instance of AnalyzerConfig by first parsing
-  // a CobaltConfig proto message from cobalt_config_proto_text which should
-  // contain an ASCII text representation of a CobaltConfigProto, and then
+  // a CobaltRegistry proto message from cobalt_registry_proto_text which should
+  // contain an ASCII text representation of a CobaltRegistryProto, and then
   // invoking CreateFromCobaltconfigProto.
-  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltConfigProtoText(
-      std::string cobalt_config_proto_text);
+  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltRegistryProtoText(
+      std::string cobalt_registry_proto_text);
 
   // Constructs an AnalyzerConfig that wraps the given registries.
   AnalyzerConfig(std::shared_ptr<config::EncodingRegistry> encoding_configs,

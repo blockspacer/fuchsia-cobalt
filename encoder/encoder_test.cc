@@ -38,13 +38,13 @@ const uint32_t kPacificDayIndex = 17136;
 // Returns a ProjectContext obtained by parsing the configuration specified
 // in envelope_maker_test_config.yaml
 std::shared_ptr<ProjectContext> GetTestProject() {
-  // Parse the base64-encoded, serialized CobaltConfig in
+  // Parse the base64-encoded, serialized CobaltRegistry in
   // encoder_test_config.h. This is generated from encoder_test_config.yaml.
   // Edit encoder_test_config.yaml to make changes. The variable name
-  // below, |kCobaltConfigBase64|, must match what is specified in the
+  // below, |kCobaltRegistryBase64|, must match what is specified in the
   // invocation of generate_test_config_h() in CMakeLists.txt.
   std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltConfigBase64(kCobaltConfigBase64);
+      ClientConfig::CreateFromCobaltRegistryBase64(kCobaltRegistryBase64);
   EXPECT_NE(nullptr, client_config);
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(

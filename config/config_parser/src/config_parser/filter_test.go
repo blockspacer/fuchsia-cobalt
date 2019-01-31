@@ -49,7 +49,7 @@ var filterTests = []struct {
 	},
 
 	{
-		before: &config.CobaltConfig{
+		before: &config.CobaltRegistry{
 			Customers: []*config.CustomerConfig{
 				&config.CustomerConfig{
 					Projects: []*config.ProjectConfig{
@@ -67,7 +67,7 @@ var filterTests = []struct {
 				},
 			},
 		},
-		after: &config.CobaltConfig{
+		after: &config.CobaltRegistry{
 			Customers: []*config.CustomerConfig{
 				&config.CustomerConfig{
 					Projects: []*config.ProjectConfig{

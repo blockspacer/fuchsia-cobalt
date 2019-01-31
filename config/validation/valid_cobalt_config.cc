@@ -13,9 +13,9 @@ namespace cobalt {
 namespace config {
 namespace validation {
 
-StatusOr<ValidCobaltConfig> ValidCobaltConfig::GetValidCobaltConfig(
-    std::unique_ptr<CobaltConfig> cfg) {
-  ValidCobaltConfig config(std::move(cfg));
+StatusOr<ValidCobaltRegistry> ValidCobaltRegistry::GetValidCobaltRegistry(
+    std::unique_ptr<CobaltRegistry> cfg) {
+  ValidCobaltRegistry config(std::move(cfg));
 
   if (config.config_->encoding_configs_size() == 0 &&
       config.config_->metric_configs_size() == 0 &&
@@ -27,7 +27,7 @@ StatusOr<ValidCobaltConfig> ValidCobaltConfig::GetValidCobaltConfig(
   return config;
 }
 
-ValidCobaltConfig::ValidCobaltConfig(std::unique_ptr<CobaltConfig> cfg)
+ValidCobaltRegistry::ValidCobaltRegistry(std::unique_ptr<CobaltRegistry> cfg)
     : config_(std::move(cfg)) {}
 
 }  // namespace validation

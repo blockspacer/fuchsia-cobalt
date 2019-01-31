@@ -31,7 +31,7 @@ message ProjectConfigFile {
   repeated Metric metric_configs = 2;
   repeated ReportConfig report_configs = 3;
 
-  // Cobalt 1.0 configuration.
+  // Cobalt 1.0 registration.
   repeated MetricDefinition metric_definitions = 4;
 }
 
@@ -49,16 +49,16 @@ message ProjectConfig {
   repeated MetricDefinition metrics = 3;
 }
 
-// CobaltConfig holds the configuration for a Cobalt client or Cobalt analyzer.
-// It lists all available encoding, metric and report configs available for all
-// customers and all projects.
-message CobaltConfig {
+// CobaltRegistry holds the metrics registry for a Cobalt client or Cobalt
+// analyzer. It lists all available encoding, metric and report definitions
+// available for all customers and all projects.
+message CobaltRegistry {
   reserved 4;
-  // Cobalt 0.1 Configuration.
+  // Cobalt 0.1 registry.
   repeated EncodingConfig encoding_configs = 1;
   repeated Metric metric_configs = 2;
   repeated ReportConfig report_configs = 3;
 
-  // Cobalt 1.0 configuration.
+  // Cobalt 1.0 registration.
   repeated CustomerConfig customers = 5;
 }

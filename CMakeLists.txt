@@ -565,26 +565,26 @@ set(CONFIG_PARSER_BINARY "${CMAKE_BINARY_DIR}/config/config_parser/config_parser
 # Runs the Cobalt config parser on a .yaml file containing Cobalt configuration
 # for a single project. Generates a C++ header file containing the definition
 # of a string containing the base64 encoding of the bytes of a serialized
-# CobaltConfig proto message containing the data specified in the YAML.
+# CobaltRegistry proto message containing the data specified in the YAML.
 # This is intended for use in tests.
 #
 # Args:
 # INPUT_YAML: Path to the YAML config file for the test
 # OUTFILE: Path to the .h file to produce
-# CUSTOMER_ID, PROJECTID: These are inserted into the generated CobaltConfig.
+# CUSTOMER_ID, PROJECTID: These are inserted into the generated CobaltRegistry.
 # STRING_VAR_NAME: The C++ variable name to use in the .h file.
 #
 # example usage:
 #
 # set(ENCODER_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/encoder_test_config.h")
 # generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/encoder_test_config.yaml
-#     ${ENCODER_TEST_CONFIG_H} 1 1 "cobalt_config_base64")
+#     ${ENCODER_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
 #
 # This will parse the file "encoder_test_config.yaml" in the current source
 # directory and generate a C++ .h file in the current binary out directory
 # named "encoder_test_config.h". The header file will contain the definition of
-# a variable named |cobalt_config_base64| of type "const char[]" containing
-# the base64 encoded bytes of a serialized CobaltConfig proto message
+# a variable named |cobalt_registry_base64| of type "const char[]" containing
+# the base64 encoded bytes of a serialized CobaltRegistry proto message
 # corresponding to the configuration described in the YAML file, and for
 # customer_id=1, project_id=1.
 #
@@ -592,7 +592,7 @@ set(CONFIG_PARSER_BINARY "${CMAKE_BINARY_DIR}/config/config_parser/config_parser
 # type something like the following:
 #
 # std::unique_ptr<ClientConfig> client_config =
-#      ClientConfig::CreateFromCobaltConfigBase64(cobalt_config_base64);
+#      ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
 macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID STRING_VAR_NAME)
   set_source_files_properties(${OUTFILE} PROPERTIES GENERATED TRUE)
   add_custom_command(OUTPUT ${OUTFILE}
@@ -609,12 +609,12 @@ macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID STRING_VA
   )
 endmacro()
 
-macro(generate_cobalt_config_h)
+macro(generate_cobalt_registry_h)
   set(oneValueArgs CUSTOMER_ID PROJECT_NAME OUTPUT_FILE NAMESPACE)
   cmake_parse_arguments(ARGS "" "${oneValueArgs}" "" ${ARGN})
 
   if ("${ARGS_OUTPUT_FILE}" STREQUAL "")
-    message(FATAL_ERROR "generate_cobalt_config_h requires OUTPUT_FILE to be specified")
+    message(FATAL_ERROR "generate_cobalt_registry_h requires OUTPUT_FILE to be specified")
   endif()
 
   set_source_files_properties(${ARGS_OUTPUT_FILE} PROPERTIES GENERATED TRUE)
@@ -674,7 +674,7 @@ set(CONFIG_PROTO_HDRS
     "${CMAKE_BINARY_DIR}/config/report_configs.pb.h"
     "${CMAKE_BINARY_DIR}/config/report_definition.pb.h")
 set(CONFIG_PB_GO_FILES
-    "${GO_PROTO_GEN_SRC_DIR}/config/cobalt_config.pb.go"
+    "${GO_PROTO_GEN_SRC_DIR}/config/cobalt_registry.pb.go"
     "${GO_PROTO_GEN_SRC_DIR}/config/encodings.pb.go"
     "${GO_PROTO_GEN_SRC_DIR}/config/metrics.pb.go"
     "${GO_PROTO_GEN_SRC_DIR}/config/report_configs.pb.go"

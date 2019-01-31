@@ -58,8 +58,8 @@ void SetupCustomer(uint32_t customer_id, size_t num_projects,
   }
 }
 
-std::unique_ptr<CobaltConfig> NewTestConfig() {
-  auto cobalt_config = std::make_unique<CobaltConfig>();
+std::unique_ptr<CobaltRegistry> NewTestConfig() {
+  auto cobalt_config = std::make_unique<CobaltRegistry>();
   for (size_t i = 1u; i <= kNumCustomers; i++) {
     SetupCustomer(i, NumProjectsForCustomer(i), cobalt_config->add_customers());
   }
@@ -278,30 +278,30 @@ TEST_F(ProjectConfigsTest, GetReportDefinitionById) {
 }
 
 // Tests using a ProjectConfigs constructed directly from a
-// CobaltConfig
-TEST_F(ProjectConfigsTest, ConstructForCobaltConfig) {
+// CobaltRegistry
+TEST_F(ProjectConfigsTest, ConstructForCobaltRegistry) {
   ProjectConfigs project_configs(NewTestConfig());
   EXPECT_TRUE(CheckProjectConfigs(project_configs));
 }
 
-// Tests using a ProjectConfigs obtained via CreateFromCobaltConfigBytes().
-TEST_F(ProjectConfigsTest, CreateFromCobaltConfigBytes) {
+// Tests using a ProjectConfigs obtained via CreateFromCobaltRegistryBytes().
+TEST_F(ProjectConfigsTest, CreateFromCobaltRegistryBytes) {
   auto cobalt_config = NewTestConfig();
   std::string bytes;
   cobalt_config->SerializeToString(&bytes);
-  auto project_configs = ProjectConfigs::CreateFromCobaltConfigBytes(bytes);
+  auto project_configs = ProjectConfigs::CreateFromCobaltRegistryBytes(bytes);
   EXPECT_TRUE(CheckProjectConfigs(*project_configs));
 }
 
-// Tests using a ProjectConfigs obtained via CreateFromCobaltConfigBase64().
-TEST_F(ProjectConfigsTest, CreateFromCobaltConfigBase64) {
+// Tests using a ProjectConfigs obtained via CreateFromCobaltRegistryBase64().
+TEST_F(ProjectConfigsTest, CreateFromCobaltRegistryBase64) {
   auto cobalt_config = NewTestConfig();
   std::string bytes;
   cobalt_config->SerializeToString(&bytes);
-  std::string cobalt_config_base64;
-  crypto::Base64Encode(bytes, &cobalt_config_base64);
+  std::string cobalt_registry_base64;
+  crypto::Base64Encode(bytes, &cobalt_registry_base64);
   auto project_configs =
-      ProjectConfigs::CreateFromCobaltConfigBase64(cobalt_config_base64);
+      ProjectConfigs::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   EXPECT_TRUE(CheckProjectConfigs(*project_configs));
 }
 
