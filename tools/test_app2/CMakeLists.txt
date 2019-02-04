@@ -5,6 +5,7 @@
 # Build the test_app library.
 add_library(test_app2 test_app.cc)
 target_link_libraries(test_app2
+                      config_proto_lib
                       consistent_proto_store
                       curl_http_client
                       encoder
