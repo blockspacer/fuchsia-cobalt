@@ -33,6 +33,11 @@ class ProjectConfigs {
   static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryBytes(
       const std::string& cobalt_config_bytes);
 
+  // Alias of CreateFromCobaltRegistryBytes. (DEPRECATED)
+  // TODO(azani): Delete when all callsites are updated.
+  static std::unique_ptr<ProjectConfigs> CreateFromCobaltConfigBytes(
+      const std::string& cobalt_config_bytes);
+
   // Constructs and returns and instance of ProjectConfigs from |cobalt_config|.
   static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryProto(
       std::unique_ptr<CobaltRegistry> cobalt_config);

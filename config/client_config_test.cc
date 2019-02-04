@@ -71,7 +71,7 @@ TEST(ClientConfigTest, ValidateSingleProjectConfig) {
       cobalt_config.encoding_configs(), 1, 1));
 }
 
-TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesValidConfig) {
+TEST(ClientConfigTest, CreateFromCobaltProjectRegistryBytesValidConfig) {
   std::string cobalt_config_bytes;
   CobaltRegistry cobalt_config;
   AddMetric(1, 1, 42, &cobalt_config);
@@ -80,7 +80,7 @@ TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesValidConfig) {
   AddEncodingConfig(1, 1, 43, &cobalt_config);
   ASSERT_TRUE(cobalt_config.SerializeToString(&cobalt_config_bytes));
   auto client_config_project_id_pair =
-      ClientConfig::CreateFromCobaltProjectConfigBytes(cobalt_config_bytes);
+      ClientConfig::CreateFromCobaltProjectRegistryBytes(cobalt_config_bytes);
   auto client_config = std::move(client_config_project_id_pair.first);
   ASSERT_NE(nullptr, client_config);
   EXPECT_EQ(1u, client_config_project_id_pair.second);
@@ -92,7 +92,7 @@ TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesValidConfig) {
   EXPECT_NE(nullptr, client_config->Metric(1, 1, 43));
 }
 
-TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesInvalidConfig) {
+TEST(ClientConfigTest, CreateFromCobaltProjectRegistryBytesInvalidConfig) {
   std::string cobalt_config_bytes;
   CobaltRegistry cobalt_config;
   AddMetric(1, 1, 42, &cobalt_config);
@@ -101,7 +101,7 @@ TEST(ClientConfigTest, CreateFromCobaltProjectConfigBytesInvalidConfig) {
   AddEncodingConfig(1, 2, 43, &cobalt_config);
   ASSERT_TRUE(cobalt_config.SerializeToString(&cobalt_config_bytes));
   auto client_config_project_id_pair =
-      ClientConfig::CreateFromCobaltProjectConfigBytes(cobalt_config_bytes);
+      ClientConfig::CreateFromCobaltProjectRegistryBytes(cobalt_config_bytes);
   auto client_config = std::move(client_config_project_id_pair.first);
   ASSERT_EQ(nullptr, client_config);
 }
