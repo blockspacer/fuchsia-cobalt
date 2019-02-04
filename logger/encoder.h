@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "./event.pb.h"
 #include "./observation2.pb.h"
@@ -150,18 +151,17 @@ class Encoder {
   //
   // day_index: The day index associated with the Observation being encoded.
   //
-  // event_code: This will populate the Observation's |event_code|
-  // field.
+  // event_codes: This will be used to populate the bits of the Obseravtion's
+  // |event_code|.
   //
   // component: The hash of this value will populate the Observation's
   // |component_name_hash| field.
   //
   // value: This will populate the Observation's |value| field.
-  Result EncodeIntegerEventObservation(MetricRef metric,
-                                       const ReportDefinition* report,
-                                       uint32_t day_index, uint32_t event_code,
-                                       const std::string component,
-                                       int64_t value) const;
+  Result EncodeIntegerEventObservation(
+      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+      const google::protobuf::RepeatedField<uint32_t>& event_codes,
+      const std::string component, int64_t value) const;
 
   // Encodes an Observation of type HistogramObservation.
   //
@@ -173,8 +173,8 @@ class Encoder {
   //
   // day_index: The day index associated with the Observation being encoded.
   //
-  // event_code: This will populate the Observation's |event_code|
-  // field.
+  // event_codes: This will be used to populate the bits of the Obseravtion's
+  // |event_code|.
   //
   // component: The hash of this value will populate the Observation's
   // |component_name_hash| field.
@@ -182,11 +182,10 @@ class Encoder {
   // histogram: This will be used to populate the Observation's |buckets| field.
   // This method does not validate |histogram| against the Metric definition.
   // That is the caller's responsibility.
-  Result EncodeHistogramObservation(MetricRef metric,
-                                    const ReportDefinition* report,
-                                    uint32_t day_index, uint32_t event_code,
-                                    const std::string component,
-                                    HistogramPtr histogram) const;
+  Result EncodeHistogramObservation(
+      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+      const google::protobuf::RepeatedField<uint32_t>& event_codes,
+      const std::string component, HistogramPtr histogram) const;
 
   // Encodes an Observation of type CustomObservation.
   //
@@ -295,7 +294,8 @@ class Encoder {
   // component: The component associated with this Observation. The hash of this
   // value will populate the Observation's |component_name_hash| field.
   //
-  // event_code: The event code of the Event associated with this Observation.
+  // event_codes: This will be used to populate the bits of the Obseravtion's
+  // |event_code|.
   //
   // count: This will populate the |value| field of the the
   // IntegerEventObservation wrapped by the PerDeviceCountObservation.
@@ -303,12 +303,11 @@ class Encoder {
   // window_size: The number of days in the window associated with the
   // Observation. This should be one of the window sizes specified in |report|,
   // but it is the caller's responsibility to ensure this.
-  Result EncodePerDeviceCountObservation(MetricRef metric,
-                                         const ReportDefinition* report,
-                                         uint32_t day_index,
-                                         const std::string component,
-                                         uint32_t event_code, int64_t count,
-                                         uint32_t window_size) const;
+  Result EncodePerDeviceCountObservation(
+      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+      const std::string component,
+      const google::protobuf::RepeatedField<uint32_t>& event_codes,
+      int64_t count, uint32_t window_size) const;
 
   // Encodes an Observation of type ReportParticipationObservation.
   //

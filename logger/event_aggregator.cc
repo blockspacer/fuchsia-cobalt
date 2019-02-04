@@ -19,6 +19,7 @@
 
 namespace cobalt {
 
+using google::protobuf::RepeatedField;
 using rappor::RapporConfigHelper;
 using util::ConsistentProtoStore;
 using util::SerializeToBase64;
@@ -98,6 +99,36 @@ Status MaybeInsertReportConfig(const ProjectContext& project_context,
     (*store->mutable_by_report_key())[key] = report_aggregates;
   }
   return kOK;
+}
+
+// PackEventCodes converts a list of event_codes into an int64_t, for putting
+// into an Observation.
+//
+// |event_codes| The list of event_codes to be packed into the int64_t. Each
+//               value gets a separate section of 10 bits, and as such this must
+//               be no longer than 5.
+uint64_t PackEventCodes(const RepeatedField<uint32_t>& event_codes) {
+  CHECK_LE(event_codes.size(), 5);
+
+  uint64_t event_code = 0;
+  for (int i = 0; i < event_codes.size(); i++) {
+    event_code <<= 10;
+    event_code |= event_codes.Get(i);
+  }
+  return event_code;
+}
+
+RepeatedField<uint32_t> UnpackEventCodes(uint64_t event_code) {
+  std::vector<uint32_t> event_codes;
+  while (event_code != 0) {
+    event_codes.insert(event_codes.begin(), event_code & 0x3FF);
+    event_code >>= 10;
+  }
+  RepeatedField<uint32_t> fields;
+  for (auto code : event_codes) {
+    *fields.Add() = code;
+  }
+  return fields;
 }
 
 }  // namespace
@@ -300,9 +331,9 @@ Status EventAggregator::LogPerDeviceCountEvent(uint32_t report_id,
       (*(*(*aggregates->second.mutable_count_aggregates()
                 ->mutable_by_component())[event_record->event->count_event()
                                               .component()]
-              .mutable_by_event_code())[event_record->event->count_event()
-                                            .event_code(0)]
-            .mutable_by_day_index())[event_record->event->day_index()]
+              .mutable_by_event_code())
+            [PackEventCodes(event_record->event->count_event().event_code())]
+                .mutable_by_day_index())[event_record->event->day_index()]
           .mutable_count_daily_aggregate();
   daily_aggregate->set_count(daily_aggregate->count() +
                              event_record->event->count_event().count());
@@ -862,8 +893,8 @@ Status EventAggregator::GenerateSinglePerDeviceCountObservation(
     uint32_t obs_day_index, const std::string& component, uint32_t event_code,
     uint32_t window_size, int64_t count) const {
   auto encoder_result = encoder_->EncodePerDeviceCountObservation(
-      metric_ref, report, obs_day_index, component, event_code, count,
-      window_size);
+      metric_ref, report, obs_day_index, component,
+      UnpackEventCodes(event_code), count, window_size);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }

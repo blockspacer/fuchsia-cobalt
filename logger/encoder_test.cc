@@ -164,6 +164,26 @@ metric {
   }
 }
 
+metric {
+  metric_name: "MultiEventCodeTest"
+  metric_type: EVENT_COUNT
+  customer_id: 1
+  project_id: 1
+  id: 11
+  metric_dimensions: {
+    max_event_code: 10
+  }
+  metric_dimensions: {
+    max_event_code: 10
+  }
+  reports: {
+    report_name: "MultiEventCodeCounts"
+    id: 171
+    report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+    system_profile_field: OS
+  }
+}
+
 )";
 
 bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
@@ -223,6 +243,15 @@ void CheckResult(const Encoder::Result& result, uint32_t expected_metric_id,
   EXPECT_EQ(expected_report_id, result.metadata->report_id());
   EXPECT_EQ(result.observation->random_id().size(), 8u);
   EXPECT_EQ(expected_day_index, result.metadata->day_index());
+}
+
+std::vector<uint32_t> UnpackEventCodes(uint64_t event_code) {
+  std::vector<uint32_t> event_codes;
+  while (event_code != 0) {
+    event_codes.insert(event_codes.begin(), event_code & 0x3FF);
+    event_code >>= 10;
+  }
+  return event_codes;
 }
 
 }  // namespace
@@ -314,11 +343,13 @@ TEST_F(EncoderTest, EncodeIntegerEventObservation) {
   const uint32_t kValue = 314159;
   const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 9;
+  google::protobuf::RepeatedField<uint32_t> event_codes;
+  *event_codes.Add() = kEventCode;
 
   auto pair = GetMetricAndReport(kMetricName, kReportName);
   auto result = encoder_->EncodeIntegerEventObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex,
-      kEventCode, kComponent, kValue);
+      event_codes, kComponent, kValue);
   CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
   // In the SystemProfile only the OS should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA,
@@ -326,6 +357,37 @@ TEST_F(EncoderTest, EncodeIntegerEventObservation) {
   ASSERT_TRUE(result.observation->has_numeric_event());
   const IntegerEventObservation& obs = result.observation->numeric_event();
   EXPECT_EQ(kEventCode, obs.event_code());
+  EXPECT_EQ(obs.component_name_hash().size(), 32u);
+  EXPECT_EQ(kValue, obs.value());
+}
+
+TEST_F(EncoderTest, MultipleEventCodes) {
+  const char kMetricName[] = "MultiEventCodeTest";
+  const char kReportName[] = "MultiEventCodeCounts";
+  const uint32_t kExpectedMetricId = 11;
+  const uint32_t kExpectedReportId = 171;
+  const char kComponent[] = "My Component";
+  const uint32_t kValue = 314159;
+  const uint32_t kDayIndex = 111;
+  const uint32_t kEventCode1 = 7;
+  const uint32_t kEventCode2 = 5;
+  google::protobuf::RepeatedField<uint32_t> event_codes;
+  *event_codes.Add() = kEventCode1;
+  *event_codes.Add() = kEventCode2;
+
+  auto pair = GetMetricAndReport(kMetricName, kReportName);
+  auto result = encoder_->EncodeIntegerEventObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex,
+      event_codes, kComponent, kValue);
+  CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
+  // In the SystemProfile only the OS should be set.
+  CheckSystemProfile(result, SystemProfile::FUCHSIA,
+                     SystemProfile::UNKNOWN_ARCH, "", "");
+  ASSERT_TRUE(result.observation->has_numeric_event());
+  const IntegerEventObservation& obs = result.observation->numeric_event();
+  auto codes = UnpackEventCodes(obs.event_code());
+  EXPECT_EQ(kEventCode1, codes[0]);
+  EXPECT_EQ(kEventCode2, codes[1]);
   EXPECT_EQ(obs.component_name_hash().size(), 32u);
   EXPECT_EQ(kValue, obs.value());
 }
@@ -338,6 +400,8 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   const char kComponent[] = "";
   const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 9;
+  google::protobuf::RepeatedField<uint32_t> event_codes;
+  *event_codes.Add() = kEventCode;
 
   std::vector<uint32_t> indices = {0, 1, 2};
   std::vector<uint32_t> counts = {100, 200, 300};
@@ -345,7 +409,7 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   auto pair = GetMetricAndReport(kMetricName, kReportName);
   auto result = encoder_->EncodeHistogramObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex,
-      kEventCode, kComponent, std::move(histogram));
+      event_codes, kComponent, std::move(histogram));
   CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "",
@@ -482,9 +546,12 @@ TEST_F(EncoderTest, EncodePerDeviceCountObservation) {
   const uint32_t kWindowSize = 7;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
 
+  google::protobuf::RepeatedField<uint32_t> event_codes;
+  *event_codes.Add() = kEventCode;
+
   auto result = encoder_->EncodePerDeviceCountObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex,
-      kComponent, kEventCode, kCount, kWindowSize);
+      kComponent, event_codes, kCount, kWindowSize);
   CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "",

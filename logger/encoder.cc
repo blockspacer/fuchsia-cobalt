@@ -25,6 +25,7 @@ using ::cobalt::forculus::ForculusEncrypter;
 using ::cobalt::rappor::BasicRapporEncoder;
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::rappor::RapporEncoder;
+using ::google::protobuf::RepeatedField;
 
 namespace {
 // Populates |*hash_out| with the SHA256 of |component|, unless |component|
@@ -67,6 +68,23 @@ Status TranslateBasicRapporEncoderStatus(MetricRef metric,
                  << metric.ProjectDebugString() << ".";
       return kInvalidArguments;
   }
+}
+
+// PackEventCodes converts a list of event_codes into an int64_t, for putting
+// into an Observation.
+//
+// |event_codes| The list of event_codes to be packed into the int64_t. Each
+//               value gets a separate section of 10 bits, and as such this must
+//               be no longer than 5.
+uint64_t PackEventCodes(const RepeatedField<uint32_t>& event_codes) {
+  CHECK_LE(event_codes.size(), 5);
+
+  uint64_t event_code = 0;
+  for (int i = 0; i < event_codes.size(); i++) {
+    event_code <<= 10;
+    event_code |= event_codes.Get(i);
+  }
+  return event_code;
 }
 
 }  // namespace
@@ -196,11 +214,12 @@ Encoder::Result Encoder::EncodeForculusObservation(
 
 Encoder::Result Encoder::EncodeIntegerEventObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    uint32_t event_code, const std::string component, int64_t value) const {
+    const RepeatedField<uint32_t>& event_codes, const std::string component,
+    int64_t value) const {
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* integer_event_observation = observation->mutable_numeric_event();
-  integer_event_observation->set_event_code(event_code);
+  integer_event_observation->set_event_code(PackEventCodes(event_codes));
   if (!HashComponentNameIfNotEmpty(
           component,
           integer_event_observation->mutable_component_name_hash())) {
@@ -216,12 +235,12 @@ Encoder::Result Encoder::EncodeIntegerEventObservation(
 
 Encoder::Result Encoder::EncodeHistogramObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    uint32_t event_code, const std::string component,
+    const RepeatedField<uint32_t>& event_codes, const std::string component,
     HistogramPtr histogram) const {
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* histogram_observation = observation->mutable_histogram();
-  histogram_observation->set_event_code(event_code);
+  histogram_observation->set_event_code(PackEventCodes(event_codes));
   if (!HashComponentNameIfNotEmpty(
           component, histogram_observation->mutable_component_name_hash())) {
     LOG(ERROR) << "Hashing the component name failed for: Report "
@@ -274,10 +293,10 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(
 
 Encoder::Result Encoder::EncodePerDeviceCountObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const std::string component, uint32_t event_code, int64_t count,
-    uint32_t window_size) const {
+    const std::string component, const RepeatedField<uint32_t>& event_codes,
+    int64_t count, uint32_t window_size) const {
   auto result = EncodeIntegerEventObservation(metric, report, day_index,
-                                              event_code, component, count);
+                                              event_codes, component, count);
   auto* integer_event_observation = result.observation->release_numeric_event();
   auto* count_observation = result.observation->mutable_per_device_count();
   count_observation->set_allocated_integer_event_obs(integer_event_observation);

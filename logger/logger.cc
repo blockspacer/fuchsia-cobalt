@@ -143,7 +143,7 @@ class IntegerPerformanceEventLogger : public EventLogger {
   Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record) override;
-  virtual uint32_t EventCode(const Event& event) = 0;
+  virtual const RepeatedField<uint32_t>& EventCodes(const Event& event) = 0;
   virtual std::string Component(const Event& event) = 0;
   virtual int64_t IntValue(const Event& event) = 0;
 };
@@ -156,7 +156,7 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
   virtual ~ElapsedTimeEventLogger() = default;
 
  private:
-  uint32_t EventCode(const Event& event) override;
+  const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -170,7 +170,7 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
   virtual ~FrameRateEventLogger() = default;
 
  private:
-  uint32_t EventCode(const Event& event) override;
+  const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -184,7 +184,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
   virtual ~MemoryUsageEventLogger() = default;
 
  private:
-  uint32_t EventCode(const Event& event) override;
+  const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -767,16 +767,21 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_count_event());
-  const auto& count_event = event.count_event();
+  auto* count_event = event_record->event->mutable_count_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT: {
+      std::string component;
+      if (may_invalidate) {
+        component = std::move(*count_event->mutable_component());
+      } else {
+        component = count_event->component();
+      }
       return encoder()->EncodeIntegerEventObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          // TODO(zmbush): Pass all event_codes, not just the first.
-          count_event.event_code(0), count_event.component(),
-          count_event.count());
+          count_event->event_code(), std::move(component),
+          count_event->count());
     }
 
     default:
@@ -804,7 +809,7 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
     case ReportDefinition::INT_RANGE_HISTOGRAM: {
       return encoder()->EncodeIntegerEventObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          EventCode(event), Component(event), IntValue(event));
+          EventCodes(event), Component(event), IntValue(event));
       break;
     }
 
@@ -815,10 +820,10 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
 
 ////////////// ElapsedTimeEventLogger method implementations ///////////////////
 
-uint32_t ElapsedTimeEventLogger::EventCode(const Event& event) {
+const RepeatedField<uint32_t>& ElapsedTimeEventLogger::EventCodes(
+    const Event& event) {
   CHECK(event.has_elapsed_time_event());
-  // TODO(zmbush): Pass all event_codes, not just the first.
-  return event.elapsed_time_event().event_code(0);
+  return event.elapsed_time_event().event_code();
 }
 
 std::string ElapsedTimeEventLogger::Component(const Event& event) {
@@ -838,10 +843,10 @@ Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
 
 ////////////// FrameRateEventLogger method implementations /////////////////
 
-uint32_t FrameRateEventLogger::EventCode(const Event& event) {
+const RepeatedField<uint32_t>& FrameRateEventLogger::EventCodes(
+    const Event& event) {
   CHECK(event.has_frame_rate_event());
-  // TODO(zmbush): Pass all event_codes, not just the first.
-  return event.frame_rate_event().event_code(0);
+  return event.frame_rate_event().event_code();
 }
 
 std::string FrameRateEventLogger::Component(const Event& event) {
@@ -860,10 +865,10 @@ Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 ////////////// MemoryUsageEventLogger method implementations ///////////////////
-uint32_t MemoryUsageEventLogger::EventCode(const Event& event) {
+const RepeatedField<uint32_t>& MemoryUsageEventLogger::EventCodes(
+    const Event& event) {
   CHECK(event.has_memory_usage_event());
-  // TODO(zmbush): Pass all event_codes, not just the first.
-  return event.memory_usage_event().event_code(0);
+  return event.memory_usage_event().event_code();
 }
 
 std::string MemoryUsageEventLogger::Component(const Event& event) {
@@ -960,8 +965,7 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
       }
       return encoder()->EncodeHistogramObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          // TODO(zmbush): Pass all event_codes, not just the first.
-          int_histogram_event->event_code(0), int_histogram_event->component(),
+          int_histogram_event->event_code(), int_histogram_event->component(),
           std::move(histogram));
     }
 
