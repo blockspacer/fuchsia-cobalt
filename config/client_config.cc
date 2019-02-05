@@ -60,12 +60,6 @@ std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBytes(
   return CreateFromCobaltRegistry(&cobalt_config);
 }
 
-// TODO(azani): Delete when all callsites are updated.
-std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltConfigBytes(
-    const std::string& cobalt_config_bytes) {
-  return CreateFromCobaltRegistryBytes(cobalt_config_bytes);
-}
-
 template <class Config>
 bool ClientConfig::ValidateSingleProjectConfig(
     const ::google::protobuf::RepeatedPtrField<Config>& configs,
@@ -125,13 +119,6 @@ ClientConfig::CreateFromCobaltProjectRegistryBytes(
   }
 
   return std::make_pair(CreateFromCobaltRegistry(&cobalt_config), project_id);
-}
-
-// TODO(azani): Delete when all callsites are updated.
-std::pair<std::unique_ptr<ClientConfig>, uint32_t>
-ClientConfig::CreateFromCobaltProjectConfigBytes(
-    const std::string& cobalt_config_bytes) {
-  return CreateFromCobaltProjectRegistryBytes(cobalt_config_bytes);
 }
 
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistry(

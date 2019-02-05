@@ -8,12 +8,6 @@ config("proto_config") {
   defines = [ "PROTO_LITE" ]
 }
 
-# Alias cobalt_registry_proto for backwards compatibility.
-# TODO(azani): Delete when done migrating the name.
-group("cobalt_config_proto") {
-  deps = [":cobalt_registry_proto"]
-}
-
 proto_library("cobalt_registry_proto") {
   proto_in_dir = "//third_party/cobalt"
   sources = [

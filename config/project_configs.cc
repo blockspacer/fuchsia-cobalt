@@ -30,11 +30,6 @@ std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBytes(
   return CreateFromCobaltRegistryProto(std::move(cobalt_config));
 }
 
-std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltConfigBytes(
-    const std::string& cobalt_config_bytes) {
-  return CreateFromCobaltRegistryBytes(cobalt_config_bytes);
-}
-
 std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryProto(
     std::unique_ptr<CobaltRegistry> cobalt_config) {
   return std::make_unique<ProjectConfigs>(std::move(cobalt_config));

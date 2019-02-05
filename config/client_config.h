@@ -37,11 +37,6 @@ class ClientConfig {
   static std::unique_ptr<ClientConfig> CreateFromCobaltRegistryBytes(
       const std::string& cobalt_config_bytes);
 
-  // Alias of CreateFromCobaltRegistryBytes. (DEPRECATED)
-  // TODO(azani): Delete when all callsites are updated.
-  static std::unique_ptr<ClientConfig> CreateFromCobaltConfigBytes(
-      const std::string& cobalt_config_bytes);
-
   // Checks list of Metrics or EncodingConfigs to  make sure that |customer_id|
   // is the only customer_id referenced and |project_id| is the only project_id
   // referenced.
@@ -59,11 +54,6 @@ class ClientConfig {
   // as the second value in the pair.
   static std::pair<std::unique_ptr<ClientConfig>, uint32_t>
   CreateFromCobaltProjectRegistryBytes(const std::string& cobalt_config_bytes);
-
-  // Alias of CreateFromCobaltProjectRegistryBytes. (DEPRECATED)
-  // TODO(azani): Delete when all callsites are updated.
-  static std::pair<std::unique_ptr<ClientConfig>, uint32_t>
-  CreateFromCobaltProjectConfigBytes(const std::string& cobalt_config_bytes);
 
   // Constructs and returns an instance of ClientConfig by swapping all of
   // the Metrics and EncodingConfigs from the given |cobalt_config|.
