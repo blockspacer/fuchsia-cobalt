@@ -42,116 +42,111 @@ std::string ErrorMessage(Status status) {
 
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBase64(
     const std::string& cobalt_registry_base64) {
-  std::string cobalt_config_bytes;
-  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_config_bytes)) {
+  std::string cobalt_registry_bytes;
+  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_registry_bytes)) {
     LOG(ERROR) << "Unable to parse the provided string as base-64";
     return nullptr;
   }
-  return CreateFromCobaltRegistryBytes(cobalt_config_bytes);
+  return CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
 }
 
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBytes(
-    const std::string& cobalt_config_bytes) {
-  CobaltRegistry cobalt_config;
-  if (!cobalt_config.ParseFromString(cobalt_config_bytes)) {
+    const std::string& cobalt_registry_bytes) {
+  auto cobalt_registry = std::make_unique<CobaltRegistry>();
+  if (!cobalt_registry->ParseFromString(cobalt_registry_bytes)) {
     LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
     return nullptr;
   }
-  return CreateFromCobaltRegistry(&cobalt_config);
-}
-
-template <class Config>
-bool ClientConfig::ValidateSingleProjectConfig(
-    const ::google::protobuf::RepeatedPtrField<Config>& configs,
-    uint32_t customer_id, uint32_t project_id) {
-  for (int i = 0; i < configs.size(); i++) {
-    if (configs[i].customer_id() != customer_id ||
-        configs[i].project_id() != project_id) {
-      return false;
-    }
-  }
-
-  return true;
+  return CreateFromCobaltRegistryProto(std::move(cobalt_registry));
 }
 
 std::pair<std::unique_ptr<ClientConfig>, uint32_t>
 ClientConfig::CreateFromCobaltProjectRegistryBytes(
-    const std::string& cobalt_config_bytes) {
-  uint32_t customer_id = 0;
-  uint32_t project_id = 0;
-
-  CobaltRegistry cobalt_config;
-  if (!cobalt_config.ParseFromString(cobalt_config_bytes)) {
-    LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
-    return std::make_pair(nullptr, project_id);
+    const std::string& cobalt_registry_bytes) {
+  auto client_config = CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
+  if (!client_config) {
+    return std::make_pair(nullptr, 0);
+  }
+  if (client_config->is_empty()) {
+    LOG(ERROR) << "No project data found in the provided CobaltRegistry.";
+    return std::make_pair(nullptr, 0);
+  }
+  if (!client_config->is_single_project()) {
+    LOG(ERROR) << "More than one project found in the provided CobaltRegistry.";
+    return std::make_pair(nullptr, 0);
   }
 
-  if (cobalt_config.metric_configs_size() > 0) {
-    customer_id = cobalt_config.metric_configs()[0].customer_id();
-    project_id = cobalt_config.metric_configs()[0].project_id();
-  } else if (cobalt_config.encoding_configs_size() > 0) {
-    customer_id = cobalt_config.encoding_configs()[0].customer_id();
-    project_id = cobalt_config.encoding_configs()[0].project_id();
-  }
-
-  if (cobalt_config.customers_size() > 1) {
-    LOG(ERROR) << "More than one customer found in config.";
-    return std::make_pair(nullptr, project_id);
-  }
-
-  if (cobalt_config.customers_size() > 0 &&
-      cobalt_config.customers(0).projects_size() > 1) {
-    LOG(ERROR) << "More than one projects found in config.";
-    return std::make_pair(nullptr, project_id);
-  }
-
-  // Validate configs
-  if (!ValidateSingleProjectConfig<::cobalt::Metric>(
-          cobalt_config.metric_configs(), customer_id, project_id)) {
-    LOG(ERROR) << "More than one customer_id or project_id found.";
-    return std::make_pair(nullptr, project_id);
-  }
-
-  if (!ValidateSingleProjectConfig<::cobalt::EncodingConfig>(
-          cobalt_config.encoding_configs(), customer_id, project_id)) {
-    LOG(ERROR) << "More than one customer_id or project_id found.";
-    return std::make_pair(nullptr, project_id);
-  }
-
-  return std::make_pair(CreateFromCobaltRegistry(&cobalt_config), project_id);
+  return std::make_pair(std::move(client_config),
+                        client_config->single_project_id());
 }
 
+std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryProto(
+    std::unique_ptr<CobaltRegistry> cobalt_registry) {
+  return CreateFromCobaltRegistry(cobalt_registry.get());
+}
+
+// DEPRECATED: As soon as we are able to delete this method, move its logic
+// into CreateFromCobaltRegistryProto() above instead.
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistry(
-    CobaltRegistry* cobalt_config) {
-  if (cobalt_config->customers_size() > 0) {
-    auto customer = std::make_unique<CustomerConfig>();
-    cobalt_config->mutable_customers(0)->Swap(customer.get());
-    return std::unique_ptr<ClientConfig>(new ClientConfig(std::move(customer)));
-  } else {
-    RegisteredEncodings registered_encodings;
-    registered_encodings.mutable_element()->Swap(
-        cobalt_config->mutable_encoding_configs());
-    auto encodings = EncodingRegistry::TakeFrom(&registered_encodings, nullptr);
-    if (encodings.second != config::kOK) {
-      LOG(ERROR) << "Invalid EncodingConfigs. "
-                 << ErrorMessage(encodings.second);
-      return std::unique_ptr<ClientConfig>(nullptr);
-    }
-
-    RegisteredMetrics registered_metrics;
-    registered_metrics.mutable_element()->Swap(
-        cobalt_config->mutable_metric_configs());
-    auto metrics = MetricRegistry::TakeFrom(&registered_metrics, nullptr);
-    if (metrics.second != config::kOK) {
-      LOG(ERROR) << "Error getting Metrics from registry. "
-                 << ErrorMessage(metrics.second);
-      return std::unique_ptr<ClientConfig>(nullptr);
-    }
-
-    return std::unique_ptr<ClientConfig>(new ClientConfig(
-        std::shared_ptr<config::EncodingRegistry>(encodings.first.release()),
-        std::shared_ptr<config::MetricRegistry>(metrics.first.release())));
+    CobaltRegistry* cobalt_registry) {
+  RegisteredEncodings registered_encodings;
+  registered_encodings.mutable_element()->Swap(
+      cobalt_registry->mutable_encoding_configs());
+  auto encoding_registry_and_status =
+      EncodingRegistry::TakeFrom(&registered_encodings, nullptr);
+  if (encoding_registry_and_status.second != config::kOK) {
+    LOG(ERROR) << "Invalid EncodingConfigs. "
+               << ErrorMessage(encoding_registry_and_status.second);
+    return std::unique_ptr<ClientConfig>(nullptr);
   }
+
+  RegisteredMetrics registered_metrics;
+  registered_metrics.mutable_element()->Swap(
+      cobalt_registry->mutable_metric_configs());
+  auto metrics_registry_and_status =
+      MetricRegistry::TakeFrom(&registered_metrics, nullptr);
+  if (metrics_registry_and_status.second != config::kOK) {
+    LOG(ERROR) << "Error getting Metrics from registry. "
+               << ErrorMessage(metrics_registry_and_status.second);
+    return std::unique_ptr<ClientConfig>(nullptr);
+  }
+
+  auto client_config = std::unique_ptr<ClientConfig>(
+      new ClientConfig(std::move(encoding_registry_and_status.first),
+                       std::move(metrics_registry_and_status.first)));
+
+  // Deprecated: Delete this block once TakeCustomerConfig() has no more uses.
+  size_t num_customers = cobalt_registry->customers_size();
+  if (num_customers == 0) {
+    // There is no Cobalt 1.0 data. We are done.
+    return client_config;
+  }
+  // Since there is Cobalt 1.0 data, any previous computation regarding
+  // whether or not there is a single project based on the Cobalt 0.1 data
+  // only is invalid. Initialize is_single_project to false.
+  client_config->is_single_project_ = false;
+  if (!client_config->is_empty_) {
+    // There is both Cobalt 0.1 and Cobalt 1.0 data.
+    return client_config;
+  }
+  client_config->is_empty_ = false;
+  if (num_customers > 1) {
+    // There is more than one Cobalt 1.0 customer.
+    return client_config;
+  }
+  auto* single_customer = cobalt_registry->mutable_customers(0);
+  if (single_customer->projects_size() != 1) {
+    // The first Cobalt 1.0 customer does not have exactly one project.
+    return client_config;
+  }
+  auto single_project = single_customer->projects(0);
+  client_config->is_single_project_ = true;
+  client_config->single_customer_id_ = single_customer->customer_id();
+  client_config->single_project_id_ = single_project.project_id();
+  client_config->single_customer_config_.reset(new CustomerConfig());
+  client_config->single_customer_config_->Swap(single_customer);
+
+  return client_config;
 }
 
 const EncodingConfig* ClientConfig::EncodingConfig(
@@ -170,16 +165,48 @@ const Metric* ClientConfig::Metric(uint32_t customer_id, uint32_t project_id,
 }
 
 ClientConfig::ClientConfig(
-    std::shared_ptr<config::EncodingRegistry> encoding_configs,
-    std::shared_ptr<config::MetricRegistry> metrics)
-    : encoding_configs_(encoding_configs),
-      metrics_(metrics),
-      customer_config_(nullptr) {}
+    std::unique_ptr<config::EncodingRegistry> encoding_configs,
+    std::unique_ptr<config::MetricRegistry> metrics)
+    : encoding_configs_(std::move(encoding_configs)),
+      metrics_(std::move(metrics)) {
+  CHECK(metrics_);
+  CHECK(encoding_configs_);
+  is_empty_ = encoding_configs_->size() == 0 && metrics_->size() == 0;
+  DetermineIfSingleProject();
+}
 
-ClientConfig::ClientConfig(std::unique_ptr<CustomerConfig> customer_config)
-    : encoding_configs_(nullptr),
-      metrics_(nullptr),
-      customer_config_(std::move(customer_config)) {}
+void ClientConfig::DetermineIfSingleProject() {
+  is_single_project_ = false;
+  if (is_empty_) {
+    return;
+  }
+
+  bool first = true;
+  for (const class EncodingConfig& encoding_config : *encoding_configs_) {
+    if (first) {
+      first = false;
+      is_single_project_ = true;
+      single_customer_id_ = encoding_config.customer_id();
+      single_project_id_ = encoding_config.project_id();
+    } else if (encoding_config.customer_id() != single_customer_id_ ||
+               encoding_config.project_id() != single_project_id_) {
+      is_single_project_ = false;
+      return;
+    }
+  }
+  for (const class Metric& metric : *metrics_) {
+    if (first) {
+      first = false;
+      is_single_project_ = true;
+      single_customer_id_ = metric.customer_id();
+      single_project_id_ = metric.project_id();
+    } else if (metric.customer_id() != single_customer_id_ ||
+               metric.project_id() != single_project_id_) {
+      is_single_project_ = false;
+      return;
+    }
+  }
+}
 
 }  // namespace config
 }  // namespace cobalt

@@ -49,9 +49,25 @@ message ProjectConfig {
   repeated MetricDefinition metrics = 3;
 }
 
-// CobaltRegistry holds the metrics registry for a Cobalt client or Cobalt
-// analyzer. It lists all available encoding, metric and report definitions
-// available for all customers and all projects.
+// CobaltRegistry holds a set of metrics and reports registered with Cobalt.
+//
+// A CobaltRegistry can be in one of three states:
+//
+// (1) It can contain data for a single Cobalt 0.1 project. In this case
+//     the |encoding_configs|, |metric_configs| and |report_configs|
+//     fields are set and the |customers| field is unset. Furthermore all
+//     of the metrics, reports and encodings will be for the same project.
+//
+// (2) It can contain data for a single Cobalt 1.0 project. In this case
+//     the |encoding_configs|, |metric_configs| and |report_configs|
+//     fields are unset and the |customers| field is set. Furthermore there
+//     is a single CustomerConfig and it contains a single ProjectConfig.
+//
+// (3) It can contain data for multiple Cobalt projects. In this case it
+//     may contain data for some Cobalt 0.1 projects and some Cobalt 1.0
+//     projects. The Cobalt 0.1 project data will be contained in the fields
+//     |encoding_configs|, |metric_configs| and |report_configs| and the
+//     Cobalt 1.0 project data will be contained in the field |customers|.
 message CobaltRegistry {
   reserved 4;
   // Cobalt 0.1 registry.
