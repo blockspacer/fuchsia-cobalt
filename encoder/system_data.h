@@ -8,8 +8,8 @@
 #include <string>
 
 #include <mutex>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "./observation_batch.pb.h"
 #include "third_party/abseil-cpp/absl/synchronization/mutex.h"
@@ -38,7 +38,22 @@ class SystemData : public SystemDataInterface {
  public:
   // Constructor: Populuates system_profile_ with the real SystemProfile
   // of the actual running system and the specified product name.
+  //
+  // DEPRECATED
   explicit SystemData(const std::string& product_name);
+
+  // Constructor: Uses the real SystemProfile of the actual running system.
+  //
+  // |product_name|: The value to use for the |product_name| field of the
+  // embedded SystemProfile.
+  //
+  // |board_name_suggestion|: A suggestion for the value to use for the
+  // |board_name| field of the embedded SystemProfile. This may be ignored if
+  // SystemData is able to determine the boardh name directly. A value of ""
+  // indicates that the caller has no information about board name, so one
+  // should be guessed.
+  SystemData(const std::string& product_name,
+             const std::string& board_name_suggestion);
 
   virtual ~SystemData() = default;
 

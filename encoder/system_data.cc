@@ -71,8 +71,9 @@ void PopulateBoardName(SystemProfile* profile) {
 #elif defined(__aarch64__)
 
 void PopulateBoardName(SystemProfile* profile) {
-  // TODO(zmbush): Update this to actually determine board name.
-  profile->set_board_name("Generic ARM");
+  if (profile->board_name() == "") {
+    profile->set_board_name("Generic ARM");
+  }
 }
 
 #else
@@ -83,8 +84,13 @@ void PopulateBoardName(SystemProfile* profile) {}
 
 }  // namespace
 
-SystemData::SystemData(const std::string& product_name) {
+SystemData::SystemData(const std::string& product_name)
+    : SystemData(product_name, "") {}
+
+SystemData::SystemData(const std::string& product_name,
+                       const std::string& board_name_suggestion) {
   system_profile_.set_product_name(product_name);
+  system_profile_.set_board_name(board_name_suggestion);
   PopulateSystemProfile();
 }
 
