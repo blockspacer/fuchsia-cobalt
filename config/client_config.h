@@ -47,7 +47,6 @@ class ClientConfig {
   // such a message, and then extracting the Metrics and EncodingConfigs from
   // that.
   //
-  //
   // Returns nullptr to indicate failure.
   static std::unique_ptr<ClientConfig> CreateFromCobaltRegistryBase64(
       const std::string& cobalt_registry_base64);
@@ -56,7 +55,6 @@ class ClientConfig {
   // a CobaltRegistry proto message from |cobalt_registry_bytes|, which should
   // contain the bytes of the binary serialization of such a message, and then
   // extracting the Metrics and EncodingConfigs from that.
-  //
   //
   // Returns nullptr to indicate failure.
   static std::unique_ptr<ClientConfig> CreateFromCobaltRegistryBytes(

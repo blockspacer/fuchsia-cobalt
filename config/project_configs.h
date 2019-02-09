@@ -16,29 +16,53 @@
 namespace cobalt {
 namespace config {
 
-// ProjectConfigs wraps a CobaltRegistry and offers convenient and efficient
-// methods for looking up a project.
+// ProjectConfigs provides a convenient interface over a |CobaltRegistry|
+// that is intended to be used on Cobalt's client-side.
+//
+// A CobaltRegistry can be in one of three states:
+//
+// (1) It can contain data for a single Cobalt 0.1 project.
+// (2) It can contain data for a single Cobalt 1.0 project.
+// (3) It can contain data for multiple Cobalt projects. In this case it
+//     may contain data for some Cobalt 0.1 projects and some Cobalt 1.0
+//     projects.
+//
+// This class is part of Cobalt 1.0. and as such it ignores the Cobalt 0.1
+// data in a |CobaltRegistry| and gives access only to the Cobalt 1.0 data.
+// So an instance of this class can be in one of three states corresponding
+// to the three states above:
+//
+// (1) It can be empty
+// (2) It can contain data for a single Cobalt 1.0 project.
+// (3) It can contain data for multiple Cobalt 1.0 projects.
+//
+// See the class |ClientConfig| for the Cobalt 0.1 analogue of this class.
 class ProjectConfigs {
  public:
   // Constructs and returns an instance of ProjectConfigs by first parsing
   // a CobaltRegistry proto message from |cobalt_registry_base64|, which should
   // contain the Base64 encoding of the bytes of the binary serialization of
   // such a message.
+  //
+  // Returns nullptr to indicate failure.
   static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryBase64(
       const std::string& cobalt_registry_base64);
 
   // Constructs and returns an instance of ProjectConfigs by first parsing
-  // a CobaltRegistry proto message from |cobalt_config_bytes|, which should
+  // a CobaltRegistry proto message from |cobalt_registry_bytes|, which should
   // contain the bytes of the binary serialization of such a message.
+  //
+  // Returns nullptr to indicate failure.
   static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryBytes(
-      const std::string& cobalt_config_bytes);
+      const std::string& cobalt_registry_bytes);
 
-  // Constructs and returns and instance of ProjectConfigs from |cobalt_config|.
+  // Constructs and returns and instance of ProjectConfigs that contains the
+  // data from |cobalt_registry|.
   static std::unique_ptr<ProjectConfigs> CreateFromCobaltRegistryProto(
-      std::unique_ptr<CobaltRegistry> cobalt_config);
+      std::unique_ptr<CobaltRegistry> cobalt_registry);
 
-  // Constructs a ProjectConfigs that wraps the given |cobalt_config|.
-  explicit ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_config);
+  // Constructs a ProjectConfigs that contains the data from |cobalt_registry|.
+  explicit ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_registry);
 
   // Returns the CustomerConfig for the customer with the given name, or
   // nullptr if there is no such customer.
@@ -73,8 +97,32 @@ class ProjectConfigs {
                                               uint32_t metric_id,
                                               uint32_t report_id) const;
 
+  // Returns whether or not this instance of ProjectConfigs contains data for
+  // exactly one project.
+  bool is_single_project() { return is_single_project_; }
+
+  // Returns whether or not this instance of ProjectConfigs contains no
+  // project data.
+  bool is_empty() { return is_empty_; }
+
+  // If is_single_project() is true then this returns the customer ID of
+  // the single project. Otherwise the return value is undefined.
+  uint32_t single_customer_id() { return single_customer_id_; }
+
+  // If is_single_project() is true then this returns the customer name of
+  // the single project. Otherwise the return value is undefined.
+  std::string single_customer_name() { return single_customer_name_; }
+
+  // If is_single_project() is true then this returns the project ID of
+  // the single project. Otherwise the return value is undefined.
+  uint32_t single_project_id() { return single_project_id_; }
+
+  // If is_single_project() is true then this returns the project name of
+  // the single project. Otherwise the return value is undefined.
+  std::string single_project_name() { return single_project_name_; }
+
  private:
-  std::unique_ptr<CobaltRegistry> cobalt_config_;
+  std::unique_ptr<CobaltRegistry> cobalt_registry_;
 
   std::map<std::string, const CustomerConfig*> customers_by_name_;
 
@@ -92,6 +140,13 @@ class ProjectConfigs {
   std::map<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>,
            const ReportDefinition*>
       reports_by_id_;
+
+  bool is_single_project_;
+  bool is_empty_;
+  uint32_t single_customer_id_ = 0;
+  std::string single_customer_name_;
+  uint32_t single_project_id_ = 0;
+  std::string single_project_name_;
 };
 
 }  // namespace config
