@@ -37,10 +37,12 @@ TEST(EncryptedMessageUtilTest, NoEncryption) {
   // Make a dummy observation.
   auto observation = MakeDummyObservation("hello");
   // Make an EncryptedMessageMaker that uses the NONE encryption scheme.
-  EncryptedMessageMaker maker("dummy_key", EncryptedMessage::NONE);
+  auto maker = EncryptedMessageMaker::MakeAllowUnencrypted(
+                   "dummy_key", EncryptedMessage::NONE)
+                   .ValueOrDie();
   // Encrypt the dummy observation.
   EncryptedMessage encrypted_message;
-  EXPECT_TRUE(maker.Encrypt(observation, &encrypted_message));
+  EXPECT_TRUE(maker->Encrypt(observation, &encrypted_message));
 
   // Make a MessageDecrypter.
   MessageDecrypter decrypter("dummy_key");
@@ -56,11 +58,13 @@ TEST(EncryptedMessageUtilTest, BadKeys) {
   auto observation = MakeDummyObservation("hello");
 
   // Make an EncryptedMessageMaker that uses a bad public key.
-  EncryptedMessageMaker maker("dummy_key", EncryptedMessage::HYBRID_ECDH_V1);
+  auto maker = EncryptedMessageMaker::Make(
+                   "dummy_key", EncryptedMessage::HYBRID_ECDH_V1)
+                   .ValueOrDie();
   // Try to encrypt the dummy observation.
   EncryptedMessage encrypted_message;
   // Expect it to fail, but not crash.
-  EXPECT_FALSE(maker.Encrypt(observation, &encrypted_message));
+  EXPECT_FALSE(maker->Encrypt(observation, &encrypted_message));
 }
 
 // Tests the use of the hybrid cipher option.
@@ -73,10 +77,12 @@ TEST(EncryptedMessageUtilTest, HybridEncryption) {
   auto observation = MakeDummyObservation("hello");
 
   // Make an EncryptedMessageMaker that uses our real encryption scheme.
-  EncryptedMessageMaker maker(public_key, EncryptedMessage::HYBRID_ECDH_V1);
+  auto maker = EncryptedMessageMaker::Make(
+                   public_key, EncryptedMessage::HYBRID_ECDH_V1)
+                   .ValueOrDie();
   // Encrypt the dummy observation.
   EncryptedMessage encrypted_message;
-  ASSERT_TRUE(maker.Encrypt(observation, &encrypted_message));
+  ASSERT_TRUE(maker->Encrypt(observation, &encrypted_message));
   EXPECT_EQ(32u, encrypted_message.public_key_fingerprint().size());
 
   // Make a MessageDecrypter.
@@ -93,6 +99,16 @@ TEST(EncryptedMessageUtilTest, HybridEncryption) {
   EXPECT_FALSE(bad_decrypter.DecryptMessage(encrypted_message, &observation));
 }
 
+// Tests that Make does not allow the NONE scheme.
+TEST(EncryptedMessageUtilTest, DisallowUnencrypted) {
+  // Make a dummy observation.
+  auto observation = MakeDummyObservation("hello");
+  // Try to make an EncryptedMessageMaker that uses the NONE encryption scheme.
+  auto status = EncryptedMessageMaker::Make(
+                   "dummy_key", EncryptedMessage::NONE);
+  EXPECT_EQ(INVALID_ARGUMENT, status.status().error_code());
+}
+
 // Tests that using encryption incorrectly fails but doesn't cause any crashes.
 TEST(EncryptedMessageUtilTest, Crazy) {
   std::string public_key;
@@ -104,18 +120,21 @@ TEST(EncryptedMessageUtilTest, Crazy) {
 
   // Make an EncryptedMessageMaker that incorrectly uses the private key
   // instead of the public key
-  EncryptedMessageMaker bad_maker(private_key,
-                                  EncryptedMessage::HYBRID_ECDH_V1);
+  auto bad_maker = EncryptedMessageMaker::Make(
+                       private_key, EncryptedMessage::HYBRID_ECDH_V1)
+                       .ValueOrDie();
+
   // Try to encrypt the dummy observation.
   EncryptedMessage encrypted_message;
   // Expect it to fail, but not crash.
-  EXPECT_FALSE(bad_maker.Encrypt(observation, &encrypted_message));
+  EXPECT_FALSE(bad_maker->Encrypt(observation, &encrypted_message));
 
   // Now make a good EncryptedMessageMaker
-  EncryptedMessageMaker real_maker(public_key,
-                                   EncryptedMessage::HYBRID_ECDH_V1);
+  auto real_maker = EncryptedMessageMaker::Make(
+                        public_key, EncryptedMessage::HYBRID_ECDH_V1)
+                        .ValueOrDie();
   // Encrypt the dummy observation.
-  EXPECT_TRUE(real_maker.Encrypt(observation, &encrypted_message));
+  EXPECT_TRUE(real_maker->Encrypt(observation, &encrypted_message));
 
   // Make a MessageDecrypter that uses the correct private key.
   MessageDecrypter real_decrypter(private_key);

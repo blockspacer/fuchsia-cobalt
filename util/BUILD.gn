@@ -16,6 +16,7 @@ static_library("encrypted_message_util") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
 
   deps = [
+    ":status",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
   ]

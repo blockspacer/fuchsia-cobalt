@@ -12,7 +12,9 @@ add_library(encrypted_message_util
             encrypted_message_util.cc
             ${COBALT_PROTO_SRCS})
 target_link_libraries(encrypted_message_util
-                      cobalt_crypto)
+                      cobalt_crypto
+                      status
+                      tensorflow_statusor)
 add_cobalt_dependencies(encrypted_message_util)
 
 add_library(pem_util

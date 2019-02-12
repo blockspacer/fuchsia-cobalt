@@ -20,6 +20,8 @@
 #include "./logging.h"
 #include "google/protobuf/message_lite.h"
 #include "util/crypto_util/cipher.h"
+#include "util/status.h"
+#include "util/status_codes.h"
 
 namespace cobalt {
 namespace util {
@@ -39,6 +41,24 @@ EncryptedMessageMaker::EncryptedMessageMaker(
     VLOG(5) << "WARNING: encryption_scheme is NONE. Cobalt data will not be "
                "encrypted!";
   }
+}
+
+tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::Make(const std::string& public_key_pem,
+                            EncryptedMessage::EncryptionScheme scheme) {
+  if (scheme == EncryptedMessage::NONE) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: encryption_scheme NONE is not "
+                  "allowed in production.");
+  }
+  return std::make_unique<EncryptedMessageMaker>(public_key_pem, scheme);
+}
+
+tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeAllowUnencrypted(
+    const std::string& public_key_pem,
+    EncryptedMessage::EncryptionScheme scheme) {
+  return std::make_unique<EncryptedMessageMaker>(public_key_pem, scheme);
 }
 
 bool EncryptedMessageMaker::Encrypt(

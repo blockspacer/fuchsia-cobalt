@@ -29,6 +29,7 @@
 
 #include "./encrypted_message.pb.h"
 #include "google/protobuf/message_lite.h"
+#include "third_party/tensorflow_statusor/statusor.h"
 #include "util/crypto_util/cipher.h"
 
 namespace cobalt {
@@ -43,7 +44,24 @@ namespace util {
 // encrypting Envelopes.
 class EncryptedMessageMaker {
  public:
-  // Constructs an EncryptedMessageMaker.
+  // Encrypts a protocol buffer |message| and populates |encrypted_message|
+  // with the result. Returns true for success or false on failure.
+  bool Encrypt(const google::protobuf::MessageLite& message,
+               EncryptedMessage* encrypted_message) const;
+
+  // Make an EncryptedMessageMaker.
+  //
+  // |scheme| specifies which encryption scheme should be used.
+  // The use of EncryptedMessage::NONE is disallowed.
+  //
+  // |public_key_pem| must be appropriate to |scheme|. If |scheme| is
+  // EncryptedMessage::HYBRID_ECDH_V1 then |public_key_pem| must be a PEM
+  // encoding of a public key appropriate for that scheme.
+  static tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  Make(const std::string& public_key_pem,
+       EncryptedMessage::EncryptionScheme scheme);
+
+  // Make an EncryptedMessageMaker. (Do not use in production)
   //
   // |scheme| specifies which encryption scheme should be used. As of this
   // writing there are two schemes:
@@ -59,13 +77,13 @@ class EncryptedMessageMaker {
   // EncryptedMessage::NONE then |public_key_pem| is ignored. If |scheme| is
   // EncryptedMessage::HYBRID_ECDH_V1 then |public_key_pem| must be a PEM
   // encoding of a public key appropriate for that scheme.
+  static tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  MakeAllowUnencrypted(const std::string& public_key_pem,
+                       EncryptedMessage::EncryptionScheme scheme);
+
+  // DEPRECATED. Use Make instead.
   EncryptedMessageMaker(const std::string& public_key_pem,
                         EncryptedMessage::EncryptionScheme scheme);
-
-  // Encrypts a protocol buffer |message| and populates |encrypted_message|
-  // with the result. Returns true for success or false on failure.
-  bool Encrypt(const google::protobuf::MessageLite& message,
-               EncryptedMessage* encrypted_message) const;
 
  private:
   std::unique_ptr<crypto::HybridCipher> cipher_;
