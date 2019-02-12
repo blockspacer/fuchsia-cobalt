@@ -1,0 +1,58 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+##########################################################################
+#  This file contains MetricDefinitions used in Logger tests.
+#  It is compiled into unique_actives_test_registry.h, which is included
+#  in testing_constants.h.
+#
+#  When editing this file, also update testing_constants.h with any
+#  changes to report IDs or to local aggregation parameters.
+##########################################################################
+
+metric_definitions:
+
+- id: 1
+  metric_name: "DeviceBoots"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 1
+  reports:
+    # Report ID: 131134909
+    - report_name: "DeviceBoots_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: SMALL
+      window_size:
+        - 1
+
+- id: 2
+  metric_name: "FeaturesActive"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 4
+  reports:
+    # Report ID: 635837989
+    - report_name: "FeaturesActive_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: LARGE
+      window_size:
+        - 7
+        - 30
+
+- id: 3
+  metric_name: "NetworkActivity"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 2
+  reports:
+    # Report ID: 1956746741
+    - report_name: "NetworkActivity_GlobalCount"
+      report_type: SIMPLE_OCCURRENCE_COUNT
+      local_privacy_noise_level: MEDIUM
+    # Report ID: 2668029569
+    - report_name: "NetworkActivity_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: LARGE
+      window_size:
+        - 1
+        - 7
+        - 30
+

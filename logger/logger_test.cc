@@ -23,6 +23,7 @@
 #include "logger/logger_test_utils.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
+#include "logger/testing_constants.h"
 #include "util/clock.h"
 #include "util/datetime_util.h"
 #include "util/encrypted_message_util.h"
@@ -32,9 +33,12 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
+using config::ProjectConfigs;
+
 using encoder::ClientSecret;
 using encoder::SystemDataInterface;
 using rappor::BasicRapporEncoder;
+
 using util::EncryptedMessageMaker;
 using util::IncrementingClock;
 using util::MessageDecrypter;
@@ -50,9 +54,9 @@ using testing::FakeObservationStore;
 using testing::FetchAggregatedObservations;
 using testing::FetchObservations;
 using testing::FetchSingleObservation;
+using testing::GetTestProject;
 using testing::MakeNullExpectedUniqueActivesObservations;
 using testing::MockConsistentProtoStore;
-using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
 namespace {
@@ -61,357 +65,9 @@ const int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
 const int kYear = kDay * 365;
 
-static const uint32_t kCustomerId = 1;
-static const uint32_t kProjectId = 1;
-static const char kCustomerName[] = "Fuchsia";
-static const char kProjectName[] = "Cobalt";
-
 // Filenames for constructors of ConsistentProtoStores
 static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
 static const char kObsHistoryFilename[] = "obs_history_backup";
-
-// Metric IDs
-const uint32_t kErrorOccurredMetricId = 1;
-const uint32_t kReadCacheHitsMetricId = 2;
-const uint32_t kModuleLoadTimeMetricId = 3;
-const uint32_t kLoginModuleFrameRateMetricId = 4;
-const uint32_t kLedgerMemoryUsageMetricId = 5;
-const uint32_t kFileSystemWriteTimesMetricId = 6;
-const uint32_t kModuleDownloadsMetricId = 7;
-const uint32_t kModuleInstallsMetricId = 8;
-const uint32_t kDeviceBootsMetricId = 9;
-const uint32_t kFeaturesActiveMetricId = 10;
-const uint32_t kEventsOccurredMetricId = 11;
-
-// MetricReportIds
-const MetricReportId kDeviceBoots_UniqueDevicesMetricReportId =
-    MetricReportId(kDeviceBootsMetricId, 91);
-const MetricReportId kFeaturesActive_UniqueDevicesMetricReportId =
-    MetricReportId(kFeaturesActiveMetricId, 201);
-const MetricReportId kEventsOccurred_SimpleOccurrenceCountMetricReportId =
-    MetricReportId(kEventsOccurredMetricId, 301);
-const MetricReportId kEventsOccurred_UniqueDevicesMetricReportId =
-    MetricReportId(kEventsOccurredMetricId, 401);
-
-static const char kMetricDefinitions[] = R"(
-metric {
-  metric_name: "ErrorOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 1
-  max_event_code: 100
-  reports: {
-    report_name: "ErrorCountsByCode"
-    id: 123
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: SMALL
-  }
-}
-
-metric {
-  metric_name: "ReadCacheHits"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 2
-  reports: {
-    report_name: "ReadCacheHitCounts"
-    id: 111
-    report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
-  }
-}
-
-metric {
-  metric_name: "ModuleLoadTime"
-  metric_type: ELAPSED_TIME
-  customer_id: 1
-  project_id: 1
-  id: 3
-  reports: {
-    report_name: "ModuleLoadTime_Aggregated"
-    id: 121
-    report_type: NUMERIC_AGGREGATION
-  }
-  reports: {
-    report_name: "ModuleLoadTime_Histogram"
-    id: 221
-    report_type: INT_RANGE_HISTOGRAM
-  }
-  reports: {
-    report_name: "ModuleLoadTime_RawDump"
-    id: 321
-    report_type: NUMERIC_PERF_RAW_DUMP
-  }
-}
-
-metric {
-  metric_name: "LoginModuleFrameRate"
-  metric_type: FRAME_RATE
-  customer_id: 1
-  project_id: 1
-  id: 4
-  reports: {
-    report_name: "LoginModuleFrameRate_Aggregated"
-    id: 131
-    report_type: NUMERIC_AGGREGATION
-  }
-  reports: {
-    report_name: "LoginModuleFrameRate_Histogram"
-    id: 231
-    report_type: INT_RANGE_HISTOGRAM
-  }
-  reports: {
-    report_name: "LoginModuleFrameRate_RawDump"
-    id: 331
-    report_type: NUMERIC_PERF_RAW_DUMP
-  }
-}
-
-metric {
-  metric_name: "LedgerMemoryUsage"
-  metric_type: MEMORY_USAGE
-  customer_id: 1
-  project_id: 1
-  id: 5
-  reports: {
-    report_name: "LedgerMemoryUsage_Aggregated"
-    id: 141
-    report_type: NUMERIC_AGGREGATION
-  }
-  reports: {
-    report_name: "LedgerMemoryUsage_Histogram"
-    id: 241
-    report_type: INT_RANGE_HISTOGRAM
-  }
-}
-
-metric {
-  metric_name: "FileSystemWriteTimes"
-  metric_type: INT_HISTOGRAM
-  int_buckets: {
-    linear: {
-      floor: 0
-      num_buckets: 10
-      step_size: 1
-    }
-  }
-  customer_id: 1
-  project_id: 1
-  id: 6
-  reports: {
-    report_name: "FileSystemWriteTimes_Histogram"
-    id: 151
-    report_type: INT_RANGE_HISTOGRAM
-  }
-}
-
-metric {
-  metric_name: "ModuleDownloads"
-  metric_type: STRING_USED
-  customer_id: 1
-  project_id: 1
-  id: 7
-  reports: {
-    report_name: "ModuleDownloads_HeavyHitters"
-    id: 161
-    report_type: HIGH_FREQUENCY_STRING_COUNTS
-    local_privacy_noise_level: SMALL
-    expected_population_size: 20000
-    expected_string_set_size: 10000
-  }
-  reports: {
-    report_name: "ModuleDownloads_WithThreshold"
-    id: 261
-    report_type: STRING_COUNTS_WITH_THRESHOLD
-    threshold: 200
-  }
-}
-
-metric {
-  metric_name: "ModuleInstalls"
-  metric_type: CUSTOM
-  customer_id: 1
-  project_id: 1
-  id: 8
-  reports: {
-    report_name: "ModuleInstalls_DetailedData"
-    id: 125
-    report_type: CUSTOM_RAW_DUMP
-  }
-}
-
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 9
-  max_event_code: 1
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 91
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: SMALL
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 10
-  max_event_code: 4
-  reports: {
-    report_name: "FeaturesActive_UniqueDevices"
-    id: 201
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: LARGE
-    window_size: 1
-    window_size: 7
-    window_size: 30
-  }
-}
-
-metric {
-  metric_name: "EventsOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 11
-  max_event_code: 4
-  reports: {
-    report_name: "SomeEventsOccurred_SimpleCount"
-    id: 301
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: MEDIUM
-  }
-  reports: {
-    report_name: "EventsOccurred_UniqueDevices"
-    id: 401
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: MEDIUM
-    window_size: 1
-    window_size: 7
-  }
-}
-
-)";
-
-// Expected parameters of the locally aggregated reports in
-// |kMetricDefinitions|.
-static const ExpectedAggregationParams kExpectedAggregationParams = {
-    /* The total number of locally aggregated Observations which should be
-       generated for each day index. */
-    27,
-    /* The MetricReportIds of the locally aggregated reports in this
-configuration. */
-    {kDeviceBoots_UniqueDevicesMetricReportId,
-     kFeaturesActive_UniqueDevicesMetricReportId,
-     kEventsOccurred_UniqueDevicesMetricReportId},
-    /* The number of Observations which should be generated for each day
-       index, broken down by MetricReportId. */
-    {{kDeviceBoots_UniqueDevicesMetricReportId, 2},
-     {kFeaturesActive_UniqueDevicesMetricReportId, 15},
-     {kEventsOccurred_UniqueDevicesMetricReportId, 10}},
-    /* The number of event codes for each MetricReportId. */
-    {{kDeviceBoots_UniqueDevicesMetricReportId, 2},
-     {kFeaturesActive_UniqueDevicesMetricReportId, 5},
-     {kEventsOccurred_UniqueDevicesMetricReportId, 5}},
-    /* The set of window sizes for each MetricReportId. */
-    {{kDeviceBoots_UniqueDevicesMetricReportId, {1}},
-     {kFeaturesActive_UniqueDevicesMetricReportId, {1, 7, 30}},
-     {kEventsOccurred_UniqueDevicesMetricReportId, {1, 7}}}};
-
-// A set of MetricDefinitions of type EVENT_OCCURRED, each of which has a
-// UNIQUE_N_DAY_ACTIVES report with local_privacy_noise_level set to NONE.
-static const char kNoiseFreeUniqueActivesMetricDefinitions[] = R"(
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 9
-  max_event_code: 1
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 91
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 10
-  max_event_code: 4
-  reports: {
-    report_name: "SomeFeaturesActive_UniqueDevices"
-    id: 201
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-    window_size: 7
-    window_size: 30
-  }
-}
-
-metric {
-  metric_name: "EventsOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 11
-  max_event_code: 4
-  reports: {
-    report_name: "SomeEventsOccurred_SimpleCount"
-    id: 301
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: NONE
-  }
-  reports: {
-    report_name: "SomeEventsOccurred_UniqueDevices"
-    id: 401
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-    window_size: 7
-  }
-}
-
-)";
-
-// Expected parameters of the locally aggregated reports in
-// |kNoiseFreeUniqueActivesMetricDefinitions|.
-static const ExpectedAggregationParams
-    kNoiseFreeUniqueActivesExpectedAggregationParams = {
-        /* The total number of locally aggregated Observations which should be
-            generated for each day index. */
-        27,
-        /* The MetricReportIds of the locally aggregated reports in this
-    configuration. */
-        {kDeviceBoots_UniqueDevicesMetricReportId,
-         kFeaturesActive_UniqueDevicesMetricReportId,
-         kEventsOccurred_UniqueDevicesMetricReportId},
-        /* The number of Observations which should be generated for each day
-           index, broken down by MetricReportId. */
-        {{kDeviceBoots_UniqueDevicesMetricReportId, 2},
-         {kFeaturesActive_UniqueDevicesMetricReportId, 15},
-         {kEventsOccurred_UniqueDevicesMetricReportId, 10}},
-        /* The number of event codes for each MetricReportId. */
-        {{kDeviceBoots_UniqueDevicesMetricReportId, 2},
-         {kFeaturesActive_UniqueDevicesMetricReportId, 5},
-         {kEventsOccurred_UniqueDevicesMetricReportId, 5}},
-        /* The set of window sizes for each MetricReportId. */
-        {{kDeviceBoots_UniqueDevicesMetricReportId, {1}},
-         {kFeaturesActive_UniqueDevicesMetricReportId, {1, 7, 30}},
-         {kEventsOccurred_UniqueDevicesMetricReportId, {1, 7}}}};
 
 HistogramPtr NewHistogram(std::vector<uint32_t> indices,
                           std::vector<uint32_t> counts) {
@@ -442,20 +98,18 @@ EventValuesPtr NewCustomEvent(std::vector<std::string> dimension_names,
 class LoggerTest : public ::testing::Test {
  protected:
   void SetUp() {
-    SetUpFromMetrics(kMetricDefinitions, kExpectedAggregationParams);
+    SetUpFromMetrics(testing::all_report_types::kCobaltRegistryBase64,
+                     testing::all_report_types::kExpectedAggregationParams);
   }
 
-  // Set up LoggerTest using serialized MetricDefinitions.
+  // Set up LoggerTest using a base64-encoded registry. The argument
+  // |registry_var_name| should be the name of a variable to which the
+  // base64-encoded registry is assigned.
   void SetUpFromMetrics(
-      const char metric_string[],
+      const std::string& registry_var_name,
       const ExpectedAggregationParams expected_aggregation_params) {
-    auto metric_definitions = std::make_unique<MetricDefinitions>();
-    ASSERT_TRUE(
-        PopulateMetricDefinitions(metric_string, metric_definitions.get()));
     expected_aggregation_params_ = expected_aggregation_params;
-    project_context_.reset(new ProjectContext(kCustomerId, kProjectId,
-                                              kCustomerName, kProjectName,
-                                              std::move(metric_definitions)));
+    project_context_ = GetTestProject(registry_var_name);
     observation_store_.reset(new FakeObservationStore);
     update_recipient_.reset(new TestUpdateRecipient);
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
@@ -540,16 +194,19 @@ class LoggerTest : public ::testing::Test {
 class UniqueActivesLoggerTest : public LoggerTest {
  protected:
   void SetUp() {
-    SetUpFromMetrics(kNoiseFreeUniqueActivesMetricDefinitions,
-                     kNoiseFreeUniqueActivesExpectedAggregationParams);
+    SetUpFromMetrics(
+        testing::unique_actives_noise_free::kCobaltRegistryBase64,
+        testing::unique_actives_noise_free::kExpectedAggregationParams);
   }
 };
 
 // Tests the method LogEvent().
 TEST_F(LoggerTest, LogEvent) {
-  ASSERT_EQ(kOK, logger_->LogEvent(kErrorOccurredMetricId, 42));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kErrorOccurredMetricId, 42));
   Observation2 observation;
-  uint32_t expected_report_id = 123;
+  uint32_t expected_report_id =
+      testing::all_report_types::kErrorCountsByCodeReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id,
                                      observation_store_.get(),
                                      update_recipient_.get()));
@@ -559,9 +216,11 @@ TEST_F(LoggerTest, LogEvent) {
 
 // Tests the method LogEventCount().
 TEST_F(LoggerTest, LogEventcount) {
-  std::vector<uint32_t> expected_report_ids = {111};
-  ASSERT_EQ(kOK, logger_->LogEventCount(kReadCacheHitsMetricId, 43,
-                                        "component2", 1, 303));
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kReadCacheHitCountsReportId};
+  ASSERT_EQ(kOK, logger_->LogEventCount(
+                     testing::all_report_types::kReadCacheHitsMetricId, 43,
+                     "component2", 1, 303));
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, 43u, "component2", 303, observation_store_.get(),
       update_recipient_.get()));
@@ -569,9 +228,13 @@ TEST_F(LoggerTest, LogEventcount) {
 
 // Tests the method LogElapsedTime().
 TEST_F(LoggerTest, LogElapsedTime) {
-  std::vector<uint32_t> expected_report_ids = {121, 221, 321};
-  ASSERT_EQ(kOK, logger_->LogElapsedTime(kModuleLoadTimeMetricId, 44,
-                                         "component4", 4004));
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+  ASSERT_EQ(kOK, logger_->LogElapsedTime(
+                     testing::all_report_types::kModuleLoadTimeMetricId, 44,
+                     "component4", 4004));
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, 44u, "component4", 4004, observation_store_.get(),
       update_recipient_.get()));
@@ -579,9 +242,13 @@ TEST_F(LoggerTest, LogElapsedTime) {
 
 // Tests the method LogFrameRate().
 TEST_F(LoggerTest, LogFrameRate) {
-  std::vector<uint32_t> expected_report_ids = {131, 231, 331};
-  ASSERT_EQ(kOK, logger_->LogFrameRate(kLoginModuleFrameRateMetricId, 45,
-                                       "component5", 5.123));
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+  ASSERT_EQ(kOK, logger_->LogFrameRate(
+                     testing::all_report_types::kLoginModuleFrameRateMetricId,
+                     45, "component5", 5.123));
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, 45u, "component5", 5123, observation_store_.get(),
       update_recipient_.get()));
@@ -589,9 +256,12 @@ TEST_F(LoggerTest, LogFrameRate) {
 
 // Tests the method LogMemoryUsage().
 TEST_F(LoggerTest, LogMemoryUsage) {
-  std::vector<uint32_t> expected_report_ids = {141, 241};
-  ASSERT_EQ(kOK, logger_->LogMemoryUsage(kLedgerMemoryUsageMetricId, 46,
-                                         "component6", 606));
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+  ASSERT_EQ(kOK, logger_->LogMemoryUsage(
+                     testing::all_report_types::kLedgerMemoryUsageMetricId, 46,
+                     "component6", 606));
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, 46u, "component6", 606, observation_store_.get(),
       update_recipient_.get()));
@@ -602,10 +272,12 @@ TEST_F(LoggerTest, LogIntHistogram) {
   std::vector<uint32_t> indices = {0, 1, 2, 3};
   std::vector<uint32_t> counts = {100, 101, 102, 103};
   auto histogram = NewHistogram(indices, counts);
-  ASSERT_EQ(kOK, logger_->LogIntHistogram(kFileSystemWriteTimesMetricId, 47,
-                                          "component7", std::move(histogram)));
+  ASSERT_EQ(kOK, logger_->LogIntHistogram(
+                     testing::all_report_types::kFileSystemWriteTimesMetricId,
+                     47, "component7", std::move(histogram)));
   Observation2 observation;
-  uint32_t expected_report_id = 151;
+  uint32_t expected_report_id =
+      testing::all_report_types::kFileSystemWriteTimesHistogramReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id,
                                      observation_store_.get(),
                                      update_recipient_.get()));
@@ -624,10 +296,13 @@ TEST_F(LoggerTest, LogIntHistogram) {
 
 // Tests the method LogString().
 TEST_F(LoggerTest, LogString) {
-  ASSERT_EQ(kOK,
-            logger_->LogString(kModuleDownloadsMetricId, "www.mymodule.com"));
+  ASSERT_EQ(kOK, logger_->LogString(
+                     testing::all_report_types::kModuleDownloadsMetricId,
+                     "www.mymodule.com"));
   std::vector<Observation2> observations(2);
-  std::vector<uint32_t> expected_report_ids = {161, 261};
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kModuleDownloadsHeavyHittersReportId,
+      testing::all_report_types::kModuleDownloadsWithThresholdReportId};
   ASSERT_TRUE(FetchObservations(&observations, expected_report_ids,
                                 observation_store_.get(),
                                 update_recipient_.get()));
@@ -647,10 +322,12 @@ TEST_F(LoggerTest, LogCustomEvent) {
   std::vector<std::string> dimension_names = {"module", "number"};
   std::vector<CustomDimensionValue> values = {module_value, number_value};
   auto custom_event = NewCustomEvent(dimension_names, values);
-  ASSERT_EQ(kOK, logger_->LogCustomEvent(kModuleInstallsMetricId,
-                                         std::move(custom_event)));
+  ASSERT_EQ(kOK, logger_->LogCustomEvent(
+                     testing::all_report_types::kModuleInstallsMetricId,
+                     std::move(custom_event)));
   Observation2 observation;
-  uint32_t expected_report_id = 125;
+  uint32_t expected_report_id =
+      testing::all_report_types::kModuleInstallsDetailedDataReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id,
                                      observation_store_.get(),
                                      update_recipient_.get()));
@@ -678,7 +355,8 @@ TEST_F(LoggerTest, CheckNumAggregatedObsNoEvents) {
 TEST_F(LoggerTest, CheckNumAggregatedObsOneEvent) {
   // Log 1 occurrence of event code 0 for the DeviceBoots metric, which has no
   // immediate reports.
-  ASSERT_EQ(kOK, logger_->LogEvent(kDeviceBootsMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kDeviceBootsMetricId, 0));
   // Check that no immediate Observation was generated.
   std::vector<Observation2> immediate_observations(0);
   std::vector<uint32_t> expected_immediate_report_ids = {};
@@ -701,12 +379,16 @@ TEST_F(LoggerTest, CheckNumAggregatedObsOneEvent) {
 TEST_F(LoggerTest, CheckNumAggregatedObsMultipleEvents) {
   // Log 2 occurrences of event code 0 for the DeviceBoots metric, which has 1
   // locally aggregated report and no immediate reports.
-  ASSERT_EQ(kOK, logger_->LogEvent(kDeviceBootsMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kDeviceBootsMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kDeviceBootsMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kDeviceBootsMetricId, 0));
   // Log 2 occurrences of event codes for the FeaturesActive metric, which
   // has 1 locally aggregated report and no immediate reports.
-  ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 1));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kFeaturesActiveMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kFeaturesActiveMetricId, 1));
   // Check that no immediate Observations were generated.
   std::vector<Observation2> immediate_observations(0);
   std::vector<uint32_t> expected_immediate_report_ids = {};
@@ -730,14 +412,17 @@ TEST_F(LoggerTest, CheckNumAggregatedObsMultipleEvents) {
 TEST_F(LoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEvents) {
   // Log 3 occurrences of event codes for the EventsOccurred metric, which
   // has 1 locally aggregated report and 1 immediate report.
-  ASSERT_EQ(kOK, logger_->LogEvent(kEventsOccurredMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kEventsOccurredMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kEventsOccurredMetricId, 2));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kEventsOccurredMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kEventsOccurredMetricId, 0));
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kEventsOccurredMetricId, 2));
   // Check that each of the 3 logged events resulted in an immediate
   // Observation.
   std::vector<Observation2> immediate_observations(3);
   std::vector<uint32_t> expected_immediate_report_ids(
-      3, kEventsOccurred_SimpleOccurrenceCountMetricReportId.second);
+      3, testing::all_report_types::kEventsOccurredGlobalCountReportId);
   ASSERT_TRUE(
       FetchObservations(&immediate_observations, expected_immediate_report_ids,
                         observation_store_.get(), update_recipient_.get()));
@@ -773,23 +458,32 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObsValuesSingleDay) {
   auto current_day_index = CurrentDayIndex(MetricDefinition::UTC);
   // Log 2 occurrences of event code 0 for the DeviceBoots metric, which has 1
   // locally aggregated report and no immediate reports.
-  ASSERT_EQ(kOK, logger_->LogEvent(kDeviceBootsMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kDeviceBootsMetricId, 0));
-  // Log 2 occurrences of event codes for the SomeFeaturesActive metric, which
-  // has 1 locally aggregated report and no immediate reports.
-  ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 0));
-  ASSERT_EQ(kOK, logger_->LogEvent(kFeaturesActiveMetricId, 1));
+  ASSERT_EQ(kOK,
+            logger_->LogEvent(
+                testing::unique_actives_noise_free::kDeviceBootsMetricId, 0));
+  ASSERT_EQ(kOK,
+            logger_->LogEvent(
+                testing::unique_actives_noise_free::kDeviceBootsMetricId, 0));
+  // Log 2 occurrences of different event codes for the SomeFeaturesActive
+  // metric, which has 1 locally aggregated report and no immediate reports.
+  ASSERT_EQ(
+      kOK, logger_->LogEvent(
+               testing::unique_actives_noise_free::kFeaturesActiveMetricId, 0));
+  ASSERT_EQ(
+      kOK, logger_->LogEvent(
+               testing::unique_actives_noise_free::kFeaturesActiveMetricId, 1));
   // Generate locally aggregated observations for the current day index.
   ASSERT_EQ(kOK, GenerateAggregatedObservations(current_day_index));
   // Form the expected observations for the current day index.
   auto expected_obs = MakeNullExpectedUniqueActivesObservations(
       expected_aggregation_params_, current_day_index);
-  expected_obs[{kDeviceBoots_UniqueDevicesMetricReportId, current_day_index}] =
-      {{1, {true, false}}};
-  expected_obs[{kFeaturesActive_UniqueDevicesMetricReportId,
-                current_day_index}] = {{1, {true, true, false, false, false}},
-                                       {7, {true, true, false, false, false}},
-                                       {30, {true, true, false, false, false}}};
+  expected_obs[{testing::unique_actives_noise_free::kDeviceBootsMetricReportId,
+                current_day_index}] = {{1, {true, false}}};
+  expected_obs[{
+      testing::unique_actives_noise_free::kFeaturesActiveMetricReportId,
+      current_day_index}] = {{1, {true, true, false, false, false}},
+                             {7, {true, true, false, false, false}},
+                             {30, {true, true, false, false, false}}};
   // Check that the expected aggregated observations were generated.
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs, observation_store_.get(), update_recipient_.get()));
@@ -839,50 +533,44 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObsValuesSingleDay) {
 // All Observations for all other locally aggregated reports should be
 // observations of non-occurrence.
 TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObservationValues) {
+  const auto& expected_id =
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
+  const auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
+
   // Form expected Observations for the 10 days of logging.
-  auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
   std::vector<ExpectedUniqueActivesObservations> expected_obs(10);
   for (uint32_t i = 0; i < expected_obs.size(); i++) {
     expected_obs[i] = MakeNullExpectedUniqueActivesObservations(
         expected_aggregation_params_, start_day_index + i);
   }
-  expected_obs[0][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index}] = {{1, {false, true, true, true, true}},
-                                        {7, {false, true, true, true, true}}};
-  expected_obs[1][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 1}] = {
+  expected_obs[0][{expected_id, start_day_index}] = {
+      {1, {false, true, true, true, true}},
+      {7, {false, true, true, true, true}}};
+  expected_obs[1][{expected_id, start_day_index + 1}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[2][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 2}] = {
+  expected_obs[2][{expected_id, start_day_index + 2}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[3][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 3}] = {
+  expected_obs[3][{expected_id, start_day_index + 3}] = {
       {1, {false, true, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[4][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 4}] = {
+  expected_obs[4][{expected_id, start_day_index + 4}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[5][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 5}] = {
+  expected_obs[5][{expected_id, start_day_index + 5}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[6][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 6}] = {
+  expected_obs[6][{expected_id, start_day_index + 6}] = {
       {1, {false, true, true, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[7][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 7}] = {
+  expected_obs[7][{expected_id, start_day_index + 7}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[8][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 8}] = {
+  expected_obs[8][{expected_id, start_day_index + 8}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[9][{kEventsOccurred_UniqueDevicesMetricReportId,
-                   start_day_index + 9}] = {
+  expected_obs[9][{expected_id, start_day_index + 9}] = {
       {1, {false, true, false, true, false}},
       {7, {false, true, true, true, false}}};
 
@@ -890,8 +578,11 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObservationValues) {
     if (i < 10) {
       for (uint32_t event_code = 1; event_code < 5; event_code++) {
         if (i % (3 * event_code) == 0) {
-          ASSERT_EQ(kOK,
-                    logger_->LogEvent(kEventsOccurredMetricId, event_code));
+          ASSERT_EQ(
+              kOK,
+              logger_->LogEvent(
+                  testing::unique_actives_noise_free::kEventsOccurredMetricId,
+                  event_code));
         }
       }
     }

@@ -26,9 +26,14 @@ namespace cobalt {
 
 using crypto::byte;
 using crypto::hash::DIGEST_SIZE;
+
+using config::ProjectConfigs;
+
 using encoder::ClientSecret;
+
 using rappor::BasicRapporEncoder;
 using rappor::RapporConfigHelper;
+
 using util::EncryptedMessageMaker;
 using util::MessageDecrypter;
 
@@ -56,10 +61,14 @@ bool HashComponentNameIfNotEmpty(const std::string& component,
 }
 }  // namespace
 
-bool PopulateMetricDefinitions(const char metric_string[],
-                               MetricDefinitions* metric_definitions) {
-  google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(metric_string, metric_definitions);
+std::unique_ptr<ProjectContext> GetTestProject(
+    const std::string& registry_base64) {
+  std::unique_ptr<ProjectConfigs> project_configs =
+      ProjectConfigs::CreateFromCobaltRegistryBase64(registry_base64);
+  EXPECT_NE(nullptr, project_configs);
+  return ProjectContext::ConstructWithProjectConfigs(
+             "", "", std::shared_ptr<ProjectConfigs>(project_configs.release()))
+      .ValueOrDie();
 }
 
 ReportAggregationKey MakeAggregationKey(

@@ -562,23 +562,26 @@ endmacro()
 
 set(CONFIG_PARSER_BINARY "${CMAKE_BINARY_DIR}/config/config_parser/config_parser")
 
-# Runs the Cobalt config parser on a .yaml file containing Cobalt configuration
+# Runs the Cobalt config parser on a .yaml file containing Cobalt registry
 # for a single project. Generates a C++ header file containing the definition
 # of a string containing the base64 encoding of the bytes of a serialized
-# CobaltRegistry proto message containing the data specified in the YAML.
+# CobaltRegistry proto message containing the data specified in the YAML, and
+# places the generated constants in a specified namespace.
 # This is intended for use in tests.
 #
 # Args:
 # INPUT_YAML: Path to the YAML config file for the test
 # OUTFILE: Path to the .h file to produce
-# CUSTOMER_ID, PROJECTID: These are inserted into the generated CobaltRegistry.
+# CUSTOMER_ID, PROJECT_ID: These are inserted into the generated CobaltRegistry.
+# COBALT_VERSION: The Cobalt version (0 or 1) of the registry.
+# NAMESPACE: Namespace of the generated .h file, as a period-separated list.
 # STRING_VAR_NAME: The C++ variable name to use in the .h file.
 #
 # example usage:
 #
 # set(ENCODER_TEST_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/encoder_test_config.h")
 # generate_test_config_h(${CMAKE_CURRENT_SOURCE_DIR}/encoder_test_config.yaml
-#     ${ENCODER_TEST_CONFIG_H} 1 1 "cobalt_registry_base64")
+#     ${ENCODER_TEST_CONFIG_H} 1 1 0 "encoder.testing" "cobalt_registry_base64")
 #
 # This will parse the file "encoder_test_config.yaml" in the current source
 # directory and generate a C++ .h file in the current binary out directory
@@ -586,14 +589,15 @@ set(CONFIG_PARSER_BINARY "${CMAKE_BINARY_DIR}/config/config_parser/config_parser
 # a variable named |cobalt_registry_base64| of type "const char[]" containing
 # the base64 encoded bytes of a serialized CobaltRegistry proto message
 # corresponding to the configuration described in the YAML file, and for
-# customer_id=1, project_id=1.
+# customer_id=1, project_id=1. The contents of the header file will be placed
+# in the namespace encoder::testing.
 #
 # To use this in a test one would #include encoder_test_config.h and then
 # type something like the following:
 #
 # std::unique_ptr<ClientConfig> client_config =
 #      ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
-macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID STRING_VAR_NAME)
+macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID COBALT_VERSION NAMESPACE STRING_VAR_NAME)
   set_source_files_properties(${OUTFILE} PROPERTIES GENERATED TRUE)
   add_custom_command(OUTPUT ${OUTFILE}
     COMMAND ${CONFIG_PARSER_BINARY}
@@ -601,13 +605,15 @@ macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID STRING_VA
     ARGS -customer_id=${CUSTOMER_ID}
     ARGS -project_id=${PROJECT_ID}
     ARGS -out_format=cpp
+    ARGS -namespace=${NAMESPACE}
     ARGS -var_name=${STRING_VAR_NAME}
     ARGS -output_file=${OUTFILE}
     ARGS -skip_validation # We want to be able to have invalid configs in tests.
     ARGS -for_testing # Generate constants for report IDs.
+    ARGS -v1_project=${COBALT_VERSION}
     DEPENDS ${INPUT_YAML}
     DEPENDS ${CONFIG_PARSER_BINARY}
-  )
+    )
 endmacro()
 
 macro(generate_cobalt_registry_h)

@@ -14,7 +14,9 @@
 
 #include "./event.pb.h"
 #include "./gtest.h"
+#include "config/project_configs.h"
 #include "logger/logger_test_utils.h"
+#include "logger/testing_constants.h"
 #include "util/clock.h"
 #include "util/datetime_util.h"
 #include "util/proto_util.h"
@@ -23,6 +25,7 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
+using config::ProjectConfigs;
 using encoder::ClientSecret;
 using encoder::ObservationStoreUpdateRecipient;
 using encoder::ObservationStoreWriterInterface;
@@ -42,12 +45,12 @@ using testing::ExpectedReportParticipationObservations;
 using testing::ExpectedUniqueActivesObservations;
 using testing::FakeObservationStore;
 using testing::FetchAggregatedObservations;
+using testing::GetTestProject;
 using testing::MakeAggregationConfig;
 using testing::MakeAggregationKey;
 using testing::MakeExpectedReportParticipationObservations;
 using testing::MakeNullExpectedUniqueActivesObservations;
 using testing::MockConsistentProtoStore;
-using testing::PopulateMetricDefinitions;
 using testing::TestUpdateRecipient;
 
 namespace {
@@ -56,386 +59,9 @@ const int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
 const int kYear = kDay * 365;
 
-static const uint32_t kCustomerId = 1;
-static const uint32_t kProjectId = 1;
-static const char kCustomerName[] = "Fuchsia";
-static const char kProjectName[] = "Cobalt";
-
 // Filenames for constructors of ConsistentProtoStores
 static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
 static const char kObsHistoryFilename[] = "obs_history_backup";
-
-// Pairs (metric ID, report ID) for the locally aggregated reports defined
-// in the MetricDefinition strings below. The MetricDefinition and
-// ReportDefinition corresponding to each of these MetricReportIds is determined
-// relative to a ProjectContext.
-const MetricReportId kDeviceBootsMetricReportId = MetricReportId(10, 101);
-const MetricReportId kFeaturesActiveMetricReportId = MetricReportId(20, 201);
-const MetricReportId kErrorsOccurredMetricReportId = MetricReportId(30, 302);
-const MetricReportId kEventsOccurredMetricReportId = MetricReportId(40, 402);
-const MetricReportId kConnectionFailuresMetricReportId =
-    MetricReportId(50, 501);
-const MetricReportId kSettingsChangedMetricReportId = MetricReportId(60, 601);
-
-// A set of metric definitions of various types, each with a locally aggregated
-// report.
-static const char kMetricDefinitions[] = R"(
-metric {
-  metric_name: "ErrorsOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 30
-  max_event_code: 2
-  reports: {
-    report_name: "ErrorsOccurred_SimpleCount"
-    id: 301
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: NONE
-  }
-  reports: {
-    report_name: "ErrorsOccurred_UniqueDevices"
-    id: 302
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: LARGE
-    window_size: 1
-    window_size: 7
-    window_size: 30
-  }
-}
-
-metric {
-  metric_name: "ConnectionFailures"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 50
-  reports: {
-    report_name: "ConnectionFailures_PerDeviceCount"
-    id: 501
-    report_type: PER_DEVICE_COUNT_STATS
-    window_size: 1
-  }
-}
-
-)";
-
-// Properties of the locally aggregated Observations which should be generated
-// for the reports in |kMetricDefinitions|, assuming that no events have ever
-// been logged for those reports.
-static const ExpectedAggregationParams kExpectedParams = {
-    /* The total number of locally aggregated Observations that should be
-       generated for each day index. */
-    10,
-    /* The MetricReportIds of the locally aggregated reports in this
-       configuration. */
-    {kErrorsOccurredMetricReportId, kConnectionFailuresMetricReportId},
-    /* The number of Observations which should be generated for each day index,
-       broken down by MetricReportId. */
-    {{kErrorsOccurredMetricReportId, 9},
-     {kConnectionFailuresMetricReportId, 1}},
-    /* The number of event codes for each report of type UNIQUE_N_DAY_ACTIVES,
-       by MetricReportId. */
-    {{kErrorsOccurredMetricReportId, 3}},
-    /* The set of window sizes for each MetricReportId. */
-    {{kErrorsOccurredMetricReportId, {1, 7, 30}},
-     {kConnectionFailuresMetricReportId, {1}}}};
-
-// A set of metric definitions of type EVENT_OCCURRED, each of which has a
-// UNIQUE_N_DAY_ACTIVES report.
-static const char kUniqueActivesMetricDefinitions[] = R"(
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 10
-  metric_dimensions: {
-    max_event_code: 1
-  }
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 101
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: MEDIUM
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 20
-  metric_dimensions: {
-    max_event_code: 4
-  }
-  reports: {
-    report_name: "FeaturesActive_UniqueDevices"
-    id: 201
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: LARGE
-    window_size: 7
-    window_size: 30
-  }
-}
-
-metric {
-  metric_name: "ErrorsOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 30
-  metric_dimensions: {
-    max_event_code: 2
-  }
-  reports: {
-    report_name: "ErrorsOccurred_SimpleCount"
-    id: 301
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: NONE
-  }
-  reports: {
-    report_name: "ErrorsOccurred_UniqueDevices"
-    id: 302
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: LARGE
-    window_size: 1
-    window_size: 7
-    window_size: 30
-  }
-}
-
-)";
-
-// Properties of the locally aggregated reports in
-// |kUniqueActivesMetricDefinitions|.
-static const ExpectedAggregationParams kUniqueActivesExpectedParams = {
-    /* The total number of locally aggregated Observations which should be
-       generated for each day index. */
-    21,
-    /* The MetricReportIds of the locally aggregated reports in this
-       configuration. */
-    {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
-     kErrorsOccurredMetricReportId},
-    /* The number of Observations which should be generated for each day
-       index, broken down by MetricReportId. */
-    {{kDeviceBootsMetricReportId, 2},
-     {kFeaturesActiveMetricReportId, 10},
-     {kErrorsOccurredMetricReportId, 9}},
-    /* The number of event codes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, 2},
-     {kFeaturesActiveMetricReportId, 5},
-     {kErrorsOccurredMetricReportId, 3}},
-    /* The set of window sizes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, {1}},
-     {kFeaturesActiveMetricReportId, {7, 30}},
-     {kErrorsOccurredMetricReportId, {1, 7, 30}}}};
-
-// A set of MetricDefinitions of type EVENT_OCCURRED, each of which has a
-// UNIQUE_N_DAY_ACTIVES report with local_privacy_noise_level set to NONE.
-static const char kNoiseFreeUniqueActivesMetricDefinitions[] = R"(
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 10
-  metric_dimensions: {
-    max_event_code: 1
-  }
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 101
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 20
-  metric_dimensions: {
-    max_event_code: 4
-  }
-  reports: {
-    report_name: "FeaturesActive_UniqueDevices"
-    id: 201
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-    window_size: 7
-    window_size: 30
-  }
-}
-
-metric {
-  metric_name: "EventsOccurred"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 40
-  metric_dimensions: {
-    max_event_code: 4
-  }
-  reports: {
-    report_name: "EventsOccurred_SimpleCount"
-    id: 401
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: NONE
-  }
-  reports: {
-    report_name: "EventsOccurred_UniqueDevices"
-    id: 402
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-    window_size: 7
-  }
-}
-)";
-
-// Properties of the locally aggregated reports in
-// |kNoiseFreeUniqueActivesMetricDefinitions|.
-static const ExpectedAggregationParams kNoiseFreeUniqueActivesExpectedParams = {
-    /* The total number of locally aggregated Observations which should be
-       generated for each day index. */
-    27,
-    /* The MetricReportIds of the locally aggregated reports in this
-configuration. */
-    {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
-     kEventsOccurredMetricReportId},
-    /* The number of Observations which should be generated for each day
-       index, broken down by MetricReportId. */
-    {{kDeviceBootsMetricReportId, 2},
-     {kFeaturesActiveMetricReportId, 15},
-     {kEventsOccurredMetricReportId, 10}},
-    /* The number of event codes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, 2},
-     {kFeaturesActiveMetricReportId, 5},
-     {kEventsOccurredMetricReportId, 5}},
-    /* The set of window sizes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, {1}},
-     {kFeaturesActiveMetricReportId, {1, 7, 30}},
-     {kEventsOccurredMetricReportId, {1, 7}}}};
-
-// A set of MetricDefinitions of type EVENT_COUNT, each of which has a
-// ReportDefinition of type PER_DEVICE_COUNT_STATS.
-static const char kPerDeviceCountMetricDefinitions[] = R"(
-metric {
-  metric_name: "ConnectionFailures"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 50
-  reports: {
-    report_name: "ConnectionFailures_PerDeviceCount"
-    id: 501
-    report_type: PER_DEVICE_COUNT_STATS
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "SettingsChanged"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 60
-  reports: {
-    report_name: "SettingsChanged_PerDeviceCount"
-    id: 601
-    report_type: PER_DEVICE_COUNT_STATS
-    window_size: 7
-    window_size: 30
-  }
-}
-
-)";
-
-// Properties of the locally aggregated Observations which should be generated
-// for the reports in |kMetricDefinitions|, assuming that no events have ever
-// been logged for those reports.
-static const ExpectedAggregationParams kPerDeviceCountExpectedParams = {
-    /* The total number of Observations that should be generated for a day
-       index. */
-    2,
-    /* The MetricReportIds of the locally aggregated reports in this
-       configuration. */
-    {kConnectionFailuresMetricReportId, kSettingsChangedMetricReportId},
-    /* The number of Observations which should be generated for a day index,
-       broken down by MetricReportId. */
-    {{kConnectionFailuresMetricReportId, 1},
-     {kSettingsChangedMetricReportId, 1}},
-    /* The number of event codes for each UNIQUE_N_DAY_ACTIVES report. Omitted
-       because this config contains no UNIQUE_N_DAY_ACTIVES reports. */
-    {},
-    /* The set of window sizes for each MetricReportId. */
-    {{kConnectionFailuresMetricReportId, {1}},
-     {kSettingsChangedMetricReportId, {7, 30}}}};
-
-// A set of MetricDefinitions including one with TimeZonePolicy UTC and one with
-// TimeZonePolicy LOCAL.
-static const char kNoiseFreeMixedTimeZoneMetricDefinitions[] = R"(
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 10
-  metric_dimensions: {
-    max_event_code: 2
-  }
-  time_zone_policy: LOCAL
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 101
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-  }
-}
-
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 20
-  metric_dimensions: {
-    max_event_code: 2
-  }
-  time_zone_policy: UTC
-  reports: {
-    report_name: "FeaturesActive_UniqueDevices"
-    id: 201
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: NONE
-    window_size: 1
-  }
-}
-
-)";
-
-static const ExpectedAggregationParams kNoiseFreeMixedTimeZoneExpectedParams = {
-    /* The total number of locally aggregated Observations which should be
-       generated for each day index. */
-    6,
-    /* The MetricReportIds of the locally aggregated reports in this
-configuration. */
-    {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId},
-    /* The number of Observations which should be generated for each day
-       index, broken down by MetricReportId. */
-    {{kDeviceBootsMetricReportId, 3}, {kFeaturesActiveMetricReportId, 3}},
-    /* The number of event codes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, 3}, {kFeaturesActiveMetricReportId, 3}},
-    /* The set of window sizes for each MetricReportId. */
-    {{kDeviceBootsMetricReportId, {1}}, {kFeaturesActiveMetricReportId, {1}}}};
 
 // A map keyed by base64-encoded, serialized ReportAggregationKeys. The value at
 // a key is a map of event codes to sets of day indices. Used in tests as
@@ -452,19 +78,6 @@ typedef std::map<
     std::string,
     std::map<std::string, std::map<uint32_t, std::map<uint32_t, int64_t>>>>
     LoggedCounts;
-
-// Given a string representing a MetricDefinitions proto message, creates a
-// ProjectContext from that MetricDefinitions and returns a unique pointer.
-std::unique_ptr<ProjectContext> MakeProjectContext(const char metric_string[]) {
-  auto metric_definitions = std::make_unique<MetricDefinitions>();
-  if (!PopulateMetricDefinitions(metric_string, metric_definitions.get())) {
-    return nullptr;
-  }
-  auto project_context = std::make_unique<ProjectContext>(
-      kCustomerId, kProjectId, kCustomerName, kProjectName,
-      std::move(metric_definitions));
-  return project_context;
-}
 
 }  // namespace
 
@@ -996,12 +609,13 @@ class EventAggregatorTest : public ::testing::Test {
   std::unique_ptr<SystemDataInterface> system_data_;
 };
 
-// Creates an EventAggregator and provides it with MetricDefinitions from a
-// serialized representation |metric_string|.
+// Creates an EventAggregator and provides it with a ProjectContext generated
+// from a registry.
 class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
  protected:
-  explicit EventAggregatorTestWithProjectContext(const char metric_string[]) {
-    project_context_ = MakeProjectContext(metric_string);
+  explicit EventAggregatorTestWithProjectContext(
+      const std::string& registry_var_name) {
+    project_context_ = GetTestProject(registry_var_name);
   }
 
   void SetUp() {
@@ -1010,7 +624,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   }
 
   // Logs an OccurrenceEvent for the MetricReportId of a locally
-  // aggregated report in |metric_string|. Overrides the method
+  // aggregated report of the ProjectContext. Overrides the method
   // EventAggregatorTest::LogUniqueActivesEvent.
   Status LogUniqueActivesEvent(const MetricReportId& metric_report_id,
                                uint32_t day_index, uint32_t event_code,
@@ -1021,7 +635,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   }
 
   // Logs a CountEvent for the MetricReportId of a locally
-  // aggregated report in |metric_string|. Overrides the method
+  // aggregated report of the ProjectContext. Overrides the method
   // EventAggregatorTest::LogPerDeviceCountEvent.
   Status LogPerDeviceCountEvent(const MetricReportId& metric_report_id,
                                 uint32_t day_index,
@@ -1039,44 +653,49 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   std::unique_ptr<ProjectContext> project_context_;
 };
 
-// Creates an EventAggregator and provides it with
-// |kUniqueActivesMetricDefinitions|.
+// Creates an EventAggregator and provides it with a ProjectContext generated
+// from test_registries/unique_actives_test_registry.yaml. All metrics in this
+// registry are of type EVENT_OCCURRED and have a UNIQUE_N_DAY_ACTIVES report.
 class UniqueActivesEventAggregatorTest
     : public EventAggregatorTestWithProjectContext {
  protected:
   UniqueActivesEventAggregatorTest()
-      : EventAggregatorTestWithProjectContext(kUniqueActivesMetricDefinitions) {
-  }
+      : EventAggregatorTestWithProjectContext(
+            testing::unique_actives::kCobaltRegistryBase64) {}
 };
 
-// Creates an EventAggregator as in EventAggregatorTest and provides it with
-// |kNoiseFreeUniqueActivesMetricDefinitions|.
-class NoiseFreeUniqueActivesEventAggregatorTest
+// Creates an EventAggregator and provides it with a ProjectContext generated
+// from test_registries/unique_actives_noise_free_test_registry.yaml. All
+// metrics in this registry are of type EVENT_OCCURRED and have a
+// UNIQUE_N_DAY_ACTIVES report with local_privacy_noise_level NONE.
+class UniqueActivesNoiseFreeEventAggregatorTest
     : public EventAggregatorTestWithProjectContext {
  protected:
-  NoiseFreeUniqueActivesEventAggregatorTest()
+  UniqueActivesNoiseFreeEventAggregatorTest()
       : EventAggregatorTestWithProjectContext(
-            kNoiseFreeUniqueActivesMetricDefinitions) {}
+            testing::unique_actives_noise_free::kCobaltRegistryBase64) {}
 };
 
-// Creates an EventAggregator as in EventAggregatorTest and provides it with
-// |kPerDeviceCountMetricDefinitions|.
+// Creates an EventAggregator and provides it with a ProjectContext generated
+// from test_registries/per_device_count_test_registry.yaml. All metrics in this
+// registry are of type EVENT_COUNT and have a PER_DEVICE_COUNT report.
 class PerDeviceCountEventAggregatorTest
     : public EventAggregatorTestWithProjectContext {
  protected:
   PerDeviceCountEventAggregatorTest()
       : EventAggregatorTestWithProjectContext(
-            kPerDeviceCountMetricDefinitions) {}
+            testing::per_device_count::kCobaltRegistryBase64) {}
 };
 
-// Creates an EventAggregator as in EventAggregatorTest and provides it with
-// |kNoiseFreeMixedTimeZoneMetricDefinitions|.
+// Creates an EventAggregator and provides it with a ProjectContext generated
+// from test_registries/mixed_time_zone_test_registry.yaml. This registry
+// contains multiple MetricDefinitions with different time zone policies.
 class NoiseFreeMixedTimeZoneEventAggregatorTest
     : public EventAggregatorTestWithProjectContext {
  protected:
   NoiseFreeMixedTimeZoneEventAggregatorTest()
       : EventAggregatorTestWithProjectContext(
-            kNoiseFreeMixedTimeZoneMetricDefinitions) {}
+            testing::mixed_time_zone::kCobaltRegistryBase64) {}
 };
 
 class EventAggregatorWorkerTest : public EventAggregatorTest {
@@ -1124,22 +743,28 @@ TEST_F(EventAggregatorTest, BackUpProtos) {
 TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
   // Check that the LocalAggregateStore is empty.
   EXPECT_EQ(0u, CopyLocalAggregateStore().by_report_key().size());
-  // Provide |kMetricDefinitions| to the EventAggregator.
-  auto project_context = MakeProjectContext(kMetricDefinitions);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  // Provide the unique_actives test registry to the EventAggregator.
+  auto unique_actives_project_context =
+      GetTestProject(testing::unique_actives::kCobaltRegistryBase64);
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
+                     *unique_actives_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
-  // now equal to the number of locally aggregated reports in
-  // |kMetricDefinitions|.
-  EXPECT_EQ(kExpectedParams.metric_report_ids.size(),
+  // now equal to the number of locally aggregated reports in the unique_actives
+  // test registry.
+  EXPECT_EQ(testing::unique_actives::kExpectedAggregationParams
+                .metric_report_ids.size(),
             CopyLocalAggregateStore().by_report_key().size());
   // Check that the LocalAggregateStore contains the expected
   // ReportAggregationKey and AggregationConfig for each locally aggregated
-  // report in |kUniqueActivesMetricDefinitions|,
-  for (const auto& metric_report_id : kExpectedParams.metric_report_ids) {
+  // report in the unique_actives registry.
+  for (const auto& metric_report_id :
+       testing::unique_actives::kExpectedAggregationParams.metric_report_ids) {
     std::string key;
-    SerializeToBase64(MakeAggregationKey(*project_context, metric_report_id),
-                      &key);
-    auto config = MakeAggregationConfig(*project_context, metric_report_id);
+    SerializeToBase64(
+        MakeAggregationKey(*unique_actives_project_context, metric_report_id),
+        &key);
+    auto config = MakeAggregationConfig(*unique_actives_project_context,
+                                        metric_report_id);
     LocalAggregateStore local_aggregate_store = CopyLocalAggregateStore();
     auto report_aggregates = local_aggregate_store.by_report_key().find(key);
     EXPECT_NE(local_aggregate_store.by_report_key().end(), report_aggregates);
@@ -1154,58 +779,59 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
 // These assumptions are:
 // (1) If the second project provides a report with a
 // ReportAggregationKey which was not provided by the first project, then
-// the EventAggregator accepts the new report. (2) If a report provided by
-// the second project has a ReportAggregationKey which was already provided
-// by the first project, then the EventAggregator rejects the new report,
-// even if its ReportDefinition differs from that of existing report with
-// the same ReportAggregationKey.
+// the EventAggregator accepts the new report.
+// (2) If a report provided by the second project has a ReportAggregationKey
+// which was already provided by the first project, then the EventAggregator
+// rejects the new report, even if its ReportDefinition differs from that of
+// existing report with the same ReportAggregationKey.
 TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
-  // Provide the EventAggregator with |kUniqueActivesMetricDefinitions|.
+  // Provide the unique_actives test registry to the EventAggregator.
   auto unique_actives_project_context =
-      MakeProjectContext(kUniqueActivesMetricDefinitions);
+      GetTestProject(testing::unique_actives::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
                      *unique_actives_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
-  // now equal to the number of locally aggregated reports in
-  // |kUniqueActivesMetricDefinitions|.
-  EXPECT_EQ(kUniqueActivesExpectedParams.metric_report_ids.size(),
+  // now equal to the number of locally aggregated reports in the unique_actives
+  // test registry.
+  EXPECT_EQ(testing::unique_actives::kExpectedAggregationParams
+                .metric_report_ids.size(),
             CopyLocalAggregateStore().by_report_key().size());
-  // Provide the EventAggregator with
-  // |kNoiseFreeUniqueActivesMetricDefinitions|.
-  auto noise_free_unique_actives_project_context =
-      MakeProjectContext(kNoiseFreeUniqueActivesMetricDefinitions);
+  // Provide the unique_actives_noise_free test registry to the EventAggregator.
+  auto unique_actives_noise_free_project_context =
+      GetTestProject(testing::unique_actives_noise_free::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
-                     *noise_free_unique_actives_project_context));
+                     *unique_actives_noise_free_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of distinct MetricReportIds of locally
-  // aggregated reports in |kUniqueActivesMetricDefinitions| and
-  // |kNoiseFreeUniqueActivesMetricDefinitions|.
+  // aggregated reports in the union of the unique_actives and
+  // unique_actives_noise_free registries.
   auto local_aggregate_store = CopyLocalAggregateStore();
   EXPECT_EQ(4u, local_aggregate_store.by_report_key().size());
   // The MetricReportId |kFeaturesActiveMetricReportId| appears in both
-  // |kUniqueActivesMetricDefinitions| and
-  // |kNoiseFreeUniqueActivesMetricDefinitions|. The associated
-  // ReportAggregationKeys are identical, but the AggregationConfigs are
-  // different.
+  // registries. The associated ReportAggregationKeys are identical, but the
+  // FeaturesActive_UniqueDevices reports in the two registries have different
+  // sets of window sizes, so their AggregationConfigs are different.
   //
   // Check that the AggregationConfig stored in the LocalAggregateStore
   // under the key associated to |kFeaturesActiveMetricReportId| is the
   // first AggregationConfig that was provided for that key; i.e., is
-  // derived from |kUniqueActivesMetricDefinitions|.
+  // derived from the unique_actives test registry.
   std::string key;
-  EXPECT_TRUE(
-      SerializeToBase64(MakeAggregationKey(*unique_actives_project_context,
-                                           kFeaturesActiveMetricReportId),
-                        &key));
+  EXPECT_TRUE(SerializeToBase64(
+      MakeAggregationKey(
+          *unique_actives_project_context,
+          testing::unique_actives::kFeaturesActiveMetricReportId),
+      &key));
   auto unique_actives_config = MakeAggregationConfig(
-      *unique_actives_project_context, kFeaturesActiveMetricReportId);
+      *unique_actives_project_context,
+      testing::unique_actives::kFeaturesActiveMetricReportId);
   auto report_aggregates = local_aggregate_store.by_report_key().find(key);
   EXPECT_NE(local_aggregate_store.by_report_key().end(), report_aggregates);
   EXPECT_TRUE(MessageDifferencer::Equals(
       unique_actives_config, report_aggregates->second.aggregation_config()));
-  auto noise_free_config =
-      MakeAggregationConfig(*noise_free_unique_actives_project_context,
-                            kFeaturesActiveMetricReportId);
+  auto noise_free_config = MakeAggregationConfig(
+      *unique_actives_noise_free_project_context,
+      testing::unique_actives_noise_free::kFeaturesActiveMetricReportId);
   EXPECT_FALSE(MessageDifferencer::Equals(
       noise_free_config, report_aggregates->second.aggregation_config()));
 }
@@ -1215,74 +841,79 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
 // LocalAggregateStore, or when passed an EventRecord containing an Event
 // proto message which is not of the appropriate event type.
 TEST_F(EventAggregatorTest, LogBadEvents) {
-  // Provide the EventAggregator with |kMetricDefinitions|.
-  auto project_context = MakeProjectContext(kUniqueActivesMetricDefinitions);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
-  // Attempt to log events for |kEventsOccurredMetricReportId|, which is not
-  // in |kMetricDefinitions|. Check that the result is |kInvalidArguments|.
+  // Provide the unique_actives test registry to the EventAggregator.
+  auto unique_actives_project_context =
+      GetTestProject(testing::unique_actives::kCobaltRegistryBase64);
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(
+                     *unique_actives_project_context));
+  // Attempt to log a UniqueActivesEvent for
+  // |kEventsOccurredMetricReportId|, which is not in the unique_actives
+  // registry. Check that the result is |kInvalidArguments|.
   auto noise_free_project_context =
-      MakeProjectContext(kNoiseFreeUniqueActivesMetricDefinitions);
+      GetTestProject(testing::unique_actives_noise_free::kCobaltRegistryBase64);
   EventRecord bad_event_record;
   bad_event_record.metric = noise_free_project_context->GetMetric(
-      kEventsOccurredMetricReportId.first);
+      testing::unique_actives_noise_free::kEventsOccurredMetricId);
   bad_event_record.event->set_day_index(CurrentDayIndex());
-  bad_event_record.event->mutable_occurrence_event();
-  EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->LogUniqueActivesEvent(
-                kEventsOccurredMetricReportId.second, &bad_event_record));
-  bad_event_record.event->mutable_count_event();
-  EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->LogPerDeviceCountEvent(
-                kEventsOccurredMetricReportId.second, &bad_event_record));
+  bad_event_record.event->mutable_occurrence_event()->set_event_code(0u);
+  EXPECT_EQ(kInvalidArguments, event_aggregator_->LogUniqueActivesEvent(
+                                   testing::unique_actives_noise_free::
+                                       kEventsOccurredUniqueDevicesReportId,
+                                   &bad_event_record));
   // Attempt to call LogUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
   // OccurrenceEvent. Check that the result is |kInvalidArguments|.
-  bad_event_record.metric =
-      project_context->GetMetric(kErrorsOccurredMetricReportId.first);
+  bad_event_record.metric = unique_actives_project_context->GetMetric(
+      testing::unique_actives::kFeaturesActiveMetricId);
   bad_event_record.event->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
-                kErrorsOccurredMetricReportId.second, &bad_event_record));
+                testing::unique_actives::kFeaturesActiveUniqueDevicesReportId,
+                &bad_event_record));
   // Attempt to call LogPerDeviceCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
   // CountEvent. Check that the result is |kInvalidArguments|.
-  bad_event_record.metric =
-      project_context->GetMetric(kConnectionFailuresMetricReportId.first);
+  bad_event_record.metric = noise_free_project_context->GetMetric(
+      testing::per_device_count::kConnectionFailuresMetricReportId.first);
   bad_event_record.event->mutable_occurrence_event();
-  EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->LogPerDeviceCountEvent(
-                kConnectionFailuresMetricReportId.second, &bad_event_record));
+  EXPECT_EQ(
+      kInvalidArguments,
+      event_aggregator_->LogPerDeviceCountEvent(
+          testing::per_device_count::kConnectionFailuresPerDeviceCountReportId,
+          &bad_event_record));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
 // status and that the expected number of Observations is generated when no
 // Events have been logged to the EventAggregator.
 TEST_F(EventAggregatorTest, GenerateObservationsNoEvents) {
-  // Provide the EventAggregator with |kMetricDefinitions|.
-  auto project_context = MakeProjectContext(kMetricDefinitions);
+  // Provide the all_report_types test registry to the EventAggregator.
+  auto project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Generate locally aggregated Observations for the current day index.
   EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
   std::vector<Observation2> observations(0);
-  EXPECT_TRUE(FetchAggregatedObservations(&observations, kExpectedParams,
-                                          observation_store_.get(),
-                                          update_recipient_.get()));
+  EXPECT_TRUE(FetchAggregatedObservations(
+      &observations, testing::all_report_types::kExpectedAggregationParams,
+      observation_store_.get(), update_recipient_.get()));
 }
 
 // Tests that EventAggregator::GenerateObservations() only generates
 // Observations the first time it is called for a given day index.
 TEST_F(EventAggregatorTest, GenerateObservationsTwice) {
-  // Provide the EventAggregator with |kMetricDefinitions|.
-  auto project_context = MakeProjectContext(kMetricDefinitions);
+  // Provide the all_report_types test registry to the EventAggregator.
+  auto project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Check that Observations are generated when GenerateObservations is called
   // for the current day index for the first time.
   auto current_day_index = CurrentDayIndex();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
   std::vector<Observation2> observations(0);
-  EXPECT_TRUE(FetchAggregatedObservations(&observations, kExpectedParams,
-                                          observation_store_.get(),
-                                          update_recipient_.get()));
+  EXPECT_TRUE(FetchAggregatedObservations(
+      &observations, testing::all_report_types::kExpectedAggregationParams,
+      observation_store_.get(), update_recipient_.get()));
   // Check that no Observations are generated when GenerateObservations is
   // called for the currentday index for the second time.
   ResetObservationStore();
@@ -1302,26 +933,30 @@ TEST_F(UniqueActivesEventAggregatorTest, LogEvents) {
   LoggedActivity logged_activity;
   uint32_t num_days = 35;
   for (uint32_t offset = 0; offset < num_days; offset++) {
-    // Log an event for the FeaturesActive_UniqueDevices report of
-    // |kUniqueActivesMetricDefinitions| with event code 0. Check the
-    // contents of the LocalAggregateStore.
+    // Log an event for the FeaturesActive_UniqueDevices report with event code
+    // 0. Check the contents of the LocalAggregateStore.
     auto day_index = CurrentDayIndex();
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                         day_index, 0u, &logged_activity));
+    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                       testing::unique_actives::kFeaturesActiveMetricReportId,
+                       day_index, 0u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
     // Log another event for the same report, event code, and day index.
     // Check the contents of the LocalAggregateStore.
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                         day_index, 0u, &logged_activity));
+    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                       testing::unique_actives::kFeaturesActiveMetricReportId,
+                       day_index, 0u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
     // Log several more events for various valid reports and event codes.
     // Check the contents of the LocalAggregateStore.
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(kDeviceBootsMetricReportId, day_index,
-                                         0u, &logged_activity));
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                         day_index, 4u, &logged_activity));
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
-                                         day_index, 1u, &logged_activity));
+    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                       testing::unique_actives::kDeviceBootsMetricReportId,
+                       day_index, 0u, &logged_activity));
+    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                       testing::unique_actives::kFeaturesActiveMetricReportId,
+                       day_index, 4u, &logged_activity));
+    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                       testing::unique_actives::kNetworkActivityMetricReportId,
+                       day_index, 1u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
     AdvanceClock(kDay);
   }
@@ -1343,7 +978,8 @@ TEST_F(UniqueActivesEventAggregatorTest, GarbageCollect) {
     for (uint32_t offset = 0; offset < days_before_gc; offset++) {
       auto day_index = CurrentDayIndex();
       for (const auto& metric_report_id :
-           kUniqueActivesExpectedParams.metric_report_ids) {
+           testing::unique_actives::kExpectedAggregationParams
+               .metric_report_ids) {
         // Log 2 events with event code 0.
         EXPECT_EQ(kOK, LogUniqueActivesEvent(metric_report_id, day_index, 0u,
                                              &logged_activity));
@@ -1366,47 +1002,18 @@ TEST_F(UniqueActivesEventAggregatorTest, GarbageCollect) {
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
-// status and that the expected number of Observations is generated when no
-// Events have been logged to the EventAggregator.
-TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsNoEvents) {
-  EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
-  std::vector<Observation2> observations(0);
-  EXPECT_TRUE(FetchAggregatedObservations(
-      &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-      update_recipient_.get()));
-}
-
-// Tests that EventAggregator::GenerateObservations() only generates
-// Observations the first time it is called for a given day index.
-TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsTwice) {
-  // Check that Observations are generated when GenerateObservations is called
-  // for the current day index for the first time.
-  auto current_day_index = CurrentDayIndex();
-  EXPECT_EQ(kOK, GenerateObservations(current_day_index));
-  std::vector<Observation2> observations(0);
-  EXPECT_TRUE(FetchAggregatedObservations(
-      &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-      update_recipient_.get()));
-  // Check that no Observations are generated when GenerateObservations is
-  // called for the currentday index for the second time.
-  ResetObservationStore();
-  EXPECT_EQ(kOK, GenerateObservations(current_day_index));
-  EXPECT_EQ(0u, observation_store_->num_observations_added());
-}
-
-// Tests that EventAggregator::GenerateObservations() returns a positive
 // status and that the expected number of Observations is generated after
 // some UniqueActivesEvents have been logged, without any garbage
 // collection.
 //
-// For 35 days, logs 2 events each day for the ErrorsOccurred_UniqueDevices
+// For 35 days, logs 2 events each day for the NetworkActivity_UniqueDevices
 // report and 2 events for the FeaturesActive_UniqueDevices report, all
 // with event code 0.
 //
 // Each day, calls GenerateObservations() with the day index of the previous
 // day. Checks that a positive status is returned and that the
 // FakeObservationStore has received the expected number of new observations
-// for each locally aggregated report ID in |kUniqueActivesMetricDefinitions|.
+// for each locally aggregated report ID in the unique_actives registry.
 TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
   int num_days = 35;
   std::vector<Observation2> observations(0);
@@ -1416,13 +1023,16 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
     ResetObservationStore();
     EXPECT_EQ(kOK, GenerateObservations(day_index - 1));
     EXPECT_TRUE(FetchAggregatedObservations(
-        &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-        update_recipient_.get()));
+        &observations, testing::unique_actives::kExpectedAggregationParams,
+        observation_store_.get(), update_recipient_.get()));
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
-                                           day_index, 0u));
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                           day_index, 0u));
+      EXPECT_EQ(kOK,
+                LogUniqueActivesEvent(
+                    testing::unique_actives::kNetworkActivityMetricReportId,
+                    day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                         testing::unique_actives::kFeaturesActiveMetricReportId,
+                         day_index, 0u));
     }
     AdvanceClock(kDay);
   }
@@ -1430,8 +1040,8 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
   ResetObservationStore();
   EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex() - 1));
   EXPECT_TRUE(FetchAggregatedObservations(
-      &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-      update_recipient_.get()));
+      &observations, testing::unique_actives::kExpectedAggregationParams,
+      observation_store_.get(), update_recipient_.get()));
 }
 
 // Tests that GenerateObservations() returns a positive status and that the
@@ -1439,7 +1049,7 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
 // logged for UNIQUE_N_DAY_ACTIVES reports over multiple days, and when the
 // LocalAggregateStore is garbage-collected each day.
 //
-// For 35 days, logs 2 events each day for the ErrorsOccurred_UniqueDevices
+// For 35 days, logs 2 events each day for the NetworkActivity_UniqueDevices
 // report and 2 events for the FeaturesActive_UniqueDevices report, all
 // with event code 0.
 //
@@ -1447,7 +1057,7 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservations) {
 // GarbageCollect() with the day index of the current day. Checks that
 // positive statuses are returned and that the FakeObservationStore has
 // received the expected number of new observations for each locally
-// aggregated report ID in |kUniqueActivesMetricDefinitions|.
+// aggregated report ID in the unique_actives registry.
 TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithGc) {
   int num_days = 35;
   std::vector<Observation2> observations(0);
@@ -1457,14 +1067,17 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithGc) {
     ResetObservationStore();
     EXPECT_EQ(kOK, GenerateObservations(day_index - 1));
     EXPECT_TRUE(FetchAggregatedObservations(
-        &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-        update_recipient_.get()));
+        &observations, testing::unique_actives::kExpectedAggregationParams,
+        observation_store_.get(), update_recipient_.get()));
     EXPECT_EQ(kOK, GarbageCollect(day_index));
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
-                                           day_index, 0u));
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                           day_index, 0u));
+      EXPECT_EQ(kOK,
+                LogUniqueActivesEvent(
+                    testing::unique_actives::kNetworkActivityMetricReportId,
+                    day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                         testing::unique_actives::kFeaturesActiveMetricReportId,
+                         day_index, 0u));
     }
     AdvanceClock(kDay);
   }
@@ -1473,8 +1086,8 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithGc) {
   auto day_index = CurrentDayIndex();
   EXPECT_EQ(kOK, GenerateObservations(day_index - 1));
   EXPECT_TRUE(FetchAggregatedObservations(
-      &observations, kUniqueActivesExpectedParams, observation_store_.get(),
-      update_recipient_.get()));
+      &observations, testing::unique_actives::kExpectedAggregationParams,
+      observation_store_.get(), update_recipient_.get()));
   EXPECT_EQ(kOK, GarbageCollect(day_index));
 }
 
@@ -1487,8 +1100,8 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithGc) {
 //
 // Logging pattern:
 // For 35 days, logs 2 events each day for the
-// SomeErrorsOccurred_UniqueDevices report and 2 events for the
-// SomeFeaturesActive_Unique_Devices report, all with event code 0.
+// NetworkActivity_UniqueDevices report and 2 events for the
+// FeaturesActive_UniqueDevices report, all with event code 0.
 //
 // Observation generation pattern:
 // Calls GenerateObservations() on the 1st through 5th and the 7th out of
@@ -1511,10 +1124,13 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithBackfill) {
   for (int offset = 0; offset < 35; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
-                                           day_index, 0u));
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                           day_index, 0u));
+      EXPECT_EQ(kOK,
+                LogUniqueActivesEvent(
+                    testing::unique_actives::kNetworkActivityMetricReportId,
+                    day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                         testing::unique_actives::kFeaturesActiveMetricReportId,
+                         day_index, 0u));
     }
     observation_store_->ResetObservationCounter();
     if (offset % 10 < 5 || offset % 10 == 6) {
@@ -1526,17 +1142,23 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithBackfill) {
     switch (offset % 10) {
       case 0:
         EXPECT_EQ(
-            kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs *
+                (backfill_days + 1),
             num_new_obs);
         break;
       case 1:
       case 2:
       case 3:
       case 4:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs, num_new_obs);
+        EXPECT_EQ(
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs,
+            num_new_obs);
         break;
       case 6:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2, num_new_obs);
+        EXPECT_EQ(
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs *
+                2,
+            num_new_obs);
         break;
       default:
         EXPECT_EQ(0u, num_new_obs);
@@ -1555,8 +1177,8 @@ TEST_F(UniqueActivesEventAggregatorTest, GenerateObservationsWithBackfill) {
 //
 // Logging pattern:
 // For 35 days, logs 2 events each day for the
-// SomeErrorsOccurred_UniqueDevices report and 2 events for the
-// SomeFeaturesActive_Unique_Devices report, all with event code 0.
+// NetworkActivity_UniqueDevices report and 2 events for the
+// FeaturesActive_Unique_Devices report, all with event code 0.
 //
 // Observation generation pattern:
 // Calls GenerateObservations() on the 1st through 5th and the 7th out of
@@ -1582,10 +1204,13 @@ TEST_F(UniqueActivesEventAggregatorTest,
   for (int offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kErrorsOccurredMetricReportId,
-                                           day_index, 0u));
-      EXPECT_EQ(kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId,
-                                           day_index, 0u));
+      EXPECT_EQ(kOK,
+                LogUniqueActivesEvent(
+                    testing::unique_actives::kNetworkActivityMetricReportId,
+                    day_index, 0u));
+      EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                         testing::unique_actives::kFeaturesActiveMetricReportId,
+                         day_index, 0u));
     }
     observation_store_->ResetObservationCounter();
     if (offset % 10 < 5 || offset % 10 == 6) {
@@ -1601,17 +1226,23 @@ TEST_F(UniqueActivesEventAggregatorTest,
     switch (offset % 10) {
       case 0:
         EXPECT_EQ(
-            kUniqueActivesExpectedParams.daily_num_obs * (backfill_days + 1),
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs *
+                (backfill_days + 1),
             num_new_obs);
         break;
       case 1:
       case 2:
       case 3:
       case 4:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs, num_new_obs);
+        EXPECT_EQ(
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs,
+            num_new_obs);
         break;
       case 6:
-        EXPECT_EQ(kUniqueActivesExpectedParams.daily_num_obs * 2, num_new_obs);
+        EXPECT_EQ(
+            testing::unique_actives::kExpectedAggregationParams.daily_num_obs *
+                2,
+            num_new_obs);
         break;
       default:
         EXPECT_EQ(0u, num_new_obs);
@@ -1624,12 +1255,13 @@ TEST_F(UniqueActivesEventAggregatorTest,
 // non-active for all UNIQUE_N_DAY_ACTIVES reports, for all window sizes and
 // event codes) are generated when no Events have been logged to the
 // EventAggregator.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesNoEvents) {
   auto current_day_index = CurrentDayIndex();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
   auto expected_obs = MakeNullExpectedUniqueActivesObservations(
-      kNoiseFreeUniqueActivesExpectedParams, current_day_index);
+      testing::unique_actives_noise_free::kExpectedAggregationParams,
+      current_day_index);
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs, observation_store_.get(), update_recipient_.get()));
 }
@@ -1649,7 +1281,7 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 //
 // Expected numbers of Observations:
 // The expected number of Observations is the daily_num_obs field of
-// |kNoiseFreeUniqueActivesExpectedParams|.
+// |testing::unique_actives_noise_free::kExpectedAggregationParams|.
 //
 // Expected Observation values:
 // All Observations should be labeled with the day index on which the events
@@ -1670,29 +1302,41 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // 7                           1
 //
 // All other Observations should be of inactivity.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesSingleDay) {
   auto day_index = CurrentDayIndex();
   // Log several events on |day_index|.
   EXPECT_EQ(
-      kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId, day_index, 0u));
+      kOK,
+      LogUniqueActivesEvent(
+          testing::unique_actives_noise_free::kFeaturesActiveMetricReportId,
+          day_index, 0u));
   EXPECT_EQ(
-      kOK, LogUniqueActivesEvent(kFeaturesActiveMetricReportId, day_index, 0u));
+      kOK,
+      LogUniqueActivesEvent(
+          testing::unique_actives_noise_free::kFeaturesActiveMetricReportId,
+          day_index, 0u));
   EXPECT_EQ(
-      kOK, LogUniqueActivesEvent(kEventsOccurredMetricReportId, day_index, 1u));
+      kOK,
+      LogUniqueActivesEvent(
+          testing::unique_actives_noise_free::kEventsOccurredMetricReportId,
+          day_index, 1u));
   // Generate locally aggregated Observations for |day_index|.
   EXPECT_EQ(kOK, GenerateObservations(day_index));
 
   // Form the expected observations.
   auto expected_obs = MakeNullExpectedUniqueActivesObservations(
-      kNoiseFreeUniqueActivesExpectedParams, day_index);
-  expected_obs[{kFeaturesActiveMetricReportId, day_index}] = {
-      {1, {true, false, false, false, false}},
-      {7, {true, false, false, false, false}},
-      {30, {true, false, false, false, false}}};
-  expected_obs[{kEventsOccurredMetricReportId, day_index}] = {
-      {1, {false, true, false, false, false}},
-      {7, {false, true, false, false, false}}};
+      testing::unique_actives_noise_free::kExpectedAggregationParams,
+      day_index);
+  expected_obs[{
+      testing::unique_actives_noise_free::kFeaturesActiveMetricReportId,
+      day_index}] = {{1, {true, false, false, false, false}},
+                     {7, {true, false, false, false, false}},
+                     {30, {true, false, false, false, false}}};
+  expected_obs[{
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId,
+      day_index}] = {{1, {false, true, false, false, false}},
+                     {7, {false, true, false, false, false}}};
 
   // Check the contents of the FakeObservationStore.
   EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -1705,7 +1349,7 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // day, without garbage collection or backfill.
 //
 // Logging pattern:
-// Logs events for the SomeEventsOccurred_UniqueDevices report (whose parent
+// Logs events for the EventsOccurred_UniqueDevices report (whose parent
 // metric has max_event_code = 4) for 10 days, according to the following
 // pattern:
 //
@@ -1720,10 +1364,10 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // Expected number of Observations:
 // Each call to GenerateObservations should generate a number of Observations
 // equal to the daily_num_obs field of
-// |kNoisefreeUniqueActivesExpectedParams|.
+// |testing::unique_actives_noise_free::kExpectedAggregationParams|.
 //
 // Expected Observation values:
-// The SomeEventsOccurred_UniqueDevices report has window sizes 1 and 7, and
+// The EventsOccurred_UniqueDevices report has window sizes 1 and 7, and
 // the expected activity indicators of Observations for that report on the
 // i-th day are:
 //
@@ -1752,56 +1396,60 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 //
 // All Observations for all other locally aggregated reports should be
 // observations of non-occurrence.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesMultiDay) {
   auto start_day_index = CurrentDayIndex();
   // Form expected Obsevations for the 10 days of logging.
   uint32_t num_days = 10;
   std::vector<ExpectedUniqueActivesObservations> expected_obs(num_days);
+  const auto& expected_id =
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     expected_obs[offset] = MakeNullExpectedUniqueActivesObservations(
-        kNoiseFreeUniqueActivesExpectedParams, start_day_index + offset);
+        testing::unique_actives_noise_free::kExpectedAggregationParams,
+        start_day_index + offset);
   }
-  expected_obs[0][{kEventsOccurredMetricReportId, start_day_index}] = {
+  expected_obs[0][{expected_id, start_day_index}] = {
       {1, {false, true, true, true, true}},
       {7, {false, true, true, true, true}}};
-  expected_obs[1][{kEventsOccurredMetricReportId, start_day_index + 1}] = {
+  expected_obs[1][{expected_id, start_day_index + 1}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[2][{kEventsOccurredMetricReportId, start_day_index + 2}] = {
+  expected_obs[2][{expected_id, start_day_index + 2}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[3][{kEventsOccurredMetricReportId, start_day_index + 3}] = {
+  expected_obs[3][{expected_id, start_day_index + 3}] = {
       {1, {false, true, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[4][{kEventsOccurredMetricReportId, start_day_index + 4}] = {
+  expected_obs[4][{expected_id, start_day_index + 4}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[5][{kEventsOccurredMetricReportId, start_day_index + 5}] = {
+  expected_obs[5][{expected_id, start_day_index + 5}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[6][{kEventsOccurredMetricReportId, start_day_index + 6}] = {
+  expected_obs[6][{expected_id, start_day_index + 6}] = {
       {1, {false, true, true, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[7][{kEventsOccurredMetricReportId, start_day_index + 7}] = {
+  expected_obs[7][{expected_id, start_day_index + 7}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[8][{kEventsOccurredMetricReportId, start_day_index + 8}] = {
+  expected_obs[8][{expected_id, start_day_index + 8}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[9][{kEventsOccurredMetricReportId, start_day_index + 9}] = {
+  expected_obs[9][{expected_id, start_day_index + 9}] = {
       {1, {false, true, false, true, false}},
       {7, {false, true, true, true, false}}};
 
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (uint32_t event_code = 1;
-         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
-                          kEventsOccurredMetricReportId);
+         event_code <
+         testing::unique_actives_noise_free::kExpectedAggregationParams
+             .num_event_codes.at(expected_id);
          event_code++) {
       if (offset % (3 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogUniqueActivesEvent(kEventsOccurredMetricReportId,
-                                             day_index, event_code));
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
     // Clear the FakeObservationStore.
@@ -1823,7 +1471,7 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // to GenerateObservations().
 //
 // Logging pattern:
-// Logs events for the SomeEventsOccurred_UniqueDevices report (whose parent
+// Logs events for the EventsOccurred_UniqueDevices report (whose parent
 // metric has max_event_code = 4) for 10 days, according to the following
 // pattern:
 //
@@ -1838,10 +1486,10 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // Expected number of Observations:
 // Each call to GenerateObservations should generate a number of Observations
 // equal to the daily_num_obs field of
-// |kNoisefreeUniqueActivesExpectedParams|.
+// |testing::unique_actives_noise_free::kExpectedAggregationParams|.
 //
 // Expected Observation values:
-// The SomeEventsOccurred_UniqueDevices report has window sizes 1 and 7, and
+// The EventsOccurred_UniqueDevices report has window sizes 1 and 7, and
 // the expected activity indicators of Observations for that report on the
 // i-th day are:
 //
@@ -1870,56 +1518,61 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 //
 // All Observations for all other locally aggregated reports should be
 // observations of non-occurrence.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesMultiDayWithGarbageCollection) {
   auto start_day_index = CurrentDayIndex();
   // Form expected Observations for the 10 days of logging.
   uint32_t num_days = 10;
   std::vector<ExpectedUniqueActivesObservations> expected_obs(num_days);
+  const auto& expected_id =
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
+
   for (uint32_t offset = 0; offset < num_days; offset++) {
     expected_obs[offset] = MakeNullExpectedUniqueActivesObservations(
-        kNoiseFreeUniqueActivesExpectedParams, start_day_index + offset);
+        testing::unique_actives_noise_free::kExpectedAggregationParams,
+        start_day_index + offset);
   }
-  expected_obs[0][{kEventsOccurredMetricReportId, start_day_index}] = {
+  expected_obs[0][{expected_id, start_day_index}] = {
       {1, {false, true, true, true, true}},
       {7, {false, true, true, true, true}}};
-  expected_obs[1][{kEventsOccurredMetricReportId, start_day_index + 1}] = {
+  expected_obs[1][{expected_id, start_day_index + 1}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[2][{kEventsOccurredMetricReportId, start_day_index + 2}] = {
+  expected_obs[2][{expected_id, start_day_index + 2}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[3][{kEventsOccurredMetricReportId, start_day_index + 3}] = {
+  expected_obs[3][{expected_id, start_day_index + 3}] = {
       {1, {false, true, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[4][{kEventsOccurredMetricReportId, start_day_index + 4}] = {
+  expected_obs[4][{expected_id, start_day_index + 4}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[5][{kEventsOccurredMetricReportId, start_day_index + 5}] = {
+  expected_obs[5][{expected_id, start_day_index + 5}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[6][{kEventsOccurredMetricReportId, start_day_index + 6}] = {
+  expected_obs[6][{expected_id, start_day_index + 6}] = {
       {1, {false, true, true, false, false}},
       {7, {false, true, true, true, true}}};
-  expected_obs[7][{kEventsOccurredMetricReportId, start_day_index + 7}] = {
+  expected_obs[7][{expected_id, start_day_index + 7}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[8][{kEventsOccurredMetricReportId, start_day_index + 8}] = {
+  expected_obs[8][{expected_id, start_day_index + 8}] = {
       {1, {false, false, false, false, false}},
       {7, {false, true, true, false, false}}};
-  expected_obs[9][{kEventsOccurredMetricReportId, start_day_index + 9}] = {
+  expected_obs[9][{expected_id, start_day_index + 9}] = {
       {1, {false, true, false, true, false}},
       {7, {false, true, true, true, false}}};
 
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (uint32_t event_code = 1;
-         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
-                          kEventsOccurredMetricReportId);
+         event_code <
+         testing::unique_actives_noise_free::kExpectedAggregationParams
+             .num_event_codes.at(expected_id);
          event_code++) {
       if (offset % (3 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogUniqueActivesEvent(kEventsOccurredMetricReportId,
-                                             day_index, event_code));
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
     // Advance |mock_clock_| by 1 day.
@@ -1993,24 +1646,27 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // (8, 7)                           1, 2, 3, 4
 //
 // All other Observations should be of non-activity.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesWithBackfill) {
   auto start_day_index = CurrentDayIndex();
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
+  const auto& expected_id =
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
+  const auto& expected_params =
+      testing::unique_actives_noise_free::kExpectedAggregationParams;
   // Log events for 9 days. Call GenerateObservations() on the first 6 day
   // indices, and the 9th.
   for (uint32_t offset = 0; offset < 9; offset++) {
     auto day_index = CurrentDayIndex();
     ResetObservationStore();
     for (uint32_t event_code = 0;
-         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
-                          kEventsOccurredMetricReportId);
+         event_code < expected_params.num_event_codes.at(expected_id);
          event_code++) {
       if (event_code == offset || (2 * event_code) == offset) {
-        EXPECT_EQ(kOK, LogUniqueActivesEvent(kEventsOccurredMetricReportId,
-                                             day_index, event_code));
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
     if (offset < 6 || offset == 8) {
@@ -2025,11 +1681,11 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
         for (uint32_t day_index = start_day_index - backfill_days;
              day_index <= start_day_index; day_index++) {
           for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
-                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_obs.insert(pair);
           }
         }
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index}] = {
+        expected_obs[{expected_id, start_day_index}] = {
             {1, {true, false, false, false, false}},
             {7, {true, false, false, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2038,8 +1694,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 1: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 1);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 1}] = {
+            expected_params, start_day_index + 1);
+        expected_obs[{expected_id, start_day_index + 1}] = {
             {1, {false, true, false, false, false}},
             {7, {true, true, false, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2048,8 +1704,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 2: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 2);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 2}] = {
+            expected_params, start_day_index + 2);
+        expected_obs[{expected_id, start_day_index + 2}] = {
             {1, {false, true, true, false, false}},
             {7, {true, true, true, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2058,8 +1714,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 3: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 3);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 3}] = {
+            expected_params, start_day_index + 3);
+        expected_obs[{expected_id, start_day_index + 3}] = {
             {1, {false, false, false, true, false}},
             {7, {true, true, true, true, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2068,8 +1724,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 4: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 4);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 4}] = {
+            expected_params, start_day_index + 4);
+        expected_obs[{expected_id, start_day_index + 4}] = {
             {1, {false, false, true, false, true}},
             {7, {true, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2078,8 +1734,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 5: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 5);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 5}] = {
+            expected_params, start_day_index + 5);
+        expected_obs[{expected_id, start_day_index + 5}] = {
             {1, {false, false, false, false, false}},
             {7, {true, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2090,17 +1746,17 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
         for (uint32_t day_index = start_day_index + 6;
              day_index <= start_day_index + 8; day_index++) {
           for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
-                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_obs.insert(pair);
           }
         }
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 6}] = {
+        expected_obs[{expected_id, start_day_index + 6}] = {
             {1, {false, false, false, true, false}},
             {7, {true, true, true, true, true}}};
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 7}] = {
+        expected_obs[{expected_id, start_day_index + 7}] = {
             {1, {false, false, false, false, false}},
             {7, {false, true, true, true, true}}};
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 8}] = {
+        expected_obs[{expected_id, start_day_index + 8}] = {
             {1, {false, false, false, false, true}},
             {7, {false, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2170,24 +1826,29 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
 // (8, 7)                           1, 2, 3, 4
 //
 // All other Observations should be of non-activity.
-TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
+TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
        CheckObservationValuesWithBackfillAndGc) {
   auto start_day_index = CurrentDayIndex();
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
+
+  const auto& expected_id =
+      testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
+  const auto& expected_params =
+      testing::unique_actives_noise_free::kExpectedAggregationParams;
+
   // Log events for 9 days. Call GenerateObservations() on the first 6 day
   // indices, and the 9th.
   for (uint32_t offset = 0; offset < 8; offset++) {
     auto day_index = CurrentDayIndex();
     ResetObservationStore();
     for (uint32_t event_code = 0;
-         event_code < kNoiseFreeUniqueActivesExpectedParams.num_event_codes.at(
-                          kEventsOccurredMetricReportId);
+         event_code < expected_params.num_event_codes.at(expected_id);
          event_code++) {
       if (event_code == offset || (2 * event_code) == offset) {
-        EXPECT_EQ(kOK, LogUniqueActivesEvent(kEventsOccurredMetricReportId,
-                                             day_index, event_code));
+        EXPECT_EQ(kOK,
+                  LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
     // Advance |mock_clock_| by 1 day.
@@ -2207,11 +1868,11 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
         for (uint32_t day_index = start_day_index - backfill_days;
              day_index <= start_day_index; day_index++) {
           for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
-                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_obs.insert(pair);
           }
         }
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index}] = {
+        expected_obs[{expected_id, start_day_index}] = {
             {1, {true, false, false, false, false}},
             {7, {true, false, false, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2220,8 +1881,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 1: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 1);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 1}] = {
+            expected_params, start_day_index + 1);
+        expected_obs[{expected_id, start_day_index + 1}] = {
             {1, {false, true, false, false, false}},
             {7, {true, true, false, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2230,8 +1891,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 2: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 2);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 2}] = {
+            expected_params, start_day_index + 2);
+        expected_obs[{expected_id, start_day_index + 2}] = {
             {1, {false, true, true, false, false}},
             {7, {true, true, true, false, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2240,8 +1901,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 3: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 3);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 3}] = {
+            expected_params, start_day_index + 3);
+        expected_obs[{expected_id, start_day_index + 3}] = {
             {1, {false, false, false, true, false}},
             {7, {true, true, true, true, false}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2250,8 +1911,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 4: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 4);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 4}] = {
+            expected_params, start_day_index + 4);
+        expected_obs[{expected_id, start_day_index + 4}] = {
             {1, {false, false, true, false, true}},
             {7, {true, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2260,8 +1921,8 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
       }
       case 5: {
         expected_obs = MakeNullExpectedUniqueActivesObservations(
-            kNoiseFreeUniqueActivesExpectedParams, start_day_index + 5);
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 5}] = {
+            expected_params, start_day_index + 5);
+        expected_obs[{expected_id, start_day_index + 5}] = {
             {1, {false, false, false, false, false}},
             {7, {true, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2272,17 +1933,17 @@ TEST_F(NoiseFreeUniqueActivesEventAggregatorTest,
         for (uint32_t day_index = start_day_index + 6;
              day_index <= start_day_index + 8; day_index++) {
           for (const auto& pair : MakeNullExpectedUniqueActivesObservations(
-                   kNoiseFreeUniqueActivesExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_obs.insert(pair);
           }
         }
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 6}] = {
+        expected_obs[{expected_id, start_day_index + 6}] = {
             {1, {false, false, false, true, false}},
             {7, {true, true, true, true, true}}};
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 7}] = {
+        expected_obs[{expected_id, start_day_index + 7}] = {
             {1, {false, false, false, false, false}},
             {7, {false, true, true, true, true}}};
-        expected_obs[{kEventsOccurredMetricReportId, start_day_index + 8}] = {
+        expected_obs[{expected_id, start_day_index + 8}] = {
             {1, {false, false, false, false, true}},
             {7, {false, true, true, true, true}}};
         EXPECT_TRUE(CheckUniqueActivesObservations(
@@ -2308,27 +1969,34 @@ TEST_F(PerDeviceCountEventAggregatorTest, LogEvents) {
   uint32_t num_days = 35;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 0u, 5,
-                                          &logged_counts));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 0u, 7,
-                                          &logged_counts));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 1u, 3,
-                                          &logged_counts));
     EXPECT_EQ(kOK,
-              LogPerDeviceCountEvent(kSettingsChangedMetricReportId, day_index,
-                                     "component_B", 0u, 10, &logged_counts));
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kConnectionFailuresMetricReportId,
+                  day_index, "component_A", 0u, 5, &logged_counts));
     EXPECT_EQ(kOK,
-              LogPerDeviceCountEvent(kSettingsChangedMetricReportId, day_index,
-                                     "component_A", 0u, 2, &logged_counts));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                          day_index, "component_C", 0u, 15,
-                                          &logged_counts));
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kConnectionFailuresMetricReportId,
+                  day_index, "component_A", 0u, 7, &logged_counts));
     EXPECT_EQ(kOK,
-              LogPerDeviceCountEvent(kSettingsChangedMetricReportId, day_index,
-                                     "component_B", 0u, 4, &logged_counts));
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kConnectionFailuresMetricReportId,
+                  day_index, "component_A", 1u, 3, &logged_counts));
+    EXPECT_EQ(kOK,
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kSettingsChangedMetricReportId,
+                  day_index, "component_B", 0u, 10, &logged_counts));
+    EXPECT_EQ(kOK,
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kSettingsChangedMetricReportId,
+                  day_index, "component_A", 0u, 2, &logged_counts));
+    EXPECT_EQ(kOK,
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kConnectionFailuresMetricReportId,
+                  day_index, "component_C", 0u, 15, &logged_counts));
+    EXPECT_EQ(kOK,
+              LogPerDeviceCountEvent(
+                  testing::per_device_count::kSettingsChangedMetricReportId,
+                  day_index, "component_B", 0u, 4, &logged_counts));
     EXPECT_TRUE(CheckPerDeviceCountAggregates(logged_counts, day_index));
     AdvanceClock(kDay);
   }
@@ -2350,7 +2018,8 @@ TEST_F(PerDeviceCountEventAggregatorTest, GarbageCollect) {
     for (uint32_t offset = 0; offset < days_before_gc; offset++) {
       auto day_index = CurrentDayIndex();
       for (const auto& metric_report_id :
-           kPerDeviceCountExpectedParams.metric_report_ids) {
+           testing::per_device_count::kExpectedAggregationParams
+               .metric_report_ids) {
         for (const auto& component :
              {"component_A", "component_B", "component_C"}) {
           // Log 2 events with event code 0, for each component A, B, C.
@@ -2391,11 +2060,12 @@ TEST_F(PerDeviceCountEventAggregatorTest, GarbageCollect) {
 // Each day, calls GenerateObservations() with the day index of the previous
 // day. Checks that a positive status is returned and that the
 // FakeObservationStore has received the expected number of new observations
-// for each locally aggregated report ID in |kPerDeviceCountMetricDefinitions|.
+// for each locally aggregated report ID in the per_device_count test registry.
 TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservations) {
   int num_days = 1;
   std::vector<Observation2> observations(0);
-  ExpectedAggregationParams expected_params = kPerDeviceCountExpectedParams;
+  ExpectedAggregationParams expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   for (int offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     observations.clear();
@@ -2405,10 +2075,14 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservations) {
                                             observation_store_.get(),
                                             update_recipient_.get()));
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                            day_index, "component_A", 0u, 1));
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                            day_index, "component_B", 0u, 5));
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(
+                   testing::per_device_count::kConnectionFailuresMetricReportId,
+                   day_index, "component_A", 0u, 1));
+      EXPECT_EQ(kOK,
+                LogPerDeviceCountEvent(
+                    testing::per_device_count::kSettingsChangedMetricReportId,
+                    day_index, "component_B", 0u, 5));
     }
     // If this is the first time we're logging events, update the expected
     // numbers of generated Observations to account for the logged events.
@@ -2416,9 +2090,10 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservations) {
     // no events had been logged.
     if (offset == 0) {
       expected_params.daily_num_obs += 3;
-      expected_params.num_obs_per_report[kConnectionFailuresMetricReportId] +=
-          1;
-      expected_params.num_obs_per_report[kSettingsChangedMetricReportId] += 2;
+      expected_params.num_obs_per_report
+          [testing::per_device_count::kConnectionFailuresMetricReportId] += 1;
+      expected_params.num_obs_per_report
+          [testing::per_device_count::kSettingsChangedMetricReportId] += 2;
     }
     AdvanceClock(kDay);
   }
@@ -2443,11 +2118,12 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservations) {
 // Each day, calls GenerateObservations() with the day index of the previous
 // day. Checks that a positive status is returned and that the
 // FakeObservationStore has received the expected number of new observations
-// for each locally aggregated report ID in |kPerDeviceCountMetricDefinitions|.
+// for each locally aggregated report ID in the per_device_count test registry.
 TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithGc) {
   int num_days = 35;
   std::vector<Observation2> observations(0);
-  ExpectedAggregationParams expected_params = kPerDeviceCountExpectedParams;
+  ExpectedAggregationParams expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   for (int offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     observations.clear();
@@ -2458,10 +2134,14 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithGc) {
                                             update_recipient_.get()));
     EXPECT_EQ(kOK, GarbageCollect(day_index));
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                            day_index, "component_A", 0u, 1));
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                            day_index, "component_B", 0u, 5));
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(
+                   testing::per_device_count::kConnectionFailuresMetricReportId,
+                   day_index, "component_A", 0u, 1));
+      EXPECT_EQ(kOK,
+                LogPerDeviceCountEvent(
+                    testing::per_device_count::kSettingsChangedMetricReportId,
+                    day_index, "component_B", 0u, 5));
     }
     // If this is the first time we're logging events, update the expected
     // numbers of generated Observations to account for the logged events.
@@ -2469,9 +2149,10 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithGc) {
     // no events had been logged.
     if (offset == 0) {
       expected_params.daily_num_obs += 3;
-      expected_params.num_obs_per_report[kConnectionFailuresMetricReportId] +=
-          1;
-      expected_params.num_obs_per_report[kSettingsChangedMetricReportId] += 2;
+      expected_params.num_obs_per_report
+          [testing::per_device_count::kConnectionFailuresMetricReportId] += 1;
+      expected_params.num_obs_per_report
+          [testing::per_device_count::kSettingsChangedMetricReportId] += 2;
     }
     AdvanceClock(kDay);
   }
@@ -2510,6 +2191,8 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithGc) {
 // day index for which GenerateObservations() was called, plus 1 day of
 // backfill), and that no Observations are generated on the remaining days.
 TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithBackfill) {
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
@@ -2518,10 +2201,14 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithBackfill) {
   for (int offset = 0; offset < 35; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                            day_index, "component_A", 0u, 1));
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                            day_index, "component_B", 0u, 5));
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(
+                   testing::per_device_count::kConnectionFailuresMetricReportId,
+                   day_index, "component_A", 0u, 1));
+      EXPECT_EQ(kOK,
+                LogPerDeviceCountEvent(
+                    testing::per_device_count::kSettingsChangedMetricReportId,
+                    day_index, "component_B", 0u, 5));
     }
     auto num_obs_before = observation_store_->messages_received.size();
     if (offset % 10 < 5 || offset % 10 == 6) {
@@ -2535,16 +2222,14 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithBackfill) {
         // If this is the first day of logging, expect 3 Observations for each
         // day in the backfill period and 6 Observations for the current day.
         if (offset == 0) {
-          EXPECT_EQ(
-              (kPerDeviceCountExpectedParams.daily_num_obs * backfill_days) +
-                  kPerDeviceCountExpectedParams.daily_num_obs + 3,
-              num_obs_after - num_obs_before);
+          EXPECT_EQ((expected_params.daily_num_obs * backfill_days) +
+                        expected_params.daily_num_obs + 3,
+                    num_obs_after - num_obs_before);
         } else {
           // If this is another day whose offset is a multiple of 10, expect 6
           // Observations for each day in the backfill period as well as the
           // current day.
-          EXPECT_EQ((kPerDeviceCountExpectedParams.daily_num_obs + 3) *
-                        (backfill_days + 1),
+          EXPECT_EQ((expected_params.daily_num_obs + 3) * (backfill_days + 1),
                     num_obs_after - num_obs_before);
         }
         break;
@@ -2553,12 +2238,12 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithBackfill) {
       case 3:
       case 4:
         // Expect 6 Observations for this day.
-        EXPECT_EQ(kPerDeviceCountExpectedParams.daily_num_obs + 3,
+        EXPECT_EQ(expected_params.daily_num_obs + 3,
                   num_obs_after - num_obs_before);
         break;
       case 6:
         // Expect 6 Observations for each of today and yesterday.
-        EXPECT_EQ((kPerDeviceCountExpectedParams.daily_num_obs + 3) * 2,
+        EXPECT_EQ((expected_params.daily_num_obs + 3) * 2,
                   num_obs_after - num_obs_before);
         break;
       default:
@@ -2598,6 +2283,8 @@ TEST_F(PerDeviceCountEventAggregatorTest, GenerateObservationsWithBackfill) {
 TEST_F(PerDeviceCountEventAggregatorTest,
        GenerateObservationsWithBackfillAndGc) {
   int num_days = 35;
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
@@ -2606,10 +2293,14 @@ TEST_F(PerDeviceCountEventAggregatorTest,
   for (int offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                            day_index, "component_A", 0u, 1));
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                            day_index, "component_B", 0u, 5));
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(
+                   testing::per_device_count::kConnectionFailuresMetricReportId,
+                   day_index, "component_A", 0u, 1));
+      EXPECT_EQ(kOK,
+                LogPerDeviceCountEvent(
+                    testing::per_device_count::kSettingsChangedMetricReportId,
+                    day_index, "component_B", 0u, 5));
     }
     auto num_obs_before = observation_store_->messages_received.size();
     if (offset % 10 < 5 || offset % 10 == 6) {
@@ -2624,16 +2315,14 @@ TEST_F(PerDeviceCountEventAggregatorTest,
         // If this is the first day of logging, expect 3 Observations for each
         // day in the backfill period and 6 Observations for the current day.
         if (offset == 0) {
-          EXPECT_EQ(
-              (kPerDeviceCountExpectedParams.daily_num_obs * backfill_days) +
-                  kPerDeviceCountExpectedParams.daily_num_obs + 3,
-              num_obs_after - num_obs_before);
+          EXPECT_EQ((expected_params.daily_num_obs * backfill_days) +
+                        expected_params.daily_num_obs + 3,
+                    num_obs_after - num_obs_before);
         } else {
           // If this is another day whose offset is a multiple of 10, expect 6
           // Observations for each day in the backfill period as well as the
           // current day.
-          EXPECT_EQ((kPerDeviceCountExpectedParams.daily_num_obs + 3) *
-                        (backfill_days + 1),
+          EXPECT_EQ((expected_params.daily_num_obs + 3) * (backfill_days + 1),
                     num_obs_after - num_obs_before);
         }
         break;
@@ -2642,12 +2331,12 @@ TEST_F(PerDeviceCountEventAggregatorTest,
       case 3:
       case 4:
         // Expect 6 Observations for this day.
-        EXPECT_EQ(kPerDeviceCountExpectedParams.daily_num_obs + 3,
+        EXPECT_EQ(expected_params.daily_num_obs + 3,
                   num_obs_after - num_obs_before);
         break;
       case 6:
         // Expect 6 Observations for each of today and yesterday.
-        EXPECT_EQ((kPerDeviceCountExpectedParams.daily_num_obs + 3) * 2,
+        EXPECT_EQ((expected_params.daily_num_obs + 3) * 2,
                   num_obs_after - num_obs_before);
         break;
       default:
@@ -2665,8 +2354,9 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesNoEvents) {
   auto current_day_index = CurrentDayIndex();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
   auto expected_report_participation_obs =
-      MakeExpectedReportParticipationObservations(kPerDeviceCountExpectedParams,
-                                                  current_day_index);
+      MakeExpectedReportParticipationObservations(
+          testing::per_device_count::kExpectedAggregationParams,
+          current_day_index);
   EXPECT_TRUE(CheckPerDeviceCountObservations(
       {}, expected_report_participation_obs, observation_store_.get(),
       update_recipient_.get()));
@@ -2679,32 +2369,45 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesNoEvents) {
 TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesSingleDay) {
   auto day_index = CurrentDayIndex();
   // Log several events on |day_index|.
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                        day_index, "component_A", 0u, 5));
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                        day_index, "component_B", 0u, 5));
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                        day_index, "component_A", 0u, 5));
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kConnectionFailuresMetricReportId,
-                                        day_index, "component_A", 1u, 5));
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                        day_index, "component_C", 0u, 5));
-  EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                        day_index, "component_C", 0u, 5));
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(
+                testing::per_device_count::kConnectionFailuresMetricReportId,
+                day_index, "component_A", 0u, 5));
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(
+                testing::per_device_count::kConnectionFailuresMetricReportId,
+                day_index, "component_B", 0u, 5));
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(
+                testing::per_device_count::kConnectionFailuresMetricReportId,
+                day_index, "component_A", 0u, 5));
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(
+                testing::per_device_count::kConnectionFailuresMetricReportId,
+                day_index, "component_A", 1u, 5));
+  EXPECT_EQ(kOK, LogPerDeviceCountEvent(
+                     testing::per_device_count::kSettingsChangedMetricReportId,
+                     day_index, "component_C", 0u, 5));
+  EXPECT_EQ(kOK, LogPerDeviceCountEvent(
+                     testing::per_device_count::kSettingsChangedMetricReportId,
+                     day_index, "component_C", 0u, 5));
   // Generate locally aggregated Observations for |day_index|.
   EXPECT_EQ(kOK, GenerateObservations(day_index));
 
   // Form the expected Observations.
   auto expected_report_participation_obs =
-      MakeExpectedReportParticipationObservations(kPerDeviceCountExpectedParams,
-                                                  day_index);
+      MakeExpectedReportParticipationObservations(
+          testing::per_device_count::kExpectedAggregationParams, day_index);
   ExpectedPerDeviceCountObservations expected_per_device_count_obs;
-  expected_per_device_count_obs[{kConnectionFailuresMetricReportId,
-                                 day_index}][1] = {
+  expected_per_device_count_obs[{
+      testing::per_device_count::kConnectionFailuresMetricReportId,
+      day_index}][1] = {
       {"component_A", 0u, 10}, {"component_A", 1u, 5}, {"component_B", 0u, 5}};
-  expected_per_device_count_obs[{kSettingsChangedMetricReportId, day_index}]
+  expected_per_device_count_obs[{
+      testing::per_device_count::kSettingsChangedMetricReportId, day_index}]
                                [7] = {{"component_C", 0u, 10}};
-  expected_per_device_count_obs[{kSettingsChangedMetricReportId, day_index}]
+  expected_per_device_count_obs[{
+      testing::per_device_count::kSettingsChangedMetricReportId, day_index}]
                                [30] = {{"component_C", 0u, 10}};
   EXPECT_TRUE(CheckPerDeviceCountObservations(
       expected_per_device_count_obs, expected_report_participation_obs,
@@ -2761,6 +2464,10 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesSingleDay) {
 // of ConnectionFailures_PerDeviceCount and SettingsChanged_PerDeviceCount.
 TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesMultiDay) {
   auto start_day_index = CurrentDayIndex();
+  const auto& expected_id =
+      testing::per_device_count::kSettingsChangedMetricReportId;
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Form expected Observations for the 10 days of logging.
   uint32_t num_days = 10;
   std::vector<ExpectedPerDeviceCountObservations> expected_per_device_count_obs(
@@ -2769,43 +2476,34 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesMultiDay) {
       expected_report_participation_obs(num_days);
   for (uint32_t offset = 0; offset < num_days; offset++) {
     expected_report_participation_obs[offset] =
-        MakeExpectedReportParticipationObservations(
-            kPerDeviceCountExpectedParams, start_day_index + offset);
+        MakeExpectedReportParticipationObservations(expected_params,
+                                                    start_day_index + offset);
   }
   expected_per_device_count_obs[0] = {};
-  expected_per_device_count_obs[1][{kSettingsChangedMetricReportId,
-                                    start_day_index + 1}] = {
+  expected_per_device_count_obs[1][{expected_id, start_day_index + 1}] = {
       {7, {{"A", 1u, 3}}}, {30, {{"A", 1u, 3}}}};
-  expected_per_device_count_obs[2][{kSettingsChangedMetricReportId,
-                                    start_day_index + 2}] = {
+  expected_per_device_count_obs[2][{expected_id, start_day_index + 2}] = {
       {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[3][{kSettingsChangedMetricReportId,
-                                    start_day_index + 3}] = {
+  expected_per_device_count_obs[3][{expected_id, start_day_index + 3}] = {
       {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[4][{kSettingsChangedMetricReportId,
-                                    start_day_index + 4}] = {
+  expected_per_device_count_obs[4][{expected_id, start_day_index + 4}] = {
       {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[5][{kSettingsChangedMetricReportId,
-                                    start_day_index + 5}] = {
+  expected_per_device_count_obs[5][{expected_id, start_day_index + 5}] = {
       {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[6][{kSettingsChangedMetricReportId,
-                                    start_day_index + 6}] = {
+  expected_per_device_count_obs[6][{expected_id, start_day_index + 6}] = {
       {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[7][{kSettingsChangedMetricReportId,
-                                    start_day_index + 7}] = {
+  expected_per_device_count_obs[7][{expected_id, start_day_index + 7}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[8][{kSettingsChangedMetricReportId,
-                                    start_day_index + 8}] = {
+  expected_per_device_count_obs[8][{expected_id, start_day_index + 8}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
-  expected_per_device_count_obs[9][{kSettingsChangedMetricReportId,
-                                    start_day_index + 9}] = {
+  expected_per_device_count_obs[9][{expected_id, start_day_index + 9}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
 
@@ -2813,12 +2511,12 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesMultiDay) {
     auto day_index = CurrentDayIndex();
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && offset % event_code == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "A", event_code, 3));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "A",
+                                              event_code, 3));
       }
       if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "B", event_code, 2));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B",
+                                              event_code, 2));
       }
     }
     // Clear the FakeObservationStore.
@@ -2843,6 +2541,10 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesMultiDay) {
 TEST_F(PerDeviceCountEventAggregatorTest,
        CheckObservationValuesMultiDayWithGarbageCollection) {
   auto start_day_index = CurrentDayIndex();
+  const auto& expected_id =
+      testing::per_device_count::kSettingsChangedMetricReportId;
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Form expected Observations for the 10 days of logging.
   uint32_t num_days = 10;
   std::vector<ExpectedPerDeviceCountObservations> expected_per_device_count_obs(
@@ -2851,43 +2553,34 @@ TEST_F(PerDeviceCountEventAggregatorTest,
       expected_report_participation_obs(num_days);
   for (uint32_t offset = 0; offset < num_days; offset++) {
     expected_report_participation_obs[offset] =
-        MakeExpectedReportParticipationObservations(
-            kPerDeviceCountExpectedParams, start_day_index + offset);
+        MakeExpectedReportParticipationObservations(expected_params,
+                                                    start_day_index + offset);
   }
   expected_per_device_count_obs[0] = {};
-  expected_per_device_count_obs[1][{kSettingsChangedMetricReportId,
-                                    start_day_index + 1}] = {
+  expected_per_device_count_obs[1][{expected_id, start_day_index + 1}] = {
       {7, {{"A", 1u, 3}}}, {30, {{"A", 1u, 3}}}};
-  expected_per_device_count_obs[2][{kSettingsChangedMetricReportId,
-                                    start_day_index + 2}] = {
+  expected_per_device_count_obs[2][{expected_id, start_day_index + 2}] = {
       {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[3][{kSettingsChangedMetricReportId,
-                                    start_day_index + 3}] = {
+  expected_per_device_count_obs[3][{expected_id, start_day_index + 3}] = {
       {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[4][{kSettingsChangedMetricReportId,
-                                    start_day_index + 4}] = {
+  expected_per_device_count_obs[4][{expected_id, start_day_index + 4}] = {
       {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[5][{kSettingsChangedMetricReportId,
-                                    start_day_index + 5}] = {
+  expected_per_device_count_obs[5][{expected_id, start_day_index + 5}] = {
       {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[6][{kSettingsChangedMetricReportId,
-                                    start_day_index + 6}] = {
+  expected_per_device_count_obs[6][{expected_id, start_day_index + 6}] = {
       {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[7][{kSettingsChangedMetricReportId,
-                                    start_day_index + 7}] = {
+  expected_per_device_count_obs[7][{expected_id, start_day_index + 7}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[8][{kSettingsChangedMetricReportId,
-                                    start_day_index + 8}] = {
+  expected_per_device_count_obs[8][{expected_id, start_day_index + 8}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
-  expected_per_device_count_obs[9][{kSettingsChangedMetricReportId,
-                                    start_day_index + 9}] = {
+  expected_per_device_count_obs[9][{expected_id, start_day_index + 9}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
 
@@ -2895,12 +2588,12 @@ TEST_F(PerDeviceCountEventAggregatorTest,
     auto day_index = CurrentDayIndex();
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && offset % event_code == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "A", event_code, 3));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "A",
+                                              event_code, 3));
       }
       if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "B", event_code, 2));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B",
+                                              event_code, 2));
       }
     }
     // Advance |mock_clock_| by 1 day.
@@ -2929,6 +2622,10 @@ TEST_F(PerDeviceCountEventAggregatorTest,
 // that test for documentation.
 TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesWithBackfill) {
   auto start_day_index = CurrentDayIndex();
+  const auto& expected_id =
+      testing::per_device_count::kSettingsChangedMetricReportId;
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
@@ -2940,12 +2637,12 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesWithBackfill) {
     ResetObservationStore();
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && (offset % event_code == 0)) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "A", event_code, 3));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "A",
+                                              event_code, 3));
       }
       if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "B", event_code, 2));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B",
+                                              event_code, 2));
       }
     }
     if (offset < 6 || offset == 8) {
@@ -2961,7 +2658,7 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesWithBackfill) {
         for (uint32_t day_index = start_day_index - backfill_days;
              day_index <= start_day_index; day_index++) {
           for (const auto& pair : MakeExpectedReportParticipationObservations(
-                   kPerDeviceCountExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_report_participation_obs.insert(pair);
           }
         }
@@ -2971,86 +2668,78 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesWithBackfill) {
         break;
       }
       case 1: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {{7, {{"A", 1u, 3}}},
-                                                      {30, {{"A", 1u, 3}}}};
+        expected_per_device_count_obs[{expected_id, day_index}] = {
+            {7, {{"A", 1u, 3}}}, {30, {{"A", 1u, 3}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 2: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 3: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 4: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 5: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 8: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 6}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 6}] = {
             {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 7}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 7}] = {
             {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 8}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 8}] = {
             {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
             {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
         for (uint32_t day_index = start_day_index + 6;
              day_index <= start_day_index + 8; day_index++) {
           for (const auto& pair : MakeExpectedReportParticipationObservations(
-                   kPerDeviceCountExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_report_participation_obs.insert(pair);
           }
         }
@@ -3080,6 +2769,10 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesWithBackfill) {
 TEST_F(PerDeviceCountEventAggregatorTest,
        CheckObservationValuesWithBackfillAndGc) {
   auto start_day_index = CurrentDayIndex();
+  const auto& expected_id =
+      testing::per_device_count::kSettingsChangedMetricReportId;
+  const auto& expected_params =
+      testing::per_device_count::kExpectedAggregationParams;
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
@@ -3091,12 +2784,12 @@ TEST_F(PerDeviceCountEventAggregatorTest,
     ResetObservationStore();
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && (offset % event_code == 0)) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "A", event_code, 3));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "A",
+                                              event_code, 3));
       }
       if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(kSettingsChangedMetricReportId,
-                                              day_index, "B", event_code, 2));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B",
+                                              event_code, 2));
       }
     }
     // Advance |mock_clock_| by 1 day.
@@ -3117,7 +2810,7 @@ TEST_F(PerDeviceCountEventAggregatorTest,
         for (uint32_t day_index = start_day_index - backfill_days;
              day_index <= start_day_index; day_index++) {
           for (const auto& pair : MakeExpectedReportParticipationObservations(
-                   kPerDeviceCountExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_report_participation_obs.insert(pair);
           }
         }
@@ -3127,86 +2820,78 @@ TEST_F(PerDeviceCountEventAggregatorTest,
         break;
       }
       case 1: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {{7, {{"A", 1u, 3}}},
-                                                      {30, {{"A", 1u, 3}}}};
+        expected_per_device_count_obs[{expected_id, day_index}] = {
+            {7, {{"A", 1u, 3}}}, {30, {{"A", 1u, 3}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 2: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 3: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 4: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 5: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       day_index}] = {
+        expected_per_device_count_obs[{expected_id, day_index}] = {
             {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
-            MakeExpectedReportParticipationObservations(
-                kPerDeviceCountExpectedParams, day_index);
+            MakeExpectedReportParticipationObservations(expected_params,
+                                                        day_index);
         EXPECT_TRUE(CheckPerDeviceCountObservations(
             expected_per_device_count_obs, expected_report_participation_obs,
             observation_store_.get(), update_recipient_.get()));
         break;
       }
       case 8: {
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 6}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 6}] = {
             {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 7}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 7}] = {
             {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
             {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_count_obs[{kSettingsChangedMetricReportId,
-                                       start_day_index + 8}] = {
+        expected_per_device_count_obs[{expected_id, start_day_index + 8}] = {
             {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
             {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
         for (uint32_t day_index = start_day_index + 6;
              day_index <= start_day_index + 8; day_index++) {
           for (const auto& pair : MakeExpectedReportParticipationObservations(
-                   kPerDeviceCountExpectedParams, day_index)) {
+                   expected_params, day_index)) {
             expected_report_participation_obs.insert(pair);
           }
         }
@@ -3234,8 +2919,10 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalBeforeUTC) {
   // generate Observations and garbage-collect for the previous day index in
   // each of UTC and local time.
   auto start_day_index = CurrentDayIndex();
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index, 0u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index, 0u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index, 0u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index, 0u);
   GenerateObservations(start_day_index - 1, start_day_index - 1);
   GarbageCollect(start_day_index - 1, start_day_index - 1);
   // Form the expected contents of the FakeObservationStore.
@@ -3243,23 +2930,26 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalBeforeUTC) {
   // been generated for that day yet, expect Observations of non-activity for
   // all event codes, for both reports.
   expected_obs[0] = MakeNullExpectedUniqueActivesObservations(
-      kNoiseFreeMixedTimeZoneExpectedParams, start_day_index - 1);
+      testing::mixed_time_zone::kExpectedAggregationParams,
+      start_day_index - 1);
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[0], observation_store_.get(), update_recipient_.get()));
   ResetObservationStore();
   // Advance the day index in UTC, but not in local time, and log 1 event for
   // event code 1 for each of the 2 reports. Generate Observations and
   // garbage-collect for the previous day in each of UTC and local time.
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index, 1u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index + 1, 1u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index, 1u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index + 1, 1u);
   GenerateObservations(start_day_index, start_day_index - 1);
   GarbageCollect(start_day_index, start_day_index - 1);
   // Form the expected contents of the FakeObservationStore. Since
   // Observations have already been generated for the
   // DeviceBoots_UniqueDevices report for |start_day_index - 1|, expect no
   // Observations for that report.
-  expected_obs[1][{kFeaturesActiveMetricReportId, start_day_index}] = {
-      {1, {true, false, false}}};
+  expected_obs[1][{testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                   start_day_index}] = {{1, {true, false, false}}};
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[1], observation_store_.get(), update_recipient_.get()));
   ResetObservationStore();
@@ -3267,16 +2957,18 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalBeforeUTC) {
   // in UTC. Log 1 event for event code 2 for each of the 2 reports, then
   // generate Observations and garbage-collect for the previous day in each of
   // UTC and local time.
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index + 1, 2u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index + 1, 2u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index + 1, 2u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index + 1, 2u);
   GenerateObservations(start_day_index, start_day_index);
   GarbageCollect(start_day_index, start_day_index);
   // Form the expected contents of the FakeObservationStore. Since
   // Observations have already been generated for the
   // FeaturesActive_UniqueDevices report for day |start_day_index|, expect no
   // Observations for that report.
-  expected_obs[2][{kDeviceBootsMetricReportId, start_day_index}] = {
-      {1, {true, true, false}}};
+  expected_obs[2][{testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                   start_day_index}] = {{1, {true, true, false}}};
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[2], observation_store_.get(), update_recipient_.get()));
 }
@@ -3292,8 +2984,10 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
   // generate Observations and garbage-collect for the previous day index in
   // each of UTC and local time.
   auto start_day_index = CurrentDayIndex();
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index, 0u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index, 0u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index, 0u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index, 0u);
   GenerateObservations(start_day_index - 1, start_day_index - 1);
   GarbageCollect(start_day_index - 1, start_day_index - 1);
   // Form the expected contents of the FakeObservationStore.
@@ -3301,23 +2995,26 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
   // been generated for that day yet, expect Observations of non-activity for
   // all event codes, for both reports.
   expected_obs[0] = MakeNullExpectedUniqueActivesObservations(
-      kNoiseFreeMixedTimeZoneExpectedParams, start_day_index - 1);
+      testing::mixed_time_zone::kExpectedAggregationParams,
+      start_day_index - 1);
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[0], observation_store_.get(), update_recipient_.get()));
   ResetObservationStore();
   // Advance the day index in local time, but not in UTC, and log 1 event for
   // event code 1 for each of the 2 reports. Generate Observations and
   // garbage-collect for the previous day in each of UTC and local time.
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index + 1, 1u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index, 1u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index + 1, 1u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index, 1u);
   GenerateObservations(start_day_index - 1, start_day_index);
   GarbageCollect(start_day_index - 1, start_day_index);
   // Form the expected contents of the FakeObservationStore. Since
   // Observations have already been generated for the
   // FeaturesActive_UniqueDevices report for |start_day_index - 1|, expect no
   // Observations for that report.
-  expected_obs[1][{kDeviceBootsMetricReportId, start_day_index}] = {
-      {1, {true, false, false}}};
+  expected_obs[1][{testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                   start_day_index}] = {{1, {true, false, false}}};
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[1], observation_store_.get(), update_recipient_.get()));
   ResetObservationStore();
@@ -3325,16 +3022,18 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
   // local time. Log 1 event for event code 2 for each of the 2 reports, then
   // generate Observations and garbage-collect for the previous day in each of
   // UTC and local time.
-  LogUniqueActivesEvent(kDeviceBootsMetricReportId, start_day_index + 1, 2u);
-  LogUniqueActivesEvent(kFeaturesActiveMetricReportId, start_day_index + 1, 2u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kDeviceBootsMetricReportId,
+                        start_day_index + 1, 2u);
+  LogUniqueActivesEvent(testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                        start_day_index + 1, 2u);
   GenerateObservations(start_day_index, start_day_index);
   GarbageCollect(start_day_index, start_day_index);
   // Form the expected contents of the FakeObservationStore. Since
   // Observations have already been generated for the
   // DeviceBoots_UniqueDevices report for day |start_day_index|, expect no
   // Observations for that report.
-  expected_obs[2][{kFeaturesActiveMetricReportId, start_day_index}] = {
-      {1, {true, true, false}}};
+  expected_obs[2][{testing::mixed_time_zone::kFeaturesActiveMetricReportId,
+                   start_day_index}] = {{1, {true, true, false}}};
   EXPECT_TRUE(CheckUniqueActivesObservations(
       expected_obs[2], observation_store_.get(), update_recipient_.get()));
 }
@@ -3372,13 +3071,15 @@ TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
 // EventAggregator::UpdateAggregationConfigs() on the main thread.
 TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
   event_aggregator_->Start();
-  // Provide the EventAggregator with |kMetricDefinitions|.
-  auto project_context = MakeProjectContext(kMetricDefinitions);
+  // Provide the EventAggregator with the all_report_types registry.
+  auto project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
-  // now equal to the number of locally aggregated reports in
-  // |kMetricDefinitions|.
-  EXPECT_EQ(kExpectedParams.metric_report_ids.size(),
+  // now equal to the number of locally aggregated reports in the
+  // all_report_types registry.
+  EXPECT_EQ(testing::all_report_types::kExpectedAggregationParams
+                .metric_report_ids.size(),
             CopyLocalAggregateStore().by_report_key().size());
 }
 
@@ -3388,14 +3089,24 @@ TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
 TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
   event_aggregator_->Start();
-  // Provide the EventAggregator with |kMetricDefinitions|.
-  auto project_context = MakeProjectContext(kMetricDefinitions);
+  // Provide the EventAggregator with the all_report_types registry.
+  auto project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Log some events.
   LoggedActivity logged_activity;
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(*project_context,
-                                       kErrorsOccurredMetricReportId, day_index,
-                                       1u, &logged_activity));
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                     *project_context,
+                     testing::all_report_types::kDeviceBootsMetricReportId,
+                     day_index, 0u, &logged_activity));
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                     *project_context,
+                     testing::all_report_types::kFeaturesActiveMetricReportId,
+                     day_index, 4u, &logged_activity));
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(
+                     *project_context,
+                     testing::all_report_types::kEventsOccurredMetricReportId,
+                     day_index, 1u, &logged_activity));
   EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
   ShutDownWorkerThread();
   EXPECT_GE(local_aggregate_proto_store_->write_count_, 1);

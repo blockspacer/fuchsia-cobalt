@@ -10,6 +10,8 @@ generate_cobalt_registry_h(
   OUTPUT_FILE "${INTERNAL_METRICS_CONFIG_H}"
 )
 
+add_subdirectory(test_registries)
+
 cobalt_make_protobuf_cpp_lib(local_aggregation_proto_lib
                              LOCAL_AGGREGATION_PROTO_HDRS
                              false
@@ -62,6 +64,12 @@ target_link_libraries(logger
                       config_ids)
 add_cobalt_dependencies(logger)
 
+add_library(testing_constants
+            testing_constants.h)
+target_link_libraries(testing_constants
+	              test_registries)
+set_target_properties(testing_constants PROPERTIES LINKER_LANGUAGE CXX)
+
 add_library(logger_test_utils
             logger_test_utils.cc)
 target_link_libraries(logger_test_utils
@@ -70,15 +78,17 @@ target_link_libraries(logger_test_utils
                       encoder
                       logger
                       local_aggregation_proto_lib
+                      testing_constants
                       posix_file_system
-		      proto_util)
+                      proto_util)
 add_cobalt_dependencies(logger_test_utils)
 
 add_executable(logger_tests
-               encoder_test.cc
-               event_aggregator_test.cc
-               logger_test.cc
-               project_context_test.cc)
+                logger_test.cc
+                encoder_test.cc
+                event_aggregator_test.cc
+                logger_test.cc
+                project_context_test.cc)
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator

@@ -1,0 +1,40 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+##########################################################################
+#  This file contains MetricDefinitions used in Logger tests.
+#  It is compiled into mixed_time_zone_test_registry.h, which is included
+#  in testing_constants.h.
+#
+#  When editing this file, also update testing_constants.h with any
+#  changes to report IDs or to local aggregation parameters.
+##########################################################################
+
+metric_definitions:
+
+- id: 1
+  metric_name: "DeviceBoots"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 2
+  time_zone_policy: LOCAL
+  reports:
+    # Report ID: 131134909
+    - report_name: "DeviceBoots_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: NONE
+      window_size:
+        - 1
+
+- id: 2
+  metric_name: "FeaturesActive"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 2
+  time_zone_policy: UTC
+  reports:
+    # Report ID: 635837989
+    - report_name: "FeaturesActive_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: NONE
+      window_size:
+        - 1

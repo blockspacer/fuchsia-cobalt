@@ -1,0 +1,175 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+##########################################################################
+#  This file contains MetricDefinitions used in Logger tests.
+#  It is compiled into all_report_types_test_registry.h, which is included
+#  in testing_constants.h.
+#
+#  When editing this file, also update testing_constants.h with any
+#  changes to report IDs or to local aggregation parameters.
+##########################################################################
+
+metric_definitions:
+
+- id: 1
+  metric_name: "ErrorOccurred"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 100
+  reports:
+    # Report ID: 3131160301
+    - report_name: "ErrorCountsByCode"
+      report_type: SIMPLE_OCCURRENCE_COUNT
+      local_privacy_noise_level: SMALL
+
+- id: 2
+  metric_name: "ReadCacheHits"
+  metric_type: EVENT_COUNT
+  max_event_code: 111
+  reports:
+    # Report ID: 2845948340
+    - report_name: "ReadCacheHitCounts"
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+
+- id: 3
+  metric_name: "ModuleLoadTime"
+  metric_type: ELAPSED_TIME
+  reports:
+    # Report ID: 643534882
+    - report_name: "ModuleLoadTime_Aggregated"
+      report_type: NUMERIC_AGGREGATION
+    # Report ID: 1259152485
+    - report_name: "ModuleLoadTime_Histogram"
+      report_type: INT_RANGE_HISTOGRAM
+    # Report ID: 916724603
+    - report_name: "ModuleLoadTime_RawDump"
+      report_type: NUMERIC_PERF_RAW_DUMP
+
+- id: 4
+  metric_name: "LoginModuleFrameRate"
+  metric_type: FRAME_RATE
+  reports:
+    # Report ID: 1444372300
+    - report_name: "LoginModuleFrameRate_Aggregated"
+      report_type: NUMERIC_AGGREGATION
+    # Report ID: 81821186
+    - report_name: "LoginModuleFrameRate_Histogram"
+      report_type: INT_RANGE_HISTOGRAM
+    # Report ID: 1067664280
+    - report_name: "LoginModuleFrameRate_RawDump"
+      report_type: NUMERIC_PERF_RAW_DUMP
+
+- id: 5
+  metric_name: "LedgerMemoryUsage"
+  metric_type: MEMORY_USAGE
+  reports:
+    # Report ID: 4291656504
+    - report_name: "LedgerMemoryUsage_Aggregated"
+      report_type: NUMERIC_AGGREGATION
+    # Report ID: 253462951
+    - report_name: "LedgerMemoryUsage_Histogram"
+      report_type: INT_RANGE_HISTOGRAM
+
+- id: 6
+  metric_name: "FileSystemWriteTimes"
+  metric_type: INT_HISTOGRAM
+  int_buckets:
+     linear:
+       floor: 0
+       num_buckets: 10
+       step_size: 1
+  reports:
+    # Report ID: 1534862846
+    - report_name: "FileSystemWriteTimes_Histogram"
+      report_type: INT_RANGE_HISTOGRAM
+
+- id: 7
+  metric_name: "ModuleDownloads"
+  metric_type: STRING_USED
+  reports:
+    # Report ID: 1447128111
+    - report_name: "ModuleDownloads_HeavyHitters"
+      report_type: HIGH_FREQUENCY_STRING_COUNTS
+      local_privacy_noise_level: SMALL
+      expected_population_size: 20000
+      expected_string_set_size: 10000
+    # Report ID: 823581688
+    - report_name: "ModuleDownloads_WithThreshold"
+      report_type: STRING_COUNTS_WITH_THRESHOLD
+      threshold: 200
+
+- id: 8
+  metric_name: "ModuleInstalls"
+  metric_type: CUSTOM
+  reports:
+    # Report ID: 1219786724
+    - report_name: "ModuleInstalls_DetailedData"
+      report_type: CUSTOM_RAW_DUMP
+
+- id: 9
+  metric_name: "DeviceBoots"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 1
+  reports:
+    # Report ID: 131134909
+    - report_name: "DeviceBoots_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: SMALL
+      window_size:
+        - 1
+
+- id: 10
+  metric_name: "FeaturesActive"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 4
+  reports:
+    # Report ID: 635837989
+    - report_name: "FeaturesActive_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: LARGE
+      window_size:
+        - 1
+        - 7
+        - 30
+
+- id: 11
+  metric_name: "EventsOccurred"
+  metric_type: EVENT_OCCURRED
+  max_event_code: 4
+  reports:
+    # Report ID: 1203991176
+    - report_name: "EventsOccurred_GlobalCount"
+      report_type: SIMPLE_OCCURRENCE_COUNT
+      local_privacy_noise_level: SMALL
+    # Report ID: 1444372300
+    - report_name: "EventsOccurred_UniqueDevices"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: MEDIUM
+      window_size:
+        - 1
+        - 7
+
+- id: 12
+  metric_name: "SettingsChanged"
+  metric_type: EVENT_COUNT
+  reports:
+    # Report ID: 2024497361
+    - report_name: "SettingsChanged_PerDeviceCount"
+      report_type: PER_DEVICE_COUNT_STATS
+      window_size:
+        - 7
+        - 30
+
+- id: 13
+  metric_name: "ConnectionFailures"
+  metric_type: EVENT_COUNT
+  reports:
+    # Report ID: 2973951499
+    - report_name: "ConnectionFailures_GlobalCount"
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+    # Report ID: 1059892875
+    - report_name: "ConnectionFailures_PerDeviceCount"
+      report_type: PER_DEVICE_COUNT_STATS
+      window_size:
+        - 1

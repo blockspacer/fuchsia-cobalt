@@ -45,8 +45,7 @@ var (
 	namespace      = flag.String("namespace", "", "When using the 'cpp' or 'rust' output format, this will specify the period-separated namespace within which the config variable must be placed.")
 	depFile        = flag.String("dep_file", "", "Generate a depfile (see gn documentation) that lists all the project configuration files. Requires -output_file and -config_dir.")
 	forClient      = flag.Bool("for_client", false, "Filters out the hide_on_client tagged fields")
-
-	dartOutDir = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
+	dartOutDir     = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
 )
 
 func generateFilename(format string) string {
