@@ -84,7 +84,7 @@ func ReadProjectConfigFromDirByName(rootDir string, customerId uint32, projectNa
 
 // ReadConfigFromYaml reads the configuration for a single project from a single yaml file.
 // See project_config.go for the format.
-func ReadConfigFromYaml(yamlConfigPath string, customerId uint32, projectId uint32) (c ProjectConfig, err error) {
+func ReadConfigFromYaml(yamlConfigPath string, customerId uint32, projectId uint32, version CobaltVersion) (c ProjectConfig, err error) {
 	r, err := newConfigReaderForFile(yamlConfigPath)
 	if err != nil {
 		return c, err
@@ -92,6 +92,7 @@ func ReadConfigFromYaml(yamlConfigPath string, customerId uint32, projectId uint
 
 	c.CustomerId = customerId
 	c.ProjectId = projectId
+	c.CobaltVersion = version
 	if err := ReadProjectConfig(r, &c); err != nil {
 		return c, err
 	}
