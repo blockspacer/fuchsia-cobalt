@@ -423,6 +423,12 @@ message ReportDefinition {
   // specify the path to the location the metrics should be written to.
   string output_location = 12;
 
+  // This field can be used with all Report types. When set, the generated
+  // report will exclude an Observation if there are not at least
+  // |reporting_threshold| number of distinct devices reporting Observations
+  // with the same ObservationMetadata.
+  uint32 reporting_threshold = 13;
+
   ///////////////////  Fields used by all metric types ///////////////////
 
   // The list of SystemProfileFields to include in each row of the report.
