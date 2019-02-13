@@ -54,17 +54,24 @@ void Cpuid(int info_type, int cpu_info[4]) {
 
 // Invokes Cpuid() to determine the board_name.
 void PopulateBoardName(SystemProfile* profile) {
-  // First we invoke Cpuid with info_type = 0 in order to obtain num_ids
-  // and vendor_name.
-  int cpu_info[4] = {-1};
-  Cpuid(0, cpu_info);
-  int num_ids = cpu_info[0];
+  // "": means that the calling system has no idea.
+  // "pc": is the current placeholder value that fuchsia reports for x86
+  //       devices, so we think we can do better.
+  // Anything else is considered to be "better" than just raw Cpuid or a lookup
+  // table.
+  if (profile->board_name() == "" || profile->board_name() == "pc") {
+    // First we invoke Cpuid with info_type = 0 in order to obtain num_ids
+    // and vendor_name.
+    int cpu_info[4] = {-1};
+    Cpuid(0, cpu_info);
+    int num_ids = cpu_info[0];
 
-  if (num_ids > 0) {
-    // Then invoke Cpuid again with info_type = 1 in order to obtain
-    // |signature|.
-    Cpuid(1, cpu_info);
-    profile->set_board_name(getBoardName(cpu_info[0]));
+    if (num_ids > 0) {
+      // Then invoke Cpuid again with info_type = 1 in order to obtain
+      // |signature|.
+      Cpuid(1, cpu_info);
+      profile->set_board_name(getBoardName(cpu_info[0]));
+    }
   }
 }
 
