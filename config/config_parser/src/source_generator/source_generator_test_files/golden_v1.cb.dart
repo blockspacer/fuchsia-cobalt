@@ -21,7 +21,7 @@ const int TheOtherMetricNameEventCode_AnEvent = TheOtherMetricNameEventCode::AnE
 const int TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode::AnotherEvent;
 const int TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
-// Enum for event groups (MetricDimensionThe First Group)
+// Enum for event groups (Metric Dimension The First Group)
 class EventGroupsMetricDimensionTheFirstGroup {
   static const int AnEvent = 0;
   static const int AnotherEvent = 1;
@@ -31,7 +31,7 @@ const int EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDim
 const int EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const int EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
 
-// Enum for event groups (MetricDimensionA second group)
+// Enum for event groups (Metric Dimension A second group)
 class EventGroupsMetricDimensionASecondGroup {
   static const int This = 1;
   static const int Is = 2;
@@ -43,5 +43,15 @@ const int EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimension
 const int EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
 const int EventGroupsMetricDimensionASecondGroup_Test = EventGroupsMetricDimensionASecondGroup::Test;
 
+// Enum for event groups (Metric Dimension 2)
+class EventGroupsMetricDimension2 {
+  static const int ThisMetric = 0;
+  static const int HasNo = 2;
+  static const int Name = 4;
+}
+const int EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
+const int EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
+const int EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const String config = 'KsUDCghjdXN0b21lchAKGrYDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0GsYBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0';
+const String config = 'Ku0DCghjdXN0b21lchAKGt4DCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0Gu4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggElEg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZQ==';

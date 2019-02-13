@@ -15,14 +15,14 @@ pub enum TheOtherMetricNameEventCode {
   AThirdEvent = 2,
 }
 
-// Enum for event groups (MetricDimensionThe First Group)
+// Enum for event groups (Metric Dimension The First Group)
 pub enum EventGroupsMetricDimensionTheFirstGroup {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 }
 
-// Enum for event groups (MetricDimensionA second group)
+// Enum for event groups (Metric Dimension A second group)
 pub enum EventGroupsMetricDimensionASecondGroup {
   This = 1,
   Is = 2,
@@ -30,5 +30,12 @@ pub enum EventGroupsMetricDimensionASecondGroup {
   Test = 4,
 }
 
+// Enum for event groups (Metric Dimension 2)
+pub enum EventGroupsMetricDimension2 {
+  ThisMetric = 0,
+  HasNo = 2,
+  Name = 4,
+}
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-pub const CONFIG: &str = "KsUDCghjdXN0b21lchAKGrYDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0GsYBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0";
+pub const CONFIG: &str = "Ku0DCghjdXN0b21lchAKGt4DCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqAAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBMgsIABIHQW5FdmVudDIQCAESDEFub3RoZXJFdmVudDIRCAISDUEgdGhpcmQgZXZlbnQ4yAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0Gu4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggElEg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZQ==";

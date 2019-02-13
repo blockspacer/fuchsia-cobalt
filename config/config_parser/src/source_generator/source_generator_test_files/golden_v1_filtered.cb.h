@@ -23,7 +23,7 @@ const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnEvent = TheOther
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AnotherEvent = TheOtherMetricNameEventCode::AnotherEvent;
 const TheOtherMetricNameEventCode TheOtherMetricNameEventCode_AThirdEvent = TheOtherMetricNameEventCode::AThirdEvent;
 
-// Enum for event groups (MetricDimensionThe First Group)
+// Enum for event groups (Metric Dimension The First Group)
 namespace event_groups_metric_dimension_the_first_group_scope {
 enum Enum {
   AnEvent = 0,
@@ -36,7 +36,7 @@ const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirst
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
 
-// Enum for event groups (MetricDimensionA second group)
+// Enum for event groups (Metric Dimension A second group)
 namespace event_groups_metric_dimension_a_second_group_scope {
 enum Enum {
   This = 1,
@@ -51,5 +51,18 @@ const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGr
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Test = EventGroupsMetricDimensionASecondGroup::Test;
 
+// Enum for event groups (Metric Dimension 2)
+namespace event_groups_metric_dimension_2_scope {
+enum Enum {
+  ThisMetric = 0,
+  HasNo = 2,
+  Name = 4,
+};
+}  // event_groups_metric_dimension_2_scope
+typedef event_groups_metric_dimension_2_scope::Enum EventGroupsMetricDimension2;
+const EventGroupsMetricDimension2 EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
+const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
+const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const char kConfig[] = "Kv0BCghjdXN0b21lchAKGu4BCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpYCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cA==";
+const char kConfig[] = "KoACCghjdXN0b21lchAKGvEBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpbCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cIIBAA==";

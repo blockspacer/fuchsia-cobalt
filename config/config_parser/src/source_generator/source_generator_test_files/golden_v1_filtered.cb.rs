@@ -15,14 +15,14 @@ pub enum TheOtherMetricNameEventCode {
   AThirdEvent = 2,
 }
 
-// Enum for event groups (MetricDimensionThe First Group)
+// Enum for event groups (Metric Dimension The First Group)
 pub enum EventGroupsMetricDimensionTheFirstGroup {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 }
 
-// Enum for event groups (MetricDimensionA second group)
+// Enum for event groups (Metric Dimension A second group)
 pub enum EventGroupsMetricDimensionASecondGroup {
   This = 1,
   Is = 2,
@@ -30,5 +30,12 @@ pub enum EventGroupsMetricDimensionASecondGroup {
   Test = 4,
 }
 
+// Enum for event groups (Metric Dimension 2)
+pub enum EventGroupsMetricDimension2 {
+  ThisMetric = 0,
+  HasNo = 2,
+  Name = 4,
+}
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-pub const CONFIG: &str = "Kv0BCghjdXN0b21lchAKGu4BCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpYCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cA==";
+pub const CONFIG: &str = "KoACCghjdXN0b21lchAKGvEBCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGjsKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoATjIAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYBxpbCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCARMKD1RoZSBGaXJzdCBHcm91cBgCggEQCg5BIHNlY29uZCBncm91cIIBAA==";

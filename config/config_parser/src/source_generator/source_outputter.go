@@ -189,9 +189,9 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 				for value, name := range md.EventCodes {
 					events[value] = name
 				}
-				varname := "MetricDimension" + strconv.Itoa(i)
+				varname := "Metric Dimension " + strconv.Itoa(i)
 				if md.Dimension != "" {
-					varname = "MetricDimension" + md.Dimension
+					varname = "Metric Dimension " + md.Dimension
 				}
 				so.writeEnum(metric.MetricName, varname, events)
 			}

@@ -150,6 +150,10 @@ metric_definitions:
         2: Is
         3: another
         4: Test
+    - event_codes:
+        0: ThisMetric
+        2: HasNo
+        4: Name
   reports:
   - report_name: the_report
     report_type: NUMERIC_PERF_RAW_DUMP
