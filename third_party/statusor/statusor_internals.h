@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_COMPILER_XLA_STATUSOR_INTERNALS_H_
-#define TENSORFLOW_COMPILER_XLA_STATUSOR_INTERNALS_H_
+#ifndef THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_
+#define THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_
 
 #include <utility>
 
 #include "util/status.h"
 
-namespace tensorflow_statusor {
+namespace statusor {
 namespace internal_statusor {
 
 using cobalt::util::Status;
@@ -243,6 +243,6 @@ struct TraitsBase<false, false> {
 };
 
 }  // namespace internal_statusor
-}  // namespace tensorflow_statusor
+}  // namespace statusor
 
-#endif  // TENSORFLOW_COMPILER_XLA_STATUSOR_INTERNALS_H_
+#endif  // THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_

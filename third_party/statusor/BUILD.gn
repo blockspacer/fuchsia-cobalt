@@ -2,15 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# TODO(azani): Delete after tensorflow_statusor is deleted.
 static_library("statusor") {
   sources = [
+    "status_macros.cc",
+    "status_macros.h",
+    "statusor.cc",
     "statusor.h",
+    "statusor_internals.h",
   ]
 
   public_configs = [ "//third_party/cobalt:cobalt_config" ]
 
   public_deps = [
-    "//third_party/cobalt/third_party/statusor:statusor",
+    "//third_party/cobalt/util:status",
+    "//third_party/glog:glog",
+    "//third_party/protobuf:protobuf_lite",
   ]
 }

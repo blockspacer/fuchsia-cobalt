@@ -11,7 +11,7 @@ static_library("validator") {
 
   public_deps = [
     "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/third_party/tensorflow_statusor:statusor",
+    "//third_party/cobalt/third_party/statusor:statusor",
   ]
 }
 

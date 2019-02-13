@@ -91,7 +91,7 @@ add_library(clearcut
             uploader.cc)
 target_link_libraries(clearcut
                       absl::strings clearcut_proto_lib
-                      tensorflow_statusor status)
+                      statusor status)
 
 
 add_executable(clearcut_tests

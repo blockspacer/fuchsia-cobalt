@@ -10,7 +10,7 @@
 #include <iostream>
 #include <utility>
 
-#include "third_party/tensorflow_statusor/status_macros.h"
+#include "third_party/statusor/status_macros.h"
 
 namespace cobalt {
 namespace util {

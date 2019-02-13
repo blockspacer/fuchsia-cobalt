@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "third_party/tensorflow_statusor/status_macros.h"
+#include "third_party/statusor/status_macros.h"
 #include "util/status.h"
 
 #include <google/protobuf/stubs/strutil.h>
@@ -21,7 +21,7 @@ limitations under the License.
 
 #include "glog/logging.h"
 
-namespace tensorflow_statusor {
+namespace statusor {
 namespace status_macros {
 
 using cobalt::util::Status;
@@ -164,4 +164,4 @@ void MakeErrorStream::Impl::CheckNotDone() const {
 }
 
 }  // namespace status_macros
-}  // namespace tensorflow_statusor
+}  // namespace statusor

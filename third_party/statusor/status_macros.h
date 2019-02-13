@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_COMPILER_XLA_STATUS_MACROS_H_
-#define TENSORFLOW_COMPILER_XLA_STATUS_MACROS_H_
+#ifndef THIRD_PARTY_STATUSOR_STATUS_MACROS_H_
+#define THIRD_PARTY_STATUSOR_STATUS_MACROS_H_
 
 #include <memory>
 #include <ostream>  // NOLINT
@@ -23,9 +23,9 @@ limitations under the License.
 #include <utility>
 #include <vector>
 
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 
-namespace tensorflow_statusor {
+namespace statusor {
 namespace status_macros {
 
 using cobalt::util::Status;
@@ -169,7 +169,7 @@ class StatusAdaptorForMacros {
 };
 
 }  // namespace status_macros
-}  // namespace tensorflow_statusor
+}  // namespace statusor
 
 #define CB_RET_CHECK(condition)                                            \
   while (!(condition))                                                     \
@@ -202,4 +202,4 @@ class StatusAdaptorForMacros {
   }                                                    \
   lhs = std::move(statusor.ValueOrDie())
 
-#endif  // TENSORFLOW_COMPILER_XLA_STATUS_MACROS_H_
+#endif  // THIRD_PARTY_STATUSOR_STATUS_MACROS_H_

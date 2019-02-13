@@ -12,7 +12,7 @@
 #include <string>
 
 #include "third_party/clearcut/http_client.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 #include "util/status.h"
 
 namespace cobalt {
@@ -20,7 +20,7 @@ namespace util {
 namespace clearcut {
 
 using ::clearcut::HTTPResponse;
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 using util::Status;
 
 // CurlHandle wraps around a CURL * to make it easier to interact with curl.

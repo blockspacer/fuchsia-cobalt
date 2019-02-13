@@ -11,7 +11,7 @@
 namespace cobalt {
 namespace logger {
 
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 using util::StatusCode;
 
 std::string MetricDebugString(const MetricDefinition& metric) {

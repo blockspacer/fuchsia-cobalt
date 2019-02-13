@@ -43,7 +43,7 @@ EncryptedMessageMaker::EncryptedMessageMaker(
   }
 }
 
-tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::Make(const std::string& public_key_pem,
                             EncryptedMessage::EncryptionScheme scheme) {
   if (scheme == EncryptedMessage::NONE) {
@@ -54,7 +54,7 @@ EncryptedMessageMaker::Make(const std::string& public_key_pem,
   return std::make_unique<EncryptedMessageMaker>(public_key_pem, scheme);
 }
 
-tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeAllowUnencrypted(
     const std::string& public_key_pem,
     EncryptedMessage::EncryptionScheme scheme) {

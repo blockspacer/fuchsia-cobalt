@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "config/validation/valid_cobalt_config.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 
 namespace cobalt {
 namespace config {

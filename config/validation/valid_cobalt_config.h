@@ -8,13 +8,13 @@
 #include <memory>
 
 #include "config/cobalt_registry.pb.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 
 namespace cobalt {
 namespace config {
 namespace validation {
 
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 
 // This represents a validated CobaltRegistry object. If the StatusOr returned
 // from GetValidCobaltRegistry is a ValidCobaltRegistry then the provided

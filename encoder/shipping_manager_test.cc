@@ -33,7 +33,7 @@ using cobalt::clearcut_extensions::LogEventExtension;
 using config::ClientConfig;
 using send_retryer::CancelHandle;
 using send_retryer::SendRetryer;
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 using util::EncryptedMessageMaker;
 
 namespace {

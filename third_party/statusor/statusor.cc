@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 #include "glog/logging.h"
 #include "util/status.h"
 
-namespace tensorflow_statusor {
+namespace statusor {
 namespace internal_statusor {
 
 void Helper::HandleInvalidStatusCtorArg(Status* status) {
@@ -34,4 +34,4 @@ void Helper::Crash(const Status& status) {
 }
 
 }  // namespace internal_statusor
-}  // namespace tensorflow_statusor
+}  // namespace statusor

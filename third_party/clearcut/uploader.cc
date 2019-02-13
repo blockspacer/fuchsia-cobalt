@@ -8,7 +8,7 @@
 #include "glog/logging.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/clearcut/uploader.h"
-#include "third_party/tensorflow_statusor/status_macros.h"
+#include "third_party/statusor/status_macros.h"
 #include "unistd.h"
 
 namespace clearcut {

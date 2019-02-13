@@ -14,7 +14,7 @@
 namespace cobalt {
 namespace util {
 
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 using util::Status;
 using util::StatusCode;
 

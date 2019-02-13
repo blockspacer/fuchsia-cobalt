@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 
 namespace cobalt {
 namespace util {
@@ -33,7 +33,7 @@ class FileSystem {
   //
   // Note: On unix like systems, the directories "." and ".." should not be
   // returned.
-  virtual tensorflow_statusor::StatusOr<std::vector<std::string>> ListFiles(
+  virtual statusor::StatusOr<std::vector<std::string>> ListFiles(
       const std::string &directory) = 0;
 
   // Delete deletes a file or an empty directory.
@@ -50,7 +50,7 @@ class FileSystem {
   // Returns: A StatusOr containing the size of the file in bytes. An OK
   // status indicates that the FileSize operation succeeded, even if the
   // size_t is 0.
-  virtual tensorflow_statusor::StatusOr<size_t> FileSize(
+  virtual statusor::StatusOr<size_t> FileSize(
       const std::string &file) = 0;
 
   // FileExists returns true if the |file| exists.

@@ -8,13 +8,13 @@
 #include <future>
 #include <map>
 
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 #include "util/status.h"
 
 namespace clearcut {
 
 using cobalt::util::Status;
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 
 // HTTPResponse contains the response from the server.
 //

@@ -17,10 +17,10 @@ namespace util {
 class PosixFileSystem : public FileSystem {
  public:
   bool MakeDirectory(const std::string &directory) override;
-  tensorflow_statusor::StatusOr<std::vector<std::string>> ListFiles(
+  statusor::StatusOr<std::vector<std::string>> ListFiles(
       const std::string &directory) override;
   bool Delete(const std::string &file) override;
-  tensorflow_statusor::StatusOr<size_t> FileSize(
+  statusor::StatusOr<size_t> FileSize(
       const std::string &file) override;
   bool FileExists(const std::string &file) override;
   bool Rename(const std::string &from, const std::string &to) override;

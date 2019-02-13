@@ -735,6 +735,6 @@ add_compile_options(-Wno-sign-compare
 
 # Third-party directories that we include using the simpler add_subdirectory method
 add_subdirectory(third_party/abseil-cpp)
-add_subdirectory(third_party/tensorflow_statusor)
+add_subdirectory(third_party/statusor)
 add_subdirectory(third_party/rapidjson)
 add_subdirectory(third_party/tink)

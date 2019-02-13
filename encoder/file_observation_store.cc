@@ -14,7 +14,7 @@
 namespace cobalt {
 namespace encoder {
 
-using tensorflow_statusor::StatusOr;
+using statusor::StatusOr;
 using util::FileSystem;
 using util::Status;
 using util::StatusCode;

@@ -17,7 +17,7 @@
 #include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 #include "util/file_system.h"
 #include "util/protected_fields.h"
 
@@ -136,7 +136,7 @@ class FileObservationStore : public ObservationStore {
 
   // GetOldestFinalizedFile returns a file name for the oldest file in the
   // store.
-  tensorflow_statusor::StatusOr<std::string> GetOldestFinalizedFile(
+  statusor::StatusOr<std::string> GetOldestFinalizedFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
   // GenerateFinalizedName returns an absolute path that can be used for

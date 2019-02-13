@@ -14,7 +14,7 @@
 #include "config/project.pb.h"
 #include "config/project_configs.h"
 #include "logger/status.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 
 namespace cobalt {
 namespace logger {
@@ -64,7 +64,7 @@ class ProjectContext {
   //
   // If either the customer or the project are not found in the supplied
   // ProjectConfigs, then this will return an INVALID_ARGUMENT error.
-  static tensorflow_statusor::StatusOr<std::unique_ptr<ProjectContext>>
+  static statusor::StatusOr<std::unique_ptr<ProjectContext>>
   ConstructWithProjectConfigs(
       const std::string& customer_name, const std::string& project_name,
       std::shared_ptr<config::ProjectConfigs> project_configs,

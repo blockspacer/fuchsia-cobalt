@@ -29,7 +29,7 @@
 
 #include "./encrypted_message.pb.h"
 #include "google/protobuf/message_lite.h"
-#include "third_party/tensorflow_statusor/statusor.h"
+#include "third_party/statusor/statusor.h"
 #include "util/crypto_util/cipher.h"
 
 namespace cobalt {
@@ -57,7 +57,7 @@ class EncryptedMessageMaker {
   // |public_key_pem| must be appropriate to |scheme|. If |scheme| is
   // EncryptedMessage::HYBRID_ECDH_V1 then |public_key_pem| must be a PEM
   // encoding of a public key appropriate for that scheme.
-  static tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
   Make(const std::string& public_key_pem,
        EncryptedMessage::EncryptionScheme scheme);
 
@@ -77,7 +77,7 @@ class EncryptedMessageMaker {
   // EncryptedMessage::NONE then |public_key_pem| is ignored. If |scheme| is
   // EncryptedMessage::HYBRID_ECDH_V1 then |public_key_pem| must be a PEM
   // encoding of a public key appropriate for that scheme.
-  static tensorflow_statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
   MakeAllowUnencrypted(const std::string& public_key_pem,
                        EncryptedMessage::EncryptionScheme scheme);
 

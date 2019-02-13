@@ -14,7 +14,7 @@ add_library(encrypted_message_util
 target_link_libraries(encrypted_message_util
                       cobalt_crypto
                       status
-                      tensorflow_statusor)
+                      statusor)
 add_cobalt_dependencies(encrypted_message_util)
 
 add_library(pem_util
@@ -57,7 +57,7 @@ add_library(posix_file_system
             posix_file_system.cc)
 target_link_libraries(posix_file_system
                       status
-                      tensorflow_statusor)
+                      statusor)
 add_cobalt_dependencies(posix_file_system)
 
 cobalt_make_protobuf_cpp_lib(consistent_proto_store_test_proto

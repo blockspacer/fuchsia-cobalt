@@ -21,7 +21,7 @@ add_library(project_context
 target_link_libraries(project_context
                       local_aggregation_proto_lib)
 add_cobalt_dependencies(project_context)
-target_link_libraries(project_context project_configs tensorflow_statusor)
+target_link_libraries(project_context project_configs statusor)
 
 add_library(observation_writer
             observation_writer.cc)

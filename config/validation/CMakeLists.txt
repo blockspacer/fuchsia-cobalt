@@ -6,7 +6,7 @@
 # across cobalt.
 add_library(validator valid_cobalt_config.cc)
 add_cobalt_dependencies(validator)
-target_link_libraries(validator tensorflow_statusor)
+target_link_libraries(validator statusor)
 
 add_executable(validate validate_main.cc)
 target_link_libraries(validate validator)
