@@ -17,7 +17,7 @@ FROM cobalt-common
 # If this fails, look for troubleshooting information in the instructions
 # for executing cobaltb.py deploy build.
 RUN apt-get update
-RUN apt-get install -y git=1:2.11.0-3+deb9u3
+RUN apt-get install -y git
 
 COPY analyzer_report_master /usr/local/bin/
 
