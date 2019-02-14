@@ -310,7 +310,13 @@ grpc::Status ReportGenerator::GenerateHistogramReport(
 
     // Iterate through the received batch.
     for (auto& query_result : query_response.results) {
-      CHECK_EQ(1, query_result.observation.parts_size());
+      if (query_result.observation.parts_size() != 1) {
+        LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReportGeneratorFailure)
+            << "ReportGenerator::GenerateHistogramReport: num parts="
+            << query_result.observation.parts_size()
+            << " for report_id=" << ReportStore::ToString(report_id);
+        continue;
+      }
       const auto& observation_part =
           query_result.observation.parts().at(parts[0]);
       // Process each ObservationPart using the HistogramAnalysisEngine.
