@@ -502,10 +502,14 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   }
   std::unique_ptr<SystemDataInterface> system_data(new SystemData("test_app"));
 
-  auto observation_encrypter = std::make_unique<EncryptedMessageMaker>(
-      analyzer_public_key_pem, analyzer_encryption_scheme);
-  auto envelope_encrypter = std::make_unique<EncryptedMessageMaker>(
-      shuffler_public_key_pem, shuffler_encryption_scheme);
+  auto observation_encrypter =
+      EncryptedMessageMaker::MakeAllowUnencrypted(analyzer_public_key_pem,
+                                                  analyzer_encryption_scheme)
+          .ValueOrDie();
+  auto envelope_encrypter =
+      EncryptedMessageMaker::MakeAllowUnencrypted(shuffler_public_key_pem,
+                                                  shuffler_encryption_scheme)
+          .ValueOrDie();
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
   auto local_aggregate_proto_store = std::make_unique<ConsistentProtoStore>(

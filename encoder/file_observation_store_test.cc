@@ -66,7 +66,7 @@ std::shared_ptr<ProjectContext> GetTestProject() {
 class FileObservationStoreTest : public ::testing::Test {
  public:
   FileObservationStoreTest()
-      : encrypt_to_analyzer_("", EncryptedMessage::NONE),
+      : encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
         test_dir_name_(GetTestDirName(test_dir_base)),
         project_(GetTestProject()),
         encoder_(project_, ClientSecret::GenerateNewSecret(), &system_data_) {
@@ -88,13 +88,13 @@ class FileObservationStoreTest : public ::testing::Test {
         metric_id, kNoOpEncodingId,
         std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
     auto message = std::make_unique<EncryptedMessage>();
-    encrypt_to_analyzer_.Encrypt(*result.observation, message.get());
+    encrypt_to_analyzer_->Encrypt(*result.observation, message.get());
     return store_->AddEncryptedObservation(std::move(message),
                                            std::move(result.metadata));
   }
 
  private:
-  EncryptedMessageMaker encrypt_to_analyzer_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
 
  protected:
   std::string test_dir_name_;

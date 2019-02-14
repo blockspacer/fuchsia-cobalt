@@ -33,9 +33,6 @@ namespace {
 static const uint32_t kCustomerId = 1;
 static const uint32_t kProjectId = 1;
 
-static const char* kAnalyzerPublicKey = "analyzer-public-key";
-static const char* kShufflerPublicKey = "shuffler-public-key";
-
 // This unix timestamp corresponds to Friday Dec 2, 2016 in UTC
 // and Thursday Dec 1, 2016 in Pacific time.
 const time_t kSomeTimestamp = 1480647356;
@@ -65,8 +62,8 @@ std::shared_ptr<ProjectContext> GetTestProject() {
 class EnvelopeMakerTest : public ::testing::Test {
  public:
   EnvelopeMakerTest()
-      : encrypt_to_shuffler_(kShufflerPublicKey, EncryptedMessage::NONE),
-        encrypt_to_analyzer_(kAnalyzerPublicKey, EncryptedMessage::NONE),
+      : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
+        encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
         envelope_maker_(new EnvelopeMaker()),
         project_(GetTestProject()),
         encoder_(project_, ClientSecret::GenerateNewSecret(),
@@ -108,7 +105,7 @@ class EnvelopeMakerTest : public ::testing::Test {
     // Add the Observation to the EnvelopeMaker
     size_t size_before_add = envelope_maker_->Size();
     auto encrypted_message = std::make_unique<EncryptedMessage>();
-    ASSERT_TRUE(encrypt_to_analyzer_.Encrypt(*result.observation,
+    ASSERT_TRUE(encrypt_to_analyzer_->Encrypt(*result.observation,
                                              encrypted_message.get()));
     ASSERT_EQ(expected_status,
               envelope_maker_->AddEncryptedObservation(
@@ -255,7 +252,7 @@ class EnvelopeMakerTest : public ::testing::Test {
 
     // Make the encrypted Envelope.
     EncryptedMessage encrypted_message;
-    EXPECT_TRUE(encrypt_to_shuffler_.Encrypt(envelope_maker_->GetEnvelope(),
+    EXPECT_TRUE(encrypt_to_shuffler_->Encrypt(envelope_maker_->GetEnvelope(),
                                              &encrypted_message));
 
     // Decrypt encrypted_message. (No actual decryption is involved since
@@ -274,8 +271,8 @@ class EnvelopeMakerTest : public ::testing::Test {
   }
 
  protected:
-  EncryptedMessageMaker encrypt_to_shuffler_;
-  EncryptedMessageMaker encrypt_to_analyzer_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
   FakeSystemData fake_system_data_;
   std::unique_ptr<EnvelopeMaker> envelope_maker_;
   std::shared_ptr<ProjectContext> project_;

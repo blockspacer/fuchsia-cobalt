@@ -1,19 +1,10 @@
-// Copyright 2017 The Fuchsia Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "util/encrypted_message_util.h"
 
+#include <utility>
 #include <vector>
 
 #include "./encrypted_message.pb.h"
@@ -29,39 +20,59 @@ namespace util {
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::HybridCipher;
 
-EncryptedMessageMaker::EncryptedMessageMaker(
-    const std::string& public_key_pem,
-    EncryptedMessage::EncryptionScheme scheme)
-    : cipher_(new HybridCipher()), encryption_scheme_(scheme) {
-  if (!cipher_->set_public_key_pem(public_key_pem)) {
-    cipher_.reset();
-    return;
-  }
-  if (encryption_scheme_ == EncryptedMessage::NONE) {
-    VLOG(5) << "WARNING: encryption_scheme is NONE. Cobalt data will not be "
-               "encrypted!";
-  }
-}
-
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::Make(const std::string& public_key_pem,
                             EncryptedMessage::EncryptionScheme scheme) {
-  if (scheme == EncryptedMessage::NONE) {
-    return Status(INVALID_ARGUMENT,
-                  "EncryptedMessageMaker: encryption_scheme NONE is not "
-                  "allowed in production.");
+  switch (scheme) {
+    case EncryptedMessage::NONE:
+      return Status(INVALID_ARGUMENT,
+                    "EncryptedMessageMaker: encryption_scheme NONE is not "
+                    "allowed in production.");
+    case EncryptedMessage::HYBRID_ECDH_V1:
+      return EncryptedMessageMaker::MakeHybridEcdh(public_key_pem);
+    case EncryptedMessage::HYBRID_TINK:
+      return Status(UNIMPLEMENTED,
+                    "HYBRID_TINK EncryptionScheme not implemented yet.");
+    default:
+      return Status(INVALID_ARGUMENT,
+                    "EncryptedMessageMaker: Unknown encryption_scheme.");
   }
-  return std::make_unique<EncryptedMessageMaker>(public_key_pem, scheme);
 }
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeAllowUnencrypted(
     const std::string& public_key_pem,
     EncryptedMessage::EncryptionScheme scheme) {
-  return std::make_unique<EncryptedMessageMaker>(public_key_pem, scheme);
+  if (scheme == EncryptedMessage::NONE) {
+    return EncryptedMessageMaker::MakeUnencrypted();
+  }
+  return EncryptedMessageMaker::Make(public_key_pem, scheme);
 }
 
-bool EncryptedMessageMaker::Encrypt(
+std::unique_ptr<EncryptedMessageMaker>
+EncryptedMessageMaker::MakeUnencrypted() {
+  VLOG(5) << "WARNING: encryption_scheme is NONE. Cobalt data will not be "
+             "encrypted!";
+  return std::make_unique<UnencryptedMessageMaker>();
+}
+
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeHybridEcdh(const std::string& public_key_pem) {
+  auto cipher = std::make_unique<HybridCipher>();
+  if (!cipher->set_public_key_pem(public_key_pem)) {
+    // TODO(azani): Return an error here.
+    cipher.reset();
+  }
+  std::unique_ptr<EncryptedMessageMaker> maker(
+      new HybridEcdhEncryptedMessageMaker(std::move(cipher)));
+  return maker;
+}
+
+HybridEcdhEncryptedMessageMaker::HybridEcdhEncryptedMessageMaker(
+    std::unique_ptr<HybridCipher> cipher)
+    : cipher_(std::move(cipher)) {}
+
+bool HybridEcdhEncryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
     EncryptedMessage* encrypted_message) const {
   if (!encrypted_message) {
@@ -70,19 +81,6 @@ bool EncryptedMessageMaker::Encrypt(
 
   std::string serialized_message;
   message.SerializeToString(&serialized_message);
-
-  if (encryption_scheme_ == EncryptedMessage::NONE) {
-    encrypted_message->set_scheme(EncryptedMessage::NONE);
-    encrypted_message->set_ciphertext(serialized_message);
-    VLOG(5) << "EncryptedMessage: encryption_scheme=NONE.";
-    return true;
-  }
-
-  if (encryption_scheme_ != EncryptedMessage::HYBRID_ECDH_V1) {
-    // HYBRID_ECDH_V1 is the only other scheme we know about.
-    VLOG(5) << "EncryptedMessage: encryption_scheme != HYBRID_ECDH_V1.";
-    return false;
-  }
 
   VLOG(5) << "EncryptedMessage: encryption_scheme=HYBRID_ECDH_V1.";
 
@@ -104,6 +102,20 @@ bool EncryptedMessageMaker::Encrypt(
   }
   encrypted_message->set_allocated_public_key_fingerprint(
       new std::string((const char*)fingerprint, sizeof(fingerprint)));
+  return true;
+}
+
+bool UnencryptedMessageMaker::Encrypt(
+    const google::protobuf::MessageLite& message,
+    EncryptedMessage* encrypted_message) const {
+  if (!encrypted_message) {
+    return false;
+  }
+  std::string serialized_message;
+  message.SerializeToString(&serialized_message);
+  encrypted_message->set_scheme(EncryptedMessage::NONE);
+  encrypted_message->set_ciphertext(serialized_message);
+  VLOG(5) << "EncryptedMessage: encryption_scheme=NONE.";
   return true;
 }
 

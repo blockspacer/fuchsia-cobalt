@@ -100,8 +100,8 @@ TEST_F(AnalyzerServiceTest, TestGRPC) {
   // Write the Observation into an EncryptedMessage and add it to the batch.
   EncryptedMessage* encrypted_observation =
       observation_batch.add_encrypted_observation();
-  util::EncryptedMessageMaker maker("", EncryptedMessage::NONE);
-  maker.Encrypt(observation, encrypted_observation);
+  auto maker = util::EncryptedMessageMaker::MakeUnencrypted();
+  maker->Encrypt(observation, encrypted_observation);
 
   // Execute the RPC
   Empty resp;

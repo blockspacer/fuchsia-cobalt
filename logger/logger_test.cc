@@ -458,8 +458,7 @@ class LoggerTest : public ::testing::Test {
                                               std::move(metric_definitions)));
     observation_store_.reset(new FakeObservationStore);
     update_recipient_.reset(new TestUpdateRecipient);
-    observation_encrypter_.reset(
-        new EncryptedMessageMaker("", EncryptedMessage::NONE));
+    observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
     observation_writer_.reset(
         new ObservationWriter(observation_store_.get(), update_recipient_.get(),
                               observation_encrypter_.get()));

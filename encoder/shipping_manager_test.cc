@@ -160,8 +160,8 @@ class FakeHTTPClient : public clearcut::HTTPClient {
 class ShippingManagerTest : public ::testing::Test {
  public:
   ShippingManagerTest()
-      : encrypt_to_shuffler_("", EncryptedMessage::NONE),
-        encrypt_to_analyzer_("", EncryptedMessage::NONE),
+      : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
+        encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
         observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope,
                            kMaxBytesTotal),
         project_(GetTestProject()),
@@ -177,13 +177,13 @@ class ShippingManagerTest : public ::testing::Test {
         kInitialRpcDeadline, kDeadlinePerSendAttempt);
     if (metric_id == kDefaultMetricId) {
       shipping_manager_.reset(new LegacyShippingManager(
-          upload_scheduler, &observation_store_, &encrypt_to_shuffler_,
+          upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
           send_retryer_params, send_retryer_.get()));
     } else {
       auto http_client = std::make_unique<FakeHTTPClient>();
       http_client_ = http_client.get();
       shipping_manager_.reset(new ClearcutV1ShippingManager(
-          upload_scheduler, &observation_store_, &encrypt_to_shuffler_,
+          upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
           std::make_unique<clearcut::ClearcutUploader>(
               "https://test.com", std::move(http_client))));
     }
@@ -198,7 +198,7 @@ class ShippingManagerTest : public ::testing::Test {
         std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
     auto message = std::make_unique<EncryptedMessage>();
     EXPECT_TRUE(
-        encrypt_to_analyzer_.Encrypt(*result.observation, message.get()));
+        encrypt_to_analyzer_->Encrypt(*result.observation, message.get()));
     auto retval = observation_store_.AddEncryptedObservation(
         std::move(message), std::move(result.metadata));
     shipping_manager_->NotifyObservationsAdded();
@@ -218,8 +218,8 @@ class ShippingManagerTest : public ::testing::Test {
     EXPECT_EQ(expected_observation_count, http_client_->observation_count);
   }
 
-  EncryptedMessageMaker encrypt_to_shuffler_;
-  EncryptedMessageMaker encrypt_to_analyzer_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
   MemoryObservationStore observation_store_;
   FakeSystemData system_data_;
   std::unique_ptr<FakeSendRetryer> send_retryer_;

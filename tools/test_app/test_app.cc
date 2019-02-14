@@ -53,11 +53,11 @@ using encoder::LegacyShippingManager;
 using encoder::MemoryObservationStore;
 using encoder::ObservationStore;
 using encoder::ProjectContext;
+using encoder::send_retryer::SendRetryer;
 using encoder::ShippingManager;
 using encoder::ShufflerClient;
 using encoder::ShufflerClientInterface;
 using encoder::SystemData;
-using encoder::send_retryer::SendRetryer;
 using google::protobuf::Empty;
 using grpc::Channel;
 using grpc::ClientContext;
@@ -448,10 +448,12 @@ TestApp::TestApp(
       shuffler_client_(shuffler_client),
       send_retryer_(new SendRetryer(shuffler_client_.get())),
       system_data_(std::move(system_data)),
-      encrypt_to_shuffler_(
-          new EncryptedMessageMaker(shuffler_public_key_pem, shuffler_scheme)),
-      encrypt_to_analyzer_(
-          new EncryptedMessageMaker(analyzer_public_key_pem, analyzer_scheme)),
+      encrypt_to_shuffler_(EncryptedMessageMaker::MakeAllowUnencrypted(
+                               shuffler_public_key_pem, shuffler_scheme)
+                               .ValueOrDie()),
+      encrypt_to_analyzer_(EncryptedMessageMaker::MakeAllowUnencrypted(
+                               analyzer_public_key_pem, analyzer_scheme)
+                               .ValueOrDie()),
       observation_store_(new MemoryObservationStore(
           kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal)),
       ostream_(ostream) {

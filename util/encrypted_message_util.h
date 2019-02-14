@@ -1,16 +1,6 @@
-// Copyright 2017 The Fuchsia Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 // This file contains two classes for working with EncryptedMessages.
 //
@@ -46,8 +36,11 @@ class EncryptedMessageMaker {
  public:
   // Encrypts a protocol buffer |message| and populates |encrypted_message|
   // with the result. Returns true for success or false on failure.
-  bool Encrypt(const google::protobuf::MessageLite& message,
-               EncryptedMessage* encrypted_message) const;
+  virtual bool Encrypt(const google::protobuf::MessageLite& message,
+                       EncryptedMessage* encrypted_message) const = 0;
+
+  // Returns the EncryptionScheme used by the EncryptedMessageMaker.
+  virtual EncryptedMessage::EncryptionScheme scheme() const = 0;
 
   // Make an EncryptedMessageMaker.
   //
@@ -57,9 +50,9 @@ class EncryptedMessageMaker {
   // |public_key_pem| must be appropriate to |scheme|. If |scheme| is
   // EncryptedMessage::HYBRID_ECDH_V1 then |public_key_pem| must be a PEM
   // encoding of a public key appropriate for that scheme.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  Make(const std::string& public_key_pem,
-       EncryptedMessage::EncryptionScheme scheme);
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> Make(
+      const std::string& public_key_pem,
+      EncryptedMessage::EncryptionScheme scheme);
 
   // Make an EncryptedMessageMaker. (Do not use in production)
   //
@@ -81,13 +74,46 @@ class EncryptedMessageMaker {
   MakeAllowUnencrypted(const std::string& public_key_pem,
                        EncryptedMessage::EncryptionScheme scheme);
 
-  // DEPRECATED. Use Make instead.
-  EncryptedMessageMaker(const std::string& public_key_pem,
-                        EncryptedMessage::EncryptionScheme scheme);
+  // Make an UnencryptedMessageMaker. Equivalent to calling:
+  // MakeAllowUnencrypted("", EncryptedMessage::NONE)
+  static std::unique_ptr<EncryptedMessageMaker> MakeUnencrypted();
+
+  // Make a HybridEcdhEncryptedMessageMaker. Equivalent to calling:
+  // Make(public_key_pem, EncryptedMessage::HYBRID_ECDH_V1.
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  MakeHybridEcdh(const std::string& public_key_pem);
+
+  virtual ~EncryptedMessageMaker() = default;
+};
+
+// HybridEcdhEncryptedMessageMaker is an implementation of
+// EncryptedMessageMaker. See EncryptedScheme::HYBRID_ECDH_V1 for details.
+class HybridEcdhEncryptedMessageMaker : public EncryptedMessageMaker {
+ public:
+  explicit HybridEcdhEncryptedMessageMaker(
+      std::unique_ptr<crypto::HybridCipher> cipher);
+
+  bool Encrypt(const google::protobuf::MessageLite& message,
+               EncryptedMessage* encrypted_message) const;
+
+  EncryptedMessage::EncryptionScheme scheme() const {
+    return EncryptedMessage::HYBRID_ECDH_V1;
+  }
 
  private:
   std::unique_ptr<crypto::HybridCipher> cipher_;
-  EncryptedMessage::EncryptionScheme encryption_scheme_;
+};
+
+// UnencryptedMessageMaker is an implementation of EncryptedMessageMaker that
+// does not perform any encryption.
+class UnencryptedMessageMaker : public EncryptedMessageMaker {
+ public:
+  bool Encrypt(const google::protobuf::MessageLite& message,
+               EncryptedMessage* encrypted_message) const;
+
+  EncryptedMessage::EncryptionScheme scheme() const {
+    return EncryptedMessage::NONE;
+  }
 };
 
 class MessageDecrypter {
