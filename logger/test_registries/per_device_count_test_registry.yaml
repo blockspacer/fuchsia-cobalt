@@ -16,6 +16,11 @@ metric_definitions:
 - id: 1
   metric_name: "SettingsChanged"
   metric_type: EVENT_COUNT
+  metric_dimensions:
+    - event_codes:
+        0: SettingA
+        1: SettingB
+        2: SettingC
   reports:
     # Report ID: 2024497361
     - report_name: "SettingsChanged_PerDeviceCount"
@@ -27,6 +32,11 @@ metric_definitions:
 - id: 2
   metric_name: "ConnectionFailures"
   metric_type: EVENT_COUNT
+  metric_dimensions:
+    - event_codes:
+        0: ErrorCode0
+        1: ErrorCode1
+        2: ErrorCode2
   reports:
     # Report ID: 2973951499
     - report_name: "ConnectionFailures_GlobalCount"

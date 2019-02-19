@@ -1345,7 +1345,7 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
 
 // Checks that UniqueActivesObservations with the expected values are
 // generated when some events have been logged for a UNIQUE_N_DAY_ACTIVES
-// report for over multiple days and GenerateObservations() is called each
+// report over multiple days and GenerateObservations() is called each
 // day, without garbage collection or backfill.
 //
 // Logging pattern:
@@ -1466,7 +1466,7 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
 
 // Checks that UniqueActivesObservations with the expected values are
 // generated when some events have been logged for a UNIQUE_N_DAY_ACTIVES
-// report for over multiple days and GenerateObservations() is called each
+// report over multiple days and GenerateObservations() is called each
 // day, and when the LocalAggregateStore is garbage-collected after each call
 // to GenerateObservations().
 //
@@ -2351,9 +2351,9 @@ TEST_F(PerDeviceCountEventAggregatorTest,
 // each PER_DEVICE_COUNT_STATS report in the config, and no
 // PerDeviceCountObservations.
 TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesNoEvents) {
-  auto current_day_index = CurrentDayIndex();
+  const auto current_day_index = CurrentDayIndex();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
-  auto expected_report_participation_obs =
+  const auto& expected_report_participation_obs =
       MakeExpectedReportParticipationObservations(
           testing::per_device_count::kExpectedAggregationParams,
           current_day_index);
@@ -2367,7 +2367,7 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesNoEvents) {
 // called after logging some events for PER_DEVICE_COUNT_STATS reports over a
 // single day index.
 TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesSingleDay) {
-  auto day_index = CurrentDayIndex();
+  const auto day_index = CurrentDayIndex();
   // Log several events on |day_index|.
   EXPECT_EQ(kOK,
             LogPerDeviceCountEvent(
@@ -2416,7 +2416,7 @@ TEST_F(PerDeviceCountEventAggregatorTest, CheckObservationValuesSingleDay) {
 
 // Checks that PerDeviceCountObservations with the expected values are
 // generated when some events have been logged for a PER_DEVICE_COUNT
-// report for over multiple days and GenerateObservations() is called each
+// report over multiple days and GenerateObservations() is called each
 // day, without garbage collection or backfill.
 //
 // Logged events for the SettingsChanged_PerDeviceCount metric on the i-th day:

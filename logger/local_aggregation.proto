@@ -37,7 +37,7 @@ message ReportAggregates {
 }
 
 message UniqueActivesReportAggregates {
-  // Keyed by event code.
+  // Keyed by single event code.
   map<uint32, DailyAggregates> by_event_code = 1;
 }
 
@@ -47,8 +47,8 @@ message PerDeviceCountReportAggregates {
 }
 
 message EventCodeAggregates {
-  // Keyed by event code.
-  map<uint32, DailyAggregates> by_event_code = 1;
+  // Keyed by packed multi-event code.
+  map<uint64, DailyAggregates> by_event_code = 1;
 }
 
 message DailyAggregates {
@@ -125,7 +125,7 @@ message AggregatedObservationHistory {
 }
 
 message UniqueActivesObservationHistory {
-  // Keyed by event code.
+  // Keyed by single event code.
   map<uint32, HistoryByWindowSize> by_event_code = 1;
 }
 
@@ -146,8 +146,8 @@ message ReportParticipationObservationHistory {
 }
 
 message HistoryByEventCode {
-  // Keyed by event code.
-  map<uint32, HistoryByWindowSize> by_event_code = 1;
+  // Keyed by packed multi-event code.
+  map<uint64, HistoryByWindowSize> by_event_code = 1;
 }
 
 message HistoryByWindowSize {

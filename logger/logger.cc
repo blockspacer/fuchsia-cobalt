@@ -127,6 +127,8 @@ class CountEventLogger : public EventLogger {
   Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record) override;
+  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                     EventRecord* event_record) override;
   Status ValidateEvent(const EventRecord& event_record) override;
 };
 
@@ -783,9 +785,37 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
           count_event->event_code(), std::move(component),
           count_event->count());
     }
+    // Report type PER_DEVICE_COUNT_STATS is valid but should not result in
+    // generation of an immediate observation.
+    case ReportDefinition::PER_DEVICE_COUNT_STATS: {
+      Encoder::Result result;
+      result.status = kOK;
+      result.observation = nullptr;
+      result.metadata = nullptr;
+      return result;
+    }
 
     default:
       return BadReportType(metric, report);
+  }
+}
+
+Status CountEventLogger::MaybeUpdateLocalAggregation(
+    const ReportDefinition& report, EventRecord* event_record) {
+  // If the Logger was constructed without an EventAggregator, do nothing and
+  // return kOK.
+  // TODO(pesk): remove this clause when the deprecated Logger constructor is
+  // removed.
+  if (event_aggregator() == nullptr) {
+    return kOK;
+  }
+  switch (report.report_type()) {
+    case ReportDefinition::PER_DEVICE_COUNT_STATS: {
+      return event_aggregator()->LogPerDeviceCountEvent(report.id(),
+                                                        event_record);
+    }
+    default:
+      return kOK;
   }
 }
 
@@ -794,7 +824,8 @@ Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
                             event_record.event->count_event().event_code());
 }
 
-/////////////// IntegerPerformanceEventLogger method implementations ///////////
+/////////////// IntegerPerformanceEventLogger method implementations
+//////////////
 
 Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
@@ -818,7 +849,8 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-////////////// ElapsedTimeEventLogger method implementations ///////////////////
+////////////// ElapsedTimeEventLogger method implementations
+//////////////////////
 
 const RepeatedField<uint32_t>& ElapsedTimeEventLogger::EventCodes(
     const Event& event) {
@@ -864,7 +896,8 @@ Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
       event_record, event_record.event->frame_rate_event().event_code());
 }
 
-////////////// MemoryUsageEventLogger method implementations ///////////////////
+////////////// MemoryUsageEventLogger method implementations
+//////////////////////
 const RepeatedField<uint32_t>& MemoryUsageEventLogger::EventCodes(
     const Event& event) {
   CHECK(event.has_memory_usage_event());
@@ -886,7 +919,8 @@ Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
       event_record, event_record.event->memory_usage_event().event_code());
 }
 
-/////////////// IntHistogramEventLogger method implementations /////////////////
+/////////////// IntHistogramEventLogger method implementations
+////////////////////
 
 Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_int_histogram_event());
@@ -974,7 +1008,8 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-/////////////// StringUsedEventLogger method implementations ///////////////////
+/////////////// StringUsedEventLogger method implementations
+//////////////////////
 
 Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
@@ -1002,7 +1037,8 @@ Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-/////////////// CustomEventLogger method implementations ///////////////////////
+/////////////// CustomEventLogger method implementations
+//////////////////////////
 
 Status CustomEventLogger::ValidateEvent(const EventRecord& event_record) {
   // TODO(ninai) Add proto validation.
