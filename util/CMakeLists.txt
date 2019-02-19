@@ -14,7 +14,10 @@ add_library(encrypted_message_util
 target_link_libraries(encrypted_message_util
                       cobalt_crypto
                       status
-                      statusor)
+                      statusor
+                      tink_cc_hybrid_encrypt
+                      tink_cc_hybrid_hybrid_config
+                      tink_cc_keyset_handle)
 add_cobalt_dependencies(encrypted_message_util)
 
 add_library(pem_util
@@ -38,7 +41,12 @@ target_link_libraries(util_tests
                       encrypted_message_util
                       posix_file_system
                       consistent_proto_store
-                      consistent_proto_store_test_proto)
+                      consistent_proto_store_test_proto
+                      tink_cc_hybrid_encrypt
+                      tink_cc_hybrid_hybrid_config
+                      tink_cc_keyset_handle
+                      tink_cc_cleartext_keyset_handle
+                      tink_cc_hybrid_hybrid_key_templates)
 add_cobalt_test_dependencies(util_tests ${DIR_GTESTS})
 
 add_subdirectory(clearcut)

@@ -8,17 +8,22 @@ source_set("clock") {
   ]
 }
 
-static_library("encrypted_message_util") {
+source_set("encrypted_message_util") {
   sources = [
     "encrypted_message_util.cc",
     "encrypted_message_util.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs -= [ "//build/config:no_rtti" ]
 
-  deps = [
+  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+
+  public_deps = [
     ":status",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
+    "//third_party/tink/cc:hybrid_encrypt",
+    "//third_party/tink/cc/hybrid:hybrid_config",
+    "//third_party/tink/cc:keyset_handle",
   ]
 }
 

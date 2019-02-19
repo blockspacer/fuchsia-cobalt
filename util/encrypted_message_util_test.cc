@@ -15,10 +15,19 @@
 #include "util/encrypted_message_util.h"
 
 #include <string>
+#include <utility>
 
 #include "./encrypted_message.pb.h"
 #include "./observation.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "third_party/tink/cc/cleartext_keyset_handle.h"
+#include "third_party/tink/cc/hybrid_config.h"
+#include "third_party/tink/cc/hybrid_decrypt_factory.h"
+#include "third_party/tink/cc/hybrid_encrypt_factory.h"
+#include "third_party/tink/cc/hybrid_key_templates.h"
+#include "third_party/tink/cc/keyset_handle.h"
+#include "third_party/tink/include/proto/tink.pb.h"
+#include "util/crypto_util/base64.h"
 #include "util/crypto_util/cipher.h"
 
 namespace cobalt {
@@ -154,6 +163,77 @@ TEST(EncryptedMessageUtilTest, Crazy) {
   encrypted_message.mutable_ciphertext()[0] =
       encrypted_message.ciphertext()[0] + 1;
   EXPECT_FALSE(real_decrypter.DecryptMessage(encrypted_message, &observation));
+}
+
+// Check some ways that creating a HybridTinkEncryptedMessageMaker could fail.
+TEST(HybridTinkEncryptedMessageMaker, Make) {
+  // Check that an empty key is rejected.
+  auto result = cobalt::util::EncryptedMessageMaker::MakeHybridTink("");
+  EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
+
+  // Check that a key with invalid base64 characters is rejected.
+  result = cobalt::util::EncryptedMessageMaker::MakeHybridTink("'''");
+  EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
+}
+
+// Check that the HybridTinkEncryptedMessageMaker is correctly created and
+// encrypts the observations it is given.
+TEST(HybridTinkEncryptedMessageMaker, Encrypt) {
+  auto status = ::crypto::tink::HybridConfig::Register();
+  EXPECT_TRUE(status.ok());
+
+  // Generate a handle to a new public-private key set.
+  auto keyset_handle_result = ::crypto::tink::KeysetHandle::GenerateNew(
+      ::crypto::tink::HybridKeyTemplates::EciesP256HkdfHmacSha256Aes128Gcm());
+  EXPECT_TRUE(keyset_handle_result.ok());
+
+  // Get a handle to the public key.
+  auto public_keyset_handle_result =
+      keyset_handle_result.ValueOrDie()->GetPublicKeysetHandle();
+  EXPECT_TRUE(public_keyset_handle_result.ok());
+
+  // Get the keyset protobuf message itself.
+  const google::crypto::tink::Keyset public_keyset =
+      ::crypto::tink::CleartextKeysetHandle::GetKeyset(
+          *(public_keyset_handle_result.ValueOrDie()));
+  EXPECT_EQ(1, public_keyset.key_size());
+
+  // Serialize an encode the public key in the format expected by
+  // HybridTinkEncryptedMessageMaker.
+  std::string serialized_public_keyset;
+  EXPECT_TRUE(public_keyset.SerializeToString(&serialized_public_keyset));
+
+  std::string base64_public_keyset;
+  EXPECT_TRUE(cobalt::crypto::Base64Encode(serialized_public_keyset,
+                                           &base64_public_keyset));
+
+  auto maker =
+      cobalt::util::EncryptedMessageMaker::MakeHybridTink(base64_public_keyset);
+  EXPECT_TRUE(maker.ok());
+
+  std::string expected = "hello";
+  // Make a dummy observation.
+  auto observation = MakeDummyObservation(expected);
+
+  // Encrypt the dummy observation.
+  EncryptedMessage encrypted_message;
+  EXPECT_TRUE(maker.ValueOrDie()->Encrypt(observation, &encrypted_message));
+  EXPECT_EQ(EncryptedMessage::HYBRID_TINK, encrypted_message.scheme());
+
+  // Obtain a decrypter to be able to check the encrypted dummy observation.
+  auto decrypter_result = keyset_handle_result.ValueOrDie()
+                              ->GetPrimitive<::crypto::tink::HybridDecrypt>();
+  EXPECT_TRUE(decrypter_result.ok());
+  auto decrypter = std::move(decrypter_result.ValueOrDie());
+  auto decrypted_result =
+      decrypter->Decrypt(encrypted_message.ciphertext(), "");
+  EXPECT_TRUE(decrypted_result.ok());
+
+  observation.Clear();
+  EXPECT_EQ(0u, observation.parts().count(expected));
+  EXPECT_TRUE(observation.ParseFromString(decrypted_result.ValueOrDie()));
+
+  EXPECT_EQ(1u, observation.parts().count(expected));
 }
 
 }  // namespace util
