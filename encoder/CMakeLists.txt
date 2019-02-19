@@ -42,11 +42,21 @@ cobalt_make_protobuf_cpp_lib(file_observation_store_internal
                              false
                              file_observation_store_internal)
 
+
+
+# legacy project context library
+add_library(legacy_project_context
+            project_context.cc
+            ${COBALT_PROTO_HDRS} ${CONFIG_PROTO_HDRS}
+            ${FILE_OBSERVATION_STORE_INTERNAL_HDRS})
+target_link_libraries(legacy_project_context
+                      client_config
+                      client_secret)
+
 # encoder library
 add_library(encoder
             encoder.cc
             envelope_maker.cc
-            project_context.cc
             send_retryer.cc
             shipping_manager.cc
             shuffler_client.cc
@@ -59,6 +69,7 @@ add_library(encoder
             ${COBALT_PROTO_HDRS} ${CONFIG_PROTO_HDRS}
             ${FILE_OBSERVATION_STORE_INTERNAL_HDRS})
 target_link_libraries(encoder
+                      legacy_project_context
                       absl::synchronization
                       client_config
                       client_secret

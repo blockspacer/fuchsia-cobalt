@@ -19,11 +19,14 @@ cobalt_make_protobuf_cpp_lib(local_aggregation_proto_lib
 add_cobalt_dependencies(local_aggregation_proto_lib)
 
 add_library(project_context
-            project_context.cc)
+            project_context.cc
+            project_context_factory.cc)
 target_link_libraries(project_context
-                      local_aggregation_proto_lib)
+                      legacy_project_context
+                      local_aggregation_proto_lib
+                      project_configs
+                      statusor)
 add_cobalt_dependencies(project_context)
-target_link_libraries(project_context project_configs statusor)
 
 add_library(observation_writer
             observation_writer.cc)
@@ -88,7 +91,8 @@ add_executable(logger_tests
                 encoder_test.cc
                 event_aggregator_test.cc
                 logger_test.cc
-                project_context_test.cc)
+                project_context_test.cc
+                project_context_factory_test.cc)
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator
