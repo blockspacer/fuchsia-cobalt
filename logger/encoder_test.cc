@@ -43,9 +43,7 @@ metric {
   customer_id: 1
   project_id: 1
   id: 1
-  metric_dimensions: {
-    max_event_code: 100
-  }
+  max_event_code: 100
   reports: {
     report_name: "ErrorCountsByType"
     id: 123
@@ -133,9 +131,7 @@ metric {
   customer_id: 1
   project_id: 1
   id: 9
-  metric_dimensions: {
-    max_event_code: 1
-  }
+  max_event_code: 1
   reports: {
     report_name: "DeviceBoots_UniqueDevices"
     id: 91

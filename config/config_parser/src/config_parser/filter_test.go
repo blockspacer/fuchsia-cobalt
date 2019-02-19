@@ -27,12 +27,60 @@ var filterTests = []struct {
 	},
 
 	{
+		before: &config.MetricDefinition{
+			MetricName: "A Metric!",
+			EventCodes: map[uint32]string{
+				0: "An event code",
+			},
+		},
+		after: &config.MetricDefinition{
+			MetricName: "A Metric!",
+		},
+	},
+
+	{
 		before: &config.ReportDefinition{
 			ReportName:    "A Report!",
 			CandidateList: []string{"Candidate1", "Candidate2", "Candidate3"},
 		},
 		after: &config.ReportDefinition{
 			ReportName: "A Report!",
+		},
+	},
+
+	{
+		before: &config.CobaltRegistry{
+			Customers: []*config.CustomerConfig{
+				&config.CustomerConfig{
+					Projects: []*config.ProjectConfig{
+						&config.ProjectConfig{
+							Metrics: []*config.MetricDefinition{
+								&config.MetricDefinition{
+									MetricName: "A Metric!",
+									EventCodes: map[uint32]string{
+										0: "An event code",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		after: &config.CobaltRegistry{
+			Customers: []*config.CustomerConfig{
+				&config.CustomerConfig{
+					Projects: []*config.ProjectConfig{
+						&config.ProjectConfig{
+							Metrics: []*config.MetricDefinition{
+								&config.MetricDefinition{
+									MetricName: "A Metric!",
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	},
 }

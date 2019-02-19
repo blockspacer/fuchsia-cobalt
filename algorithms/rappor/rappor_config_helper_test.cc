@@ -40,11 +40,11 @@ TEST(RapporConfigHelperTest, BasicRapporNumCategories) {
   EXPECT_EQ(1u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 
-  metric_definition.add_metric_dimensions()->set_max_event_code(0);
+  metric_definition.set_max_event_code(0);
   EXPECT_EQ(1u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 
-  metric_definition.mutable_metric_dimensions(0)->set_max_event_code(10);
+  metric_definition.set_max_event_code(10);
   EXPECT_EQ(11u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 }
