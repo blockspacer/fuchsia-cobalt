@@ -225,7 +225,7 @@ Status EventAggregator::UpdateAggregationConfigs(
     const ProjectContext& project_context) {
   auto locked = protected_aggregate_store_.lock();
   Status status;
-  for (const auto& metric : project_context.metric_definitions()->metric()) {
+  for (const auto& metric : project_context.metrics()) {
     switch (metric.metric_type()) {
       case MetricDefinition::EVENT_OCCURRED: {
         for (const auto& report : metric.reports()) {

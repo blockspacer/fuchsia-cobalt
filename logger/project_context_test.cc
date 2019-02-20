@@ -129,6 +129,25 @@ class ProjectContextTest : public ::testing::Test {
   std::shared_ptr<ProjectConfigs> project_configs_;
 };
 
+// Test ProjectContext starting with constructing one that owns its
+// ProjectConfig.
+TEST_F(ProjectContextTest, ConstructWithOwnedProjectConfig) {
+  auto project_config = std::make_unique<ProjectConfig>(
+      *project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+  auto project_context = std::make_unique<ProjectContext>(
+      kCustomerAId, kCustomerA, std::move(project_config));
+  CheckProjectContextA1(*project_context);
+}
+
+// Test ProjectContext starting with constructing one that doesn't own its
+// ProjectConfig.
+TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
+  auto project_context = std::make_unique<ProjectContext>(
+      kCustomerAId, kCustomerA,
+      project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+  CheckProjectContextA1(*project_context);
+}
+
 // Test ProjectContext starting with constructing one from an instance
 // of |MetricDefinitions|.
 TEST_F(ProjectContextTest, ConstructWithMetricDefinitions) {

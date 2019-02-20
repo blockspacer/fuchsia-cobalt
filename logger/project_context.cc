@@ -14,6 +14,33 @@ namespace logger {
 using statusor::StatusOr;
 using util::StatusCode;
 
+namespace {
+
+void PopulateProject(uint32_t customer_id, uint32_t project_id,
+                     const std::string& customer_name,
+                     const std::string& project_name,
+                     ReleaseStage release_stage, Project* project) {
+  project->set_customer_id(customer_id);
+  project->set_project_id(project_id);
+  project->set_customer_name(std::move(customer_name));
+  project->set_project_name(std::move(project_name));
+  project->set_release_stage(release_stage);
+}
+
+// Deprecated. Remove once the constructor that takes an instance of
+// MetricDefinitions is removed.
+std::unique_ptr<ProjectConfig> NewProjectConfig(
+    uint32_t project_id, const std::string& project_name,
+    std::unique_ptr<MetricDefinitions> metric_definitions) {
+  auto project_config = std::make_unique<ProjectConfig>();
+  project_config->set_project_name(project_name);
+  project_config->set_project_id(project_id);
+  project_config->mutable_metrics()->Swap(metric_definitions->mutable_metric());
+  return project_config;
+}
+
+}  // namespace
+
 std::string MetricDebugString(const MetricDefinition& metric) {
   std::ostringstream stream;
   stream << metric.metric_name() << " (" << metric.id() << ")";
@@ -47,31 +74,45 @@ std::string MetricRef::FullyQualifiedName() const {
   return stream.str();
 }
 
-namespace {
+ProjectContext::ProjectContext(uint32_t customer_id,
+                               const std::string& customer_name,
+                               std::unique_ptr<ProjectConfig> project_config,
+                               ReleaseStage release_stage)
+    : ProjectContext(customer_id, customer_name, nullptr,
+                     std::move(project_config), release_stage) {}
 
-void PopulateProject(uint32_t customer_id, uint32_t project_id,
-                     const std::string& customer_name,
-                     const std::string& project_name,
-                     ReleaseStage release_stage, Project* project) {
-  project->set_customer_id(customer_id);
-  project->set_project_id(project_id);
-  project->set_customer_name(std::move(customer_name));
-  project->set_project_name(std::move(project_name));
-  project->set_release_stage(release_stage);
-}
-
-}  // namespace
+ProjectContext::ProjectContext(uint32_t customer_id,
+                               const std::string& customer_name,
+                               const ProjectConfig* project_config,
+                               ReleaseStage release_stage)
+    : ProjectContext(customer_id, customer_name, project_config, nullptr,
+                     release_stage) {}
 
 ProjectContext::ProjectContext(
     uint32_t customer_id, uint32_t project_id, std::string customer_name,
     std::string project_name,
     std::unique_ptr<MetricDefinitions> metric_definitions,
     ReleaseStage release_stage)
-    : metric_definitions_(std::move(metric_definitions)) {
-  CHECK(metric_definitions_);
-  PopulateProject(customer_id, project_id, customer_name, project_name,
-                  release_stage, &project_);
-  for (const auto& metric : metric_definitions_->metric()) {
+    : ProjectContext(customer_id, customer_name,
+                     NewProjectConfig(project_id, project_name,
+                                      std::move(metric_definitions)),
+                     release_stage) {}
+
+ProjectContext::ProjectContext(
+    uint32_t customer_id, const std::string& customer_name,
+    const ProjectConfig* project_config,
+    std::unique_ptr<ProjectConfig> owned_project_config,
+    ReleaseStage release_stage)
+    : project_config_(project_config),
+      maybe_null_project_config_(std::move(owned_project_config)) {
+  CHECK(project_config_ || maybe_null_project_config_);
+  CHECK(!(project_config_ && maybe_null_project_config_));
+  if (!project_config_) {
+    project_config_ = maybe_null_project_config_.get();
+  }
+  PopulateProject(customer_id, project_config_->project_id(), customer_name,
+                  project_config_->project_name(), release_stage, &project_);
+  for (const auto& metric : project_config_->metrics()) {
     if (metric.customer_id() == project_.customer_id() &&
         metric.project_id() == project_.project_id()) {
       metrics_by_name_[metric.metric_name()] = &metric;
@@ -111,42 +152,10 @@ ProjectContext::ConstructWithProjectConfigs(
                             " for the customer named " + customer_name +
                             " in the provided ProjectConfigs.");
   }
-  return std::unique_ptr<ProjectContext>(new ProjectContext(
-      customer_cfg->customer_id(), project_cfg->project_id(), customer_name,
-      project_name, project_configs, release_stage));
-}
-
-ProjectContext::ProjectContext(
-    uint32_t customer_id, uint32_t project_id, const std::string& customer_name,
-    const std::string& project_name,
-    std::shared_ptr<config::ProjectConfigs> project_configs,
-    ReleaseStage release_stage)
-    : metric_definitions_(new MetricDefinitions()),
-      project_configs_(project_configs) {
-  PopulateProject(customer_id, project_id, customer_name, project_name,
-                  release_stage, &project_);
-  auto project_cfg =
-      project_configs->GetProjectConfig(customer_name, project_name);
-
-  CHECK(project_cfg) << "Customer " << customer_name << " with project "
-                     << project_name << " was not found.";
-
-  for (const auto& metric : project_cfg->metrics()) {
-    if (metric.customer_id() == project_.customer_id() &&
-        metric.project_id() == project_.project_id()) {
-      metrics_by_name_[metric.metric_name()] = &metric;
-      metrics_by_id_[metric.id()] = &metric;
-    } else {
-      LOG(ERROR) << "ProjectContext constructor found a MetricDefinition "
-                    "for the wrong project. Expected customer "
-                 << project_.customer_name()
-                 << " (id=" << project_.customer_id() << "), project "
-                 << project_.project_name() << " (id=" << project_.project_id()
-                 << "). Found customer_id=" << metric.customer_id()
-                 << " project_id=" << metric.project_id();
-    }
-    metric_definitions_->add_metric()->CopyFrom(metric);
-  }
+  auto project_context = std::make_unique<ProjectContext>(
+      customer_cfg->customer_id(), customer_name, project_cfg, release_stage);
+  project_context->deprecated_project_configs_ = project_configs;
+  return project_context;
 }
 
 const MetricDefinition* ProjectContext::GetMetric(
