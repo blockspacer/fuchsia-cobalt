@@ -36,18 +36,20 @@ type sourceOutputter struct {
 	language   outputLanguage
 	varName    string
 	namespaces []string
+	forTesting bool
 }
 
-func newSourceOutputter(language outputLanguage, varName string) *sourceOutputter {
-	return newSourceOutputterWithNamespaces(language, varName, []string{})
+func newSourceOutputter(language outputLanguage, varName string, forTesting bool) *sourceOutputter {
+	return newSourceOutputterWithNamespaces(language, varName, []string{}, forTesting)
 }
 
-func newSourceOutputterWithNamespaces(language outputLanguage, varName string, namespaces []string) *sourceOutputter {
+func newSourceOutputterWithNamespaces(language outputLanguage, varName string, namespaces []string, forTesting bool) *sourceOutputter {
 	return &sourceOutputter{
 		buffer:     new(bytes.Buffer),
 		language:   language,
 		varName:    varName,
 		namespaces: namespaces,
+		forTesting: forTesting,
 	}
 }
 
@@ -175,13 +177,15 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 			metrics[metric.Id] = metric.MetricName
 			for _, report := range metric.Reports {
 				if report.ReportName != "" {
-					reports[report.Id] = fmt.Sprintf("%s_%s", metric.MetricName, report.ReportName)
+					reports[report.Id] = fmt.Sprintf("%s", report.ReportName)
 				}
 			}
 		}
 	}
 	so.writeIdConstants("Metric", metrics)
-	so.writeIdConstants("Report", reports)
+	if so.forTesting {
+		so.writeIdConstants("Report", reports)
+	}
 
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		events := make(map[uint32]string)

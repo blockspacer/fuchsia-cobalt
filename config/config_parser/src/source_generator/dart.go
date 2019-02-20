@@ -47,6 +47,7 @@ func (_ Dart) writeStringConstant(so *sourceOutputter, value string, name ...str
 //
 // varName will be the name of the variable containing the base64-encoded serialized proto.
 // namespace is a list of nested namespaces inside of which the variable will be defined.
-func DartOutputFactory(varName string) OutputFormatter {
-	return newSourceOutputter(Dart{}, varName).getOutputFormatter()
+// If forTesting is true, a constant will be generated for each report ID, based on the report's name.
+func DartOutputFactory(varName string, forTesting bool) OutputFormatter {
+	return newSourceOutputter(Dart{}, varName, forTesting).getOutputFormatter()
 }

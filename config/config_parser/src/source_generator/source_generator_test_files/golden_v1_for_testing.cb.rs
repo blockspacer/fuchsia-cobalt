@@ -8,6 +8,12 @@ pub const THE_OTHER_METRIC_NAME_METRIC_ID = 200;
 // event groups
 pub const EVENT_GROUPS_METRIC_ID = 300;
 
+// Report ID Constants
+// the_other_report
+pub const THE_OTHER_REPORT_REPORT_ID = 492006986;
+// the_report
+pub const THE_REPORT_REPORT_ID = 2384646843;
+
 // Enum for the_other_metric_name (EventCode)
 pub enum TheOtherMetricNameEventCode {
   AnEvent = 0,

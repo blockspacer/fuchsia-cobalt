@@ -43,6 +43,9 @@ func (_ Rust) writeStringConstant(so *sourceOutputter, value string, name ...str
 	so.writeLineFmt("pub const %s: &str = \"%s\";", toUpperSnakeCase(name...), value)
 }
 
-func RustOutputFactory(varName string, namespace []string) OutputFormatter {
-	return newSourceOutputterWithNamespaces(Rust{}, varName, namespace).getOutputFormatter()
+// varName will be the name of the variable containing the base64-encoded serialized proto.
+// namespace is a list of nested namespaces inside of which the variable will be defined.
+// If forTesting is true, a constant will be generated for each report ID, based on the report's name.
+func RustOutputFactory(varName string, namespace []string, forTesting bool) OutputFormatter {
+	return newSourceOutputterWithNamespaces(Rust{}, varName, namespace, forTesting).getOutputFormatter()
 }

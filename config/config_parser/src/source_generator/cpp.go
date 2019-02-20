@@ -65,6 +65,7 @@ func (_ CPP) writeStringConstant(so *sourceOutputter, value string, name ...stri
 //
 // varName will be the name of the variable containing the base64-encoded serialized proto.
 // namespace is a list of nested namespaces inside of which the variable will be defined.
-func CppOutputFactory(varName string, namespace []string) OutputFormatter {
-	return newSourceOutputterWithNamespaces(CPP{}, varName, namespace).getOutputFormatter()
+// If forTesting is true, a constant will be generated for each report ID, based on the report's name.
+func CppOutputFactory(varName string, namespace []string, forTesting bool) OutputFormatter {
+	return newSourceOutputterWithNamespaces(CPP{}, varName, namespace, forTesting).getOutputFormatter()
 }

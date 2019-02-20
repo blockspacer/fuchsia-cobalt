@@ -191,21 +191,25 @@ var cfgTests = []struct {
 	formatter      OutputFormatter
 	hideOnClient   bool
 }{
-	{v0ProjectConfigYaml, "golden_v0.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config"), false},
-	{v0ProjectConfigYaml, "golden_v0.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}), false},
-	{v0ProjectConfigYaml, "golden_v0.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}), false},
+	{v0ProjectConfigYaml, "golden_v0.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config", false), false},
+	{v0ProjectConfigYaml, "golden_v0.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}, false), false},
+	{v0ProjectConfigYaml, "golden_v0.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}, false), false},
 
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config"), true},
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}), true},
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}), true},
+	{v0ProjectConfigYaml, "golden_v0_filtered.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config", false), true},
+	{v0ProjectConfigYaml, "golden_v0_filtered.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}, false), true},
+	{v0ProjectConfigYaml, "golden_v0_filtered.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}, false), true},
 
-	{v1ProjectConfigYaml, "golden_v1.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config"), false},
-	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}), false},
-	{v1ProjectConfigYaml, "golden_v1.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}), false},
+	{v1ProjectConfigYaml, "golden_v1.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", false), false},
+	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), false},
+	{v1ProjectConfigYaml, "golden_v1.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), false},
 
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config"), true},
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}), true},
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}), true},
+	{v1ProjectConfigYaml, "golden_v1_filtered.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", false), true},
+	{v1ProjectConfigYaml, "golden_v1_filtered.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), true},
+	{v1ProjectConfigYaml, "golden_v1_filtered.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), true},
+
+	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", true), false},
+	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, true), false},
+	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, true), false},
 }
 
 func TestPrintConfig(t *testing.T) {
@@ -230,7 +234,7 @@ func TestPrintConfig(t *testing.T) {
 		if diff := cmp.Diff(goldenLines, generatedLines); diff != "" {
 			genFile := "/tmp/" + tt.goldenFile
 			ioutil.WriteFile(genFile, configBytes, 0644)
-			t.Errorf("Golden file %s dosen't match the generated config (%s). Diff: %s", tt.goldenFile, genFile, diff)
+			t.Errorf("Golden file %s doesn't match the generated config (%s). Diff: %s", tt.goldenFile, genFile, diff)
 		}
 	}
 }

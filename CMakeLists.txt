@@ -604,6 +604,7 @@ macro(generate_test_config_h INPUT_YAML OUTFILE CUSTOMER_ID PROJECT_ID STRING_VA
     ARGS -var_name=${STRING_VAR_NAME}
     ARGS -output_file=${OUTFILE}
     ARGS -skip_validation # We want to be able to have invalid configs in tests.
+    ARGS -for_testing # Generate constants for report IDs.
     DEPENDS ${INPUT_YAML}
     DEPENDS ${CONFIG_PARSER_BINARY}
   )

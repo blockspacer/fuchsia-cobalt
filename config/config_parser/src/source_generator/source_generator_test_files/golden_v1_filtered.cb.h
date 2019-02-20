@@ -10,12 +10,6 @@ const uint32_t kTheOtherMetricNameMetricId = 200;
 // event groups
 const uint32_t kEventGroupsMetricId = 300;
 
-// Report ID Constants
-// the_metric_name_the_other_report
-const uint32_t kTheMetricNameTheOtherReportReportId = 492006986;
-// event groups_the_report
-const uint32_t kEventGroupsTheReportReportId = 2384646843;
-
 // Enum for the_other_metric_name (EventCode)
 namespace the_other_metric_name_event_code_scope {
 enum Enum {
