@@ -166,15 +166,22 @@ func (so *sourceOutputter) writeLegacyConstants(c *config.CobaltRegistry) {
 
 func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	metrics := make(map[uint32]string)
+	reports := make(map[uint32]string)
 	if len(c.Customers) > 1 || len(c.Customers[0].Projects) > 1 {
 		return fmt.Errorf("Cobalt v1.0 output can only be used with a single project config.")
 	}
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		if metric.MetricName != "" {
 			metrics[metric.Id] = metric.MetricName
+			for _, report := range metric.Reports {
+				if report.ReportName != "" {
+					reports[report.Id] = fmt.Sprintf("%s_%s", metric.MetricName, report.ReportName)
+				}
+			}
 		}
 	}
 	so.writeIdConstants("Metric", metrics)
+	so.writeIdConstants("Report", reports)
 
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		events := make(map[uint32]string)

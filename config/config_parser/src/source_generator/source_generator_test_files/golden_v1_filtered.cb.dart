@@ -11,6 +11,14 @@ const int theOtherMetricNameMetricId = 200;
 // ignore: constant_identifier_names
 const int eventGroupsMetricId = 300;
 
+// Report ID Constants
+// the_metric_name_the_other_report
+// ignore: constant_identifier_names
+const int theMetricNameTheOtherReportReportId = 492006986;
+// event groups_the_report
+// ignore: constant_identifier_names
+const int eventGroupsTheReportReportId = 2384646843;
+
 // Enum for the_other_metric_name (EventCode)
 class TheOtherMetricNameEventCode {
   static const int AnEvent = 0;
