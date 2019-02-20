@@ -66,10 +66,6 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 		return fmt.Errorf("Error in meta_data: %v", err)
 	}
 
-	if m.MaxEventCode != 0 && m.MetricType != config.MetricDefinition_EVENT_OCCURRED {
-		return fmt.Errorf("Metric %s has max_event_code set. max_event_code can only be set for metrics for metric type EVENT_OCCURRED.", m.MetricName)
-	}
-
 	if m.IntBuckets != nil && m.MetricType != config.MetricDefinition_INT_HISTOGRAM {
 		return fmt.Errorf("Metric %s has int_buckets set. int_buckets can only be set for metrics for metric type INT_HISTOGRAM.", m.MetricName)
 	}
@@ -122,22 +118,8 @@ func validateMetadata(m config.MetricDefinition_Metadata) (err error) {
 }
 
 // Validate the event_codes and max_event_code fields.
-func validateEventCodes(m config.MetricDefinition) error {
-	if len(m.EventCodes) > 0 {
-		if m.MaxEventCode >= 1024 {
-			return fmt.Errorf("max_event_code must be less than 1024. (Configured: %v)", m.MaxEventCode)
-		}
-
-		if m.MaxEventCode == 0 {
-			return nil
-		}
-
-		for i, _ := range m.EventCodes {
-			if i > m.MaxEventCode {
-				return fmt.Errorf("Event code %v is greater than max_event_code %v.", i, m.MaxEventCode)
-			}
-		}
-	} else if len(m.MetricDimensions) > 0 {
+func validateMetricDimensions(m config.MetricDefinition) error {
+	if len(m.MetricDimensions) > 0 {
 		if len(m.MetricDimensions) > 5 {
 			return fmt.Errorf("there can be at most 5 dimensions in metric_dimensions")
 		}
@@ -178,7 +160,7 @@ func validateEventCodes(m config.MetricDefinition) error {
 			return fmt.Errorf("metric_dimensions have too many possible representations: %v. May be no more than 1024", num_options)
 		}
 	} else {
-		return fmt.Errorf("no event_codes or metric_dimensions listed for metric of type %s.", m.MetricType)
+		return fmt.Errorf("no metric_dimensions listed for metric of type %v+.", m)
 	}
 
 	return nil
@@ -193,13 +175,13 @@ func validateMetricDefinitionForType(m config.MetricDefinition) error {
 	case config.MetricDefinition_EVENT_OCCURRED:
 		return validateEventOccurred(m)
 	case config.MetricDefinition_EVENT_COUNT:
-		return validateEventCodes(m)
+		return validateMetricDimensions(m)
 	case config.MetricDefinition_ELAPSED_TIME:
-		return validateEventCodes(m)
+		return validateMetricDimensions(m)
 	case config.MetricDefinition_FRAME_RATE:
-		return validateEventCodes(m)
+		return validateMetricDimensions(m)
 	case config.MetricDefinition_MEMORY_USAGE:
-		return validateEventCodes(m)
+		return validateMetricDimensions(m)
 	case config.MetricDefinition_INT_HISTOGRAM:
 		return validateIntHistogram(m)
 	case config.MetricDefinition_STRING_USED:
@@ -212,8 +194,12 @@ func validateMetricDefinitionForType(m config.MetricDefinition) error {
 }
 
 func validateEventOccurred(m config.MetricDefinition) error {
-	if m.MaxEventCode == 0 && len(m.MetricDimensions) == 0 {
+	if len(m.MetricDimensions) == 0 || m.MetricDimensions[0].MaxEventCode == 0 {
 		return fmt.Errorf("No max_event_code specified for metric of type EVENT_OCCURRED.")
+	}
+
+	if len(m.MetricDimensions) > 1 {
+		return fmt.Errorf("Too many metric dimensions specified for metric of type EVENT_OCCURRED.")
 	}
 
 	for i, md := range m.MetricDimensions {
@@ -222,7 +208,7 @@ func validateEventOccurred(m config.MetricDefinition) error {
 		}
 	}
 
-	return validateEventCodes(m)
+	return validateMetricDimensions(m)
 }
 func validateIntHistogram(m config.MetricDefinition) error {
 	if m.IntBuckets == nil {
@@ -231,20 +217,20 @@ func validateIntHistogram(m config.MetricDefinition) error {
 
 	// TODO(azani): Validate bucket definition.
 
-	return validateEventCodes(m)
+	return validateMetricDimensions(m)
 }
 
 func validateStringUsed(m config.MetricDefinition) error {
-	if len(m.EventCodes) > 0 {
-		return fmt.Errorf("event_codes must not be set for metrics of type STRING_USED")
+	if len(m.MetricDimensions) > 0 {
+		return fmt.Errorf("metric_dimensions must not be set for metrics of type STRING_USED")
 	}
 	return nil
 }
 
 // TODO(ninai): remove this function when Cobalt 1.0 is done.
 func validateCustomOld(m config.MetricDefinition) error {
-	if len(m.EventCodes) > 0 {
-		return fmt.Errorf("event_codes must not be set for metrics of type CUSTOM")
+	if len(m.MetricDimensions) > 0 {
+		return fmt.Errorf("metric_dimensions must not be set for metrics of type CUSTOM")
 	}
 	if len(m.Parts) == 0 {
 		return fmt.Errorf("No parts specified for metric of type CUSTOM.")
@@ -263,8 +249,8 @@ func validateCustom(m config.MetricDefinition) error {
 		return nil
 	}
 
-	if len(m.EventCodes) > 0 {
-		return fmt.Errorf("event_types must not be set for metrics of type CUSTOM")
+	if len(m.MetricDimensions) > 0 {
+		return fmt.Errorf("metric_dimensions must not be set for metrics of type CUSTOM")
 	}
 
 	if m.ProtoName == "" {
