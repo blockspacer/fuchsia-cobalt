@@ -237,6 +237,8 @@ void WriteFilteredSystemProfile(SystemProfile* dst,
         case SystemProfileField::PRODUCT_NAME:
           dst->set_allocated_product_name(src->release_product_name());
           break;
+        case SystemProfileField::SYSTEM_VERSION:
+          dst->set_allocated_system_version(src->release_system_version());
       }
     }
   }

@@ -26,6 +26,7 @@ enum SystemProfileField {
   ARCH = 1;
   BOARD_NAME = 2;
   PRODUCT_NAME = 3;
+  SYSTEM_VERSION = 4;
 }
 
 // ExponentialIntegerBuckets is used to define a partition of the integers into

@@ -385,6 +385,10 @@ Encoder::Result Encoder::MakeObservation(MetricRef metric,
             metadata->mutable_system_profile()->set_product_name(
                 profile.product_name());
             break;
+          case SystemProfileField::SYSTEM_VERSION:
+            metadata->mutable_system_profile()->set_system_version(
+                profile.system_version());
+            break;
         }
       }
     }

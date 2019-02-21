@@ -508,6 +508,9 @@ grpc::Status ReportSerializer::AppendCSVHeaderRowSystemProfileFields(
       case cobalt::SystemProfileField::PRODUCT_NAME:
         (*stream) << "Product_Name";
         break;
+      case cobalt::SystemProfileField::SYSTEM_VERSION:
+        (*stream) << "System_Version";
+        break;
     }
   }
   return grpc::Status::OK;
@@ -615,6 +618,9 @@ grpc::Status ReportSerializer::AppendCSVSystemProfileFields(
         case SystemProfileField::PRODUCT_NAME:
           (*stream) << ToCSVString(profile.product_name());
           break;
+        case SystemProfileField::SYSTEM_VERSION:
+          (*stream) << ToCSVString(profile.system_version());
+          break;
       }
     }
   }
@@ -676,7 +682,7 @@ grpc::Status ReportSerializer::AppendCSVRawDumpReportRow(
 
   for (size_t i = 0; i < num_values_this_row; i++) {
     const IndexLabels* index_labels = nullptr;
-    if (i < (size_t) report_config_->variable_size() &&
+    if (i < (size_t)report_config_->variable_size() &&
         report_config_->variable(i).has_index_labels()) {
       index_labels = &(report_config_->variable(i).index_labels());
     }

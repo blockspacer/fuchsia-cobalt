@@ -36,12 +36,6 @@ class SystemDataInterface {
 // the SystemProfile, and dynamic stateful data about the running system.
 class SystemData : public SystemDataInterface {
  public:
-  // Constructor: Populuates system_profile_ with the real SystemProfile
-  // of the actual running system and the specified product name.
-  //
-  // DEPRECATED
-  explicit SystemData(const std::string& product_name);
-
   // Constructor: Uses the real SystemProfile of the actual running system.
   //
   // |product_name|: The value to use for the |product_name| field of the
@@ -52,8 +46,13 @@ class SystemData : public SystemDataInterface {
   // SystemData is able to determine the boardh name directly. A value of ""
   // indicates that the caller has no information about board name, so one
   // should be guessed.
+  //
+  // |version|: The version of the running system. The use of this field is
+  // system-specific. For example on Fuchsia a possible value for |version| is
+  // "20190220_01_RC00".
   SystemData(const std::string& product_name,
-             const std::string& board_name_suggestion);
+             const std::string& board_name_suggestion = "",
+             const std::string& version = "");
 
   virtual ~SystemData() = default;
 

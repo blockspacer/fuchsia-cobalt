@@ -16,11 +16,12 @@ namespace cobalt {
 namespace encoder {
 
 TEST(SystemDataTest, BasicTest) {
-  SystemData system_data("test_product");
+  SystemData system_data("test_product", "", "test_version");
   EXPECT_NE(SystemProfile::UNKNOWN_OS, system_data.system_profile().os());
   EXPECT_NE(SystemProfile::UNKNOWN_ARCH, system_data.system_profile().arch());
   EXPECT_NE(system_data.system_profile().board_name(), "");
   EXPECT_EQ(system_data.system_profile().product_name(), "test_product");
+  EXPECT_EQ(system_data.system_profile().system_version(), "test_version");
 
   // Board names we expect to see.
   std::set<std::string> expected_board_names = {"Eve", "Generic ARM"};
@@ -52,7 +53,7 @@ TEST(SystemDataTest, SetExperimentTest) {
   const int kExperimentId = 1;
   const int kArmId = 123;
 
-  SystemData system_data("test_product");
+  SystemData system_data("test_product", "");
 
   Experiment experiment;
   experiment.set_experiment_id(kExperimentId);
