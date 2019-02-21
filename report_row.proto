@@ -215,6 +215,12 @@ message PerDeviceCountStatsReportRow {
   // The mean of the counts contributing to this report row.
   float mean = 6;
 
+  // The standard deviation of the counts contributing to this report row.
+  float stddev = 7;
+
+  // The number of devices reporting a nonzero count for this report row.
+  int64 nonzero_count = 8;
+
   // Percentiles: the value of |percentile_N| is the smallest count k
   // contributed by a device to this report row such that at least N percent
   // of devices reported an occurrence count less than or equal to k.
