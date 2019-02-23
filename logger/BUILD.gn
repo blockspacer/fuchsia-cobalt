@@ -73,6 +73,28 @@ source_set("project_context") {
   ]
 }
 
+source_set("project_context_factory") {
+  sources = [
+    "project_context_factory.cc",
+    "project_context_factory.h",
+  ]
+
+  public_configs = [
+    "//third_party/cobalt:cobalt_config",
+    "//third_party/cobalt/config:proto_config",
+  ]
+
+  deps = [
+    "//third_party/cobalt/config:cobalt_registry_proto",
+  ]
+
+  public_deps = [
+    ":project_context",
+    "//third_party/cobalt/encoder:legacy_project_context",
+  ]
+}
+
+
 source_set("encoder") {
   sources = [
     "encoder.cc",
@@ -82,7 +104,6 @@ source_set("encoder") {
   public_configs = [ "//third_party/cobalt:cobalt_config" ]
 
   public_deps = [
-    ":project_context",
     ":status",
     "//garnet/public/lib/fxl",
     "//third_party/abseil-cpp",
@@ -178,6 +199,8 @@ source_set("logger") {
     ":internal_metrics",
     ":logger_interface",
     ":observation_writer",
+    # TODO(rudominer) Remove :project_context from public_deps after
+    # Fuchsia code switches to ProjectContextFactory.
     ":project_context",
     ":status",
     "//third_party/cobalt/config:id",

@@ -5,6 +5,21 @@
 import("//third_party/cobalt/cobalt_config_header.gni")
 import("//third_party/protobuf/proto_library.gni")
 
+static_library("legacy_project_context") {
+  sources = [
+    "project_context.cc",
+    "project_context.h",
+  ]
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+
+  deps = [
+    ":client_secret",
+    "//garnet/public/lib/fxl",
+    "//third_party/cobalt/config:client_config",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
 static_library("encoder") {
   sources = [
     "encoder.cc",
@@ -18,8 +33,6 @@ static_library("encoder") {
     "observation_store.cc",
     "observation_store.h",
     "observation_store_update_recipient.h",
-    "project_context.cc",
-    "project_context.h",
     "send_retryer.cc",
     "send_retryer.h",
     "shipping_manager.cc",
@@ -46,6 +59,10 @@ static_library("encoder") {
   public_deps = [
     ":client_secret",
     ":file_observation_store_internal_proto",
+    # TODO(rudominer) Remove legacy_project_context, client_config, and
+    # cobalt_registry_proto from public_deps after Fuchsia code switches
+    # to ProjectContextFactory
+    ":legacy_project_context",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:client_config",
@@ -126,13 +143,10 @@ source_set("unittests") {
     ":generate_encoder_test_config",
     ":generate_envelope_maker_test_config",
     ":generate_shipping_manager_test_config",
+    ":legacy_project_context",
     "//third_party/abseil-cpp",
     "//third_party/gflags",
     "//third_party/googletest:gtest_main",
-
-    # Note(rudominer) We need protobuf full here for deserializing ASCII
-    # protos as part of the test.
-    "//third_party/protobuf:protobuf_full",
   ]
 
   configs += [ "//third_party/cobalt:cobalt_config" ]
