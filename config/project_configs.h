@@ -121,6 +121,11 @@ class ProjectConfigs {
   // the single project. Otherwise the return value is undefined.
   std::string single_project_name() { return single_project_name_; }
 
+  // If is_single_project() is true then this removes and returns the single
+  // ProjectConfig from the data owned by this object leaving this object
+  // empty. Otherwise returns nullptr.
+  std::unique_ptr<ProjectConfig> TakeSingleProjectConfig();
+
  private:
   std::unique_ptr<CobaltRegistry> cobalt_registry_;
 

@@ -340,12 +340,14 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   auto project_configs = NewProjectConfigs(0, 0);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_TRUE(project_configs->is_empty());
+  EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with no
   // projects is not empty and is not a single project.
   project_configs = NewProjectConfigs(1, 0);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_FALSE(project_configs->is_empty());
+  EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with 1
   // project is not empty and is a single project.
@@ -356,18 +358,32 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_EQ("Customer-Name1", project_configs->single_customer_name());
   EXPECT_EQ(1u, project_configs->single_project_id());
   EXPECT_EQ("Project-Name1", project_configs->single_project_name());
+  // Test TakeSingleProjectConfg() in the case that there is a single project.
+  EXPECT_NE(
+      project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"),
+      nullptr);
+  auto project_config = project_configs->TakeSingleProjectConfig();
+  EXPECT_TRUE(project_config != nullptr);
+  EXPECT_EQ("Project-Name1", project_config->project_name());
+  EXPECT_FALSE(project_configs->is_single_project());
+  EXPECT_TRUE(project_configs->is_empty());
+  EXPECT_EQ(
+      project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"),
+      nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with 2
   // projects is not empty and is not a single project.
   project_configs = NewProjectConfigs(1, 2);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_FALSE(project_configs->is_empty());
+  EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 2 customers with 1
   // project each is not empty and is not a single project.
   project_configs = NewProjectConfigs(2, 1);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_FALSE(project_configs->is_empty());
+  EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 }
 
 }  // namespace config

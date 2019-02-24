@@ -72,6 +72,25 @@ ProjectConfigs::ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_registry)
   }
 }
 
+std::unique_ptr<ProjectConfig> ProjectConfigs::TakeSingleProjectConfig() {
+  if (!is_single_project_) {
+    return nullptr;
+  }
+  is_empty_ = true;
+  is_single_project_ = false;
+  projects_by_name_.clear();
+  projects_by_id_.clear();
+  metrics_by_id_.clear();
+  reports_by_id_.clear();
+  auto project_config = std::make_unique<ProjectConfig>();
+  CHECK(!cobalt_registry_->customers().empty());
+  CHECK(!cobalt_registry_->customers(0).projects().empty());
+  project_config->Swap(
+      cobalt_registry_->mutable_customers(0)->mutable_projects(0));
+  cobalt_registry_->mutable_customers(0)->mutable_projects()->Clear();
+  return project_config;
+}
+
 const CustomerConfig* ProjectConfigs::GetCustomerConfig(
     const std::string& customer_name) const {
   auto iter = customers_by_name_.find(customer_name);
