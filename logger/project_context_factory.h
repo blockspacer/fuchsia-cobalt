@@ -41,12 +41,13 @@ namespace logger {
 // ProjectContext.
 //
 // Depending on which state the factory's CobaltRegistry is in, invoke one
-// of the New*() methods to create a new ProjectContext.
+// of the New*() or Take*() methods to retrieve a new ProjectContext().
 //
-// Important: The ProjectContextFactory continues to own its CobaltRegistry.
-// The returned ProjectContext maintains a pointer to the CobaltRegistry
-// owned by the ProjectContextFactory. Thus the ProjectContextFactory must
-// not be destructed until after the ProjectContext is no longer being used.
+// Important: Pay attention to the notes on each method regarding the
+// requirement that this ProjectContextFactory remain alive. In some cases,
+// the returned ProjectContext contains a poiner into the CobaltRegistry
+// owned by this ProjectContextFactory and so the factory must not
+// be destructed until after the ProjectContext is no longer being used.
 class ProjectContextFactory {
  public:
   // Constructs a ProjectContextFactory whose CobaltRegistry is obtained
@@ -80,20 +81,26 @@ class ProjectContextFactory {
   // contains that project. The ProjectContext will be marked as being for a
   // client at the given |release_stage|. Returns nullptr otherwise.
   //
-  // This ProjectContextFactory must remain alive as long as the returned
-  // ProjectContext is being used.
+  // Important: The returned ProjectContext contains a pointer into this
+  // factory's CobaltRegistry. This ProjectContextFactory must remain alive as
+  // long as the returned ProjectContext is being used.
   std::unique_ptr<ProjectContext> NewProjectContext(
       std::string customer_name, std::string project_name,
       ReleaseStage release_stage = GA);
 
-  // If is_single_project() is true, returns a ProjectContext for the unique
-  // Cobalt 1.0 project contained in the factory's CobaltRegistry. The
-  // ProjectContext will be marked as being for a client at the given
-  // |release_stage|. Returns nullptr otherwise.
+  // If is_single_project() is true, then this returns a
+  // ProjectContext for the unique Cobalt 1.0 project contained in the factory's
+  // CobaltRegistry and removes the corresponding data from the registry,
+  // leaving this ProjectContextFactory invalid. The returned ProjectContext
+  // will be marked as being for a client at the given |release_stage|.
+  // Returns nullptr otherwise.
   //
-  // This ProjectContextFactory must remain alive as long as the returned
-  // ProjectContext is being used.
-  std::unique_ptr<ProjectContext> NewSingleProjectContext(
+  // Note: The returned ProjectContext does *not* contain a pointer into
+  // this factory's CobaltRegistry because the appropriate data is removed
+  // from the CobaltRegistry and is now owned by the ProjectContext. If nullptr
+  // is not returned then this ProjectContextFactory becomes invalid and
+  // shoud be discarded.
+  std::unique_ptr<ProjectContext> TakeSingleProjectContext(
       ReleaseStage release_stage = GA);
 
   // Returns a ProjectContext for the Cobalt 0.1 project with the given
@@ -103,8 +110,9 @@ class ProjectContextFactory {
   // CobaltRegistry for the specified project so the returned ProjectContext
   // may be non-null but still empty.
   //
-  // This ProjectContextFactory must remain alive as long as the returned
-  // ProjectContext is being used.
+  // Note: The returned ProjectContext contains a shared pointer into
+  // this factory's CobaltRegistry. It does not matter whether or not this
+  // ProjectContextFactory remains alive.
   std::unique_ptr<encoder::ProjectContext> NewLegacyProjectContext(
       uint32_t customer_id, uint32_t project_id);
 
@@ -112,8 +120,9 @@ class ProjectContextFactory {
   // unique Cobalt 0.1 project contained in the factory's CobaltRegistry.
   // Returns nullptr otherwise.
   //
-  // This ProjectContextFactory must remain alive as long as the returned
-  // ProjectContext is being used.
+  // Note: The returned ProjectContext contains a shared pointer into
+  // this factory's CobaltRegistry. It does not matter whether or not this
+  // ProjectContextFactory remains alive.
   std::unique_ptr<encoder::ProjectContext> NewSingleLegacyProjectContext();
 
  private:
