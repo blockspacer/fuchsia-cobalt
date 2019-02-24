@@ -111,7 +111,6 @@ class LoggerTest : public ::testing::Test {
       const std::string& registry_var_name,
       const ExpectedAggregationParams& expected_aggregation_params) {
     expected_aggregation_params_ = expected_aggregation_params;
-    project_context_ = GetTestProject(registry_var_name);
     observation_store_.reset(new FakeObservationStore);
     update_recipient_.reset(new TestUpdateRecipient);
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
@@ -127,9 +126,9 @@ class LoggerTest : public ::testing::Test {
     event_aggregator_.reset(new EventAggregator(
         encoder_.get(), observation_writer_.get(),
         local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
-    logger_.reset(new Logger(encoder_.get(), event_aggregator_.get(),
-                             observation_writer_.get(),
-                             project_context_.get()));
+    logger_.reset(new Logger(GetTestProject(registry_var_name), encoder_.get(),
+                             event_aggregator_.get(),
+                             observation_writer_.get()));
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
@@ -181,7 +180,6 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<FakeObservationStore> observation_store_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
-  std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;

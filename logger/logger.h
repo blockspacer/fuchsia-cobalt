@@ -41,6 +41,9 @@ class Logger : public LoggerInterface {
  public:
   // Constructor
   //
+  // |project_context| The ProjectContext of the client-side project for which
+  // the Logger will log events.
+  //
   // |encoder| The system's singleton instance of Encoder. This must remain
   // valid as long as the Logger is being used. The Logger uses this to
   // encode immediate Observations.
@@ -54,14 +57,42 @@ class Logger : public LoggerInterface {
   // to write immediate Observations to an ObservationStore. Must remain valid
   // as long as the Logger is in use.
   //
-  // |project| The ProjectContext of the client-side project for which the
-  // Logger will log events.
+  // |internal_logger| An instance of LoggerInterface, used internally by the
+  // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
+  // internal logging will be performed by this Logger.
+  Logger(std::unique_ptr<ProjectContext> project_context,
+         const Encoder* encoder, EventAggregator* event_aggregator,
+         ObservationWriter* observation_writer,
+         LoggerInterface* internal_logger = nullptr);
+
+  // Constructor
+  //
+  // Deprecated. Prefer the constructor that gives ownership of the
+  // ProjectContext. TODO(rudominer) Delete this constructor when all uses of it
+  // have been removed.
+  //
+  // |encoder| The system's singleton instance of Encoder. This must remain
+  // valid as long as the Logger is being used. The Logger uses this to
+  // encode immediate Observations.
+  //
+  // |event_aggregator| The system's singleton instance of EventAggregator.
+  // This must remain valid as long as the Logger is being used. The Logger
+  // uses this to aggregate values derived from Events and to produce locally
+  // aggregated Observations.
+  //
+  // |observation_writer| An instance of ObservationWriter, used by the Logger
+  // to write immediate Observations to an ObservationStore. Must remain valid
+  // as long as the Logger is in use.
+  //
+  // |project_context| The ProjectContext of the client-side project for which
+  // the Logger will log events.
   //
   // |internal_logger| An instance of LoggerInterface, used internally by the
   // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
   // internal logging will be performed by this Logger.
   Logger(const Encoder* encoder, EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer, const ProjectContext* project,
+         ObservationWriter* observation_writer,
+         const ProjectContext* project_context,
          LoggerInterface* internal_logger = nullptr);
 
   // Deprecated constructor
@@ -71,7 +102,7 @@ class Logger : public LoggerInterface {
   // constructor is currently used by the Cobalt test app in Garnet and will be
   // removed once those tests are updated.
   Logger(const Encoder* encoder, ObservationWriter* observation_writer,
-         const ProjectContext* project,
+         const ProjectContext* project_context,
          LoggerInterface* internal_logger = nullptr);
 
   virtual ~Logger() = default;
@@ -126,12 +157,54 @@ class Logger : public LoggerInterface {
   friend class LoggerTest;
   friend class cobalt::internal::RealLoggerFactory;
 
+  // Constructor
+  //
+  // |maybe_null_project_context| The ProjectContext of the client-side project
+  // for which the Logger will log events. Exactly one of
+  // |maybe_null_project_context| and |project_context| must be non-null.
+  //
+  // |encoder| The system's singleton instance of Encoder. This must remain
+  // valid as long as the Logger is being used. The Logger uses this to
+  // encode immediate Observations.
+  //
+  // |event_aggregator| The system's singleton instance of EventAggregator.
+  // This must remain valid as long as the Logger is being used. The Logger
+  // uses this to aggregate values derived from Events and to produce locally
+  // aggregated Observations.
+  //
+  // |observation_writer| An instance of ObservationWriter, used by the Logger
+  // to write immediate Observations to an ObservationStore. Must remain valid
+  // as long as the Logger is in use.
+  //
+  // |project_context| The ProjectContext of the client-side project for which
+  // the Logger will log events. Exactly one of |maybe_null_project_context| and
+  // |project_context| must be non-null.
+  //
+  // |internal_logger| An instance of LoggerInterface, used internally by the
+  // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
+  // internal logging will be performed by this Logger.
+  Logger(std::unique_ptr<ProjectContext> maybe_null_project_context,
+         const Encoder* encoder, EventAggregator* event_aggregator,
+         ObservationWriter* observation_writer,
+         const ProjectContext* project_context,
+         LoggerInterface* internal_logger = nullptr);
+
   void SetClock(util::ClockInterface* clock) { clock_.reset(clock); }
+
+  // TODO(rudominer) We are transitioning to having a Logger own its
+  // ProjectContext. In the interim we maintain these two variables.
+  // After the transition is complete we will delete |project_context_|
+  // and rename |maybe_null_project_context_| to |project_context_|.
+  // As long as both variables exist, only access |project_context_|,
+  // do not access |maybe_null_project_context_|. If
+  // |maybe_null_project_context_| is not null then project_context_ points
+  // to the same thing.
+  const ProjectContext* project_context_;
+  const std::unique_ptr<ProjectContext> maybe_null_project_context_;
 
   const Encoder* encoder_;
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
-  const ProjectContext* project_context_;
   std::unique_ptr<util::ClockInterface> clock_;
 
   std::unique_ptr<InternalMetrics> internal_metrics_;

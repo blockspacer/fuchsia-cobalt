@@ -232,44 +232,53 @@ class CustomEventLogger : public EventLogger {
 
 //////////////////// Logger method implementations ////////////////////////
 
+Logger::Logger(std::unique_ptr<ProjectContext> maybe_null_project_context,
+               const Encoder* encoder, EventAggregator* event_aggregator,
+               ObservationWriter* observation_writer,
+               const ProjectContext* project, LoggerInterface* internal_logger)
+    : project_context_(project),
+      maybe_null_project_context_(std::move(maybe_null_project_context)),
+      encoder_(encoder),
+      event_aggregator_(event_aggregator),
+      observation_writer_(observation_writer),
+      clock_(new SystemClock()) {
+  CHECK(project_context_ || maybe_null_project_context_);
+  CHECK(!(project_context_ && maybe_null_project_context_));
+  if (!project_context_) {
+    project_context_ = maybe_null_project_context_.get();
+  }
+
+  if (internal_logger) {
+    internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
+  } else {
+    // We were not provided with a metrics logger. We must create one.
+    internal_metrics_.reset(new NoOpInternalMetrics());
+  }
+  if (event_aggregator_) {
+    if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
+      LOG(ERROR) << "Failed to provide aggregation configurations to the "
+                    "EventAggregator.";
+    }
+  }
+}
+
+Logger::Logger(std::unique_ptr<ProjectContext> project_context,
+               const Encoder* encoder, EventAggregator* event_aggregator,
+               ObservationWriter* observation_writer,
+               LoggerInterface* internal_logger)
+    : Logger(std::move(project_context), encoder, event_aggregator,
+             observation_writer, nullptr, internal_logger) {}
+
 Logger::Logger(const Encoder* encoder, EventAggregator* event_aggregator,
                ObservationWriter* observation_writer,
                const ProjectContext* project, LoggerInterface* internal_logger)
-    : encoder_(encoder),
-      event_aggregator_(event_aggregator),
-      observation_writer_(observation_writer),
-      project_context_(project),
-      clock_(new SystemClock()) {
-  CHECK(project);
-
-  if (internal_logger) {
-    internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
-  } else {
-    // We were not provided with a metrics logger. We must create one.
-    internal_metrics_.reset(new NoOpInternalMetrics());
-  }
-  if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
-    LOG(ERROR) << "Failed to provide aggregation configurations to the "
-                  "EventAggregator.";
-  }
-}
+    : Logger(nullptr, encoder, event_aggregator, observation_writer, project,
+             internal_logger) {}
 
 Logger::Logger(const Encoder* encoder, ObservationWriter* observation_writer,
                const ProjectContext* project, LoggerInterface* internal_logger)
-    : encoder_(encoder),
-      event_aggregator_(nullptr),
-      observation_writer_(observation_writer),
-      project_context_(project),
-      clock_(new SystemClock()) {
-  CHECK(project);
-
-  if (internal_logger) {
-    internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
-  } else {
-    // We were not provided with a metrics logger. We must create one.
-    internal_metrics_.reset(new NoOpInternalMetrics());
-  }
-}
+    : Logger(nullptr, encoder, nullptr, observation_writer, project,
+             internal_logger) {}
 
 Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
