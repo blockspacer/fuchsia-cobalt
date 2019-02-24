@@ -93,6 +93,8 @@ message MetricDefinition {
     //
     // Compatible report types:
     // - EVENT_COMPONENT_OCCURRENCE_COUNT
+    // - INT_RANGE_HISTOGRAM
+    // - PER_DEVICE_COUNT_STATS
     EVENT_COUNT = 2;
 
     // Records an elapsed time.

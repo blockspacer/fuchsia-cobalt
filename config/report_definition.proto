@@ -130,7 +130,7 @@ message ReportDefinition {
     // more event types, associated with one or more components
     //
     // Supported Input Types:
-    //   - Metric types: ELAPSED_TIME, FRAME_RATE, MEMORY_USAGE
+    //   - Metric types: ELAPSED_TIME, EVENT_COUNT, FRAME_RATE, MEMORY_USAGE
     //     Encoding, Observation type, Observation value field: Same as
     //         NUMERIC_AGGREGATION above.
     //   - Metric type: INT_HISTOGRAM
