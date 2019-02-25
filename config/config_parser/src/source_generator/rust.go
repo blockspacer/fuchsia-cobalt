@@ -36,7 +36,7 @@ func (_ Rust) writeNamespaceEnd(so *sourceOutputter) {
 }
 
 func (_ Rust) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
-	so.writeLineFmt("pub const %s = %d;", toUpperSnakeCase(name...), value)
+	so.writeLineFmt("pub const %s: u32 = %d;", toUpperSnakeCase(name...), value)
 }
 
 func (_ Rust) writeStringConstant(so *sourceOutputter, value string, name ...string) {

@@ -2,11 +2,11 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 // Metric ID Constants
 // the_metric_name
-pub const THE_METRIC_NAME_METRIC_ID = 100;
+pub const THE_METRIC_NAME_METRIC_ID: u32 = 100;
 // the_other_metric_name
-pub const THE_OTHER_METRIC_NAME_METRIC_ID = 200;
+pub const THE_OTHER_METRIC_NAME_METRIC_ID: u32 = 200;
 // event groups
-pub const EVENT_GROUPS_METRIC_ID = 300;
+pub const EVENT_GROUPS_METRIC_ID: u32 = 300;
 
 // Enum for the_other_metric_name (EventCode)
 pub enum TheOtherMetricNameEventCode {
