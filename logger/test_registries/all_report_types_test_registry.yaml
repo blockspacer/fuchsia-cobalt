@@ -33,6 +33,8 @@ metric_definitions:
     # Report ID: 2845948340
     - report_name: "ReadCacheHitCounts"
       report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+    - report_name: "ReadCacheHitHistograms"
+      report_type: INT_RANGE_HISTOGRAM
 
 - id: 3
   metric_name: "ModuleLoadTime"

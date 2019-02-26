@@ -227,7 +227,8 @@ TEST_F(LoggerTest, LogEvent) {
 // Tests the method LogEventCount().
 TEST_F(LoggerTest, LogEventcount) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId};
+      testing::all_report_types::kReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitHistogramsReportId};
   ASSERT_EQ(kOK, logger_->LogEventCount(
                      testing::all_report_types::kReadCacheHitsMetricId, 43,
                      "component2", 1, 303));
