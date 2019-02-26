@@ -148,22 +148,25 @@ class EventAggregator {
   // called.
   Status LogUniqueActivesEvent(uint32_t report_id, EventRecord* event_record);
 
-  // Logs an Event associated to a report of type
-  // PER_DEVICE_COUNT_STATS to the EventAggregator.
+  // LogCountEvent, LogElapsedTimeEvent:
+  //
+  // Logs an Event associated to a report of type PER_DEVICE_NUMERIC_STATS to
+  // the EventAggregator.
   //
   // report_id: the ID of the report associated to the logged Event.
   //
-  // event_record: an EventRecord wrapping an Event of type CountEvent
-  // and the MetricDefinition for which the Event is to be logged.
+  // event_record: an EventRecord wrapping an Event and the MetricDefinition for
+  // which the Event is to be logged.
   //
   // Returns kOK if the LocalAggregateStore was successfully updated, and
   // kInvalidArguments if either a lookup key corresponding to |report_id| was
   // not found in the LocalAggregateStore, or if the Event wrapped by
-  // EventRecord is not of type CountEvent.
+  // EventRecord is not of the expected type.
   //
-  // Currently compatible only with EVENT_COUNT metrics with a single event code
-  // dimension. TODO(pesk, zmbush): support multiple event codes.
-  Status LogPerDeviceCountEvent(uint32_t report_id, EventRecord* event_record);
+  // LogCountEvent: |event_record| should wrap a CountEvent.
+  Status LogCountEvent(uint32_t report_id, EventRecord* event_record);
+  // LogElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
+  Status LogElapsedTimeEvent(uint32_t report_id, EventRecord* event_record);
 
   // Checks that the worker thread is shut down, and if so, calls the private
   // method GenerateObservations() and returns its result. Returns kOther if the
@@ -257,6 +260,14 @@ class EventAggregator {
   // |protected_aggregate_store_|.
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u);
 
+  // Logs a numeric value to the LocalAggregateStore by adding |value| to the
+  // current daily aggregate in the bucket indexed by |report_key|, |day_index|,
+  // |component|, and |event_code|. This is a helper method called by
+  // LogCountEvent and LogElapsedTimeEvent.
+  Status LogNumericEvent(const std::string& report_key, uint32_t day_index,
+                         const std::string& component, uint64_t event_code,
+                         int64_t value);
+
   // Returns the most recent day index for which an Observation was generated
   // for a given UNIQUE_N_DAY_ACTIVES report, event code, and window size,
   // according to |obs_history_|. Returns 0 if no Observation has been generated
@@ -266,13 +277,13 @@ class EventAggregator {
                                               uint32_t window_size) const;
 
   // Returns the most recent day index for which an Observation was generated
-  // for a given PER_DEVICE_COUNT_STATS report, component, event code,
+  // for a given PER_DEVICE_NUMERIC_STATS report, component, event code,
   // and window size, according to |obs_history_|. Returns 0 if no Observation
   // has been generated for the given arguments.
-  uint32_t PerDeviceCountLastGeneratedDayIndex(const std::string& report_key,
-                                               const std::string& component,
-                                               uint32_t event_code,
-                                               uint32_t window_size) const;
+  uint32_t PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
+                                                 const std::string& component,
+                                                 uint32_t event_code,
+                                                 uint32_t window_size) const;
 
   // Returns the most recent day index for which a
   // ReportParticipationObservation was generated for a given report, according
@@ -305,35 +316,36 @@ class EventAggregator {
                                                 uint32_t window_size,
                                                 bool was_active) const;
 
-  // For a fixed report of type PER_DEVICE_COUNT_STATS, generates a
-  // PerDeviceCountObservation for each tuple (component, event code, window
-  // size) for which a positive number of events with that event code occurred
-  // with that component during the window of that size ending on
-  // |final_day_index|, unless an Observation with those parameters has been
-  // generated in the past. Also generates PerDeviceCountObservations for days
-  // in the backfill period if needed.
+  // For a fixed report of type PER_DEVICE_NUMERIC_STATS, generates a
+  // PerDeviceNumericObservation for each tuple (component, event code, window
+  // size) for which a numeric event was logged for that event code and
+  // component during the window of that size ending on |final_day_index|,
+  // unless an Observation with those parameters has been generated in the past.
+  // The value of the Observation is the sum of all numeric events logged for
+  // that report during the window. Also generates PerDeviceNumericObservations
+  // for days in the backfill period if needed.
   //
-  // In addition to PerDeviceCountObservations, generates a
+  // In addition to PerDeviceNumericObservations, generates a
   // ReportParticipationObservation for |final_day_index| and any needed days in
   // the backfill period. These ReportParticipationObservations are used by the
-  // PerDeviceCount report generator to infer the fleet-wide number of devices
-  // for which the event count associated to each tuple (component, event code,
-  // window size) was zero.
+  // PerDeviceNumericStats report generator to infer the fleet-wide number of
+  // devices for which the sum of numeric events associated to each tuple
+  // (component, event code, window size) was zero.
   //
   // Observations are not generated for aggregation windows larger than
   // |kMaxAllowedAggregationWindowSize|.
-  Status GeneratePerDeviceCountObservations(
+  Status GeneratePerDeviceNumericObservations(
       const MetricRef metric_ref, const std::string& report_key,
       const ReportAggregates& report_aggregates, uint32_t final_day_index);
 
-  // Helper method called by GeneratePerDeviceCountObservations() to generate
-  // and write a single PerDeviceCountObservation.
-  Status GenerateSinglePerDeviceCountObservation(
+  // Helper method called by GeneratePerDeviceNumericObservations() to generate
+  // and write a single Observation with value |sum|.
+  Status GenerateSinglePerDeviceNumericObservation(
       const MetricRef metric_ref, const ReportDefinition* report,
       uint32_t obs_day_index, const std::string& component, uint32_t event_code,
-      uint32_t window_size, int64_t count) const;
+      uint32_t window_size, int64_t sum) const;
 
-  // Helper method called by GeneratePerDeviceCountObservations() to generate
+  // Helper method called by GeneratePerDeviceNumericObservations() to generate
   // and write a single ReportParticipationObservation.
   Status GenerateSingleReportParticipationObservation(
       const MetricRef metric_ref, const ReportDefinition* report,

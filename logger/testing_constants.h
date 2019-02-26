@@ -13,9 +13,9 @@
 // Generated from mixed_time_zone_test_registry.yaml
 // Namespace: cobalt::logger::testing::mixed_time_zone
 #include "logger/test_registries/mixed_time_zone_test_registry.h"
-// Generated from per_device_count_test_registry.yaml
-// Namespace: cobalt::logger::testing::per_device_count
-#include "logger/test_registries/per_device_count_test_registry.h"
+// Generated from per_device_numeric_stats_test_registry.yaml
+// Namespace: cobalt::logger::testing::per_device_numeric_stats
+#include "logger/test_registries/per_device_numeric_stats_test_registry.h"
 // Generated from unique_actives_noise_free_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives_noise_free
 #include "logger/test_registries/unique_actives_noise_free_test_registry.h"
@@ -42,20 +42,23 @@ const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
 const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
+const MetricReportId kStreamingTimeMetricReportId = MetricReportId(
+    kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    29,
+    30,
 
     {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
      kEventsOccurredMetricReportId, kSettingsChangedMetricReportId,
-     kConnectionFailuresMetricReportId},
+     kConnectionFailuresMetricReportId, kStreamingTimeMetricReportId},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 15},
      {kEventsOccurredMetricReportId, 10},
      {kSettingsChangedMetricReportId, 1},
-     {kConnectionFailuresMetricReportId, 1}},
+     {kConnectionFailuresMetricReportId, 1},
+     {kStreamingTimeMetricReportId, 1}},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 5},
@@ -65,7 +68,8 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
      {kFeaturesActiveMetricReportId, {1, 7, 30}},
      {kEventsOccurredMetricReportId, {1, 7}},
      {kSettingsChangedMetricReportId, {7, 30}},
-     {kConnectionFailuresMetricReportId, {1}}}};
+     {kConnectionFailuresMetricReportId, {1}},
+     {kStreamingTimeMetricReportId, {1, 7}}}};
 
 }  // namespace all_report_types
 
@@ -94,30 +98,35 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 }  // namespace mixed_time_zone
 
 // Constants specific to the registry defined in
-// test_registries/per_device_count_test_registry.yaml
-namespace per_device_count {
+// test_registries/per_device_numeric_stats_test_registry.yaml
+namespace per_device_numeric_stats {
 
 // MetricReportIds of the locally aggregated reports in this registry
 const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
 const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
+const MetricReportId kStreamingTimeMetricReportId = MetricReportId(
+    kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    2,
+    3,
 
-    {kSettingsChangedMetricReportId, kConnectionFailuresMetricReportId},
+    {kSettingsChangedMetricReportId, kConnectionFailuresMetricReportId,
+     kStreamingTimeMetricReportId},
 
     {{kSettingsChangedMetricReportId, 1},
-     {kConnectionFailuresMetricReportId, 1}},
+     {kConnectionFailuresMetricReportId, 1},
+     {kStreamingTimeMetricReportId, 1}},
 
     {},
 
     {{kSettingsChangedMetricReportId, {7, 30}},
-     {kConnectionFailuresMetricReportId, {1}}}};
+     {kConnectionFailuresMetricReportId, {1}},
+     {kStreamingTimeMetricReportId, {1, 7}}}};
 
-}  // namespace per_device_count
+}  // namespace per_device_numeric_stats
 
 // Constants specific to the registry defined in
 // test_registries/unique_actives_test_registry.yaml

@@ -29,7 +29,7 @@ message ReportAggregates {
   // A collection of aggregates whose form depends on the report type.
   oneof type {
     UniqueActivesReportAggregates unique_actives_aggregates = 1;
-    PerDeviceCountReportAggregates count_aggregates = 2;
+    PerDeviceNumericAggregates numeric_aggregates = 2;
   }
   // The configuration for the report represented by the ReportAggregationKey
   // of this ReportAggregates.
@@ -41,7 +41,7 @@ message UniqueActivesReportAggregates {
   map<uint32, DailyAggregates> by_event_code = 1;
 }
 
-message PerDeviceCountReportAggregates {
+message PerDeviceNumericAggregates {
   // Keyed by component string.
   map<string, EventCodeAggregates> by_component = 1;
 }
@@ -61,7 +61,7 @@ message DailyAggregates {
 message DailyAggregate {
   oneof type {
     ActivityDailyAggregate activity_daily_aggregate = 1;
-    CountDailyAggregate count_daily_aggregate = 2;
+    NumericDailyAggregate numeric_daily_aggregate = 2;
   }
 }
 
@@ -75,6 +75,10 @@ message ActivityDailyAggregate {
 // with a particular component label, on a given day.
 message CountDailyAggregate {
   int64 count = 1;
+}
+
+message NumericDailyAggregate {
+  int64 sum = 1;
 }
 
 // A representation of the configuration of a locally aggregated report and
@@ -114,9 +118,9 @@ message AggregatedObservationHistory {
     // A container for the history of UniqueActivesObservations generated
     // for a UNIQUE_N_DAY_ACTIVES report.
     UniqueActivesObservationHistory unique_actives_history = 1;
-    // A container for the history of PerDeviceCountObservations generated
-    // for a PER_DEVICE_COUNT_STATS report.
-    PerDeviceCountObservationHistory per_device_count_history = 2;
+    // A container for the history of PerDeviceNumericObservations generated
+    // for a PER_DEVICE_NUMERIC_STATS report.
+    PerDeviceNumericObservationHistory per_device_numeric_history = 2;
   }
   // A container for the history of ReportParticipationObservations generated
   // for this report. Unset if ReportParticipationObservations should not be
@@ -129,8 +133,8 @@ message UniqueActivesObservationHistory {
   map<uint32, HistoryByWindowSize> by_event_code = 1;
 }
 
-message PerDeviceCountObservationHistory {
-  // The history of PerDeviceCount Observations. Keyed by component string.
+message PerDeviceNumericObservationHistory {
+  // The history of PerDeviceNumericObservations. Keyed by component string.
   map<string, HistoryByEventCode> by_component = 1;
 }
 

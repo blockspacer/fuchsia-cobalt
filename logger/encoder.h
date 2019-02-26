@@ -279,7 +279,7 @@ class Encoder {
                                         bool was_active,
                                         uint32_t window_size) const;
 
-  // Encodes an Observation of type PerDeviceCountObservation.
+  // Encodes an Observation of type PerDeviceNumericObservation.
   //
   // metric: Provides access to the names and IDs of the customer, project and
   // metric associated with the Observation being encoded.
@@ -298,12 +298,12 @@ class Encoder {
   // |event_code|.
   //
   // count: This will populate the |value| field of the the
-  // IntegerEventObservation wrapped by the PerDeviceCountObservation.
+  // IntegerEventObservation wrapped by the PerDeviceNumericObservation.
   //
   // window_size: The number of days in the window associated with the
   // Observation. This should be one of the window sizes specified in |report|,
   // but it is the caller's responsibility to ensure this.
-  Result EncodePerDeviceCountObservation(
+  Result EncodePerDeviceNumericObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const std::string component,
       const google::protobuf::RepeatedField<uint32_t>& event_codes,

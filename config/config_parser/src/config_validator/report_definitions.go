@@ -21,12 +21,13 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 	config.MetricDefinition_EVENT_COUNT: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_EVENT_COMPONENT_OCCURRENCE_COUNT: true,
 		config.ReportDefinition_INT_RANGE_HISTOGRAM:              true,
-		config.ReportDefinition_PER_DEVICE_COUNT_STATS:           true,
+		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:         true,
 	},
 	config.MetricDefinition_ELAPSED_TIME: map[config.ReportDefinition_ReportType]bool{
-		config.ReportDefinition_NUMERIC_AGGREGATION:   true,
-		config.ReportDefinition_INT_RANGE_HISTOGRAM:   true,
-		config.ReportDefinition_NUMERIC_PERF_RAW_DUMP: true,
+		config.ReportDefinition_NUMERIC_AGGREGATION:      true,
+		config.ReportDefinition_INT_RANGE_HISTOGRAM:      true,
+		config.ReportDefinition_NUMERIC_PERF_RAW_DUMP:    true,
+		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS: true,
 	},
 	config.MetricDefinition_FRAME_RATE: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_NUMERIC_AGGREGATION:   true,

@@ -178,11 +178,17 @@ message UniqueActivesReportRow {
   int64 sample_size = 7;
 }
 
-// A row of output for a report of type PER_DEVICE_COUNT_STATS.
+// A row of output for a report of type PER_DEVICE_NUMERIC_STATS.
 //
-// Gives statistics over all devices of the number of occurrences on each
-// device, over a particular time window, of a particular event.
-message PerDeviceCountStatsReportRow {
+// Gives statistics over all devices of the sum of the numeric values associated
+// with a particular kind of event, over all occurrences of that event on
+// individual devices, over a particular time window.
+//
+// For example, if used with an EVENT_COUNT metric, reports statistics over all
+// devices of the number of occurrences of an event on each device during the
+// window. If used with an ELAPSED_TIME metric, reports statistics over all
+// devices of the total amount of time logged on each device during the window.
+message PerDeviceNumericStatsReportRow {
   // The date of the last day of the on-device aggregation window, as measured
   // on the device, using the time zone policy of the report's parent metric.
   // This is a string in yyyy-mm-dd format.
@@ -212,18 +218,18 @@ message PerDeviceCountStatsReportRow {
   // The size in days of the aggregation window.
   uint32 window_size = 5;
 
-  // The mean of the counts contributing to this report row.
+  // The mean of the values contributing to this report row.
   float mean = 6;
 
-  // The standard deviation of the counts contributing to this report row.
+  // The standard deviation of the values contributing to this report row.
   float stddev = 7;
 
-  // The number of devices reporting a nonzero count for this report row.
-  int64 nonzero_count = 8;
+  // The number of devices reporting a nonzero value for this report row.
+  int64 unique_actives = 8;
 
-  // Percentiles: the value of |percentile_N| is the smallest count k
+  // Percentiles: the value of |percentile_N| is the smallest value k
   // contributed by a device to this report row such that at least N percent
-  // of devices reported an occurrence count less than or equal to k.
+  // of devices reported a value less than or equal to k.
 
   // 1st percentile.
   int64 percentile_1 = 101;
@@ -241,13 +247,13 @@ message PerDeviceCountStatsReportRow {
   int64 percentile_75 = 175;
 
   // 95th percentile.
-  int64 percentile_90 = 190;
+  int64 percentile_95 = 195;
 
   // 99th percentile.
   int64 percentile_99 = 199;
 
   // The number of unique devices that contributed to this report row. This is
-  // equal to the number of ReportDeviceCountObservations received by
+  // equal to the number of ReportParticipationObservations received by
   // the ReportGenerator for this report, window size, and date.
   int64 sample_size = 200;
 }

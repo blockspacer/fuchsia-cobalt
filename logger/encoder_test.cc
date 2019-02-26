@@ -156,7 +156,7 @@ metric {
   reports: {
     report_name: "ConnectionFailures_PerDeviceCount"
     id: 101
-    report_type: PER_DEVICE_COUNT_STATS
+    report_type: PER_DEVICE_NUMERIC_STATS
     window_size: 7
     window_size: 30
     system_profile_field: OS
@@ -534,7 +534,7 @@ TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
                     .size());
 }
 
-TEST_F(EncoderTest, EncodePerDeviceCountObservation) {
+TEST_F(EncoderTest, EncodePerDeviceNumericObservation) {
   const char kMetricName[] = "ConnectionFailures";
   const char kReportName[] = "ConnectionFailures_PerDeviceCount";
   const uint32_t kExpectedMetricId = 10;
@@ -549,17 +549,19 @@ TEST_F(EncoderTest, EncodePerDeviceCountObservation) {
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
 
-  auto result = encoder_->EncodePerDeviceCountObservation(
+  auto result = encoder_->EncodePerDeviceNumericObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex,
       kComponent, event_codes, kCount, kWindowSize);
   CheckResult(result, kExpectedMetricId, kExpectedReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "",
                      "");
-  ASSERT_TRUE(result.observation->has_per_device_count());
-  EXPECT_EQ(kWindowSize, result.observation->per_device_count().window_size());
-  ASSERT_TRUE(result.observation->per_device_count().has_integer_event_obs());
-  auto integer_obs = result.observation->per_device_count().integer_event_obs();
+  ASSERT_TRUE(result.observation->has_per_device_numeric());
+  EXPECT_EQ(kWindowSize,
+            result.observation->per_device_numeric().window_size());
+  ASSERT_TRUE(result.observation->per_device_numeric().has_integer_event_obs());
+  auto integer_obs =
+      result.observation->per_device_numeric().integer_event_obs();
   EXPECT_EQ(kEventCode, integer_obs.event_code());
   EXPECT_EQ(32u, integer_obs.component_name_hash().size());
   EXPECT_EQ(kCount, integer_obs.value());

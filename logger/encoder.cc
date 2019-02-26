@@ -291,16 +291,18 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(
   return result;
 }
 
-Encoder::Result Encoder::EncodePerDeviceCountObservation(
+Encoder::Result Encoder::EncodePerDeviceNumericObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
     const std::string component, const RepeatedField<uint32_t>& event_codes,
     int64_t count, uint32_t window_size) const {
   auto result = EncodeIntegerEventObservation(metric, report, day_index,
                                               event_codes, component, count);
   auto* integer_event_observation = result.observation->release_numeric_event();
-  auto* count_observation = result.observation->mutable_per_device_count();
-  count_observation->set_allocated_integer_event_obs(integer_event_observation);
-  count_observation->set_window_size(window_size);
+  auto* per_device_observation =
+      result.observation->mutable_per_device_numeric();
+  per_device_observation->set_allocated_integer_event_obs(
+      integer_event_observation);
+  per_device_observation->set_window_size(window_size);
   return result;
 }
 

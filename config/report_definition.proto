@@ -297,18 +297,18 @@ message ReportDefinition {
     // that component, during the window.
     //
     // Supported Input Types:
-    //    - Metric type: EVENT_COUNT
+    //    - Metric type: EVENT_COUNT, ELAPSED_TIME
     //    - Encoding: component name is hashed
-    //    - Observation type: PerDeviceCountObservation
+    //    - Observation type: PerDeviceNumericObservation
     //
     // ReportDefinition fields particular to this type:
     //    - candidate_list # All known component names.
     //    - candidate_file # File with all known component names.
     //    - window_size # A list of window sizes in days
     //
-    // Report row type: PerDeviceCountStatsReportRow.
+    // Report row type: PerDeviceNumericStatsReportRow.
     // (See report_row.proto)
-    PER_DEVICE_COUNT_STATS = 9;
+    PER_DEVICE_NUMERIC_STATS = 9;
 
     /////////////////////// Custom Raw Dump Report /////////////////////////////
 
@@ -413,7 +413,10 @@ message ReportDefinition {
   // MetricDefinition already contains an instance of IntegerBuckets.
   IntegerBuckets int_buckets = 10;
 
-  // This field is used only with the UNIQUE_N_DAY_ACTIVES Report type.
+  // This field is required for the UNIQUE_N_DAY_ACTIVES and
+  // PER_DEVICE_NUMERIC_STATS Report types. It is not used with any other
+  // report types.
+  //
   // Used to specify the length in days of the rolling window for that
   // report type. Cobalt will send a separate Observation for each
   // WindowSize specified.

@@ -72,6 +72,7 @@ message MetricDefinition {
     //
     // Compatible report types:
     // - SIMPLE_OCCURRENCE_COUNT
+    // - UNIQUE_N_DAY_ACTIVES
     EVENT_OCCURRED = 1;
 
     // Records that an event occurred a number of times.
@@ -94,7 +95,7 @@ message MetricDefinition {
     // Compatible report types:
     // - EVENT_COMPONENT_OCCURRENCE_COUNT
     // - INT_RANGE_HISTOGRAM
-    // - PER_DEVICE_COUNT_STATS
+    // - PER_DEVICE_NUMERIC_STATS
     EVENT_COUNT = 2;
 
     // Records an elapsed time.
@@ -117,6 +118,7 @@ message MetricDefinition {
     // - NUMERIC_AGGREGATION
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
+    // - PER_DEVICE_NUMERIC_STATS
     ELAPSED_TIME = 3;
 
     // Records a frame-rate.

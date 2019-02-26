@@ -49,7 +49,7 @@ namespace logger {
 using testing::CheckNumericEventObservations;
 using testing::CheckUniqueActivesObservations;
 using testing::ExpectedAggregationParams;
-using testing::ExpectedPerDeviceCountObservations;
+using testing::ExpectedPerDeviceNumericObservations;
 using testing::ExpectedReportParticipationObservations;
 using testing::ExpectedUniqueActivesObservations;
 using testing::FakeObservationStore;
@@ -200,13 +200,14 @@ class UniqueActivesLoggerTest : public LoggerTest {
   }
 };
 
-// Creates a Logger whose ProjectContext contains only EVENT_COUNT metrics,
-// each of which has a report of type PER_DEVICE_COUNT_STATS.
-class PerDeviceCountLoggerTest : public LoggerTest {
+// Creates a Logger for a ProjectContext where each of the metrics
+// has a report of type PER_DEVICE_NUMERIC_STATS.
+class PerDeviceNumericLoggerTest : public LoggerTest {
  protected:
   void SetUp() {
-    SetUpFromMetrics(testing::per_device_count::kCobaltRegistryBase64,
-                     testing::per_device_count::kExpectedAggregationParams);
+    SetUpFromMetrics(
+        testing::per_device_numeric_stats::kCobaltRegistryBase64,
+        testing::per_device_numeric_stats::kExpectedAggregationParams);
   }
 };
 
@@ -225,7 +226,7 @@ TEST_F(LoggerTest, LogEvent) {
 }
 
 // Tests the method LogEventCount().
-TEST_F(LoggerTest, LogEventcount) {
+TEST_F(LoggerTest, LogEventCount) {
   std::vector<uint32_t> expected_report_ids = {
       testing::all_report_types::kReadCacheHitCountsReportId,
       testing::all_report_types::kReadCacheHitHistogramsReportId};
@@ -633,49 +634,57 @@ TEST_F(UniqueActivesLoggerTest, CheckUniqueActivesObsValuesMultiDay) {
 
 // Generate Observations without logging any events, and check that the
 // resulting Observations are as expected: 1 ReportParticipationObservation for
-// each PER_DEVICE_COUNT_STATS report in the config, and no
-// PerDeviceCountObservations.
-TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesNoEvents) {
+// each PER_DEVICE_NUMERIC_STATS report in the config, and no
+// PerDeviceNumericObservations.
+TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesNoEvents) {
   const auto day_index = CurrentDayIndex(MetricDefinition::UTC);
   EXPECT_EQ(kOK, GenerateAggregatedObservations(day_index));
   const auto& expected_report_participation_obs =
       MakeExpectedReportParticipationObservations(
-          testing::per_device_count::kExpectedAggregationParams, day_index);
-  EXPECT_TRUE(CheckPerDeviceCountObservations(
+          testing::per_device_numeric_stats::kExpectedAggregationParams,
+          day_index);
+  EXPECT_TRUE(CheckPerDeviceNumericObservations(
       {}, expected_report_participation_obs, observation_store_.get(),
       update_recipient_.get()));
 }
 
 // Tests that Observations with the expected values are generated when events
-// have been logged for EVENT_COUNT metrics with a PER_DEVICE_COUNT_STATS
+// have been logged for EVENT_COUNT metrics with a PER_DEVICE_NUMERIC_STATS
 // report, on a single day.
-TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesSingleDay) {
+TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesSingleDay) {
   const auto day_index = CurrentDayIndex(MetricDefinition::UTC);
   // Log several events on |day_index|.
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kConnectionFailuresMetricId, 0u,
-                     "component_A", 0, 5));
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kConnectionFailuresMetricId, 0u,
-                     "component_B", 0, 5));
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kConnectionFailuresMetricId, 0u,
-                     "component_A", 0, 5));
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kConnectionFailuresMetricId, 1u,
-                     "component_A", 0, 5));
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kSettingsChangedMetricId, 0u,
-                     "component_C", 0, 5));
-  EXPECT_EQ(kOK, logger_->LogEventCount(
-                     testing::per_device_count::kSettingsChangedMetricId, 0u,
-                     "component_C", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kConnectionFailuresMetricId,
+                0u, "component_A", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kConnectionFailuresMetricId,
+                0u, "component_B", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kConnectionFailuresMetricId,
+                0u, "component_A", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kConnectionFailuresMetricId,
+                1u, "component_A", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kSettingsChangedMetricId, 0u,
+                "component_C", 0, 5));
+  EXPECT_EQ(kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kSettingsChangedMetricId, 0u,
+                "component_C", 0, 5));
   // The ConnectionFailures metric has an immediate report of type
   // EVENT_COMPONENT_OCCURRENCE_COUNT. Check that 4 immediate Observations were
   // generated for that report.
   std::vector<Observation2> immediate_observations(4);
   std::vector<uint32_t> expected_immediate_report_ids(
-      4, testing::per_device_count::kConnectionFailuresGlobalCountReportId);
+      4, testing::per_device_numeric_stats::
+             kConnectionFailuresGlobalCountReportId);
   EXPECT_TRUE(
       FetchObservations(&immediate_observations, expected_immediate_report_ids,
                         observation_store_.get(), update_recipient_.get()));
@@ -686,27 +695,28 @@ TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesSingleDay) {
   // Form the expected locally aggregated Observations.
   auto expected_report_participation_obs =
       MakeExpectedReportParticipationObservations(
-          testing::per_device_count::kExpectedAggregationParams, day_index);
-  ExpectedPerDeviceCountObservations expected_per_device_count_obs;
-  expected_per_device_count_obs[{
-      testing::per_device_count::kConnectionFailuresMetricReportId,
+          testing::per_device_numeric_stats::kExpectedAggregationParams,
+          day_index);
+  ExpectedPerDeviceNumericObservations expected_per_device_numeric_obs;
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kConnectionFailuresMetricReportId,
       day_index}][1] = {
       {"component_A", 0u, 10}, {"component_A", 1u, 5}, {"component_B", 0u, 5}};
-  expected_per_device_count_obs[{
-      testing::per_device_count::kSettingsChangedMetricReportId, day_index}]
-                               [7] = {{"component_C", 0u, 10}};
-  expected_per_device_count_obs[{
-      testing::per_device_count::kSettingsChangedMetricReportId, day_index}]
-                               [30] = {{"component_C", 0u, 10}};
-  EXPECT_TRUE(CheckPerDeviceCountObservations(
-      expected_per_device_count_obs, expected_report_participation_obs,
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
+      day_index}][7] = {{"component_C", 0u, 10}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
+      day_index}][30] = {{"component_C", 0u, 10}};
+  EXPECT_TRUE(CheckPerDeviceNumericObservations(
+      expected_per_device_numeric_obs, expected_report_participation_obs,
       observation_store_.get(), update_recipient_.get()));
 }
 
-// Checks that PerDeviceCountObservations with the expected values are
-// generated when some events have been logged for a PER_DEVICE_COUNT
-// report over multiple days and GenerateAggregatedObservations() is called
-// each day.
+// Checks that PerDeviceNumericObservations with the expected values are
+// generated when some events have been logged for an EVENT_COUNT metric with a
+// PER_DEVICE_NUMERIC_STATS report over multiple days and
+// GenerateAggregatedObservations() is called each day.
 //
 // Logged events for the SettingsChanged_PerDeviceCount metric on the i-th day:
 //
@@ -723,7 +733,7 @@ TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesSingleDay) {
 //  8          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
 //  9          ("A", 1, 3)
 //
-// Expected PerDeviceCountObservations for the SettingsChanged_PerDeviceCount
+// Expected PerDeviceNumericObservations for the SettingsChanged_PerDeviceCount
 // report on the i-th day:
 //
 // (i, window size)          (component, event code, count)
@@ -749,16 +759,16 @@ TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesSingleDay) {
 // (9, 7)     ("A", 1, 21),  ("A", 2,  9), ("B", 1, 6), ("B", 2, 4)
 // (9, 30)    ("A", 1, 27),  ("A", 2, 12), ("B", 1, 8), ("B", 2, 4)
 //
-// In addition, expect 2 ReportParticipationObservations each day, 1 for each
-// of ConnectionFailures_PerDeviceCount and SettingsChanged_PerDeviceCount.
-TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesMultiDay) {
+// In addition, expect 1 ReportParticipationObservations for each day, for each
+// report in the registry.
+TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
   const auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
   const auto& expected_id =
-      testing::per_device_count::kSettingsChangedMetricReportId;
-  // Form expectedObservations for the 10 days of logging.
+      testing::per_device_numeric_stats::kSettingsChangedMetricReportId;
+  // Form expected Observations for the 10 days of logging.
   uint32_t num_days = 10;
-  std::vector<ExpectedPerDeviceCountObservations> expected_per_device_count_obs(
-      num_days);
+  std::vector<ExpectedPerDeviceNumericObservations>
+      expected_per_device_numeric_obs(num_days);
   std::vector<ExpectedReportParticipationObservations>
       expected_report_participation_obs(num_days);
   for (uint32_t offset = 0; offset < num_days; offset++) {
@@ -766,31 +776,31 @@ TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesMultiDay) {
         MakeExpectedReportParticipationObservations(
             expected_aggregation_params_, start_day_index + offset);
   }
-  expected_per_device_count_obs[0] = {};
-  expected_per_device_count_obs[1][{expected_id, start_day_index + 1}] = {
+  expected_per_device_numeric_obs[0] = {};
+  expected_per_device_numeric_obs[1][{expected_id, start_day_index + 1}] = {
       {7, {{"A", 1u, 3}}}, {30, {{"A", 1u, 3}}}};
-  expected_per_device_count_obs[2][{expected_id, start_day_index + 2}] = {
+  expected_per_device_numeric_obs[2][{expected_id, start_day_index + 2}] = {
       {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[3][{expected_id, start_day_index + 3}] = {
+  expected_per_device_numeric_obs[3][{expected_id, start_day_index + 3}] = {
       {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_count_obs[4][{expected_id, start_day_index + 4}] = {
+  expected_per_device_numeric_obs[4][{expected_id, start_day_index + 4}] = {
       {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[5][{expected_id, start_day_index + 5}] = {
+  expected_per_device_numeric_obs[5][{expected_id, start_day_index + 5}] = {
       {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[6][{expected_id, start_day_index + 6}] = {
+  expected_per_device_numeric_obs[6][{expected_id, start_day_index + 6}] = {
       {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[7][{expected_id, start_day_index + 7}] = {
+  expected_per_device_numeric_obs[7][{expected_id, start_day_index + 7}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
       {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_count_obs[8][{expected_id, start_day_index + 8}] = {
+  expected_per_device_numeric_obs[8][{expected_id, start_day_index + 8}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
-  expected_per_device_count_obs[9][{expected_id, start_day_index + 9}] = {
+  expected_per_device_numeric_obs[9][{expected_id, start_day_index + 9}] = {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
 
@@ -798,22 +808,142 @@ TEST_F(PerDeviceCountLoggerTest, CheckPerDeviceCountObsValuesMultiDay) {
     auto day_index = CurrentDayIndex(MetricDefinition::UTC);
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && offset % event_code == 0) {
-        EXPECT_EQ(kOK, logger_->LogEventCount(
-                           testing::per_device_count::kSettingsChangedMetricId,
-                           event_code, "A", 0, 3));
+        EXPECT_EQ(
+            kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kSettingsChangedMetricId,
+                event_code, "A", 0, 3));
       }
       if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, logger_->LogEventCount(
-                           testing::per_device_count::kSettingsChangedMetricId,
-                           event_code, "B", 0, 2));
+        EXPECT_EQ(
+            kOK,
+            logger_->LogEventCount(
+                testing::per_device_numeric_stats::kSettingsChangedMetricId,
+                event_code, "B", 0, 2));
       }
     }
     // Clear the FakeObservationStore.
     ResetObservationStore();
     // Generate locally aggregated Observations.
     EXPECT_EQ(kOK, GenerateAggregatedObservations(day_index));
-    EXPECT_TRUE(CheckPerDeviceCountObservations(
-        expected_per_device_count_obs[offset],
+    EXPECT_TRUE(CheckPerDeviceNumericObservations(
+        expected_per_device_numeric_obs[offset],
+        expected_report_participation_obs[offset], observation_store_.get(),
+        update_recipient_.get()))
+        << "offset = " << offset;
+    AdvanceDay(1);
+  }
+}
+
+// Tests that the expected Observations are generated when events are logged for
+// over multiple days for an ELAPSED_TIME metric with a PER_DEVICE_NUMERIC_STATS
+// report, when Observations are backfilled for some days during that period,
+// and when the LocalAggregatedStore is garbage-collected after each call to
+// GenerateObservations().
+//
+// Logged events for the StreamingTime_PerDeviceTotal metric on the i-th
+// day:
+//
+//  i            (component, event code, count)
+// -----------------------------------------------------------------------
+//  0
+//  1          ("A", 1, 3)
+//  2          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+//  3          ("A", 1, 3)
+//  4          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//  5          ("A", 1, 3)
+//  6          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+//  7          ("A", 1, 3)
+//  8          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//
+// Expected PerDeviceNumericObservations for the
+// SettingsChanged_PerDeviceNumeric report on the i-th day:
+//
+// (day, window size)            (event code, component, total)
+// ---------------------------------------------------------------------------
+// (0, 1)
+// (0, 7)
+// (1, 1)     ("A", 1,  3)
+// (1, 7)     ("A", 1,  3)
+// (2, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2)
+// (2, 7)     ("A", 1,  6), ("A", 2,  3), ("B", 1, 2)
+// (3, 1)     ("A", 1,  3)
+// (3, 7)     ("A", 1,  9), ("A", 2,  3), ("B", 1, 2)
+// (4, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2), ("B", 2, 2)
+// (4, 7)     ("A", 1, 12), ("A", 2,  6), ("B", 1, 4), ("B", 2, 2)
+// (5, 1)     ("A", 1,  3)
+// (5, 7)     ("A", 1, 15), ("A", 2,  6), ("B", 1, 4), ("B", 2, 2)
+// (6, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2)
+// (6, 7)     ("A", 1, 18), ("A", 2,  9), ("B", 1, 6), ("B", 2, 2)
+// (7, 1)     ("A", 1,  3)
+// (7, 7)     ("A", 1, 21), ("A", 2,  9), ("B", 1, 6), ("B", 2, 2)
+// (8, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2), ("B", 2, 2)
+// (8, 7)     ("A", 1, 21), ("A", 2, 12), ("B", 1, 8), ("B", 2, 4)
+//
+// In addition, expect 1 ReportParticipationObservation each day for each report
+// in the registry.
+TEST_F(PerDeviceNumericLoggerTest, ElapsedTimeCheckObservationValues) {
+  const auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
+  const auto& expected_id =
+      testing::per_device_numeric_stats::kStreamingTimeMetricReportId;
+  // Form expected Observations for the 9 days of logging.
+  uint32_t num_days = 9;
+  std::vector<ExpectedPerDeviceNumericObservations>
+      expected_per_device_numeric_obs(num_days);
+  std::vector<ExpectedReportParticipationObservations>
+      expected_report_participation_obs(num_days);
+
+  for (uint32_t offset = 0; offset < num_days; offset++) {
+    expected_report_participation_obs[offset] =
+        MakeExpectedReportParticipationObservations(
+            expected_aggregation_params_, start_day_index + offset);
+  }
+  expected_per_device_numeric_obs[0] = {};
+  expected_per_device_numeric_obs[1][{expected_id, start_day_index + 1}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
+  expected_per_device_numeric_obs[2][{expected_id, start_day_index + 2}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[3][{expected_id, start_day_index + 3}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[4][{expected_id, start_day_index + 4}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[5][{expected_id, start_day_index + 5}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[6][{expected_id, start_day_index + 6}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[7][{expected_id, start_day_index + 7}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[8][{expected_id, start_day_index + 8}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
+
+  for (uint32_t offset = 0; offset < 1; offset++) {
+    auto day_index = CurrentDayIndex(MetricDefinition::UTC);
+    for (uint32_t event_code = 1; event_code < 3; event_code++) {
+      if (offset > 0 && offset % event_code == 0) {
+        EXPECT_EQ(kOK,
+                  logger_->LogElapsedTime(
+                      testing::per_device_numeric_stats::kStreamingTimeMetricId,
+                      event_code, "A", 3));
+      }
+      if (offset > 0 && offset % (2 * event_code) == 0) {
+        EXPECT_EQ(kOK,
+                  logger_->LogElapsedTime(
+                      testing::per_device_numeric_stats::kStreamingTimeMetricId,
+                      event_code, "B", 2));
+      }
+    }
+    // Clear the FakeObservationStore.
+    ResetObservationStore();
+    // Generate locally aggregated Observations.
+    EXPECT_EQ(kOK, GenerateAggregatedObservations(day_index));
+    EXPECT_TRUE(CheckPerDeviceNumericObservations(
+        expected_per_device_numeric_obs[offset],
         expected_report_participation_obs[offset], observation_store_.get(),
         update_recipient_.get()))
         << "offset = " << offset;

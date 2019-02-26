@@ -45,7 +45,7 @@ message Observation2 {
     RapporObservation string_rappor = 4;
     ForculusObservation forculus = 5;
     UniqueActivesObservation unique_actives = 6;
-    PerDeviceCountObservation per_device_count = 7;
+    PerDeviceNumericObservation per_device_numeric = 7;
     CustomObservation custom = 1000;
     ReportParticipationObservation report_participation = 10000;
   }
@@ -154,20 +154,21 @@ message UniqueActivesObservation {
   uint64 event_code = 3;
 };
 
-// Observations of type PerDeviceCountObservation are used when a
-// MetricDefinition of type EVENT_COUNT is reported with a ReportDefinition
-// of type PER_DEVICE_COUNT_STATS. An Observation of this type is created by
-// aggregating CountEvents on-device over a rolling window of 1, 7, or 30 days.
+// Observations of type PerDeviceNumericObservation are used when a
+// MetricDefinition of type EVENT_COUNT, ELAPSED_TIME, MEMORY_USAGE, or
+// FRAME_RATE is reported with a ReportDefinition of type
+// PER_DEVICE_NUMERIC_STATS. An Observation of this type is created by
+// aggregating Events on-device over a rolling window of 1, 7, or 30 days.
 //
-// A PerDeviceCountObservation is generated each day, for each aggregation
+// A PerDeviceNumericObservation is generated each day, for each aggregation
 // window size of the ReportDefinition, for each pair (component, event code)
-// for which an event occurrence was logged during the window. In addition, each
-// day and for each window size, each device generates one
-// ReportDeviceCountObservation containing that window size. The number
+// for which an event was logged during the window. In addition, each day and
+// for each window size, each device generates one
+// ReportParticipationObservation for that report. The number
 // of those Observations is used by the ReportGenerator to compute the number of
 // devices on which each pair (component, event code) was *not* logged during
 // the window.
-message PerDeviceCountObservation {
+message PerDeviceNumericObservation {
   // An IntegerEventObservation containing the event code, component,
   // and occurrence count associated with this Observation.
   IntegerEventObservation integer_event_obs = 1;

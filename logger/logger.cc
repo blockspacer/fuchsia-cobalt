@@ -124,12 +124,12 @@ class CountEventLogger : public EventLogger {
   virtual ~CountEventLogger() = default;
 
  private:
+  Status ValidateEvent(const EventRecord& event_record) override;
   Encoder::Result MaybeEncodeImmediateObservation(
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                      EventRecord* event_record) override;
-  Status ValidateEvent(const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for all of the numerical performance metric
@@ -162,6 +162,8 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
+  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                     EventRecord* event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type FRAME_RATE.
@@ -772,6 +774,11 @@ Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(
 
 ///////////// CountEventLogger method implementations //////////////////////////
 
+Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
+  return ValidateEventCodes(event_record,
+                            event_record.event->count_event().event_code());
+}
+
 Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
@@ -795,9 +802,9 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
           count_event->event_code(), std::move(component),
           count_event->count());
     }
-    // Report type PER_DEVICE_COUNT_STATS is valid but should not result in
+    // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
     // generation of an immediate observation.
-    case ReportDefinition::PER_DEVICE_COUNT_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       Encoder::Result result;
       result.status = kOK;
       result.observation = nullptr;
@@ -820,18 +827,12 @@ Status CountEventLogger::MaybeUpdateLocalAggregation(
     return kOK;
   }
   switch (report.report_type()) {
-    case ReportDefinition::PER_DEVICE_COUNT_STATS: {
-      return event_aggregator()->LogPerDeviceCountEvent(report.id(),
-                                                        event_record);
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      return event_aggregator()->LogCountEvent(report.id(), event_record);
     }
     default:
       return kOK;
   }
-}
-
-Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
-  return ValidateEventCodes(event_record,
-                            event_record.event->count_event().event_code());
 }
 
 /////////////// IntegerPerformanceEventLogger method implementations
@@ -881,6 +882,24 @@ int64_t ElapsedTimeEventLogger::IntValue(const Event& event) {
 Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
   return ValidateEventCodes(
       event_record, event_record.event->elapsed_time_event().event_code());
+}
+
+Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(
+    const ReportDefinition& report, EventRecord* event_record) {
+  // If the Logger was constructed without an EventAggregator, do nothing and
+  // return kOK.
+  // TODO(pesk): remove this clause when the deprecated Logger constructor is
+  // removed.
+  if (event_aggregator() == nullptr) {
+    return kOK;
+  }
+  switch (report.report_type()) {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      return event_aggregator()->LogElapsedTimeEvent(report.id(), event_record);
+    }
+    default:
+      return kOK;
+  }
 }
 
 ////////////// FrameRateEventLogger method implementations /////////////////
