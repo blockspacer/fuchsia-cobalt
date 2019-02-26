@@ -18,4 +18,4 @@ infra/go/${platform} version:1.9.2
 
 # gcloud
 @Subdir gcloud/google-cloud-sdk
-infra/gcloud/${platform} version:180.0.1.chromium0
+infra/gcloud/${platform} version:206.0.0.chromium0
