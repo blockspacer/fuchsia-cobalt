@@ -120,6 +120,13 @@ func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
 		}
 	}
 
+	// Validation for all metrics.
+	for _, newMetric := range newMetrics {
+		if newMetric.MetaData.AlsoLogLocally {
+			return fmt.Errorf("also_log_locally may not be merged into master: Metric `%s`", newMetric.MetricName)
+		}
+	}
+
 	return nil
 }
 
