@@ -32,7 +32,6 @@ func TestValidateMakeValidReport(t *testing.T) {
 	}
 }
 
-// Test
 func TestValidateCorrectReportId(t *testing.T) {
 	r := makeValidReport()
 	r.Id += 1
@@ -61,5 +60,100 @@ func TestValidateZeroReportId(t *testing.T) {
 func TestValidateUnsetReportType(t *testing.T) {
 	if err := validateReportType(config.MetricDefinition_EVENT_OCCURRED, config.ReportDefinition_REPORT_TYPE_UNSET); err == nil {
 		t.Error("Accepted report with no report type set.")
+	}
+}
+
+// Test that validateLocalPrivacyNoiseLevel accepts a ReportDefinition if and only if it has a local_privacy_noise_level field.
+func TestValidateLocalPrivacyNoiseLevel(t *testing.T) {
+	r := makeValidReport()
+
+	if err := validateLocalPrivacyNoiseLevel(r); err == nil {
+		t.Errorf("Accepted report definition with local_privacy_noise_level unset.", t)
+	}
+
+	r.LocalPrivacyNoiseLevel = config.ReportDefinition_SMALL
+	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
+		t.Errorf("Rejected report definition with local_privacy_noise_level set.", t)
+	}
+}
+
+// Test that validateWindowSize rejects a ReportDefinition with no window_size field, and a ReportDefinition with a
+// window_size field where one of the window sizes is UNSET.
+func TestValidateWindowSize(t *testing.T) {
+	r := makeValidReport()
+
+	if err := validateWindowSize(r); err == nil {
+		t.Errorf("Accepted report definition without window_size field.", t)
+	}
+
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY, config.WindowSize_UNSET}
+	if err := validateWindowSize(r); err == nil {
+		t.Errorf("Accepted report definition with an UNSET window size.")
+	}
+
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY, config.WindowSize_WINDOW_7_DAYS}
+	if err := validateWindowSize(r); err != nil {
+		t.Errorf("Rejected report definition with valid window_size field.", t)
+	}
+}
+
+// Test that local_privacy_noise_level must be set if the report type is SIMPLE_OCCURRENCE_COUNT.
+func TestValidateReportDefinitionForSimpleOccurrenceCount(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT
+
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type SIMPLE_OCCURRENCE_COUNT with local_privacy_noise_level unset.", t)
+	}
+}
+
+// Test that local_privacy_noise_level must be set if the report type is HIGH_FREQUENCY_STRING_COUNTS.
+func TestValidateReportDefinitionForHighFrequencyStringCounts(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS
+
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type HIGH_FREQUENCY_STRING_COUNTS with local_privacy_noise_level unset.", t)
+	}
+}
+
+// Test that local_privacy_noise_level and window_size must be set if the report type is UNIQUE_N_DAY_ACTIVES.
+func TestValidateReportDefinitionForUniqueActives(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_UNIQUE_N_DAY_ACTIVES
+
+	// Add a valid window_size, but not a local_privacy_noise_level.
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY}
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type UNIQUE_N_DAY_ACTIVES with local_privacy_noise_level unset.", t)
+	}
+
+	// Remove window_size and add a local_privacy_noise_level.
+	r.WindowSize = []config.WindowSize{}
+	r.LocalPrivacyNoiseLevel = config.ReportDefinition_SMALL
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type UNIQUE_N_DAY_ACTIVES without window_size field.", t)
+	}
+
+	// Add a valid window size to window_size, but also add an UNSET window size.
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY, config.WindowSize_UNSET}
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type UNIQUE_N_DAY_ACTIVES with window_size field containing an UNSET window size.", t)
+	}
+}
+
+// Test that window_size must be set if the report type is PER_DEVICE_NUMERIC_STATS.
+func TestValidateReportDefinitionForPerDeviceNumericStats(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_PER_DEVICE_NUMERIC_STATS
+
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type PER_DEVICE_NUMERIC_STATS without window_size field.", t)
+	}
+
+	// Add a valid window size to window_size, but also add an UNSET window size.
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY, config.WindowSize_UNSET}
+	if err := validateReportDefinition(r); err == nil {
+		t.Errorf("Accepted report definition of type PER_DEVICE_NUMERIC_STATS with window_size field containing an UNSET window size.", t)
 	}
 }

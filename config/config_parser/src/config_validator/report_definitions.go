@@ -88,6 +88,10 @@ func validateReportDefinition(r config.ReportDefinition) error {
 		return fmt.Errorf("Report hashes to a zero report id. This is invalid. Please change the report name.")
 	}
 
+	if err := validateReportDefinitionForType(r); err != nil {
+		return fmt.Errorf("Report %s: %v", r.ReportName, err)
+	}
+
 	return nil
 }
 
@@ -104,6 +108,92 @@ func validateReportType(mt config.MetricDefinition_MetricType, rt config.ReportD
 
 	if _, ok = rts[rt]; !ok {
 		return fmt.Errorf("Reports of type %s cannot be used with metrics of type %s", rt, mt)
+	}
+
+	return nil
+}
+
+/////////////////////////////////////////////////////////////////
+// Validation for specific report types:
+/////////////////////////////////////////////////////////////////
+
+// Validates ReportDefinitions of some types.
+func validateReportDefinitionForType(r config.ReportDefinition) error {
+	switch r.ReportType {
+	case config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT:
+		return validateSimpleOccurrenceCountReportDef(r)
+	case config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS:
+		return validateHighFrequencyStringCountsReportDef(r)
+	case config.ReportDefinition_UNIQUE_N_DAY_ACTIVES:
+		return validateUniqueActivesReportDef(r)
+	case config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:
+		return validatePerDeviceNumericStatsReportDef(r)
+	}
+
+	return nil
+}
+
+func validateSimpleOccurrenceCountReportDef(r config.ReportDefinition) error {
+	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateHighFrequencyStringCountsReportDef(r config.ReportDefinition) error {
+	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateUniqueActivesReportDef(r config.ReportDefinition) error {
+	if err := validateWindowSize(r); err != nil {
+		return err
+	}
+	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validatePerDeviceNumericStatsReportDef(r config.ReportDefinition) error {
+	if err := validateWindowSize(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/////////////////////////////////////////////////////////////////
+// Validation for specific fields of report definitions
+//
+// These functions are oblivious to the report's type and should
+// only be called with reports for which that field is required.
+/////////////////////////////////////////////////////////////////
+
+// Check that the report definition has a nonempty window_size field, and that none of the window sizes
+// are UNSET.
+func validateWindowSize(r config.ReportDefinition) error {
+	if len(r.WindowSize) == 0 {
+		return fmt.Errorf("No window_size specified for report of type %s.", r.ReportType)
+	}
+	for _, ws := range r.WindowSize {
+		if ws == config.WindowSize_UNSET {
+			return fmt.Errorf("Unset window size found for report of type %s.", r.ReportType)
+		}
+	}
+
+	return nil
+}
+
+// Check that the local_privacy_noise_level field is set.
+func validateLocalPrivacyNoiseLevel(r config.ReportDefinition) error {
+	if r.LocalPrivacyNoiseLevel == config.ReportDefinition_NOISE_LEVEL_UNSET {
+		return fmt.Errorf("No local_privacy_noise_level specified for report of type %s.", r.ReportType)
 	}
 
 	return nil
