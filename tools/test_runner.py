@@ -138,8 +138,10 @@ def run_all_tests(test_dir,
           tls_key_file=tls_key_file,
           private_key_pem_file=E2E_TEST_SHUFFLER_PRIVATE_KEY_PEM,
           verbose_count=verbose_count, wait=False)
-      print "Running %s..." % test_executable
       path = os.path.abspath(os.path.join(tdir, test_executable))
+      if os.path.isdir(path):
+        continue
+      print "Running %s..." % test_executable
       command = [path] + test_args
       return_code = subprocess.call(command)
       if return_code != 0:
