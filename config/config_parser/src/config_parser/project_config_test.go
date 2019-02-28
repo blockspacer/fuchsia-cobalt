@@ -219,3 +219,36 @@ report_configs:
 		t.Error("Accepted non-unique encoding id.")
 	}
 }
+
+func TestAddEncryptedReports(t *testing.T) {
+	want := config.MetricDefinition{
+		Reports: []*config.ReportDefinition{
+			&config.ReportDefinition{
+				ReportName: "the_report",
+				ReportType: config.ReportDefinition_CUSTOM_RAW_DUMP,
+			},
+			&config.ReportDefinition{
+				ReportName: "the_other_report",
+				ReportType: config.ReportDefinition_STRING_COUNTS_WITH_THRESHOLD,
+			},
+		},
+	}
+
+	got := proto.Clone(&want).(*config.MetricDefinition)
+	addEncryptedReports(got)
+
+	want.Reports = append(
+		want.Reports,
+		&config.ReportDefinition{
+			ReportName: "the_report_encrypted",
+			ReportType: config.ReportDefinition_CUSTOM_RAW_DUMP,
+		},
+		&config.ReportDefinition{
+			ReportName: "the_other_report_encrypted",
+			ReportType: config.ReportDefinition_STRING_COUNTS_WITH_THRESHOLD,
+		})
+
+	if !proto.Equal(&want, got) {
+		t.Errorf("%v\n!=\n%v", proto.MarshalTextString(&want), proto.MarshalTextString(got))
+	}
+}

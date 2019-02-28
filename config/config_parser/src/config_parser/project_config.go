@@ -22,6 +22,8 @@ import (
 	"config"
 	"fmt"
 	"yamlpb"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 type CobaltVersion int
@@ -82,6 +84,12 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 		if e.Id == 0 {
 			return fmt.Errorf("Metric named '%v' does not have a metric id specified.", e.MetricName)
 		}
+
+		// TODO(azani): Remove when we turn on encryption.
+		if c.ProjectName == "fuchsia_system_metrics" || c.ProjectName == "test_app2" {
+			addEncryptedReports(e)
+		}
+
 		for _, r := range e.Reports {
 			r.Id = IdFromName(r.ReportName)
 		}
@@ -103,4 +111,12 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 	}
 
 	return nil
+}
+
+func addEncryptedReports(m *config.MetricDefinition) {
+	for i := range m.Reports {
+		r := proto.Clone(m.Reports[i]).(*config.ReportDefinition)
+		r.ReportName += "_encrypted"
+		m.Reports = append(m.Reports, r)
+	}
 }
