@@ -53,7 +53,7 @@ class ProjectContextFactory {
   // Constructs a ProjectContextFactory whose CobaltRegistry is obtained
   // by parsing |cobalt_registry_bytes|. Invoke is_valid() to determine
   // if the parsing succeeded.
-  explicit ProjectContextFactory(std::string cobalt_registry_bytes);
+  explicit ProjectContextFactory(const std::string& cobalt_registry_bytes);
 
   // Returns true if the factory's CobaltRegistry exists (meaning we were
   // able to parse the  |cobalt_regsitry_bytes| passed to the constructor)

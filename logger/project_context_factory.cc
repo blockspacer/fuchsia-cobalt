@@ -16,7 +16,7 @@ namespace cobalt {
 namespace logger {
 
 ProjectContextFactory::ProjectContextFactory(
-    std::string cobalt_registry_bytes) {
+    const std::string& cobalt_registry_bytes) {
   // Attempt to deserialize a CobaltRegistry.
   auto cobalt_registry = std::make_unique<CobaltRegistry>();
   if (!cobalt_registry->ParseFromString(cobalt_registry_bytes)) {
