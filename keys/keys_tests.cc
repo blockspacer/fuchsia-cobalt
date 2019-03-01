@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <fstream>
-#include <iostream>
-
 #include "./encrypted_message.pb.h"
 #include "./observation.pb.h"
 #include "glog/logging.h"
@@ -12,6 +9,7 @@
 #include "third_party/tink/include/proto/tink.pb.h"
 #include "util/crypto_util/base64.h"
 #include "util/encrypted_message_util.h"
+#include "util/file_util.h"
 
 // Does some sanity-checking on the tink keys.
 
@@ -23,13 +21,11 @@ class KeyTests : public ::testing::TestWithParam<std::string> {};
 
 // Check that the keys can be used to encrypt an observation.
 TEST_P(KeyTests, TestEncryption) {
-  std::ifstream fs;
   std::string path = kKeysDir + GetParam() + "_public_key.tink";
-  fs.open(path, std::ifstream::in);
-  ASSERT_TRUE(fs.is_open()) << path;
+  auto keyset_result = cobalt::util::ReadNonEmptyTextFile(path);
+  ASSERT_TRUE(keyset_result.ok());
+  auto keyset = keyset_result.ValueOrDie();
 
-  auto keyset = std::string((std::istreambuf_iterator<char>(fs)),
-                            std::istreambuf_iterator<char>());
   auto maker_result =
       cobalt::util::EncryptedMessageMaker::MakeHybridTink(keyset);
   ASSERT_TRUE(maker_result.ok());

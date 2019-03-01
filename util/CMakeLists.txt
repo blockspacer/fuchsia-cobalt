@@ -20,9 +20,18 @@ target_link_libraries(encrypted_message_util
                       tink_cc_keyset_handle)
 add_cobalt_dependencies(encrypted_message_util)
 
+add_library(file_util
+            file_util.cc)
+target_link_libraries(file_util
+                      status
+                      statusor
+                      cobalt_crypto)
+add_cobalt_dependencies(file_util)
+
 add_library(pem_util
             pem_util.cc)
 target_link_libraries(pem_util
+                      file_util
                       cobalt_crypto)
 add_cobalt_dependencies(pem_util)
 

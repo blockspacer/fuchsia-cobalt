@@ -14,11 +14,8 @@
 
 #include "util/pem_util.h"
 
-#include <fstream>
-#include <streambuf>
-#include <string>
-
 #include "./logging.h"
+#include "util/file_util.h"
 
 namespace cobalt {
 namespace util {
@@ -28,41 +25,16 @@ bool PemUtil::ReadTextFile(const std::string& file_path,
   if (!file_contents) {
     return false;
   }
-  if (file_path.empty()) {
-    return false;
-  }
-  std::ifstream stream(file_path, std::ifstream::in);
-  if (!stream.good()) {
+
+  auto result = ::cobalt::util::ReadNonEmptyTextFile(file_path);
+  if (!result.ok()) {
     // NOTE(rudominer) We use VLOG instead of LOG(ERROR) for any error messages
     // in Cobalt that may occur on the client side.
-    VLOG(1) << "Unable to open file at " << file_path;
+    VLOG(1) << result.status().error_message();
     return false;
   }
-  stream.seekg(0, std::ios::end);
-  if (!stream.good()) {
-    VLOG(1) << "Error reading PEM file at " << file_path;
-    return false;
-  }
-  // Don't try to read a file that's too big.
-  auto file_size = stream.tellg();
-  if (!stream.good() || file_size <= 0 || file_size > kMaxFileSize) {
-    VLOG(1) << "Invalid file length for " << file_path;
-    return false;
-  }
-  file_contents->reserve(file_size);
 
-  stream.seekg(0, std::ios::beg);
-  if (!stream.good()) {
-    VLOG(1) << "Error reading file at " << file_path;
-    return false;
-  }
-  file_contents->assign((std::istreambuf_iterator<char>(stream)),
-                        std::istreambuf_iterator<char>());
-  if (!stream.good()) {
-    VLOG(1) << "Error reading file at " << file_path;
-    return false;
-  }
-  VLOG(3) << "Successfully read file at " << file_path;
+  *file_contents = result.ValueOrDie();
   return true;
 }
 

@@ -38,6 +38,19 @@ static_library("datetime_util") {
   ]
 }
 
+static_library("file_util") {
+  sources = [
+    "file_util.cc",
+    "file_util.h",
+  ]
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+  deps = [
+    ":status",
+    "//garnet/public/lib/fxl",
+    "//third_party/cobalt/util/crypto_util",
+  ]
+}
+
 static_library("pem_util") {
   sources = [
     "pem_util.cc",
@@ -45,6 +58,7 @@ static_library("pem_util") {
   ]
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
+    ":file_util",
     "//garnet/public/lib/fxl",
     "//third_party/cobalt/util/crypto_util",
   ]

@@ -5,7 +5,8 @@
 add_executable(keys_tests
                keys_tests.cc)
 target_link_libraries(keys_tests
-                      encrypted_message_util)
+                      encrypted_message_util
+                      file_util)
 add_cobalt_test_dependencies(keys_tests ${DIR_GTESTS})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/analyzer_public_key.tink

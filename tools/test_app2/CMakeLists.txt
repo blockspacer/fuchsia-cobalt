@@ -13,7 +13,8 @@ target_link_libraries(test_app2
                       logger
                       pem_util
                       posix_file_system
-                      project_configs)
+                      project_configs
+                      statusor)
 add_cobalt_dependencies(test_app2)
 
 # Build the cobalt_test_app executable.

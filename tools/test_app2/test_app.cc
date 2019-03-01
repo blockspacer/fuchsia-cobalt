@@ -28,11 +28,12 @@
 #include "logger/local_aggregation.pb.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
+#include "third_party/statusor/statusor.h"
 #include "util/clearcut/curl_http_client.h"
 #include "util/clock.h"
 #include "util/consistent_proto_store.h"
 #include "util/datetime_util.h"
-#include "util/pem_util.h"
+#include "util/file_util.h"
 #include "util/posix_file_system.h"
 #include "util/status.h"
 
@@ -62,7 +63,6 @@ using util::ClockInterface;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
 using util::IncrementingClock;
-using util::PemUtil;
 using util::PosixFileSystem;
 using util::StatusCode;
 using util::SystemClock;
@@ -82,11 +82,11 @@ DEFINE_string(customer_name, "fuchsia", "Customer name");
 DEFINE_string(project_name, "test_app2", "Project name");
 DEFINE_string(metric_name, "error_occurred", "Initial Metric name");
 
-DEFINE_string(analyzer_pk_pem_file, "",
+DEFINE_string(analyzer_tink_keyset_file, "",
               "Path to a file containing a PEM encoding of the public key of "
               "the Analyzer used for Cobalt's internal encryption scheme. If "
               "not specified then no encryption will be used.");
-DEFINE_string(shuffler_pk_pem_file, "",
+DEFINE_string(shuffler_tink_keyset_file, "",
               "Path to a file containing a PEM encoding of the public key of "
               "the Shuffler used for Cobalt's internal encryption scheme. If "
               "not specified then no encryption will be used.");
@@ -286,16 +286,18 @@ TestApp::Mode ParseMode() {
   LOG(FATAL) << "Unrecognized mode: " << FLAGS_mode;
 }
 
-// Reads the PEM file at the specified path and writes the contents into
-// |*pem_out|. Returns true for success or false for failure.
-bool ReadPublicKeyPem(const std::string& pem_file, std::string* pem_out) {
-  VLOG(2) << "Reading PEM file at " << pem_file;
-  if (PemUtil::ReadTextFile(pem_file, pem_out)) {
-    return true;
+// Read the Tink keyset file at the specified path and returns a pointer to an
+// EncryptedMessageMaker based on the contents of the keyset file or an error
+// status.
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeTinkEncrypter(
+    const std::string& keyset_path) {
+  VLOG(2) << "Reading keyset file at " << keyset_path;
+  auto read_result = cobalt::util::ReadNonEmptyTextFile(keyset_path);
+  if (!read_result.ok()) {
+    return read_result.status();
   }
-  LOG(ERROR) << "Unable to open PEM file at " << pem_file
-             << ". Skipping encryption!";
-  return false;
+
+  return EncryptedMessageMaker::MakeHybridTink(read_result.ValueOrDie());
 }
 
 // Reads the specified serialized CobaltRegistry proto. Returns a ProjectContext
@@ -482,34 +484,29 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
 
   auto mode = ParseMode();
 
-  auto analyzer_encryption_scheme = EncryptedMessage::NONE;
-  std::string analyzer_public_key_pem = "";
-  if (FLAGS_analyzer_pk_pem_file.empty()) {
-    VLOG(2) << "WARNING: Encryption of Observations to the Analzyer not being "
-               "used. Pass the flag -analyzer_pk_pem_file";
-  } else if (ReadPublicKeyPem(FLAGS_analyzer_pk_pem_file,
-                              &analyzer_public_key_pem)) {
-    analyzer_encryption_scheme = EncryptedMessage::HYBRID_ECDH_V1;
+  std::unique_ptr<EncryptedMessageMaker> observation_encrypter;
+  if (FLAGS_analyzer_tink_keyset_file.empty()) {
+    VLOG(2) << "WARNING: Observations will not be encrypted to the Analyzer. "
+               "Rerun with the flag -analyzer_tink_keyset_file.";
+    observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
+  } else {
+    observation_encrypter =
+        MakeTinkEncrypter(FLAGS_analyzer_tink_keyset_file).ValueOrDie();
   }
-  auto shuffler_encryption_scheme = EncryptedMessage::NONE;
-  std::string shuffler_public_key_pem = "";
-  if (FLAGS_shuffler_pk_pem_file.empty()) {
-    VLOG(2) << "WARNING: Encryption of Envelopes to the Shuffler not being "
-               "used. Pass the flag -shuffler_pk_pem_file";
-  } else if (ReadPublicKeyPem(FLAGS_shuffler_pk_pem_file,
-                              &shuffler_public_key_pem)) {
-    shuffler_encryption_scheme = EncryptedMessage::HYBRID_ECDH_V1;
+
+  std::unique_ptr<EncryptedMessageMaker> envelope_encrypter;
+  if (FLAGS_shuffler_tink_keyset_file.empty()) {
+    VLOG(2) << "WARNING: Envelopes will not be encrypted to the Shuffler. "
+               "Rerun with the flag -shuffler_tink_keyset_file.";
+    observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
+    envelope_encrypter = EncryptedMessageMaker::MakeUnencrypted();
+  } else {
+    envelope_encrypter =
+        MakeTinkEncrypter(FLAGS_shuffler_tink_keyset_file).ValueOrDie();
   }
+
   std::unique_ptr<SystemDataInterface> system_data(new SystemData("test_app"));
 
-  auto observation_encrypter =
-      EncryptedMessageMaker::MakeAllowUnencrypted(analyzer_public_key_pem,
-                                                  analyzer_encryption_scheme)
-          .ValueOrDie();
-  auto envelope_encrypter =
-      EncryptedMessageMaker::MakeAllowUnencrypted(shuffler_public_key_pem,
-                                                  shuffler_encryption_scheme)
-          .ValueOrDie();
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
   auto local_aggregate_proto_store = std::make_unique<ConsistentProtoStore>(
