@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 // This file contains a program that compares two binary encoded CobaltRegistry,
-// and validates that the changes between them are backwards compatible.
+// and validates that the changes between them are backwards compatible. In
+// general, this tool is designed to verify that changes are okay to be merged
+// into master.
+
 package main
 
 import (
@@ -123,7 +126,7 @@ func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
 	// Validation for all metrics.
 	for _, newMetric := range newMetrics {
 		if newMetric.MetaData.AlsoLogLocally {
-			return fmt.Errorf("also_log_locally may not be merged into master: Metric `%s`", newMetric.MetricName)
+			return fmt.Errorf("The parameter also_log_locally is intended only for use on a development machine. This change may not be committed to the central Cobalt metrics registry. Metric `%s.", newMetric.MetricName)
 		}
 	}
 
@@ -132,11 +135,7 @@ func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
 
 func CompareMetrics(oldMetric, newMetric *config.MetricDefinition) error {
 	// Debug metrics are ignored for the purposes of change validation.
-	if oldMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG {
-		return nil
-	}
-
-	if newMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG {
+	if oldMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG || newMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG {
 		return nil
 	}
 
