@@ -86,6 +86,69 @@ message EventComponentOccurrenceCountReportRow {
   int64 count = 6;
 }
 
+// A row of output for a report of type NUMERIC_AGGREGATION.
+//
+// Gives the total daily fleet-wide statistics of a numerical metric, for a
+// particular event code, for a particular component, on a particular day,
+// considering only devices matching a particular system profile.  The
+// statistics include the number of observations, the mean, median, minimum,
+// maximum, and sum.
+message NumericAggregationReportRow {
+  // The date on which the logged events occurred, as measured on the device.
+  // This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The labels for the event codes associated with the events that occurred.
+  // There is one label for each metric_dimension in the metric definition. If
+  // an event code has not been assigned a label this will be a string of the
+  // form "<event-code-0-42>" where 0 is the dimension index, and 42 is the
+  // event code.
+  repeated string event_code = 3;
+
+  // The component string associated with the events that occurred. This string
+  // must have been pre-registered in the ReportDefinition (using the
+  // |candidate_list| or |candidate_file| fields). There are also two special
+  // values of |component|.
+  // "<NONE>" is the component associated with logged events that
+  // contained an empty component string.
+  // "<OTHER>" is the component associated with logged events that contained
+  // a non-empty component string that was not pre-registered.
+  string component = 4;
+
+  // The count of Observations that contributed to the statistics.
+  int64 count = 5;
+
+  // The mean value of the collected Observation values for events with the
+  // |event_code| and |component|, on the |date|, over all reporting devices
+  // with the |system_profile|.
+  float mean = 6;
+
+  // The median value of the collected Observation values for events with the
+  // |event_code| and |component|, on the |date|, over all reporting devices
+  // with the |system_profile|.
+  int64 median = 7;
+
+  // The minimum value of the collected Observation values for events with the
+  // |event_code| and |component|, on the |date|, over all reporting devices
+  // with the |system_profile|.
+  int64 min = 8;
+
+  // The maximum value of the collected Observation values for events with the
+  // |event_code| and |component|, on the |date|, over all reporting devices
+  // with the |system_profile|.
+  int64 max = 9;
+
+  // The total sum of the collected Observation values for events with the
+  // |event_code| and |component|, on the |date|, over all reporting devices
+  // with the |system_profile|.
+  int64 sum = 10;
+}
+
 // A row of output for a report of type INT_RANGE_HISTOGRAM.
 //
 // Gives the value for one bucket of an integer range histogram, aggregated

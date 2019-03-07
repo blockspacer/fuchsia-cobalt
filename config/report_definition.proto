@@ -104,26 +104,8 @@ message ReportDefinition {
     //   - candidate_list # All known component names
     //   - candidate_file # File with all known component names
     //
-    // Report fields:
-    //   - date
-    //   - system_profile # One or more fields from the SystemProfile message
-    //                      type (cobalt/observation.proto) describing the
-    //                      system on which the events occurred.
-    //   - event
-    //   - component
-    //   - count
-    //   - mean, median, etc # Aggregate numerical statistics for that event
-    //                       # type for that component, on that date, over
-    //                       # devices with that system profile.
-    //
-    // Example report:
-    //
-    // Date, SystemProfile, Component, Event, Count, Mean, Median, Min, Max, ...
-    // -------------------------------------------------------------------------
-    // 2018-7-25,<sys-prof 1>,"Component 1","Event 1",12345,123.4,123.4,123.4,..
-    // 2018-7-25,<sys-prof 2>,"Component 1","Event 2",34567,123.4,123.4,123.4,..
-    // 2018-7-25,<sys-prof 1>,"Component 2","Event 1",12345,123.4,123.4,123.4,..
-    // 2018-7-25,<sys-prof 1>,"Component 2","Event 2",23456,123.4,123.4,123.4,..
+    // Report row type: NumericAggregationReportRow.
+    // (See report_row.proto)
     NUMERIC_AGGREGATION = 3;
 
     // Gives daily, fleet-wide histograms of an integer-valued metric of one or
