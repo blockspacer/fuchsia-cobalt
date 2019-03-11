@@ -25,48 +25,17 @@ using ::cobalt::crypto::byte;
 using ::cobalt::crypto::HybridCipher;
 
 namespace {
+const char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
+const char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
+
 Status StatusFromTinkStatus(::crypto::tink::util::Status tink_status) {
   return Status(StatusCode(tink_status.error_code()),
                 tink_status.error_message());
 }
-}  // namespace
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::Make(const std::string& public_key,
-                            EncryptedMessage::EncryptionScheme scheme) {
-  switch (scheme) {
-    case EncryptedMessage::NONE:
-      return Status(INVALID_ARGUMENT,
-                    "EncryptedMessageMaker: encryption_scheme NONE is not "
-                    "allowed in production.");
-    case EncryptedMessage::HYBRID_ECDH_V1:
-      return EncryptedMessageMaker::MakeHybridEcdh(public_key);
-    case EncryptedMessage::HYBRID_TINK:
-      return EncryptedMessageMaker::MakeHybridTink(public_key);
-    default:
-      return Status(INVALID_ARGUMENT,
-                    "EncryptedMessageMaker: Unknown encryption_scheme.");
-  }
-}
-
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeAllowUnencrypted(
-    const std::string& public_key, EncryptedMessage::EncryptionScheme scheme) {
-  if (scheme == EncryptedMessage::NONE) {
-    return EncryptedMessageMaker::MakeUnencrypted();
-  }
-  return EncryptedMessageMaker::Make(public_key, scheme);
-}
-
-std::unique_ptr<EncryptedMessageMaker>
-EncryptedMessageMaker::MakeUnencrypted() {
-  VLOG(5) << "WARNING: encryption_scheme is NONE. Cobalt data will not be "
-             "encrypted!";
-  return std::make_unique<UnencryptedMessageMaker>();
-}
-
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeHybridTink(const std::string& public_keyset_base64) {
+MakeHybridTinkEncryptedMessageMaker(const std::string& public_keyset_base64,
+                                    const std::string& context_info) {
   if (public_keyset_base64.empty()) {
     return Status(INVALID_ARGUMENT, "EncryptedMessageMaker: Empty key.");
   }
@@ -96,9 +65,37 @@ EncryptedMessageMaker::MakeHybridTink(const std::string& public_keyset_base64) {
 
   std::unique_ptr<EncryptedMessageMaker> maker(
       new HybridTinkEncryptedMessageMaker(
-          std::move(primitive_result.ValueOrDie())));
+          std::move(primitive_result.ValueOrDie()), context_info));
 
   return maker;
+}
+}  // namespace
+
+std::unique_ptr<EncryptedMessageMaker>
+EncryptedMessageMaker::MakeUnencrypted() {
+  VLOG(5) << "WARNING: encryption_scheme is NONE. Cobalt data will not be "
+             "encrypted!";
+  return std::make_unique<UnencryptedMessageMaker>();
+}
+
+// TODO(azani): Delete when we stop using it.
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeHybridTink(const std::string& public_keyset_base64) {
+  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64, "");
+}
+
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeHybridTinkForEnvelopes(
+    const std::string& public_keyset_base64) {
+  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64,
+                                             kShufflerContextInfo);
+}
+
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeHybridTinkForObservations(
+    const std::string& public_keyset_base64) {
+  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64,
+                                             kAnalyzerContextInfo);
 }
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
@@ -114,8 +111,9 @@ EncryptedMessageMaker::MakeHybridEcdh(const std::string& public_key_pem) {
 }
 
 HybridTinkEncryptedMessageMaker::HybridTinkEncryptedMessageMaker(
-    std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter)
-    : encrypter_(std::move(encrypter)) {}
+    std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
+    const std::string& context_info)
+    : encrypter_(std::move(encrypter)), context_info_(context_info) {}
 
 bool HybridTinkEncryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
@@ -129,7 +127,8 @@ bool HybridTinkEncryptedMessageMaker::Encrypt(
 
   VLOG(5) << "EncryptedMessage: encryption_scheme=HYBRID_TINK.";
 
-  auto encrypted_result = encrypter_->Encrypt(serialized_message, "");
+  auto encrypted_result =
+      encrypter_->Encrypt(serialized_message, context_info_);
   if (!encrypted_result.ok()) {
     VLOG(5) << "EncryptedMessage: Tink could not encrypt message: "
             << encrypted_result.status().error_message();

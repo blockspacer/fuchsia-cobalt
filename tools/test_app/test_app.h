@@ -71,10 +71,8 @@ class TestApp {
   TestApp(std::shared_ptr<encoder::ProjectContext> project_context,
           std::shared_ptr<encoder::ShufflerClientInterface> shuffler_client,
           std::unique_ptr<encoder::SystemData> system_data, Mode mode,
-          const std::string& analyzer_public_key_pem,
-          EncryptedMessage::EncryptionScheme analyzer_encryption_scheme,
-          const std::string& shuffler_public_key_pem,
-          EncryptedMessage::EncryptionScheme shuffler_encryption_scheme,
+          std::unique_ptr<util::EncryptedMessageMaker> analyzer_encrypter,
+          std::unique_ptr<util::EncryptedMessageMaker> shuffler_encrypter,
           std::ostream* ostream);
 
   void set_metric(uint32_t metric_id) { metric_ = metric_id; }

@@ -38,7 +38,7 @@
 #include "glog/logging.h"
 #include "grpc++/grpc++.h"
 #include "util/clearcut/curl_http_client.h"
-#include "util/pem_util.h"
+#include "util/file_util.h"
 
 namespace cobalt {
 
@@ -64,7 +64,6 @@ using grpc::ClientContext;
 using grpc::Status;
 using shuffler::Shuffler;
 using util::EncryptedMessageMaker;
-using util::PemUtil;
 
 // There are three modes of operation of the Cobalt TestClient program
 // determined by the value of this flag.
@@ -225,18 +224,6 @@ TestApp::Mode ParseMode() {
   LOG(FATAL) << "Unrecognized mode: " << FLAGS_mode;
 }
 
-// Reads the PEM file at the specified path and writes the contents into
-// |*pem_out|. Returns true for success or false for failure.
-bool ReadPublicKeyPem(const std::string& pem_file, std::string* pem_out) {
-  VLOG(2) << "Reading PEM file at " << pem_file;
-  if (PemUtil::ReadTextFile(pem_file, pem_out)) {
-    return true;
-  }
-  LOG(ERROR) << "Unable to open PEM file at " << pem_file
-             << ". Skipping encryption!";
-  return false;
-}
-
 // Reads the specified serialized CobaltRegistry proto. Returns a ProjectContext
 // containing the read config and the values of the -customer and
 // -project flags.
@@ -386,8 +373,10 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
       VLOG(2) << "Using TLS.";
       if (!FLAGS_root_certs_pem_file.empty()) {
         VLOG(2) << "Reading root certs from " << FLAGS_root_certs_pem_file;
-        CHECK(PemUtil::ReadTextFile(FLAGS_root_certs_pem_file,
-                                    &pem_root_certs_str));
+        auto read_result =
+            cobalt::util::ReadNonEmptyTextFile(FLAGS_root_certs_pem_file);
+        CHECK(read_result.ok());
+        pem_root_certs_str = read_result.ValueOrDie();
         pem_root_certs = pem_root_certs_str.c_str();
       }
     } else {
@@ -397,23 +386,30 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
         new ShufflerClient(FLAGS_shuffler_uri, FLAGS_use_tls, pem_root_certs));
   }
 
-  auto analyzer_encryption_scheme = EncryptedMessage::NONE;
-  std::string analyzer_public_key_pem = "";
+  std::unique_ptr<EncryptedMessageMaker> analyzer_encrypter;
   if (FLAGS_analyzer_pk_pem_file.empty()) {
     VLOG(2) << "WARNING: Encryption of Observations to the Analzyer not being "
                "used. Pass the flag -analyzer_pk_pem_file";
-  } else if (ReadPublicKeyPem(FLAGS_analyzer_pk_pem_file,
-                              &analyzer_public_key_pem)) {
-    analyzer_encryption_scheme = EncryptedMessage::HYBRID_ECDH_V1;
+    analyzer_encrypter = EncryptedMessageMaker::MakeUnencrypted();
+  } else {
+    auto key_value =
+        cobalt::util::ReadNonEmptyTextFile(FLAGS_analyzer_pk_pem_file)
+            .ValueOrDie();
+    analyzer_encrypter =
+        EncryptedMessageMaker::MakeHybridEcdh(key_value).ValueOrDie();
   }
-  auto shuffler_encryption_scheme = EncryptedMessage::NONE;
-  std::string shuffler_public_key_pem = "";
+
+  std::unique_ptr<EncryptedMessageMaker> shuffler_encrypter;
   if (FLAGS_shuffler_pk_pem_file.empty()) {
     VLOG(2) << "WARNING: Encryption of Envelopes to the Shuffler not being "
                "used. Pass the flag -shuffler_pk_pem_file";
-  } else if (ReadPublicKeyPem(FLAGS_shuffler_pk_pem_file,
-                              &shuffler_public_key_pem)) {
-    shuffler_encryption_scheme = EncryptedMessage::HYBRID_ECDH_V1;
+    shuffler_encrypter = EncryptedMessageMaker::MakeUnencrypted();
+  } else {
+    auto key_value =
+        cobalt::util::ReadNonEmptyTextFile(FLAGS_shuffler_pk_pem_file)
+            .ValueOrDie();
+    shuffler_encrypter =
+        EncryptedMessageMaker::MakeHybridEcdh(key_value).ValueOrDie();
   }
 
   std::unique_ptr<SystemData> system_data(new SystemData("test_app"));
@@ -425,10 +421,10 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
     system_data->OverrideSystemProfile(profile);
   }
 
-  auto test_app = std::unique_ptr<TestApp>(new TestApp(
-      project_context, shuffler_client, std::move(system_data), mode,
-      analyzer_public_key_pem, analyzer_encryption_scheme,
-      shuffler_public_key_pem, shuffler_encryption_scheme, &std::cout));
+  auto test_app = std::unique_ptr<TestApp>(
+      new TestApp(project_context, shuffler_client, std::move(system_data),
+                  mode, std::move(analyzer_encrypter),
+                  std::move(shuffler_encrypter), &std::cout));
   test_app->set_metric(FLAGS_metric);
   return test_app;
 }
@@ -437,10 +433,9 @@ TestApp::TestApp(
     std::shared_ptr<ProjectContext> project_context,
     std::shared_ptr<encoder::ShufflerClientInterface> shuffler_client,
     std::unique_ptr<encoder::SystemData> system_data, Mode mode,
-    const std::string& analyzer_public_key_pem,
-    EncryptedMessage::EncryptionScheme analyzer_scheme,
-    const std::string& shuffler_public_key_pem,
-    EncryptedMessage::EncryptionScheme shuffler_scheme, std::ostream* ostream)
+    std::unique_ptr<util::EncryptedMessageMaker> analyzer_encrypter,
+    std::unique_ptr<util::EncryptedMessageMaker> shuffler_encrypter,
+    std::ostream* ostream)
     : customer_id_(project_context->customer_id()),
       project_id_(project_context->project_id()),
       mode_(mode),
@@ -448,12 +443,8 @@ TestApp::TestApp(
       shuffler_client_(shuffler_client),
       send_retryer_(new SendRetryer(shuffler_client_.get())),
       system_data_(std::move(system_data)),
-      encrypt_to_shuffler_(EncryptedMessageMaker::MakeAllowUnencrypted(
-                               shuffler_public_key_pem, shuffler_scheme)
-                               .ValueOrDie()),
-      encrypt_to_analyzer_(EncryptedMessageMaker::MakeAllowUnencrypted(
-                               analyzer_public_key_pem, analyzer_scheme)
-                               .ValueOrDie()),
+      encrypt_to_shuffler_(std::move(shuffler_encrypter)),
+      encrypt_to_analyzer_(std::move(analyzer_encrypter)),
       observation_store_(new MemoryObservationStore(
           kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal)),
       ostream_(ostream) {

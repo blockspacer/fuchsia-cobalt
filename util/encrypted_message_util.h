@@ -43,38 +43,6 @@ class EncryptedMessageMaker {
   // Returns the EncryptionScheme used by the EncryptedMessageMaker.
   virtual EncryptedMessage::EncryptionScheme scheme() const = 0;
 
-  // Make an EncryptedMessageMaker.
-  //
-  // |scheme| specifies which encryption scheme should be used.
-  // The use of EncryptedMessage::NONE is disallowed.
-  //
-  // |public_key| must be appropriate to |scheme|. If |scheme| is
-  // EncryptedMessage::NONE then |public_key| is ignored. If |scheme| is
-  // EncryptedMessage::HYBRID_ECDH_V1 then |public_key| must be a PEM
-  // encoding of a public key appropriate for that scheme. If |scheme| is
-  // EncryptedMessage::HYBRID_TINK the |public_key| must be a base64-encoded
-  // serialized tink Keyset protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> Make(
-      const std::string& public_key, EncryptedMessage::EncryptionScheme scheme);
-
-  // Make an EncryptedMessageMaker. (Do not use in production)
-  //
-  // |scheme| specifies which encryption scheme should be used. As of this
-  // writing there are three schemes:
-  //   - EncryptedMessage::NONE: See MakeUnencrypted below.
-  //   - EncryptedMessage::HYBRID_ECDH_V1: See MakeHybridEcdh below.
-  //   - EncryptedMessage::HYBRID_TINK: See MakeHybridTink below.
-  //
-  // |public_key| must be appropriate to |scheme|. If |scheme| is
-  // EncryptedMessage::NONE then |public_key| is ignored. If |scheme| is
-  // EncryptedMessage::HYBRID_ECDH_V1 then |public_key| must be a PEM
-  // encoding of a public key appropriate for that scheme. If |scheme| is
-  // EncryptedMessage::HYBRID_TINK the |public_key| must be a base64-encoded
-  // serialized tink Keyset protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeAllowUnencrypted(const std::string& public_key,
-                       EncryptedMessage::EncryptionScheme scheme);
-
   // Make an UnencryptedMessageMaker.
   // Message will be serialized, but not encrypted: they will be sent in plain
   // text. This scheme must never be used in production Cobalt.
@@ -94,6 +62,20 @@ class EncryptedMessageMaker {
   static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
   MakeHybridTink(const std::string& public_keyset_base64);
 
+  // Make a HybridTinkEncryptedMessageMaker to encrypt Observations.
+  // Messages will be encrypted using Tink's hybrid encryption scheme based on
+  // the keyset passed in. |public_keyset_base64| is a tink::Keyset protobuf
+  // message serialized and base64 encoded.
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  MakeHybridTinkForObservations(const std::string& public_keyset_base64);
+
+  // Make a HybridTinkEncryptedMessageMaker to encrypt Envelopes.
+  // Messages will be encrypted using Tink's hybrid encryption scheme based on
+  // the keyset passed in. |public_keyset_base64| is a tink::Keyset protobuf
+  // message serialized and base64 encoded.
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+  MakeHybridTinkForEnvelopes(const std::string& public_keyset_base64);
+
   virtual ~EncryptedMessageMaker() = default;
 };
 
@@ -101,8 +83,9 @@ class EncryptedMessageMaker {
 // EncryptedMessageMaker. See EncryptedMessage::HYBRID_TINK for details.
 class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
  public:
-  explicit HybridTinkEncryptedMessageMaker(
-      std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter);
+  HybridTinkEncryptedMessageMaker(
+      std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
+      const std::string& context_info);
 
   bool Encrypt(const google::protobuf::MessageLite& message,
                EncryptedMessage* encrypted_message) const;
@@ -113,6 +96,7 @@ class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
 
  private:
   std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter_;
+  std::string context_info_;
 };
 
 // HybridEcdhEncryptedMessageMaker is an implementation of

@@ -245,10 +245,11 @@ class TestAppTest : public ::testing::Test {
  public:
   TestAppTest()
       : fake_shuffler_client_(new FakeShufflerClient()),
-        test_app_(new TestApp(GetTestProject(), fake_shuffler_client_,
-                              std::unique_ptr<SystemData>(),
-                              TestApp::kInteractive, "", EncryptedMessage::NONE,
-                              "", EncryptedMessage::NONE, &output_stream_)) {}
+        test_app_(new TestApp(
+            GetTestProject(), fake_shuffler_client_,
+            std::unique_ptr<SystemData>(), TestApp::kInteractive,
+            util::EncryptedMessageMaker::MakeUnencrypted(),
+            util::EncryptedMessageMaker::MakeUnencrypted(), &output_stream_)) {}
 
  protected:
   // Clears the contents of the TestApp's output stream and returns the
@@ -624,10 +625,10 @@ TEST_F(TestAppTest, ProcessCommandLineQuit) {
 // Tests the Run() method in send-once mode.
 TEST_F(TestAppTest, RunSendAndQuit) {
   // Reconstruct TestApp in send-once mode.
-  test_app_.reset(new TestApp(GetTestProject(), fake_shuffler_client_,
-                              std::unique_ptr<SystemData>(), TestApp::kSendOnce,
-                              "", EncryptedMessage::NONE, "",
-                              EncryptedMessage::NONE, &output_stream_));
+  test_app_.reset(new TestApp(
+      GetTestProject(), fake_shuffler_client_, std::unique_ptr<SystemData>(),
+      TestApp::kSendOnce, util::EncryptedMessageMaker::MakeUnencrypted(),
+      util::EncryptedMessageMaker::MakeUnencrypted(), &output_stream_));
   test_app_->set_metric(3);
   FLAGS_num_clients = 31;
   FLAGS_values = "fruit:apple:3,rating:10:4";
@@ -657,10 +658,10 @@ TEST_F(TestAppTest, RunSendAndQuit) {
 // Tests the Run() method in send-once mode with invalid flags.
 TEST_F(TestAppTest, RunSendAndQuitBad) {
   // Reconstruct TestApp in send-once mode.
-  test_app_.reset(new TestApp(GetTestProject(), fake_shuffler_client_,
-                              std::unique_ptr<SystemData>(), TestApp::kSendOnce,
-                              "", EncryptedMessage::NONE, "",
-                              EncryptedMessage::NONE, &output_stream_));
+  test_app_.reset(new TestApp(
+      GetTestProject(), fake_shuffler_client_, std::unique_ptr<SystemData>(),
+      TestApp::kSendOnce, util::EncryptedMessageMaker::MakeUnencrypted(),
+      util::EncryptedMessageMaker::MakeUnencrypted(), &output_stream_));
   test_app_->set_metric(3);
 
   // Misspell "fruit"

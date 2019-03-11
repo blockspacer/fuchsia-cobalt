@@ -286,20 +286,6 @@ TestApp::Mode ParseMode() {
   LOG(FATAL) << "Unrecognized mode: " << FLAGS_mode;
 }
 
-// Read the Tink keyset file at the specified path and returns a pointer to an
-// EncryptedMessageMaker based on the contents of the keyset file or an error
-// status.
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeTinkEncrypter(
-    const std::string& keyset_path) {
-  VLOG(2) << "Reading keyset file at " << keyset_path;
-  auto read_result = cobalt::util::ReadNonEmptyTextFile(keyset_path);
-  if (!read_result.ok()) {
-    return read_result.status();
-  }
-
-  return EncryptedMessageMaker::MakeHybridTink(read_result.ValueOrDie());
-}
-
 // Reads the specified serialized CobaltRegistry proto. Returns a ProjectContext
 // containing the read config and the values of the -customer and
 // -project flags.
@@ -490,8 +476,14 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
                "Rerun with the flag -analyzer_tink_keyset_file.";
     observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
   } else {
+    VLOG(2) << "Reading analyzer keyset file at "
+            << FLAGS_analyzer_tink_keyset_file;
+    auto key_value =
+        cobalt::util::ReadNonEmptyTextFile(FLAGS_analyzer_tink_keyset_file)
+            .ValueOrDie();
     observation_encrypter =
-        MakeTinkEncrypter(FLAGS_analyzer_tink_keyset_file).ValueOrDie();
+        EncryptedMessageMaker::MakeHybridTinkForObservations(key_value)
+            .ValueOrDie();
   }
 
   std::unique_ptr<EncryptedMessageMaker> envelope_encrypter;
@@ -501,8 +493,14 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
     observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
     envelope_encrypter = EncryptedMessageMaker::MakeUnencrypted();
   } else {
+    VLOG(2) << "Reading shuffler keyset file at "
+            << FLAGS_shuffler_tink_keyset_file;
+    auto key_value =
+        cobalt::util::ReadNonEmptyTextFile(FLAGS_shuffler_tink_keyset_file)
+            .ValueOrDie();
     envelope_encrypter =
-        MakeTinkEncrypter(FLAGS_shuffler_tink_keyset_file).ValueOrDie();
+        EncryptedMessageMaker::MakeHybridTinkForObservations(key_value)
+            .ValueOrDie();
   }
 
   std::unique_ptr<SystemDataInterface> system_data(new SystemData("test_app"));
