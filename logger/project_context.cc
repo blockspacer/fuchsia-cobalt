@@ -27,18 +27,6 @@ void PopulateProject(uint32_t customer_id, uint32_t project_id,
   project->set_release_stage(release_stage);
 }
 
-// Deprecated. Remove once the constructor that takes an instance of
-// MetricDefinitions is removed.
-std::unique_ptr<ProjectConfig> NewProjectConfig(
-    uint32_t project_id, const std::string& project_name,
-    std::unique_ptr<MetricDefinitions> metric_definitions) {
-  auto project_config = std::make_unique<ProjectConfig>();
-  project_config->set_project_name(project_name);
-  project_config->set_project_id(project_id);
-  project_config->mutable_metrics()->Swap(metric_definitions->mutable_metric());
-  return project_config;
-}
-
 }  // namespace
 
 std::string MetricDebugString(const MetricDefinition& metric) {
@@ -89,16 +77,6 @@ ProjectContext::ProjectContext(uint32_t customer_id,
                      release_stage) {}
 
 ProjectContext::ProjectContext(
-    uint32_t customer_id, uint32_t project_id, std::string customer_name,
-    std::string project_name,
-    std::unique_ptr<MetricDefinitions> metric_definitions,
-    ReleaseStage release_stage)
-    : ProjectContext(customer_id, customer_name,
-                     NewProjectConfig(project_id, project_name,
-                                      std::move(metric_definitions)),
-                     release_stage) {}
-
-ProjectContext::ProjectContext(
     uint32_t customer_id, const std::string& customer_name,
     const ProjectConfig* project_config,
     std::unique_ptr<ProjectConfig> owned_project_config,
@@ -127,35 +105,6 @@ ProjectContext::ProjectContext(
                  << " project_id=" << metric.project_id();
     }
   }
-}
-
-StatusOr<std::unique_ptr<ProjectContext>>
-ProjectContext::ConstructWithProjectConfigs(
-    const std::string& customer_name, const std::string& project_name,
-    std::shared_ptr<config::ProjectConfigs> project_configs,
-    ReleaseStage release_stage) {
-  if (!project_configs) {
-    return util::Status(StatusCode::INVALID_ARGUMENT,
-                        "The project_configs argument was null.");
-  }
-  auto customer_cfg = project_configs->GetCustomerConfig(customer_name);
-  if (!customer_cfg) {
-    return util::Status(StatusCode::INVALID_ARGUMENT,
-                        "Could not find a customer named " + customer_name +
-                            " in the provided ProjectConfigs.");
-  }
-  auto project_cfg =
-      project_configs->GetProjectConfig(customer_name, project_name);
-  if (!project_cfg) {
-    return util::Status(StatusCode::INVALID_ARGUMENT,
-                        "Could not find a project named " + project_name +
-                            " for the customer named " + customer_name +
-                            " in the provided ProjectConfigs.");
-  }
-  auto project_context = std::make_unique<ProjectContext>(
-      customer_cfg->customer_id(), customer_name, project_cfg, release_stage);
-  project_context->deprecated_project_configs_ = project_configs;
-  return project_context;
 }
 
 const MetricDefinition* ProjectContext::GetMetric(

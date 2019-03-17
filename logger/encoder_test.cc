@@ -18,6 +18,7 @@
 #include "./observation2.pb.h"
 #include "encoder/fake_system_data.h"
 #include "logger/project_context.h"
+#include "logger/project_context_factory.h"
 #include "logger/status.h"
 
 namespace cobalt {
@@ -33,162 +34,168 @@ namespace logger {
 namespace {
 static const uint32_t kCustomerId = 1;
 static const uint32_t kProjectId = 1;
-static const char kCustomerName[] = "Fuchsia";
-static const char kProjectName[] = "Cobalt";
 
-static const char kMetricDefinitions[] = R"(
-metric {
-  metric_name: "ErrorOccurred"
-  metric_type: EVENT_OCCURRED
+static const char kCobaltRegistry[] = R"(
+customers {
+  customer_name: "Fuchsia"
   customer_id: 1
-  project_id: 1
-  id: 1
-  metric_dimensions: {
-    max_event_code: 100
-  }
-  reports: {
-    report_name: "ErrorCountsByType"
-    id: 123
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: SMALL
-  }
-}
 
-metric {
-  metric_name: "ReadCacheHits"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 2
-  reports: {
-    report_name: "ReadCacheHitCounts"
-    id: 124
-    report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
-    system_profile_field: OS
-  }
-}
+  projects: {
+    project_name: "Cobalt"
+    project_id: 1
+    metrics: {
+      metric_name: "ErrorOccurred"
+      metric_type: EVENT_OCCURRED
+      customer_id: 1
+      project_id: 1
+      id: 1
+      metric_dimensions: {
+        max_event_code: 100
+      }
+      reports: {
+        report_name: "ErrorCountsByType"
+        id: 123
+        report_type: SIMPLE_OCCURRENCE_COUNT
+        local_privacy_noise_level: SMALL
+      }
+    }
 
-metric {
-  metric_name: "FileSystemWriteTimes"
-  metric_type: INT_HISTOGRAM
-  int_buckets: {
-    linear: {
-      floor: 0
-      num_buckets: 10
-      step_size: 1
+    metrics: {
+      metric_name: "ReadCacheHits"
+      metric_type: EVENT_COUNT
+      customer_id: 1
+      project_id: 1
+      id: 2
+      reports: {
+        report_name: "ReadCacheHitCounts"
+        id: 124
+        report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+        system_profile_field: OS
+      }
+    }
+
+    metrics: {
+      metric_name: "FileSystemWriteTimes"
+      metric_type: INT_HISTOGRAM
+      int_buckets: {
+        linear: {
+          floor: 0
+          num_buckets: 10
+          step_size: 1
+        }
+      }
+      customer_id: 1
+      project_id: 1
+      id: 6
+      reports: {
+        report_name: "FileSystemWriteTimes_Histogram"
+        id: 151
+        report_type: INT_RANGE_HISTOGRAM
+        system_profile_field: OS
+        system_profile_field: ARCH
+      }
+    }
+
+    metrics: {
+      metric_name: "ModuleDownloads"
+      metric_type: STRING_USED
+      customer_id: 1
+      project_id: 1
+      id: 7
+      reports: {
+        report_name: "ModuleDownloads_HeavyHitters"
+        id: 161
+        report_type: HIGH_FREQUENCY_STRING_COUNTS
+        local_privacy_noise_level: SMALL
+        expected_population_size: 20000
+        expected_string_set_size: 10000
+      }
+      reports: {
+        report_name: "ModuleDownloads_WithThreshold"
+        id: 261
+        report_type: STRING_COUNTS_WITH_THRESHOLD
+        threshold: 200
+      }
+    }
+
+    metrics: {
+      metric_name: "ModuleInstalls"
+      metric_type: CUSTOM
+      customer_id: 1
+      project_id: 1
+      id: 8
+      reports: {
+        report_name: "ModuleInstalls_DetailedData"
+        id: 125
+        report_type: CUSTOM_RAW_DUMP
+        system_profile_field: OS
+        system_profile_field: ARCH
+      }
+    }
+
+    metrics: {
+      metric_name: "DeviceBoots"
+      metric_type: EVENT_OCCURRED
+      customer_id: 1
+      project_id: 1
+      id: 9
+      metric_dimensions: {
+        max_event_code: 1
+      }
+      reports: {
+        report_name: "DeviceBoots_UniqueDevices"
+        id: 91
+        report_type: UNIQUE_N_DAY_ACTIVES
+        local_privacy_noise_level: SMALL
+        window_size: 1
+        system_profile_field: OS
+        system_profile_field: ARCH
+      }
+    }
+
+    metrics: {
+      metric_name: "ConnectionFailures"
+      metric_type: EVENT_COUNT
+      customer_id: 1
+      project_id: 1
+      id: 10
+      reports: {
+        report_name: "ConnectionFailures_PerDeviceCount"
+        id: 101
+        report_type: PER_DEVICE_NUMERIC_STATS
+        window_size: 7
+        window_size: 30
+        system_profile_field: OS
+        system_profile_field: ARCH
+      }
+    }
+
+    metrics: {
+      metric_name: "MultiEventCodeTest"
+      metric_type: EVENT_COUNT
+      customer_id: 1
+      project_id: 1
+      id: 11
+      metric_dimensions: {
+        max_event_code: 10
+      }
+      metric_dimensions: {
+        max_event_code: 10
+      }
+      reports: {
+        report_name: "MultiEventCodeCounts"
+        id: 171
+        report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+        system_profile_field: OS
+      }
     }
   }
-  customer_id: 1
-  project_id: 1
-  id: 6
-  reports: {
-    report_name: "FileSystemWriteTimes_Histogram"
-    id: 151
-    report_type: INT_RANGE_HISTOGRAM
-    system_profile_field: OS
-    system_profile_field: ARCH
-  }
 }
-
-metric {
-  metric_name: "ModuleDownloads"
-  metric_type: STRING_USED
-  customer_id: 1
-  project_id: 1
-  id: 7
-  reports: {
-    report_name: "ModuleDownloads_HeavyHitters"
-    id: 161
-    report_type: HIGH_FREQUENCY_STRING_COUNTS
-    local_privacy_noise_level: SMALL
-    expected_population_size: 20000
-    expected_string_set_size: 10000
-  }
-  reports: {
-    report_name: "ModuleDownloads_WithThreshold"
-    id: 261
-    report_type: STRING_COUNTS_WITH_THRESHOLD
-    threshold: 200
-  }
-}
-
-metric {
-  metric_name: "ModuleInstalls"
-  metric_type: CUSTOM
-  customer_id: 1
-  project_id: 1
-  id: 8
-  reports: {
-    report_name: "ModuleInstalls_DetailedData"
-    id: 125
-    report_type: CUSTOM_RAW_DUMP
-    system_profile_field: OS
-    system_profile_field: ARCH
-  }
-}
-
-metric {
-  metric_name: "DeviceBoots"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 9
-  metric_dimensions: {
-    max_event_code: 1
-  }
-  reports: {
-    report_name: "DeviceBoots_UniqueDevices"
-    id: 91
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: SMALL
-    window_size: 1
-    system_profile_field: OS
-    system_profile_field: ARCH
-  }
-}
-
-metric {
-  metric_name: "ConnectionFailures"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 10
-  reports: {
-    report_name: "ConnectionFailures_PerDeviceCount"
-    id: 101
-    report_type: PER_DEVICE_NUMERIC_STATS
-    window_size: 7
-    window_size: 30
-    system_profile_field: OS
-    system_profile_field: ARCH
-  }
-}
-
-metric {
-  metric_name: "MultiEventCodeTest"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 11
-  metric_dimensions: {
-    max_event_code: 10
-  }
-  metric_dimensions: {
-    max_event_code: 10
-  }
-  reports: {
-    report_name: "MultiEventCodeCounts"
-    id: 171
-    report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
-    system_profile_field: OS
-  }
-}
-
 )";
 
-bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
+bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(kMetricDefinitions, metric_definitions);
+  return parser.ParseFromString(kCobaltRegistry, cobalt_registry);
 }
 
 HistogramPtr NewHistogram(std::vector<uint32_t> indices,
@@ -259,11 +266,11 @@ std::vector<uint32_t> UnpackEventCodes(uint64_t event_code) {
 class EncoderTest : public ::testing::Test {
  protected:
   void SetUp() {
-    auto metric_definitions = std::make_unique<MetricDefinitions>();
-    ASSERT_TRUE(PopulateMetricDefinitions(metric_definitions.get()));
-    project_context_.reset(new ProjectContext(kCustomerId, kProjectId,
-                                              kCustomerName, kProjectName,
-                                              std::move(metric_definitions)));
+    auto cobalt_registry = std::make_unique<CobaltRegistry>();
+    ASSERT_TRUE(PopulateCobaltRegistry(cobalt_registry.get()));
+    ProjectContextFactory project_context_factory(std::move(cobalt_registry));
+    ASSERT_TRUE(project_context_factory.is_single_project());
+    project_context_ = project_context_factory.TakeSingleProjectContext();
     system_data_.reset(new FakeSystemData());
     encoder_.reset(
         new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));

@@ -15,148 +15,156 @@
 #include "glog/logging.h"
 #include "logger/logger_test_utils.h"
 #include "logger/project_context.h"
+#include "logger/project_context_factory.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 
 using logger::LoggerInterface;
 using logger::ProjectContext;
+using logger::ProjectContextFactory;
 using logger::testing::FakeObservationStore;
 
 DECLARE_uint32(num_clients);
 DECLARE_string(values);
 
 namespace {
-static const uint32_t kCustomerId = 1;
-static const uint32_t kProjectId = 1;
-static const char kCustomerName[] = "Fuchsia";
-static const char kProjectName[] = "Cobalt";
 static const char kErrorOccurredMetricName[] = "ErrorOccurred";
 
-const char* const kMetricDefinitions = R"(
-metric {
-  metric_name: "ErrorOccurred"
-  metric_type: EVENT_OCCURRED
+static const char kCobaltRegistry[] = R"(
+customers {
+  customer_name: "Fuchsia"
   customer_id: 1
-  project_id: 1
-  id: 1
-  metric_dimensions: {
-    max_event_code: 100
-  }
-  reports: {
-    report_name: "ErrorCountsByType"
-    id: 123
-    report_type: SIMPLE_OCCURRENCE_COUNT
-    local_privacy_noise_level: SMALL
-  }
-}
 
-metric {
-  metric_name: "CacheMiss"
-  metric_type: EVENT_COUNT
-  customer_id: 1
-  project_id: 1
-  id: 2
-  reports: {
-    report_name: "CacheMissCounts"
-    id: 111
-    report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
-  }
-}
+  projects: {
+    project_name: "Cobalt"
+    project_id: 1
 
-metric {
-  metric_name: "update_duration"
-  metric_type: ELAPSED_TIME
-  customer_id: 1
-  project_id: 1
-  id: 3
-  reports: {
-    report_name: "update_duration_report"
-    report_type: INT_RANGE_HISTOGRAM
-    int_buckets: {
-      exponential: {
-        floor: 0
-        num_buckets: 10
-        initial_step: 1
-        step_multiplier: 2
+    metrics: {
+      metric_name: "ErrorOccurred"
+      metric_type: EVENT_OCCURRED
+      customer_id: 1
+      project_id: 1
+      id: 1
+      metric_dimensions: {
+        max_event_code: 100
+      }
+      reports: {
+        report_name: "ErrorCountsByType"
+        id: 123
+        report_type: SIMPLE_OCCURRENCE_COUNT
+        local_privacy_noise_level: SMALL
       }
     }
-  }
-}
 
-metric {
-  metric_name: "game_frame_rate"
-  metric_type: FRAME_RATE
-  customer_id: 1
-  project_id: 1
-  id: 4
-  reports: {
-    report_name: "game_frame_rate_histograms"
-    report_type: INT_RANGE_HISTOGRAM
-    int_buckets: {
-      exponential: {
-        floor: 0
-        num_buckets: 10
-        initial_step: 1000
-        step_multiplier: 2
+    metrics: {
+      metric_name: "CacheMiss"
+      metric_type: EVENT_COUNT
+      customer_id: 1
+      project_id: 1
+      id: 2
+      reports: {
+        report_name: "CacheMissCounts"
+        id: 111
+        report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
       }
     }
-  }
-}
 
-metric {
-  metric_name: "application_memory"
-  metric_type: MEMORY_USAGE
-  customer_id: 1
-  project_id: 1
-  id: 5
-  reports: {
-    report_name: "application_memory_histograms"
-    report_type: INT_RANGE_HISTOGRAM
-    int_buckets: {
-      exponential: {
-        floor: 0
-        num_buckets: 10
-        initial_step: 1000
-        step_multiplier: 2
+    metrics: {
+      metric_name: "update_duration"
+      metric_type: ELAPSED_TIME
+      customer_id: 1
+      project_id: 1
+      id: 3
+      reports: {
+        report_name: "update_duration_report"
+        report_type: INT_RANGE_HISTOGRAM
+        int_buckets: {
+          exponential: {
+            floor: 0
+            num_buckets: 10
+            initial_step: 1
+            step_multiplier: 2
+          }
+        }
       }
     }
-  }
-}
 
-metric {
-  metric_name: "power_usage"
-  metric_type: INT_HISTOGRAM
-  customer_id: 1
-  project_id: 1
-  id: 6
-  int_buckets: {
-    linear: {
-      floor: 0
-      num_buckets: 50
-      step_size: 2
+    metrics: {
+      metric_name: "game_frame_rate"
+      metric_type: FRAME_RATE
+      customer_id: 1
+      project_id: 1
+      id: 4
+      reports: {
+        report_name: "game_frame_rate_histograms"
+        report_type: INT_RANGE_HISTOGRAM
+        int_buckets: {
+          exponential: {
+            floor: 0
+            num_buckets: 10
+            initial_step: 1000
+            step_multiplier: 2
+          }
+        }
+      }
     }
-  }
-  reports: {
-    report_name: "power_usage_histograms"
-    report_type: INT_RANGE_HISTOGRAM
-  }
-}
 
-metric {
-  metric_name: "FeaturesActive"
-  metric_type: EVENT_OCCURRED
-  customer_id: 1
-  project_id: 1
-  id: 7
-  max_event_code: 9
-  reports: {
-    report_name: "FeaturesActiveUniqueDevices"
-    id: 301
-    report_type: UNIQUE_N_DAY_ACTIVES
-    local_privacy_noise_level: SMALL
-    window_size: 1
-    window_size: 7
+    metrics: {
+      metric_name: "application_memory"
+      metric_type: MEMORY_USAGE
+      customer_id: 1
+      project_id: 1
+      id: 5
+      reports: {
+        report_name: "application_memory_histograms"
+        report_type: INT_RANGE_HISTOGRAM
+        int_buckets: {
+          exponential: {
+            floor: 0
+            num_buckets: 10
+            initial_step: 1000
+            step_multiplier: 2
+          }
+        }
+      }
+    }
+
+    metrics: {
+      metric_name: "power_usage"
+      metric_type: INT_HISTOGRAM
+      customer_id: 1
+      project_id: 1
+      id: 6
+      int_buckets: {
+        linear: {
+          floor: 0
+          num_buckets: 50
+          step_size: 2
+        }
+      }
+      reports: {
+        report_name: "power_usage_histograms"
+        report_type: INT_RANGE_HISTOGRAM
+      }
+    }
+
+    metrics: {
+      metric_name: "FeaturesActive"
+      metric_type: EVENT_OCCURRED
+      customer_id: 1
+      project_id: 1
+      id: 7
+      max_event_code: 9
+      reports: {
+        report_name: "FeaturesActiveUniqueDevices"
+        id: 301
+        report_type: UNIQUE_N_DAY_ACTIVES
+        local_privacy_noise_level: SMALL
+        window_size: 1
+        window_size: 7
+      }
+    }
   }
 }
 
@@ -168,9 +176,9 @@ metric {
 // number.
 static const int kNumAggregatedObservations = 20;
 
-bool PopulateMetricDefinitions(MetricDefinitions* metric_definitions) {
+bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(kMetricDefinitions, metric_definitions);
+  return parser.ParseFromString(kCobaltRegistry, cobalt_registry);
 }
 
 class TestLoggerFactory : public LoggerFactory {
@@ -244,11 +252,11 @@ const ProjectContext* TestLoggerFactory::project_context() {
 class TestAppTest : public ::testing::Test {
  public:
   void SetUp() {
-    auto metric_definitions = std::make_unique<MetricDefinitions>();
-    ASSERT_TRUE(PopulateMetricDefinitions(metric_definitions.get()));
-    project_context_.reset(new ProjectContext(kCustomerId, kProjectId,
-                                              kCustomerName, kProjectName,
-                                              std::move(metric_definitions)));
+    auto cobalt_registry = std::make_unique<CobaltRegistry>();
+    ASSERT_TRUE(PopulateCobaltRegistry(cobalt_registry.get()));
+    ProjectContextFactory project_context_factory(std::move(cobalt_registry));
+    ASSERT_TRUE(project_context_factory.is_single_project());
+    project_context_ = project_context_factory.TakeSingleProjectContext();
     std::unique_ptr<LoggerFactory> logger_factory(
         new TestLoggerFactory(project_context_.get()));
     test_app_.reset(new TestApp(std::move(logger_factory),

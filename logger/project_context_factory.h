@@ -49,6 +49,17 @@ namespace logger {
 // be destructed until after the ProjectContext is no longer being used.
 class ProjectContextFactory {
  public:
+  // Constructs and returns an instance of ProjectContextFactory whose
+  // CobaltRegistry is obtained by Base64 decoding and then deserializing
+  // |cobalt_registry_base64|, which should contain the Base64 encoding of the
+  // bytes of a serialized CobaltRegistry.
+  //
+  // Returns nullptr to indicate that the Base64 decoding failed.
+  // If a non-nullptr is returned invoke is_valid() to determine if
+  // the parsing succeeded and the resulting CobaltRegistry is valid.
+  static std::unique_ptr<ProjectContextFactory> CreateFromCobaltRegistryBase64(
+      const std::string& cobalt_registry_base64);
+
   // Constructs a ProjectContextFactory whose CobaltRegistry is obtained
   // by parsing |cobalt_registry_bytes|. Invoke is_valid() to determine
   // if the parsing succeeded and the resulting CobaltRegistry is valid.

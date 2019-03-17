@@ -95,48 +95,6 @@ class ProjectContext {
                  const ProjectConfig* project_config,
                  ReleaseStage release_stage = GA);
 
-  // This constructor is deprecated.
-  // TODO(rudominer) Remove this.
-  //
-  // Constructs an instance of ProjectContext that does own the
-  // underlying |ProjectConfig|. Rather than providing an instance of
-  // |ProjectConfig| directly, a |MetricDefinitions| object is provided
-  // and internally we construct a ProjectConfig with this data.
-  //
-  // |customer_id| The id of the customer this project is for.
-  //
-  // |project_id| The ID of the project whose ProjectContext is being
-  // constructed.
-  //
-  // |customer_name| The name of the customer this project is for.
-  //
-  // |project_name| The name of the project whose ProjectContext is being
-  // constructed.
-  //
-  // |metric_definitions| The MetricDefinitions for the project.
-  //
-  // |release_stage| The declared release stage of the unit of code that will
-  // use this ProjectContext. Used to determine which metrics from the
-  // given |ProjectConfig| are allowed to be used. Optional.
-  ProjectContext(uint32_t customer_id, uint32_t project_id,
-                 std::string customer_name, std::string project_name,
-                 std::unique_ptr<MetricDefinitions> metric_definitions,
-                 ReleaseStage release_stage = GA);
-
-  // This method is deprecated
-  // TODO(rudominer) Remove this.
-  //
-  // ConstructWithProjectConfigs tries to extract a project for the specified
-  // customer/project name.
-  //
-  // If either the customer or the project are not found in the supplied
-  // ProjectConfigs, then this will return an INVALID_ARGUMENT error.
-  static statusor::StatusOr<std::unique_ptr<ProjectContext>>
-  ConstructWithProjectConfigs(
-      const std::string& customer_name, const std::string& project_name,
-      std::shared_ptr<config::ProjectConfigs> project_configs,
-      ReleaseStage release_stage = GA);
-
   // Returns the MetricDefinition for the metric with the given name, or
   // nullptr if there is no such metric.
   const MetricDefinition* GetMetric(const std::string& metric_name) const;
@@ -199,11 +157,6 @@ class ProjectContext {
   // variable directly after it is initialized in the constructor. Instead
   // access |project_config_|.
   const std::unique_ptr<ProjectConfig> maybe_null_project_config_;
-
-  // This field is deprecated and will be removed when
-  // ConstructWithProjectConfigs() is removed.
-  // TODO(rudominer) Remove this.
-  std::shared_ptr<config::ProjectConfigs> deprecated_project_configs_;
 
   std::map<const std::string, const MetricDefinition*> metrics_by_name_;
   std::map<const uint32_t, const MetricDefinition*> metrics_by_id_;

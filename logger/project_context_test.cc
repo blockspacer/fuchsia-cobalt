@@ -25,7 +25,6 @@ namespace {
 const char kCustomerA[] = "CustomerA";
 const uint32_t kCustomerAId = 123;
 const char kProjectA1[] = "ProjectA1";
-const uint32_t kProjectA1Id = 234;
 const char kMetricA1a[] = "MetricA1a";
 const uint32_t kMetricA1aId = 1;
 
@@ -146,40 +145,6 @@ TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
       kCustomerAId, kCustomerA,
       project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
   CheckProjectContextA1(*project_context);
-}
-
-// Test ProjectContext starting with constructing one from an instance
-// of |MetricDefinitions|.
-TEST_F(ProjectContextTest, ConstructWithMetricDefinitions) {
-  auto metric_definitions = std::make_unique<MetricDefinitions>();
-  metric_definitions->mutable_metric()->CopyFrom(
-      project_configs_->GetProjectConfig(kCustomerA, kProjectA1)->metrics());
-  auto project_context = std::make_unique<ProjectContext>(
-      kCustomerAId, kProjectA1Id, kCustomerA, kProjectA1,
-      std::move(metric_definitions));
-  CheckProjectContextA1(*project_context);
-}
-
-// Test ProjectContext starting with constructing one via the method
-// ConstructWithProjectConfigs.
-TEST_F(ProjectContextTest, ConstructWithProjectConfigs) {
-  auto project_context_or = ProjectContext::ConstructWithProjectConfigs(
-      kCustomerA, kProjectA1, project_configs_);
-  ASSERT_TRUE(project_context_or.ok());
-  auto project_context = project_context_or.ConsumeValueOrDie();
-  CheckProjectContextA1(*project_context);
-}
-
-// Tests the method ConstructWithProjectConfigs() in the case where an
-// invalid customer or project name is used.
-TEST_F(ProjectContextTest, ConstructWithProjectConfigsBad) {
-  auto project_context_or = ProjectContext::ConstructWithProjectConfigs(
-      "NoSuchCustomer", kProjectA1, project_configs_);
-  ASSERT_FALSE(project_context_or.ok());
-
-  project_context_or = ProjectContext::ConstructWithProjectConfigs(
-      kCustomerA, "NoSuchProject", project_configs_);
-  ASSERT_FALSE(project_context_or.ok());
 }
 
 }  // namespace logger

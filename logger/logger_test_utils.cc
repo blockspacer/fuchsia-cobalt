@@ -18,6 +18,7 @@
 #include "encoder/send_retryer.h"
 #include "encoder/shipping_manager.h"
 #include "logger/encoder.h"
+#include "logger/project_context_factory.h"
 #include "util/encrypted_message_util.h"
 
 using ::google::protobuf::util::MessageDifferencer;
@@ -63,12 +64,11 @@ bool HashComponentNameIfNotEmpty(const std::string& component,
 
 std::unique_ptr<ProjectContext> GetTestProject(
     const std::string& registry_base64) {
-  std::unique_ptr<ProjectConfigs> project_configs =
-      ProjectConfigs::CreateFromCobaltRegistryBase64(registry_base64);
-  EXPECT_NE(nullptr, project_configs);
-  return ProjectContext::ConstructWithProjectConfigs(
-             "", "", std::shared_ptr<ProjectConfigs>(project_configs.release()))
-      .ValueOrDie();
+  auto project_context_factory =
+      ProjectContextFactory::CreateFromCobaltRegistryBase64(registry_base64);
+  EXPECT_NE(nullptr, project_context_factory);
+  EXPECT_TRUE(project_context_factory->is_single_project());
+  return project_context_factory->TakeSingleProjectContext();
 }
 
 ReportAggregationKey MakeAggregationKey(

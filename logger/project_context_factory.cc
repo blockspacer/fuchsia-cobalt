@@ -11,6 +11,7 @@
 #include "config/metric_definition.pb.h"
 #include "config/project.pb.h"
 #include "config/project_configs.h"
+#include "util/crypto_util/base64.h"
 
 namespace cobalt {
 namespace logger {
@@ -29,6 +30,17 @@ std::unique_ptr<CobaltRegistry> ParseRegistryBytes(
   return cobalt_registry;
 }
 }  // namespace
+
+std::unique_ptr<ProjectContextFactory>
+ProjectContextFactory::CreateFromCobaltRegistryBase64(
+    const std::string& cobalt_registry_base64) {
+  std::string cobalt_registry_bytes;
+  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_registry_bytes)) {
+    LOG(ERROR) << "Unable to parse the provided string as base-64";
+    return nullptr;
+  }
+  return std::make_unique<ProjectContextFactory>(cobalt_registry_bytes);
+}
 
 ProjectContextFactory::ProjectContextFactory(
     const std::string& cobalt_registry_bytes)

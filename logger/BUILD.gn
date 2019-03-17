@@ -86,6 +86,8 @@ source_set("project_context_factory") {
 
   deps = [
     "//third_party/cobalt/config:cobalt_registry_proto",
+    # This is for base64 decoding.
+    "//third_party/cobalt/util/crypto_util",
   ]
 
   public_deps = [
