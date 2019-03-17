@@ -54,41 +54,6 @@ std::unique_ptr<ClientConfig> CreateFromCopyOfRegistry(
 
 }  // namespace
 
-TEST(ClientConfigTest, CreateFromCobaltProjectRegistryBytesValidConfig) {
-  std::string cobalt_registry_bytes;
-  CobaltRegistry cobalt_registry;
-  AddMetric(1, 1, 42, &cobalt_registry);
-  AddMetric(1, 1, 43, &cobalt_registry);
-  AddEncodingConfig(1, 1, 42, &cobalt_registry);
-  AddEncodingConfig(1, 1, 43, &cobalt_registry);
-  ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
-  auto client_config_project_id_pair =
-      ClientConfig::CreateFromCobaltProjectRegistryBytes(cobalt_registry_bytes);
-  auto client_config = std::move(client_config_project_id_pair.first);
-  ASSERT_NE(nullptr, client_config);
-  EXPECT_EQ(1u, client_config_project_id_pair.second);
-  EXPECT_EQ(nullptr, client_config->EncodingConfig(1, 1, 41));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(1, 1, 42));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(1, 1, 43));
-  EXPECT_EQ(nullptr, client_config->Metric(1, 1, 41));
-  EXPECT_NE(nullptr, client_config->Metric(1, 1, 42));
-  EXPECT_NE(nullptr, client_config->Metric(1, 1, 43));
-}
-
-TEST(ClientConfigTest, CreateFromCobaltProjectRegistryBytesInvalidConfig) {
-  std::string cobalt_registry_bytes;
-  CobaltRegistry cobalt_registry;
-  AddMetric(1, 1, 42, &cobalt_registry);
-  AddMetric(1, 1, 43, &cobalt_registry);
-  AddEncodingConfig(1, 2, 42, &cobalt_registry);
-  AddEncodingConfig(1, 2, 43, &cobalt_registry);
-  ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
-  auto client_config_project_id_pair =
-      ClientConfig::CreateFromCobaltProjectRegistryBytes(cobalt_registry_bytes);
-  auto client_config = std::move(client_config_project_id_pair.first);
-  ASSERT_EQ(nullptr, client_config);
-}
-
 TEST(ClientConfigTest, CreateFromCobaltRegistryBytes) {
   std::string cobalt_registry_bytes;
   CobaltRegistry cobalt_registry;
@@ -138,7 +103,7 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   auto client_config = CreateFromCopyOfRegistry(cobalt_registry);
   EXPECT_TRUE(client_config->is_empty());
   EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
+
   // Check that even though we have not added any metrics, querying for
   // a metric does not cause a crash.
   EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
@@ -149,7 +114,6 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   EXPECT_TRUE(client_config->is_single_project());
   EXPECT_EQ(42u, client_config->single_customer_id());
   EXPECT_EQ(42u, client_config->single_project_id());
-  EXPECT_TRUE(client_config->IsLegacy());
 
   AddEncodingConfig(42u, &cobalt_registry);
   client_config = CreateFromCopyOfRegistry(cobalt_registry);
@@ -157,115 +121,11 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   EXPECT_TRUE(client_config->is_single_project());
   EXPECT_EQ(42u, client_config->single_customer_id());
   EXPECT_EQ(42u, client_config->single_project_id());
-  EXPECT_TRUE(client_config->IsLegacy());
 
   AddMetric(43u, &cobalt_registry);
   client_config = CreateFromCopyOfRegistry(cobalt_registry);
   EXPECT_FALSE(client_config->is_empty());
   EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
-}
-
-// Tests the method CreateFromCobaltRegistry along with the accessors
-// is_single_project(), is_empty(), single_customer_id(), single_project_id()
-// IsLegacy() and TakeCustomerConfig()
-// in the case that the CobaltRegistry contains only Cobalt 1.0 data and no
-// Cobalt 0.1 data.
-//
-// DEPRECATED: Remove this test once we stop supporting Cobalt 1.0 data
-// in ClientConfig.
-TEST(ClientConfigTest, CreateFromCobaltRegistry1Point0) {
-  CobaltRegistry cobalt_registry;
-  auto client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_TRUE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
-  // Check that even though we have not added any metrics, querying for
-  // a metric does not cause a crash.
-  EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
-
-  // Add one empty customer.
-  auto* customer = cobalt_registry.add_customers();
-  customer->set_customer_id(51);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
-  // Check that even though we have not added any metrics, querying for
-  // a metric does not cause a crash.
-  EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
-
-  // Add one project to that customer
-  auto project = customer->add_projects();
-  project->set_project_id(101);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_TRUE(client_config->is_single_project());
-  EXPECT_EQ(51u, client_config->single_customer_id());
-  EXPECT_EQ(101u, client_config->single_project_id());
-  EXPECT_FALSE(client_config->IsLegacy());
-  auto customer_config = client_config->TakeCustomerConfig();
-  EXPECT_TRUE(customer_config);
-  EXPECT_EQ(51u, customer_config->customer_id());
-  // Check that even though we have not added any metrics, querying for
-  // a metric does not cause a crash.
-  EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
-
-  // Add a second project to that customer
-  project = customer->add_projects();
-  project->set_project_id(102);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  // Check that even though we have not added any metrics, querying for
-  // a metric does not cause a crash.
-  EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
-}
-
-// Tests the method CreateFromCobaltRegistry along with the accessors
-// is_single_project(), is_empty(), single_customer_id(), single_project_id()
-// IsLegacy() and TakeCustomerConfig()
-// in the case that the CobaltRegistry contains both Cobalt 1.0 data and
-// Cobalt 0.1 data.
-//
-// DEPRECATED: Remove this test once we stop supporting Cobalt 1.0 data
-// in ClientConfig.
-TEST(ClientConfigTest, CreateFromCobaltRegistryMixed) {
-  CobaltRegistry cobalt_registry;
-  auto client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_TRUE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
-
-  // Add one empty customer.
-  auto* customer = cobalt_registry.add_customers();
-  customer->set_customer_id(51);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  EXPECT_TRUE(client_config->IsLegacy());
-
-  // Add one project to that customer
-  auto project = customer->add_projects();
-  project->set_project_id(101);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_TRUE(client_config->is_single_project());
-  EXPECT_EQ(51u, client_config->single_customer_id());
-  EXPECT_EQ(101u, client_config->single_project_id());
-  EXPECT_FALSE(client_config->IsLegacy());
-  auto customer_config = client_config->TakeCustomerConfig();
-  EXPECT_TRUE(customer_config);
-  EXPECT_EQ(51u, customer_config->customer_id());
-
-  // Add some Cobalt 0.1 data.
-  AddMetric(42, &cobalt_registry);
-  client_config = CreateFromCopyOfRegistry(cobalt_registry);
-  EXPECT_FALSE(client_config->is_empty());
-  EXPECT_FALSE(client_config->is_single_project());
-  // Check that even though we have added some Cobalt 1.0 data we can
-  // still query for Cobalt 0.1 metrics.
-  EXPECT_NE(nullptr, client_config->Metric(42, 42, 42));
 }
 
 }  // namespace config

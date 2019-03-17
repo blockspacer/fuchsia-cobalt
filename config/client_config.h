@@ -69,27 +69,6 @@ class ClientConfig {
   ClientConfig(std::shared_ptr<config::EncodingRegistry> encoding_configs,
                std::shared_ptr<config::MetricRegistry> metrics);
 
-  // DEPRECATED: This method is being removed. Do not use.
-  //
-  // This method first invokes CreateFromCobaltRegistryBytes() and then
-  // checks the resulting ClientConfig to see if it represents a single
-  // project. If so it returns a pair consisting of the ClientConfig
-  // and the single project ID.
-  //
-  // Returns nullptr in the first component to indicate failure.
-  static std::pair<std::unique_ptr<ClientConfig>, uint32_t>
-  CreateFromCobaltProjectRegistryBytes(
-      const std::string& cobalt_registry_bytes);
-
-  // DEPRECATED: Use CreateFromCobaltRegistryProto() instead.
-  //
-  // Constructs and returns an instance of ClientConfig by swapping all of
-  // the Metrics and EncodingConfigs from the given |cobalt_registry|.
-  //
-  // Returns nullptr to indicate failure.
-  static std::unique_ptr<ClientConfig> CreateFromCobaltRegistry(
-      CobaltRegistry* cobalt_registry);
-
   // Returns the EncodingConfig with the given ID triple, or nullptr if there is
   // no such EncodingConfig. The caller does not take ownership of the returned
   // pointer.
@@ -124,26 +103,11 @@ class ClientConfig {
   // the single project. Otherwise the return value is undefined.
   uint32_t single_project_id() { return single_project_id_; }
 
-  // DEPRECATED: This method is being removed. Do not use.
-  bool IsLegacy() { return !single_customer_config_; }
-
-  // DEPRECATED: This method is being removed. Do not use.
-  // If is_single_project() is true and IsLegacy() is false then this
-  // method returns the single CustomerConfig form the CobaltRegistry.
-  std::unique_ptr<CustomerConfig> TakeCustomerConfig() {
-    return std::move(single_customer_config_);
-  }
-
  private:
   void DetermineIfSingleProject();
 
   std::shared_ptr<config::EncodingRegistry> encoding_configs_;
   std::shared_ptr<config::MetricRegistry> metrics_;
-
-  // DEPRECATED: This field is being removed. Do not use.
-  // If there is only a single project and it is of type Cobalt 1.0
-  // then this holds the single CustomerConfig.
-  std::unique_ptr<CustomerConfig> single_customer_config_;
 
   bool is_single_project_;
   bool is_empty_;

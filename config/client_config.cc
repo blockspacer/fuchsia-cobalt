@@ -60,35 +60,8 @@ std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBytes(
   return CreateFromCobaltRegistryProto(std::move(cobalt_registry));
 }
 
-std::pair<std::unique_ptr<ClientConfig>, uint32_t>
-ClientConfig::CreateFromCobaltProjectRegistryBytes(
-    const std::string& cobalt_registry_bytes) {
-  auto client_config = CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
-  if (!client_config) {
-    return std::make_pair(nullptr, 0);
-  }
-  if (client_config->is_empty()) {
-    LOG(ERROR) << "No project data found in the provided CobaltRegistry.";
-    return std::make_pair(nullptr, 0);
-  }
-  if (!client_config->is_single_project()) {
-    LOG(ERROR) << "More than one project found in the provided CobaltRegistry.";
-    return std::make_pair(nullptr, 0);
-  }
-
-  return std::make_pair(std::move(client_config),
-                        client_config->single_project_id());
-}
-
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryProto(
     std::unique_ptr<CobaltRegistry> cobalt_registry) {
-  return CreateFromCobaltRegistry(cobalt_registry.get());
-}
-
-// DEPRECATED: As soon as we are able to delete this method, move its logic
-// into CreateFromCobaltRegistryProto() above instead.
-std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistry(
-    CobaltRegistry* cobalt_registry) {
   RegisteredEncodings registered_encodings;
   registered_encodings.mutable_element()->Swap(
       cobalt_registry->mutable_encoding_configs());
@@ -111,42 +84,9 @@ std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistry(
     return std::unique_ptr<ClientConfig>(nullptr);
   }
 
-  auto client_config = std::unique_ptr<ClientConfig>(
-      new ClientConfig(std::move(encoding_registry_and_status.first),
-                       std::move(metrics_registry_and_status.first)));
-
-  // Deprecated: Delete this block once TakeCustomerConfig() has no more uses.
-  size_t num_customers = cobalt_registry->customers_size();
-  if (num_customers == 0) {
-    // There is no Cobalt 1.0 data. We are done.
-    return client_config;
-  }
-  // Since there is Cobalt 1.0 data, any previous computation regarding
-  // whether or not there is a single project based on the Cobalt 0.1 data
-  // only is invalid. Initialize is_single_project to false.
-  client_config->is_single_project_ = false;
-  if (!client_config->is_empty_) {
-    // There is both Cobalt 0.1 and Cobalt 1.0 data.
-    return client_config;
-  }
-  client_config->is_empty_ = false;
-  if (num_customers > 1) {
-    // There is more than one Cobalt 1.0 customer.
-    return client_config;
-  }
-  auto* single_customer = cobalt_registry->mutable_customers(0);
-  if (single_customer->projects_size() != 1) {
-    // The first Cobalt 1.0 customer does not have exactly one project.
-    return client_config;
-  }
-  auto single_project = single_customer->projects(0);
-  client_config->is_single_project_ = true;
-  client_config->single_customer_id_ = single_customer->customer_id();
-  client_config->single_project_id_ = single_project.project_id();
-  client_config->single_customer_config_.reset(new CustomerConfig());
-  client_config->single_customer_config_->Swap(single_customer);
-
-  return client_config;
+  return std::make_unique<ClientConfig>(
+      std::move(encoding_registry_and_status.first),
+      std::move(metrics_registry_and_status.first));
 }
 
 const EncodingConfig* ClientConfig::EncodingConfig(
