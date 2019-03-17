@@ -165,8 +165,8 @@ const Metric* ClientConfig::Metric(uint32_t customer_id, uint32_t project_id,
 }
 
 ClientConfig::ClientConfig(
-    std::unique_ptr<config::EncodingRegistry> encoding_configs,
-    std::unique_ptr<config::MetricRegistry> metrics)
+    std::shared_ptr<config::EncodingRegistry> encoding_configs,
+    std::shared_ptr<config::MetricRegistry> metrics)
     : encoding_configs_(std::move(encoding_configs)),
       metrics_(std::move(metrics)) {
   CHECK(metrics_);

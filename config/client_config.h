@@ -65,6 +65,10 @@ class ClientConfig {
   static std::unique_ptr<ClientConfig> CreateFromCobaltRegistryProto(
       std::unique_ptr<CobaltRegistry> cobalt_registry);
 
+  // Constructs a ClientConfig that wraps the given registries.
+  ClientConfig(std::shared_ptr<config::EncodingRegistry> encoding_configs,
+               std::shared_ptr<config::MetricRegistry> metrics);
+
   // DEPRECATED: This method is being removed. Do not use.
   //
   // This method first invokes CreateFromCobaltRegistryBytes() and then
@@ -131,14 +135,10 @@ class ClientConfig {
   }
 
  private:
-  // Constructs an ClientConfig that wraps the given registries. (v0.1)
-  ClientConfig(std::unique_ptr<config::EncodingRegistry> encoding_configs,
-               std::unique_ptr<config::MetricRegistry> metrics);
-
   void DetermineIfSingleProject();
 
-  std::unique_ptr<config::EncodingRegistry> encoding_configs_;
-  std::unique_ptr<config::MetricRegistry> metrics_;
+  std::shared_ptr<config::EncodingRegistry> encoding_configs_;
+  std::shared_ptr<config::MetricRegistry> metrics_;
 
   // DEPRECATED: This field is being removed. Do not use.
   // If there is only a single project and it is of type Cobalt 1.0

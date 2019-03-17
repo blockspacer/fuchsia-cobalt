@@ -231,7 +231,9 @@ class ReportExecutorAbstractTest : public ::testing::Test {
 
     // Make a ProjectContext
     project_.reset(new encoder::ProjectContext(
-        kCustomerId, kProjectId, metric_registry, encoding_config_registry));
+        kCustomerId, kProjectId,
+        std::make_shared<config::ClientConfig>(encoding_config_registry,
+                                               metric_registry)));
 
     std::shared_ptr<config::AnalyzerConfig> analyzer_config(
         new config::AnalyzerConfig(encoding_config_registry, metric_registry,

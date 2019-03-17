@@ -43,6 +43,7 @@
 namespace cobalt {
 
 using analyzer::Analyzer;
+using config::ClientConfig;
 using config::EncodingRegistry;
 using config::MetricRegistry;
 using encoder::ClearcutV1ShippingManager;
@@ -269,7 +270,8 @@ std::shared_ptr<ProjectContext> LoadProjectContext(
                                 "intended to mutate real customer projects.";
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(
-      FLAGS_customer, FLAGS_project, metric_registry, encoding_registry));
+      FLAGS_customer, FLAGS_project,
+      std::make_shared<ClientConfig>(encoding_registry, metric_registry)));
 }
 
 // Given a |line| of text, breaks it into tokens separated by white space.

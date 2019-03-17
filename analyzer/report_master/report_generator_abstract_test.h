@@ -290,9 +290,10 @@ class ReportGeneratorAbstractTest : public ::testing::Test {
         report_parse_result.first.release());
 
     // Make a ProjectContext
-    project_.reset(
-        new encoder::ProjectContext(testing::kCustomerId, testing::kProjectId,
-                                    metric_registry, encoding_config_registry));
+    project_.reset(new encoder::ProjectContext(
+        testing::kCustomerId, testing::kProjectId,
+        std::make_shared<config::ClientConfig>(encoding_config_registry,
+                                               metric_registry)));
 
     std::shared_ptr<config::AnalyzerConfig> analyzer_config(
         new config::AnalyzerConfig(encoding_config_registry, metric_registry,

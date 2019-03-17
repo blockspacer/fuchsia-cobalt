@@ -29,6 +29,7 @@ namespace cobalt {
 DECLARE_uint32(num_clients);
 DECLARE_string(values);
 
+using config::ClientConfig;
 using config::EncodingRegistry;
 using config::MetricRegistry;
 using encoder::EnvelopeMaker;
@@ -209,7 +210,8 @@ std::shared_ptr<ProjectContext> GetTestProject() {
       encoding_parse_result.first.release());
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(
-      kCustomerId, kProjectId, metric_registry, encoding_registry));
+      kCustomerId, kProjectId,
+      std::make_shared<ClientConfig>(encoding_registry, metric_registry)));
 }
 
 // An implementation of ShufflerClientInterface that just stores the

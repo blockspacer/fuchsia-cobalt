@@ -22,13 +22,6 @@ namespace encoder {
 class ProjectContext {
  public:
   // Constructs a ProjectContext for the project with the given IDs
-  // and containing the given metric and endoding registries.
-  // DEPRECATED. Use the constructor that takes a ClientConfig instead.
-  ProjectContext(uint32_t customer_id, uint32_t project_id,
-                 std::shared_ptr<config::MetricRegistry> metric_registry,
-                 std::shared_ptr<config::EncodingRegistry> encoding_registry);
-
-  // Constructs a ProjectContext for the project with the given IDs
   // and ClientConfig.
   ProjectContext(uint32_t customer_id, uint32_t project_id,
                  std::shared_ptr<config::ClientConfig> client_config);
@@ -64,12 +57,8 @@ class ProjectContext {
   // default encoding_ids.
   std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>>
       default_encodings_;
-  // Either client_config_ will be null or else
-  // metric_registry_ and encoding_registry_ will be null, depending on
-  // which constructor was used.
+
   std::shared_ptr<config::ClientConfig> client_config_;
-  std::shared_ptr<config::MetricRegistry> metric_registry_;
-  std::shared_ptr<config::EncodingRegistry> encoding_registry_;
 };
 
 }  // namespace encoder

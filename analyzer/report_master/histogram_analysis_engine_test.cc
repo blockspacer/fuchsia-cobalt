@@ -30,6 +30,7 @@ namespace cobalt {
 namespace analyzer {
 
 using config::AnalyzerConfig;
+using config::ClientConfig;
 using config::EncodingRegistry;
 using config::MetricRegistry;
 using config::ReportRegistry;
@@ -279,8 +280,9 @@ class HistogramAnalysisEngineTest : public ::testing::Test {
     EXPECT_EQ(config::kOK, report_parse_result.second);
     report_registry_.reset((report_parse_result.first.release()));
 
-    project_.reset(new ProjectContext(kCustomerId, kProjectId, metric_registry,
-                                      encoding_registry));
+    project_.reset(new ProjectContext(
+        kCustomerId, kProjectId,
+        std::make_shared<ClientConfig>(encoding_registry, metric_registry)));
 
     std::shared_ptr<AnalyzerConfig> analyzer_config(new AnalyzerConfig(
         encoding_registry, metric_registry, report_registry_));
