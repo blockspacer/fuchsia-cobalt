@@ -27,6 +27,7 @@
 #include "logger/event_aggregator.h"
 #include "logger/local_aggregation.pb.h"
 #include "logger/project_context.h"
+#include "logger/project_context_factory.h"
 #include "logger/status.h"
 #include "third_party/statusor/statusor.h"
 #include "util/clearcut/curl_http_client.h"
@@ -58,6 +59,7 @@ using logger::Logger;
 using logger::LoggerInterface;
 using logger::ObservationWriter;
 using logger::ProjectContext;
+using logger::ProjectContextFactory;
 using logger::Status;
 using util::ClockInterface;
 using util::ConsistentProtoStore;
@@ -286,43 +288,22 @@ TestApp::Mode ParseMode() {
   LOG(FATAL) << "Unrecognized mode: " << FLAGS_mode;
 }
 
-// Reads the specified serialized CobaltRegistry proto. Returns a ProjectContext
-// containing the read config and the values of the -customer and
-// -project flags.
-std::unique_ptr<ProjectContext> LoadProjectContext(
-    const std::string& config_bin_proto_path) {
-  VLOG(2) << "Loading Cobalt configuration from " << config_bin_proto_path;
+// Reads the specified serialized CobaltRegistry pb file. Returns a
+// ProjectContextFactory containing the CobaltRegistry read from the file.
+std::unique_ptr<ProjectContextFactory> LoadCobaltRegistry(
+    const std::string& registry_pb_path) {
+  VLOG(2) << "Loading Cobalt configuration from " << registry_pb_path;
 
-  std::ifstream config_file_stream;
-  config_file_stream.open(config_bin_proto_path);
-  CHECK(config_file_stream)
-      << "Could not open cobalt config proto file: " << config_bin_proto_path;
+  std::ifstream registry_file_stream;
+  registry_file_stream.open(registry_pb_path);
+  CHECK(registry_file_stream)
+      << "Could not open cobalt registry pb file: " << registry_pb_path;
 
-  // Parse the cobalt config file.
-  auto cobalt_config = std::make_unique<cobalt::CobaltRegistry>();
-  CHECK(cobalt_config->ParseFromIstream(&config_file_stream))
-      << "Could not parse the cobalt config proto file: "
-      << config_bin_proto_path;
-  auto project_configs =
-      std::make_unique<ProjectConfigs>(std::move(cobalt_config));
-
-  // Retrieve the customer specified by the flags.
-  const auto* customer_config =
-      project_configs->GetCustomerConfig(FLAGS_customer_name);
-  CHECK(customer_config) << "No such customer: " << FLAGS_customer_name << ".";
-
-  // Retrieve the project specified by the flags.
-  const auto* project_config = project_configs->GetProjectConfig(
-      FLAGS_customer_name, FLAGS_project_name);
-  CHECK(project_config) << "No such project: " << FLAGS_customer_name << "."
-                        << FLAGS_project_name << ".";
-
-  // Copy the MetricDefinitions
-  auto metric_definitions = std::make_unique<MetricDefinitions>();
-  metric_definitions->mutable_metric()->CopyFrom(project_config->metrics());
-  return std::make_unique<ProjectContext>(
-      customer_config->customer_id(), project_config->project_id(),
-      FLAGS_customer_name, FLAGS_project_name, std::move(metric_definitions));
+  // Parse the CobaltRegistry.
+  auto cobalt_registry = std::make_unique<cobalt::CobaltRegistry>();
+  CHECK(cobalt_registry->ParseFromIstream(&registry_file_stream))
+      << "Could not parse the cobalt registry pb file: " << registry_pb_path;
+  return std::make_unique<ProjectContextFactory>(std::move(cobalt_registry));
 }
 
 // Given a |line| of text, breaks it into tokens separated by white space.
@@ -354,7 +335,8 @@ class RealLoggerFactory : public LoggerFactory {
   RealLoggerFactory(
       std::unique_ptr<EncryptedMessageMaker> observation_encrypter,
       std::unique_ptr<EncryptedMessageMaker> envelope_encrypter,
-      std::unique_ptr<ProjectContext> project_context,
+      std::unique_ptr<ProjectContextFactory> project_context_factory,
+      std::string customer_name, std::string project_name,
       std::unique_ptr<MemoryObservationStore> observation_store,
       std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
       std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
@@ -374,6 +356,9 @@ class RealLoggerFactory : public LoggerFactory {
  private:
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<EncryptedMessageMaker> envelope_encrypter_;
+  std::unique_ptr<ProjectContextFactory> project_context_factory_;
+  std::string customer_name_;
+  std::string project_name_;
   std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<MemoryObservationStore> observation_store_;
   std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
@@ -388,7 +373,8 @@ class RealLoggerFactory : public LoggerFactory {
 RealLoggerFactory::RealLoggerFactory(
     std::unique_ptr<EncryptedMessageMaker> observation_encrypter,
     std::unique_ptr<EncryptedMessageMaker> envelope_encrypter,
-    std::unique_ptr<ProjectContext> project_context,
+    std::unique_ptr<ProjectContextFactory> project_context_factory,
+    std::string customer_name, std::string project_name,
     std::unique_ptr<MemoryObservationStore> observation_store,
     std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
     std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
@@ -396,7 +382,11 @@ RealLoggerFactory::RealLoggerFactory(
     std::unique_ptr<SystemDataInterface> system_data)
     : observation_encrypter_(std::move(observation_encrypter)),
       envelope_encrypter_(std::move(envelope_encrypter)),
-      project_context_(std::move(project_context)),
+      project_context_factory_(std::move(project_context_factory)),
+      customer_name_(std::move(customer_name)),
+      project_name_(std::move(project_name)),
+      project_context_(project_context_factory_->NewProjectContext(
+          customer_name_, project_name_)),
       observation_store_(std::move(observation_store)),
       shipping_manager_(std::move(shipping_manager)),
       local_aggregate_proto_store_(std::move(local_aggregate_proto_store)),
@@ -415,8 +405,9 @@ RealLoggerFactory::RealLoggerFactory(
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(
     uint32_t day_index) {
   std::unique_ptr<Logger> logger = std::make_unique<Logger>(
-      encoder_.get(), event_aggregator_.get(), observation_writer_.get(),
-      project_context_.get());
+      project_context_factory_->NewProjectContext(customer_name_,
+                                                  project_name_),
+      encoder_.get(), event_aggregator_.get(), observation_writer_.get());
   if (day_index != 0u) {
     auto mock_clock = new IncrementingClock();
     mock_clock->set_time(std::chrono::system_clock::time_point(
@@ -459,14 +450,19 @@ bool RealLoggerFactory::SendAccumulatedObservations() {
 }  // namespace internal
 
 std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
-  std::string config_bin_proto_path = FLAGS_config_bin_proto_path;
+  std::string registry_pb_path = FLAGS_config_bin_proto_path;
   // If no path is given, try to deduce it from the binary location.
-  if (config_bin_proto_path == "") {
-    config_bin_proto_path = FindCobaltRegistryProto(argv);
+  if (registry_pb_path == "") {
+    registry_pb_path = FindCobaltRegistryProto(argv);
   }
 
-  std::unique_ptr<ProjectContext> project_context =
-      LoadProjectContext(config_bin_proto_path);
+  auto project_context_factory = LoadCobaltRegistry(registry_pb_path);
+  // Attempt to create a new ProjetContext here even though we don't need one
+  // yet in order to confirm that the customer and project names are good.
+  CHECK(project_context_factory->NewProjectContext(FLAGS_customer_name,
+                                                   FLAGS_project_name))
+      << "The Cobalt Registry does not contain a project named: "
+      << FLAGS_customer_name << "." << FLAGS_project_name;
 
   auto mode = ParseMode();
 
@@ -534,7 +530,8 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
 
   std::unique_ptr<LoggerFactory> logger_factory(new internal::RealLoggerFactory(
       std::move(observation_encrypter), std::move(envelope_encrypter),
-      std::move(project_context), std::move(observation_store),
+      std::move(project_context_factory), FLAGS_customer_name,
+      FLAGS_project_name, std::move(observation_store),
       std::move(shipping_manager), std::move(local_aggregate_proto_store),
       std::move(obs_history_proto_store), std::move(system_data)));
 

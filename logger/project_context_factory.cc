@@ -15,14 +15,28 @@
 namespace cobalt {
 namespace logger {
 
-ProjectContextFactory::ProjectContextFactory(
+namespace {
+
+// Always returns a valid pointer to a CobaltRegistry. If the bytes could not
+// be parsed then the CobaltRegistry is empty.
+std::unique_ptr<CobaltRegistry> ParseRegistryBytes(
     const std::string& cobalt_registry_bytes) {
   // Attempt to deserialize a CobaltRegistry.
   auto cobalt_registry = std::make_unique<CobaltRegistry>();
   if (!cobalt_registry->ParseFromString(cobalt_registry_bytes)) {
     LOG(ERROR) << "Unable to parse a CobaltRegistry from the provided bytes.";
-    return;
   }
+  return cobalt_registry;
+}
+}  // namespace
+
+ProjectContextFactory::ProjectContextFactory(
+    const std::string& cobalt_registry_bytes)
+    : ProjectContextFactory(ParseRegistryBytes(cobalt_registry_bytes)) {}
+
+ProjectContextFactory::ProjectContextFactory(
+    std::unique_ptr<CobaltRegistry> cobalt_registry) {
+  CHECK(cobalt_registry);
 
   // Create a second CobaltRegistry and separate the Cobalt 1.0 data
   // from the Cobalt 0.1 data.

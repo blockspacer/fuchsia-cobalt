@@ -49,7 +49,9 @@ class EventLogger {
  protected:
   const Encoder* encoder() { return logger_->encoder_; }
   EventAggregator* event_aggregator() { return logger_->event_aggregator_; }
-  const ProjectContext* project_context() { return logger_->project_context_; }
+  const ProjectContext* project_context() {
+    return logger_->project_context_.get();
+  }
   Encoder::Result BadReportType(const MetricDefinition& metric,
                                 const ReportDefinition& report);
   virtual Status ValidateEventCodes(const EventRecord& event_record,
@@ -234,53 +236,30 @@ class CustomEventLogger : public EventLogger {
 
 //////////////////// Logger method implementations ////////////////////////
 
-Logger::Logger(std::unique_ptr<ProjectContext> maybe_null_project_context,
+Logger::Logger(std::unique_ptr<ProjectContext> project_context,
                const Encoder* encoder, EventAggregator* event_aggregator,
                ObservationWriter* observation_writer,
-               const ProjectContext* project, LoggerInterface* internal_logger)
-    : project_context_(project),
-      maybe_null_project_context_(std::move(maybe_null_project_context)),
+               LoggerInterface* internal_logger)
+    : project_context_(std::move(project_context)),
       encoder_(encoder),
       event_aggregator_(event_aggregator),
       observation_writer_(observation_writer),
       clock_(new SystemClock()) {
-  CHECK(project_context_ || maybe_null_project_context_);
-  CHECK(!(project_context_ && maybe_null_project_context_));
-  if (!project_context_) {
-    project_context_ = maybe_null_project_context_.get();
-  }
-
+  CHECK(project_context_);
+  CHECK(encoder_);
+  CHECK(event_aggregator_);
+  CHECK(observation_writer_);
   if (internal_logger) {
     internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
   } else {
     // We were not provided with a metrics logger. We must create one.
     internal_metrics_.reset(new NoOpInternalMetrics());
   }
-  if (event_aggregator_) {
-    if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
-      LOG(ERROR) << "Failed to provide aggregation configurations to the "
-                    "EventAggregator.";
-    }
+  if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
+    LOG(ERROR) << "Failed to provide aggregation configurations to the "
+                  "EventAggregator.";
   }
 }
-
-Logger::Logger(std::unique_ptr<ProjectContext> project_context,
-               const Encoder* encoder, EventAggregator* event_aggregator,
-               ObservationWriter* observation_writer,
-               LoggerInterface* internal_logger)
-    : Logger(std::move(project_context), encoder, event_aggregator,
-             observation_writer, nullptr, internal_logger) {}
-
-Logger::Logger(const Encoder* encoder, EventAggregator* event_aggregator,
-               ObservationWriter* observation_writer,
-               const ProjectContext* project, LoggerInterface* internal_logger)
-    : Logger(nullptr, encoder, event_aggregator, observation_writer, project,
-             internal_logger) {}
-
-Logger::Logger(const Encoder* encoder, ObservationWriter* observation_writer,
-               const ProjectContext* project, LoggerInterface* internal_logger)
-    : Logger(nullptr, encoder, nullptr, observation_writer, project,
-             internal_logger) {}
 
 Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
@@ -755,13 +734,6 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
 
 Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(
     const ReportDefinition& report, EventRecord* event_record) {
-  // If the Logger was constructed without an EventAggregator, do nothing and
-  // return kOK.
-  // TODO(pesk): remove this clause when the deprecated Logger constructor is
-  // removed.
-  if (event_aggregator() == nullptr) {
-    return kOK;
-  }
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
       return event_aggregator()->LogUniqueActivesEvent(report.id(),
@@ -819,13 +791,6 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
 
 Status CountEventLogger::MaybeUpdateLocalAggregation(
     const ReportDefinition& report, EventRecord* event_record) {
-  // If the Logger was constructed without an EventAggregator, do nothing and
-  // return kOK.
-  // TODO(pesk): remove this clause when the deprecated Logger constructor is
-  // removed.
-  if (event_aggregator() == nullptr) {
-    return kOK;
-  }
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogCountEvent(report.id(), event_record);
@@ -886,13 +851,6 @@ Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
 
 Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(
     const ReportDefinition& report, EventRecord* event_record) {
-  // If the Logger was constructed without an EventAggregator, do nothing and
-  // return kOK.
-  // TODO(pesk): remove this clause when the deprecated Logger constructor is
-  // removed.
-  if (event_aggregator() == nullptr) {
-    return kOK;
-  }
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogElapsedTimeEvent(report.id(), event_record);

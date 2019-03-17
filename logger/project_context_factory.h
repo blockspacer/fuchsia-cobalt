@@ -17,7 +17,6 @@
 namespace cobalt {
 namespace logger {
 
-
 // A ProjectContextFactory is used in a Cobalt client application in order
 // to obtain one or more ProjectContexts based on a given a CobaltRegistry.
 //
@@ -52,8 +51,14 @@ class ProjectContextFactory {
  public:
   // Constructs a ProjectContextFactory whose CobaltRegistry is obtained
   // by parsing |cobalt_registry_bytes|. Invoke is_valid() to determine
-  // if the parsing succeeded.
+  // if the parsing succeeded and the resulting CobaltRegistry is valid.
   explicit ProjectContextFactory(const std::string& cobalt_registry_bytes);
+
+  // Constructs a ProjectContextFactory containing the given CobaltRegistry.
+  // |cobalt_registry| must not be null.
+  // Invoke is_valid() to determine if the CobbaltRegistry is valid
+  explicit ProjectContextFactory(
+      std::unique_ptr<CobaltRegistry> cobalt_registry);
 
   // Returns true if the factory's CobaltRegistry exists (meaning we were
   // able to parse the  |cobalt_regsitry_bytes| passed to the constructor)
