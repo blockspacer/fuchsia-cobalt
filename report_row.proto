@@ -188,6 +188,9 @@ message IntRangeHistogramReportRow {
 
   // The count for this bucket.
   int64 bucket_count = 6;
+
+  // The bucket index, which is useful for sorting the data in visualizations.
+  int32 bucket_index = 7;
 }
 
 // A row of output for a report of type UNIQUE_N_DAY_ACTIVES.
