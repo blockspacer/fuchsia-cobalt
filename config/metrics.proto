@@ -30,19 +30,53 @@ enum SystemProfileField {
 }
 
 // ExponentialIntegerBuckets is used to define a partition of the integers into
-// a finite number of buckets of exponentially-increasing size.
+// a finite number of exponentially increasing buckets.
 //
 // Let n = num_buckets. Then there are n+2 buckets indexed 0,...,n+1.
+//
+// The bucket boundaries are:
+// a[0] = floor
+// a[1] = floor + initial_step
+// a[2] = floor + initial_step * step_multiplier
+// a[3] = floor + initial_step * step_multiplier ^ 2
+// a[4] = floor + initial_step * step_multiplier ^ 3
+// and in general, for i = 1, 2, 3 ... n
+// a[i] = floor + initial_step * step_multiplier ^ (i-1)
+//
+// Then, the buckets are defined as follows:
 // Bucket 0 is the underflow bucket: (-infinity, floor)
-// Bucket n+1 is the overflow bucket:
-// [lower + initial_step * step_multiplier ^ n, +infinity)
+// Bucket i for 0 < i < n+1: [a[i-1], a[i])
+// Bucket n+1 is the overflow bucket: [a[n], +infinity)
 //
-// For i = 1 to n, the bucket i is defined as
-// [floor + initial_step * step_multiplier ^ (i-1), floor + initial_step *
-// step_multiplier ^ i)
+// Examples:
+// floor = 0
+// num_buckets = 3
+// initial_step = 10
+// step_multiplier = 10
+// Then, the buckets are:
+// (-infinity, 0), [0, 10), [10, 100), [100, 1000), [1000, +infinity)
 //
-// Example: floor = 0, num_buckets = 3, initial_step = 10, step_multiplier = 10.
-// (-infinity, 0), [0, 10), [10, 100), [100, 1000), [1000, +inifinity)
+// floor = 0
+// num_buckets = 3
+// initial_step = 2
+// step_multiplier = 2
+// Then, the buckets are:
+// (-infinity, 0), [0, 2), [2, 4), [4, 8), [8, +infinity)
+//
+// floor = 10
+// num_buckets = 3
+// initial_step = 2
+// step_multiplier = 2
+// Then, the buckets are:
+// (-infinity, 10), [10, 12), [12, 14), [14, 18), [18, +infinity)
+//
+// floor = 0
+// num_buckets = 3
+// initial_step = 100
+// step_multiplier = 10
+// Then, the buckets are:
+// (-infinity, 0), [0, 100), [100, 1000), [1000, 10000), [10000, +infinity)
+//
 message ExponentialIntegerBuckets {
   int64 floor = 1;
 
