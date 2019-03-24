@@ -17,7 +17,8 @@ metric_definitions:
   metric_name: "ErrorOccurred"
   metric_type: EVENT_OCCURRED
   metric_dimensions:
-    - max_event_code: 100
+    - dimension: FirstDimension
+      max_event_code: 100
   reports:
     # Report ID: 3131160301
     - report_name: "ErrorCountsByCode"
@@ -27,8 +28,10 @@ metric_definitions:
 - id: 2
   metric_name: "ReadCacheHits"
   metric_type: EVENT_COUNT
+  # One defined dimension with max_event_code set and no event_codes defined.
   metric_dimensions:
-    - max_event_code: 111
+    - dimension: FirstDimension
+      max_event_code: 111
   reports:
     # Report ID: 2845948340
     - report_name: "ReadCacheHitCounts"
@@ -39,9 +42,7 @@ metric_definitions:
 - id: 3
   metric_name: "ModuleLoadTime"
   metric_type: ELAPSED_TIME
-  metric_dimensions:
-    - event_codes:
-        44: CODE
+  # No metric dimensions defined.
   reports:
     # Report ID: 643534882
     - report_name: "ModuleLoadTime_Aggregated"
@@ -56,8 +57,11 @@ metric_definitions:
 - id: 4
   metric_name: "LoginModuleFrameRate"
   metric_type: FRAME_RATE
+  # One defined dimension with max_event_code not set and one
+  # event_code defined.
   metric_dimensions:
-    - event_codes:
+    - dimension: FirstDimension
+      event_codes:
         45: CODE
   reports:
     # Report ID: 1444372300
@@ -73,9 +77,18 @@ metric_definitions:
 - id: 5
   metric_name: "LedgerMemoryUsage"
   metric_type: MEMORY_USAGE
+  # Two metric dimensions defined
   metric_dimensions:
-    - event_codes:
-        46: CODE
+    # The first dimension has max_event_code set
+    - dimension: FirstDimension
+      event_codes:
+        45: CODE45
+      max_event_code: 100
+    # The second dimension does not max_event_code set
+    - dimension: SecondDimension
+      event_codes:
+        46: CODE46
+        47: CODE47
   reports:
     # Report ID: 4291656504
     - report_name: "LedgerMemoryUsage_Aggregated"

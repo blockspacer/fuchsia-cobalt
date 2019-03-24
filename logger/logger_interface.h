@@ -59,7 +59,7 @@ class LoggerInterface {
   // in order to achieve a semantics similar to the LogEventOccurred() method,
   // but with a |component|.
   virtual Status LogEventCount(uint32_t metric_id,
-                               std::vector<uint32_t> event_codes,
+                               const std::vector<uint32_t>& event_codes,
                                const std::string& component,
                                int64_t period_duration_micros,
                                uint32_t count) = 0;
@@ -88,7 +88,7 @@ class LoggerInterface {
   // |elapsed_micros| The elapsed time of the event, specified as a number
   // of microseconds.
   virtual Status LogElapsedTime(uint32_t metric_id,
-                                std::vector<uint32_t> event_codes,
+                                const std::vector<uint32_t>& event_codes,
                                 const std::string& component,
                                 int64_t elapsed_micros) = 0;
 
@@ -114,7 +114,7 @@ class LoggerInterface {
   //
   // |fps| The average-frame rate in frames-per-second.
   virtual Status LogFrameRate(uint32_t metric_id,
-                              std::vector<uint32_t> event_codes,
+                              const std::vector<uint32_t>& event_codes,
                               const std::string& component, float fps) = 0;
 
   // DEPRECATED. TODO(zmbush): Remove
@@ -139,7 +139,7 @@ class LoggerInterface {
   //
   // |bytes| The memory used, in bytes.
   virtual Status LogMemoryUsage(uint32_t metric_id,
-                                std::vector<uint32_t> event_codes,
+                                const std::vector<uint32_t>& event_codes,
                                 const std::string& component,
                                 int64_t bytes) = 0;
 
@@ -168,7 +168,7 @@ class LoggerInterface {
   //  for one bucket of the histogram. The definitions of the buckets is
   //  given in the Metric definition.
   virtual Status LogIntHistogram(uint32_t metric_id,
-                                 std::vector<uint32_t> event_codes,
+                                 const std::vector<uint32_t>& event_codes,
                                  const std::string& component,
                                  HistogramPtr histogram) = 0;
 

@@ -104,11 +104,9 @@ class LoggerTest : public ::testing::Test {
                      testing::all_report_types::kExpectedAggregationParams);
   }
 
-  // Set up LoggerTest using a base64-encoded registry. The argument
-  // |registry_var_name| should be the name of a variable to which the
-  // base64-encoded registry is assigned.
+  // Set up LoggerTest using a base64-encoded registry.
   void SetUpFromMetrics(
-      const std::string& registry_var_name,
+      const std::string& registry_base64,
       const ExpectedAggregationParams& expected_aggregation_params) {
     expected_aggregation_params_ = expected_aggregation_params;
     observation_store_.reset(new FakeObservationStore);
@@ -126,7 +124,7 @@ class LoggerTest : public ::testing::Test {
     event_aggregator_.reset(new EventAggregator(
         encoder_.get(), observation_writer_.get(),
         local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
-    logger_.reset(new Logger(GetTestProject(registry_var_name), encoder_.get(),
+    logger_.reset(new Logger(GetTestProject(registry_base64), encoder_.get(),
                              event_aggregator_.get(),
                              observation_writer_.get()));
     // Create a mock clock which does not increment by default when called.
@@ -213,6 +211,12 @@ class PerDeviceNumericLoggerTest : public LoggerTest {
 
 // Tests the method LogEvent().
 TEST_F(LoggerTest, LogEvent) {
+  // Attempt to use an event code larger than max_event_code.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId,
+                              101));
+
+  // Now use good arguments.
   ASSERT_EQ(kOK, logger_->LogEvent(
                      testing::all_report_types::kErrorOccurredMetricId, 42));
   Observation2 observation;
@@ -230,12 +234,74 @@ TEST_F(LoggerTest, LogEventCount) {
   std::vector<uint32_t> expected_report_ids = {
       testing::all_report_types::kReadCacheHitCountsReportId,
       testing::all_report_types::kReadCacheHitHistogramsReportId};
+
+  // Attempt to use an event code larger than max_event_code.
+  ASSERT_EQ(
+      kInvalidArguments,
+      logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
+                             112, "component2", 1, 303));
+
+  // All good
   ASSERT_EQ(kOK, logger_->LogEventCount(
                      testing::all_report_types::kReadCacheHitsMetricId, 43,
                      "component2", 1, 303));
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, 43u, "component2", 303, observation_store_.get(),
       update_recipient_.get()));
+
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
+
+  // No problem using event code 0.
+  ASSERT_EQ(kOK, logger_->LogEventCount(
+                     testing::all_report_types::kReadCacheHitsMetricId, 0, "",
+                     1, 303));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 0u, "", 303,
+                                            observation_store_.get(),
+                                            update_recipient_.get()));
+}
+
+// Tests the version of the method LogEventCount() that accepts a vector of
+// event codes.
+TEST_F(LoggerTest, LogEventCountMultiDimension) {
+  // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
+  EXPECT_EQ(
+      kInvalidArguments,
+      logger_->LogEventCount(testing::all_report_types::kErrorOccurredMetricId,
+                             std::vector<uint32_t>({43}), "", 0, 303));
+
+  // Use no event codes when the metric has one dimension. Expect
+  // kInvalidArguments.
+  EXPECT_EQ(
+      kInvalidArguments,
+      logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
+                             std::vector<uint32_t>({}), "", 0, 303));
+
+  // Use two event codes when the metric has one dimension. Expect
+  // kInvalidArguments.
+  EXPECT_EQ(
+      kInvalidArguments,
+      logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
+                             std::vector<uint32_t>({43, 44}), "", 0, 303));
+
+  // Use an event code that exceeds the specified max_event_code. Expect
+  // kInvalidArguments.
+  EXPECT_EQ(
+      kInvalidArguments,
+      logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
+                             std::vector<uint32_t>({200}), "", 0, 303));
+
+  // All good, expect OK.
+  EXPECT_EQ(kOK, logger_->LogEventCount(
+                     testing::all_report_types::kReadCacheHitsMetricId,
+                     std::vector<uint32_t>({43}), "", 0, 303));
+
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitHistogramsReportId};
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 43u, "", 303,
+                                            observation_store_.get(),
+                                            update_recipient_.get()));
 }
 
 // Tests the method LogElapsedTime().
@@ -244,11 +310,55 @@ TEST_F(LoggerTest, LogElapsedTime) {
       testing::all_report_types::kModuleLoadTimeAggregatedReportId,
       testing::all_report_types::kModuleLoadTimeHistogramReportId,
       testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+
+  // Use a non-zero event code even though the metric does not have any
+  // metric dimensions defined. Expect kInvalidArgument.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogElapsedTime(
+                testing::all_report_types::kModuleLoadTimeMetricId, 44,
+                "component4", 4004));
+
+  // Use a zero event code when the metric does not have any metric dimensions
+  // set. This is OK by convention. The zero will be ignored.
   ASSERT_EQ(kOK, logger_->LogElapsedTime(
-                     testing::all_report_types::kModuleLoadTimeMetricId, 44,
+                     testing::all_report_types::kModuleLoadTimeMetricId, 0,
                      "component4", 4004));
+
   EXPECT_TRUE(CheckNumericEventObservations(
-      expected_report_ids, 44u, "component4", 4004, observation_store_.get(),
+      expected_report_ids, 0u, "component4", 4004, observation_store_.get(),
+      update_recipient_.get()));
+}
+
+// Tests the version of the method LogElapsedTime() that accepts a vector of
+// event codes.
+TEST_F(LoggerTest, LogElapsedTimeMultiDimension) {
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+
+  // Use a non-zero event code even though the metric does not have any
+  // metric dimensions defined. Expect kInvalidArgument.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogElapsedTime(
+                testing::all_report_types::kModuleLoadTimeMetricId,
+                std::vector<uint32_t>({44}), "component4", 4004));
+
+  // Use a vector of length two even though the metric does not have any
+  // metric dimensions defined. Expect kInvalidArgument.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogElapsedTime(
+                testing::all_report_types::kModuleLoadTimeMetricId,
+                std::vector<uint32_t>({0, 0}), "component4", 4004));
+
+  // Use an empty vector of event codes when the metric does not have any metric
+  // dimensions set. This is good.
+  ASSERT_EQ(kOK, logger_->LogElapsedTime(
+                     testing::all_report_types::kModuleLoadTimeMetricId,
+                     std::vector<uint32_t>({}), "component4", 4004));
+
+  EXPECT_TRUE(CheckNumericEventObservations(
+      expected_report_ids, 0u, "component4", 4004, observation_store_.get(),
       update_recipient_.get()));
 }
 
@@ -258,6 +368,13 @@ TEST_F(LoggerTest, LogFrameRate) {
       testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
       testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
       testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+  // There is no max_event_code set so only the specified code of 45 is allowed.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogFrameRate(
+                testing::all_report_types::kLoginModuleFrameRateMetricId, 0,
+                "component5", 5.123));
+
+  // All good.
   ASSERT_EQ(kOK, logger_->LogFrameRate(
                      testing::all_report_types::kLoginModuleFrameRateMetricId,
                      45, "component5", 5.123));
@@ -266,17 +383,125 @@ TEST_F(LoggerTest, LogFrameRate) {
       update_recipient_.get()));
 }
 
+// Tests the version of the method LogFrameRate() that accepts a vector of
+// event codes.
+TEST_F(LoggerTest, LogFrameRateMultiDimension) {
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+
+  // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
+  ASSERT_EQ(
+      kInvalidArguments,
+      logger_->LogFrameRate(testing::all_report_types::kModuleLoadTimeMetricId,
+                            std::vector<uint32_t>({45}), "", 5.123));
+
+  // Use no event codes when the metric has one dimension. Expect
+  // kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogFrameRate(
+                testing::all_report_types::kLoginModuleFrameRateMetricId,
+                std::vector<uint32_t>({}), "", 5.123));
+
+  // Use two event codes when the metric has one dimension. Expect
+  // kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogFrameRate(
+                testing::all_report_types::kLoginModuleFrameRateMetricId,
+                std::vector<uint32_t>({45, 46}), "", 5.123));
+
+  // There is no max_event_code set so only the specified code of 45 is allowed.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogFrameRate(
+                testing::all_report_types::kLoginModuleFrameRateMetricId,
+                std::vector<uint32_t>({44}), "", 5.123));
+
+  // All good
+  ASSERT_EQ(kOK, logger_->LogFrameRate(
+                     testing::all_report_types::kLoginModuleFrameRateMetricId,
+                     std::vector<uint32_t>({45}), "", 5.123));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 45u, "", 5123,
+                                            observation_store_.get(),
+                                            update_recipient_.get()));
+}
+
 // Tests the method LogMemoryUsage().
 TEST_F(LoggerTest, LogMemoryUsage) {
   std::vector<uint32_t> expected_report_ids = {
       testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
       testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+  // The simple version of LogMemoryUsage() cannot be used at all since this
+  // metric has two dimensions.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLedgerMemoryUsageMetricId, 46,
+                "component6", 606));
+}
+
+// Tests the version of the method LogMemoryUsage() that accepts a vector of
+// event codes.
+TEST_F(LoggerTest, LogMemoryUsageMultiDimension) {
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+
+  // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLoginModuleFrameRateMetricId,
+                std::vector<uint32_t>({45, 46}), "component6", 606));
+
+  // Use no event codes when the metric has two dimension. Expect
+  // kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>({}), "component6", 606));
+
+  // Use one event code when the metric has two dimension. Expect
+  // kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>({45}), "component6", 606));
+
+  // Use three event codes when the metric has two dimension. Expect
+  // kInvalidArguments.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>({45, 46, 47}), "component6", 606));
+
+  // There is no max_event_code set for the second dimension so only the
+  // specified codes of 46 or 47  are allowed.
+  ASSERT_EQ(kInvalidArguments,
+            logger_->LogMemoryUsage(
+                testing::all_report_types::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>({1, 45}), "component6", 606));
+
+  // All good
   ASSERT_EQ(kOK, logger_->LogMemoryUsage(
-                     testing::all_report_types::kLedgerMemoryUsageMetricId, 46,
-                     "component6", 606));
+                     testing::all_report_types::kLedgerMemoryUsageMetricId,
+                     std::vector<uint32_t>({1, 46}), "component6", 606));
+  uint32_t expected_packed_event_code = 1 << 10 | 46;
+
   EXPECT_TRUE(CheckNumericEventObservations(
-      expected_report_ids, 46u, "component6", 606, observation_store_.get(),
-      update_recipient_.get()));
+      expected_report_ids, expected_packed_event_code, "component6", 606,
+      observation_store_.get(), update_recipient_.get()));
+
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
+
+  // No problem with the first event code being zero.
+  ASSERT_EQ(kOK, logger_->LogMemoryUsage(
+                     testing::all_report_types::kLedgerMemoryUsageMetricId,
+                     std::vector<uint32_t>({0, 46}), "component6", 606));
+  expected_packed_event_code = 0 << 10 | 46;
+
+  EXPECT_TRUE(CheckNumericEventObservations(
+      expected_report_ids, expected_packed_event_code, "component6", 606,
+      observation_store_.get(), update_recipient_.get()));
 }
 
 // Tests the method LogIntHistogram().

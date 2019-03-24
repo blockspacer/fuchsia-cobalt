@@ -54,7 +54,10 @@ class EventLogger {
   }
   Encoder::Result BadReportType(const MetricDefinition& metric,
                                 const ReportDefinition& report);
-  virtual Status ValidateEventCodes(const EventRecord& event_record,
+
+  // Validates the supplied event_codes against the defined metric dimensions
+  // in the MetricDefinition.
+  virtual Status ValidateEventCodes(const MetricDefinition& metric,
                                     const RepeatedField<uint32_t>& event_codes);
 
  private:
@@ -234,6 +237,20 @@ class CustomEventLogger : public EventLogger {
       EventRecord* event_record) override;
 };
 
+namespace {
+
+template <class EventType>
+void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
+                                const std::string& component,
+                                EventType* event) {
+  for (auto event_code : event_codes) {
+    event->add_event_code(event_code);
+  }
+  event->set_component(component);
+}
+
+}  // namespace
+
 //////////////////// Logger method implementations ////////////////////////
 
 Logger::Logger(std::unique_ptr<ProjectContext> project_context,
@@ -274,16 +291,13 @@ Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
 }
 
 Status Logger::LogEventCount(uint32_t metric_id,
-                             std::vector<uint32_t> event_codes,
+                             const std::vector<uint32_t>& event_codes,
                              const std::string& component,
                              int64_t period_duration_micros, uint32_t count) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEventCount);
   EventRecord event_record;
   auto* count_event = event_record.event->mutable_count_event();
-  for (auto event_code : event_codes) {
-    count_event->add_event_code(event_code);
-  }
-  count_event->set_component(component);
+  CopyEventCodesAndComponent(event_codes, component, count_event);
   count_event->set_period_duration_micros(period_duration_micros);
   count_event->set_count(count);
   auto event_logger = std::make_unique<CountEventLogger>(this);
@@ -292,16 +306,13 @@ Status Logger::LogEventCount(uint32_t metric_id,
 }
 
 Status Logger::LogElapsedTime(uint32_t metric_id,
-                              std::vector<uint32_t> event_codes,
+                              const std::vector<uint32_t>& event_codes,
                               const std::string& component,
                               int64_t elapsed_micros) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogElapsedTime);
   EventRecord event_record;
   auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
-  for (auto event_code : event_codes) {
-    elapsed_time_event->add_event_code(event_code);
-  }
-  elapsed_time_event->set_component(component);
+  CopyEventCodesAndComponent(event_codes, component, elapsed_time_event);
   elapsed_time_event->set_elapsed_micros(elapsed_micros);
   auto event_logger = std::make_unique<ElapsedTimeEventLogger>(this);
   return event_logger->Log(metric_id, MetricDefinition::ELAPSED_TIME,
@@ -309,15 +320,12 @@ Status Logger::LogElapsedTime(uint32_t metric_id,
 }
 
 Status Logger::LogFrameRate(uint32_t metric_id,
-                            std::vector<uint32_t> event_codes,
+                            const std::vector<uint32_t>& event_codes,
                             const std::string& component, float fps) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogFrameRate);
   EventRecord event_record;
   auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
-  for (auto event_code : event_codes) {
-    frame_rate_event->add_event_code(event_code);
-  }
-  frame_rate_event->set_component(component);
+  CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
   auto event_logger = std::make_unique<FrameRateEventLogger>(this);
   return event_logger->Log(metric_id, MetricDefinition::FRAME_RATE,
@@ -325,15 +333,12 @@ Status Logger::LogFrameRate(uint32_t metric_id,
 }
 
 Status Logger::LogMemoryUsage(uint32_t metric_id,
-                              std::vector<uint32_t> event_codes,
+                              const std::vector<uint32_t>& event_codes,
                               const std::string& component, int64_t bytes) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogMemoryUsage);
   EventRecord event_record;
   auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
-  for (auto event_code : event_codes) {
-    memory_usage_event->add_event_code(event_code);
-  }
-  memory_usage_event->set_component(component);
+  CopyEventCodesAndComponent(event_codes, component, memory_usage_event);
   memory_usage_event->set_bytes(bytes);
   auto event_logger = std::make_unique<MemoryUsageEventLogger>(this);
   return event_logger->Log(metric_id, MetricDefinition::MEMORY_USAGE,
@@ -341,16 +346,13 @@ Status Logger::LogMemoryUsage(uint32_t metric_id,
 }
 
 Status Logger::LogIntHistogram(uint32_t metric_id,
-                               std::vector<uint32_t> event_codes,
+                               const std::vector<uint32_t>& event_codes,
                                const std::string& component,
                                HistogramPtr histogram) {
   internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogIntHistogram);
   EventRecord event_record;
   auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
-  for (auto event_code : event_codes) {
-    int_histogram_event->add_event_code(event_code);
-  }
-  int_histogram_event->set_component(component);
+  CopyEventCodesAndComponent(event_codes, component, int_histogram_event);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
   auto event_logger = std::make_unique<IntHistogramEventLogger>(this);
   return event_logger->Log(metric_id, MetricDefinition::INT_HISTOGRAM,
@@ -575,20 +577,37 @@ Status EventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Status EventLogger::ValidateEventCodes(
-    const EventRecord& event_record,
+    const MetricDefinition& metric,
     const RepeatedField<uint32_t>& event_codes) {
-  if (event_record.metric->metric_dimensions_size() != event_codes.size()) {
-    LOG(ERROR) << "The number of event_codes (" << event_codes.size()
-               << ") specified does not match the "
-                  "number of metric_dimensions ("
-               << event_record.metric->metric_dimensions_size()
-               << ") for Metric "
-               << project_context()->FullMetricName(*event_record.metric)
-               << ".";
+  // Special case: Users of the version of the Log*() method that takes
+  // a single event code as opposed to a vector of event codes use the
+  // convention of passing a zero value for the single event code in the
+  // case that the metric does not have any metric dimensions defined. We have
+  // no way of distinguishing here that case from the case in which the user
+  // invoked the other version of the method and explicitly passed a vector of
+  // length one containing a single zero event code. Therefore we must accept
+  // a single 0 event code when there are no metric dimensions defined. *NOTE*
+  // The packing of multiple event codes into a single integer field in an
+  // Observation (see PackEventCodes() in encoder.cc) does not distinguish
+  // between a single event code with value 0 and an empty list of event codes.
+  // Therefore the server also cannot tell the difference between these two
+  // cases just by looking at an Observation and relies on the metric definition
+  // to distinguish them. Consequently there is no harm in us passing the
+  // single zero value to the Encoder: It will produce the same Observation
+  // whether or not we do.
+  if (metric.metric_dimensions_size() == 0 && event_codes.size() == 1 &&
+      event_codes.Get(0) == 0) {
+    return kOK;
+  }
+  if (metric.metric_dimensions_size() != event_codes.size()) {
+    LOG(ERROR) << "The number of event_codes given, " << event_codes.size()
+               << ", does not match the number of metric_dimensions, "
+               << metric.metric_dimensions_size() << ", for metric "
+               << project_context()->FullMetricName(metric) << ".";
     return kInvalidArguments;
   }
   for (int i = 0; i < event_codes.size(); i++) {
-    auto dim = event_record.metric->metric_dimensions(i);
+    auto dim = metric.metric_dimensions(i);
     auto code = event_codes.Get(i);
 
     // This verifies the two possible validation modes for a metric_dimension.
@@ -600,10 +619,10 @@ Status EventLogger::ValidateEventCodes(
     //    maps to one of the values in the event_code map.
     if (dim.max_event_code() > 0) {
       if (code > dim.max_event_code()) {
-        LOG(ERROR) << "The event_code " << code << " exceeds "
-                   << dim.max_event_code() << ", the max_event_code for Metric "
-                   << project_context()->FullMetricName(*event_record.metric)
-                   << ", dimension " << i << ".";
+        LOG(ERROR) << "The event_code given for dimension " << i << ", " << code
+                   << ", exceeds the max_event_code for that dimension, "
+                   << dim.max_event_code() << ", for metric "
+                   << project_context()->FullMetricName(metric);
         return kInvalidArguments;
       }
     } else {
@@ -616,14 +635,12 @@ Status EventLogger::ValidateEventCodes(
       }
 
       if (!valid) {
-        LOG(ERROR) << "The event_code " << i
-                   << " received a code of value: " << code
-                   << " which is not a valid event code for this dimension."
-                   << " Metric "
-                   << project_context()->FullMetricName(*event_record.metric)
-                   << ". You must either add an entry for this event code into "
-                      "the metric_dimension, or set a max_event_code >= "
-                   << code;
+        LOG(ERROR) << "The event_code given for dimension " << i << ", " << code
+                   << ", is not a valid event code for that dimension."
+                   << ". You must either define this event code in"
+                      " the metric_dimension, or set max_event_code >= "
+                   << code << ", for metric "
+                   << project_context()->FullMetricName(metric);
         return kInvalidArguments;
       }
     }
@@ -746,7 +763,8 @@ Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(
 ///////////// CountEventLogger method implementations //////////////////////////
 
 Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
-  return ValidateEventCodes(event_record,
+  CHECK(event_record.metric);
+  return ValidateEventCodes(*event_record.metric,
                             event_record.event->count_event().event_code());
 }
 
@@ -844,8 +862,10 @@ int64_t ElapsedTimeEventLogger::IntValue(const Event& event) {
 }
 
 Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
+  CHECK(event_record.metric);
   return ValidateEventCodes(
-      event_record, event_record.event->elapsed_time_event().event_code());
+      *event_record.metric,
+      event_record.event->elapsed_time_event().event_code());
 }
 
 Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(
@@ -878,8 +898,10 @@ int64_t FrameRateEventLogger::IntValue(const Event& event) {
 }
 
 Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
+  CHECK(event_record.metric);
   return ValidateEventCodes(
-      event_record, event_record.event->frame_rate_event().event_code());
+      *event_record.metric,
+      event_record.event->frame_rate_event().event_code());
 }
 
 ////////////// MemoryUsageEventLogger method implementations
@@ -901,8 +923,10 @@ int64_t MemoryUsageEventLogger::IntValue(const Event& event) {
 }
 
 Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
+  CHECK(event_record.metric);
   return ValidateEventCodes(
-      event_record, event_record.event->memory_usage_event().event_code());
+      *event_record.metric,
+      event_record.event->memory_usage_event().event_code());
 }
 
 /////////////// IntHistogramEventLogger method implementations
@@ -911,10 +935,10 @@ Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
 Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_int_histogram_event());
   const auto& int_histogram_event = event_record.event->int_histogram_event();
+  CHECK(event_record.metric);
   const auto& metric = *(event_record.metric);
 
-  auto status =
-      ValidateEventCodes(event_record, int_histogram_event.event_code());
+  auto status = ValidateEventCodes(metric, int_histogram_event.event_code());
   if (status != kOK) {
     return status;
   }

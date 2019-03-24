@@ -73,7 +73,8 @@ class Logger : public LoggerInterface {
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogEventCount;
-  Status LogEventCount(uint32_t metric_id, std::vector<uint32_t> event_codes,
+  Status LogEventCount(uint32_t metric_id,
+                       const std::vector<uint32_t>& event_codes,
                        const std::string& component,
                        int64_t period_duration_micros, uint32_t count) override;
 
@@ -81,7 +82,8 @@ class Logger : public LoggerInterface {
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogElapsedTime;
-  Status LogElapsedTime(uint32_t metric_id, std::vector<uint32_t> event_codes,
+  Status LogElapsedTime(uint32_t metric_id,
+                        const std::vector<uint32_t>& event_codes,
                         const std::string& component,
                         int64_t elapsed_micros) override;
 
@@ -89,21 +91,24 @@ class Logger : public LoggerInterface {
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogFrameRate;
-  Status LogFrameRate(uint32_t metric_id, std::vector<uint32_t> event_codes,
+  Status LogFrameRate(uint32_t metric_id,
+                      const std::vector<uint32_t>& event_codes,
                       const std::string& component, float fps) override;
 
   // In order to import the LogMemoryUsage method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogMemoryUsage;
-  Status LogMemoryUsage(uint32_t metric_id, std::vector<uint32_t> event_codes,
+  Status LogMemoryUsage(uint32_t metric_id,
+                        const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t bytes) override;
 
   // In order to import the LogIntHistogram method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogIntHistogram;
-  Status LogIntHistogram(uint32_t metric_id, std::vector<uint32_t> event_codes,
+  Status LogIntHistogram(uint32_t metric_id,
+                         const std::vector<uint32_t>& event_codes,
                          const std::string& component,
                          HistogramPtr histogram) override;
 
