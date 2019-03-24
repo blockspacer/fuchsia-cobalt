@@ -35,29 +35,38 @@ func makeValidMetadata() config.MetricDefinition_Metadata {
 }
 
 func makeValidMetric() config.MetricDefinition {
-	return makeValidMetricWithName("the_metric_name")
+	return makeValidMetricWithName("the_metric_name", 1)
 }
 
 // makeValidMetric returns a valid instance of config.MetricDefinition which
 // can be modified to fail various validation checks for testing purposes.
-func makeValidMetricWithName(name string) config.MetricDefinition {
+func makeValidMetricWithName(name string, num_dimesnsions int) config.MetricDefinition {
 	metadata := makeValidMetadata()
-	return config.MetricDefinition{
+	metric_definition := config.MetricDefinition{
 		Id:         config_parser.IdFromName(name),
 		MetricName: name,
 		MetricType: config.MetricDefinition_EVENT_COUNT,
 		MetaData:   &metadata,
-		MetricDimensions: []*config.MetricDefinition_MetricDimension{
-			&config.MetricDefinition_MetricDimension{
-				EventCodes: map[uint32]string{1: "hello_world"},
-			},
-		},
 	}
+	for i := 0; i < num_dimesnsions; i++ {
+		metric_definition.MetricDimensions = append(metric_definition.MetricDimensions, &config.MetricDefinition_MetricDimension{
+			EventCodes: map[uint32]string{1: "hello_world"},
+		})
+	}
+	return metric_definition
 }
 
 // Test that makeValidMetric returns a valid metric.
 func TestValidateMakeValidMetric(t *testing.T) {
 	m := makeValidMetric()
+	if err := validateMetricDefinition(m); err != nil {
+		t.Errorf("Rejected valid metric: %v", err)
+	}
+}
+
+// Test that it is valid to make a MetricDefinition with no metric dimensions.
+func TestValidMetricWithNoDimensions(t *testing.T) {
+	m := makeValidMetricWithName("name", 0)
 	if err := validateMetricDefinition(m); err != nil {
 		t.Errorf("Rejected valid metric: %v", err)
 	}
@@ -74,8 +83,8 @@ func TestValidateMakeValidMetadata(t *testing.T) {
 func TestValidateUniqueMetricId(t *testing.T) {
 	m1Name := "TpzQweXFfRXpQrDWvplhfXFbJptlKmkIlHBAzjPnADtJWVAawVrbPGg"
 	m2Name := "zDnlfjrXpwuQYpBrNTeCbtsRBydKuKdCvEjlGwdRJlxMjbYOSGPjhif"
-	m1 := makeValidMetricWithName(m1Name)
-	m2 := makeValidMetricWithName(m2Name)
+	m1 := makeValidMetricWithName(m1Name, 0)
+	m2 := makeValidMetricWithName(m2Name, 0)
 
 	metrics := []*config.MetricDefinition{&m1, &m2}
 
@@ -86,7 +95,7 @@ func TestValidateUniqueMetricId(t *testing.T) {
 
 // Test that invalid names are rejected.
 func TestValidateMetricInvalidMetricName(t *testing.T) {
-	m := makeValidMetricWithName("_invalid_name")
+	m := makeValidMetricWithName("_invalid_name", 0)
 
 	if err := validateMetricDefinition(m); err == nil {
 		t.Error("Accepted metric definition with invalid name.")
@@ -95,7 +104,7 @@ func TestValidateMetricInvalidMetricName(t *testing.T) {
 
 // Test that metric id 0 is not accepted.
 func TestValidateZeroMetricId(t *testing.T) {
-	m := makeValidMetricWithName("NRaMinLNcqiYmgEypLLVGnXymNpxJzqabtbbjLycCMEohvVzZtAYpah")
+	m := makeValidMetricWithName("NRaMinLNcqiYmgEypLLVGnXymNpxJzqabtbbjLycCMEohvVzZtAYpah", 0)
 
 	if err := validateMetricDefinition(m); err == nil {
 		t.Error("Accepted metric definition with 0 id.")
