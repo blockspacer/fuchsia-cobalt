@@ -87,6 +87,7 @@ message Observation2 {
 message IntegerEventObservation {
   // The event codes for each of the metric_dimensions of this observation.
   // Multiple event codes are packed together into the bits of this value.
+  // TODO(zmbush) Add reference to some specification of this.
   uint64 event_code = 1;
 
   // A hash of the component name. If component_name is empty then this field
