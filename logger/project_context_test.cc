@@ -111,16 +111,18 @@ class ProjectContextTest : public ::testing::Test {
     auto debug_string = project_context.DebugString();
     EXPECT_TRUE(debug_string.find(kCustomerA) != std::string::npos);
     EXPECT_TRUE(debug_string.find(kProjectA1) != std::string::npos);
-    EXPECT_EQ(std::string(kCustomerA) + "." + kProjectA1,
-              project_context.FullyQualifiedName());
+    auto fully_qualified_name = project_context.FullyQualifiedName();
+    EXPECT_TRUE(fully_qualified_name.find(kCustomerA) != std::string::npos);
+    EXPECT_TRUE(fully_qualified_name.find(kProjectA1) != std::string::npos);
     CheckMetricA1a(*project_context.GetMetric(kMetricA1a));
     CheckMetricA1a(*project_context.GetMetric(kMetricA1aId));
     MetricRef metric_ref(&project_context.project(),
                          project_context.GetMetric(kMetricA1a));
     EXPECT_EQ(kMetricA1aId, metric_ref.metric_id());
-    EXPECT_EQ(std::string(kCustomerA) + "." + kProjectA1 + "." + kMetricA1a,
-              metric_ref.FullyQualifiedName());
-
+    fully_qualified_name = metric_ref.FullyQualifiedName();
+    EXPECT_TRUE(fully_qualified_name.find(kCustomerA) != std::string::npos);
+    EXPECT_TRUE(fully_qualified_name.find(kProjectA1) != std::string::npos);
+    EXPECT_TRUE(fully_qualified_name.find(kMetricA1a) != std::string::npos);
     EXPECT_EQ(nullptr, project_context.GetMetric("NoSuchMetric"));
     EXPECT_EQ(nullptr, project_context.GetMetric(42));
   }

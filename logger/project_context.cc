@@ -29,12 +29,6 @@ void PopulateProject(uint32_t customer_id, uint32_t project_id,
 
 }  // namespace
 
-std::string MetricDebugString(const MetricDefinition& metric) {
-  std::ostringstream stream;
-  stream << metric.metric_name() << " (" << metric.id() << ")";
-  return stream.str();
-}
-
 MetricRef::MetricRef(const Project* project,
                      const MetricDefinition* metric_definition)
     : project_(project), metric_definition_(metric_definition) {}
@@ -56,10 +50,7 @@ const std::string& MetricRef::metric_name() const {
 }
 
 std::string MetricRef::FullyQualifiedName() const {
-  std::ostringstream stream;
-  stream << project_->customer_name() << "." << project_->project_name() << "."
-         << metric_definition_->metric_name();
-  return stream.str();
+  return ProjectContext::FullMetricName(*project_, *metric_definition_);
 }
 
 ProjectContext::ProjectContext(uint32_t customer_id,
@@ -137,10 +128,28 @@ std::string ProjectContext::DebugString() const {
 #endif
 }
 
-std::string ProjectContext::FullyQualifiedName() const {
+std::string ProjectContext::FullyQualifiedName(const Project& project) {
   std::ostringstream stream;
-  stream << project_.customer_name() << "." << project_.project_name();
+  stream << project.customer_name() << "(" << project.customer_id() << ")"
+         << "." << project.project_name() << "(" << project.project_id() << ")";
   return stream.str();
+}
+
+std::string ProjectContext::FullMetricName(const Project& project,
+                                           const MetricDefinition& metric) {
+  std::ostringstream stream;
+  stream << FullyQualifiedName(project) << "." << metric.metric_name() << "("
+         << metric.id() << ")";
+  return stream.str();
+}
+
+std::string ProjectContext::FullyQualifiedName() const {
+  return FullyQualifiedName(project_);
+}
+
+std::string ProjectContext::FullMetricName(
+    const MetricDefinition& metric_definition) const {
+  return FullMetricName(project_, metric_definition);
 }
 
 }  // namespace logger

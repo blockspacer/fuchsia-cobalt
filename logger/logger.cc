@@ -513,9 +513,8 @@ Status EventLogger::Log(uint32_t metric_id,
   int report_index = 0;
   if (event_record->metric->reports_size() == 0) {
     VLOG(1) << "Warning: An event was logged for a metric with no reports "
-               "defined. Metric ["
-            << MetricDebugString(*event_record->metric) << "] in project "
-            << project_context()->DebugString() << ".";
+               "defined: "
+            << project_context()->FullMetricName(*event_record->metric);
   }
 
   for (const auto& report : event_record->metric->reports()) {
@@ -552,13 +551,14 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id,
   event_record->metric = project_context()->GetMetric(metric_id);
   if (event_record->metric == nullptr) {
     LOG(ERROR) << "There is no metric with ID '" << metric_id << "' registered "
-               << "in project '" << project_context()->DebugString() << "'.";
+               << "in project '" << project_context()->FullyQualifiedName()
+               << "'.";
     return kInvalidArguments;
   }
   if (event_record->metric->metric_type() != expected_type) {
-    LOG(ERROR) << "Metric '" << MetricDebugString(*event_record->metric)
-               << "' in project '" << project_context()->DebugString()
-               << "' is not of type " << expected_type << ".";
+    LOG(ERROR) << "Metric "
+               << project_context()->FullMetricName(*event_record->metric)
+               << " is not of type " << expected_type << ".";
     return kInvalidArguments;
   }
 
@@ -582,8 +582,9 @@ Status EventLogger::ValidateEventCodes(
                << ") specified does not match the "
                   "number of metric_dimensions ("
                << event_record.metric->metric_dimensions_size()
-               << ") for Metric " << MetricDebugString(*event_record.metric)
-               << ", in project " << project_context()->DebugString() << ".";
+               << ") for Metric "
+               << project_context()->FullMetricName(*event_record.metric)
+               << ".";
     return kInvalidArguments;
   }
   for (int i = 0; i < event_codes.size(); i++) {
@@ -601,9 +602,8 @@ Status EventLogger::ValidateEventCodes(
       if (code > dim.max_event_code()) {
         LOG(ERROR) << "The event_code " << code << " exceeds "
                    << dim.max_event_code() << ", the max_event_code for Metric "
-                   << MetricDebugString(*event_record.metric) << ", dimension "
-                   << i << ", in project " << project_context()->DebugString()
-                   << ".";
+                   << project_context()->FullMetricName(*event_record.metric)
+                   << ", dimension " << i << ".";
         return kInvalidArguments;
       }
     } else {
@@ -619,8 +619,8 @@ Status EventLogger::ValidateEventCodes(
         LOG(ERROR) << "The event_code " << i
                    << " received a code of value: " << code
                    << " which is not a valid event code for this dimension."
-                   << " Metric " << MetricDebugString(*event_record.metric)
-                   << ", in project " << project_context()->DebugString()
+                   << " Metric "
+                   << project_context()->FullMetricName(*event_record.metric)
                    << ". You must either add an entry for this event code into "
                       "the metric_dimension, or set a max_event_code >= "
                    << code;
@@ -667,8 +667,7 @@ Encoder::Result EventLogger::MaybeEncodeImmediateObservation(
 Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
                                            const ReportDefinition& report) {
   LOG(ERROR) << "Invalid Cobalt config: Report " << report.report_name()
-             << " for metric " << MetricDebugString(metric) << " in project "
-             << project_context()->DebugString()
+             << " for metric " << project_context()->FullMetricName(metric)
              << " is not of an appropriate type for the metric type.";
   Encoder::Result encoder_result;
   encoder_result.status = kInvalidConfig;
@@ -680,8 +679,8 @@ Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
 Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_occurrence_event());
   if (event_record.metric->metric_dimensions_size() != 1) {
-    LOG(ERROR) << "The Metric " << MetricDebugString(*event_record.metric)
-               << " in project " << project_context()->DebugString()
+    LOG(ERROR) << "The Metric "
+               << project_context()->FullMetricName(*event_record.metric)
                << " has the wrong number of metric_dimensions. A metric of "
                   "type EVENT_OCCURRED must have exactly one metric_dimension.";
     return kInvalidConfig;
@@ -694,8 +693,8 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
                << " exceeds "
                << event_record.metric->metric_dimensions(0).max_event_code()
                << ", the max_event_code for Metric "
-               << MetricDebugString(*event_record.metric) << " in project "
-               << project_context()->DebugString() << ".";
+               << project_context()->FullMetricName(*event_record.metric)
+               << ".";
     return kInvalidArguments;
   }
   return kOK;
@@ -921,8 +920,8 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
   }
 
   if (!metric.has_int_buckets()) {
-    LOG(ERROR) << "Invalid Cobalt config: Metric " << MetricDebugString(metric)
-               << " in project " << project_context()->DebugString()
+    LOG(ERROR) << "Invalid Cobalt config: Metric "
+               << project_context()->FullMetricName(*event_record.metric)
                << " does not have an |int_buckets| field set.";
     return kInvalidConfig;
   }
@@ -937,8 +936,7 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
       break;
     case IntegerBuckets::BUCKETS_NOT_SET:
       LOG(ERROR) << "Invalid Cobalt config: Metric "
-                 << MetricDebugString(metric) << " in project "
-                 << project_context()->DebugString()
+                 << project_context()->FullMetricName(*event_record.metric)
                  << " has an invalid |int_buckets| field. Either exponential "
                     "or linear buckets must be specified.";
       return kInvalidConfig;
@@ -954,8 +952,8 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
       LOG(ERROR) << "The provided histogram is invalid. The index value of "
                  << int_histogram_event.buckets(i).index() << " in position "
                  << i << " is out of bounds for Metric "
-                 << MetricDebugString(*event_record.metric) << " in project "
-                 << project_context()->DebugString() << ".";
+                 << project_context()->FullMetricName(*event_record.metric)
+                 << ".";
       return kInvalidArguments;
     }
   }

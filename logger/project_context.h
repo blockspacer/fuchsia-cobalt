@@ -23,8 +23,6 @@ namespace logger {
 // A pair (metric ID, report ID).
 typedef std::pair<uint32_t, uint32_t> MetricReportId;
 
-std::string MetricDebugString(const MetricDefinition& metric);
-
 // A reference object that gives access to the names and IDs of a Metric and
 // its owning Project and Customer. One way to obtain a MetricRef is the method
 // ProjectContext::RefMetric().
@@ -119,8 +117,20 @@ class ProjectContext {
 
   std::string DebugString() const;
 
-  // Returns the string <customer_name>.<project_name>
+  // Returns the string <customer_name>(<id>).<project_name>(<id>)
+  std::string static FullyQualifiedName(const Project& project);
+
+  // Returns the string
+  // <customer_name>(<id>).<project_name>(<id>).<metric_name>(<id>)
+  std::string static FullMetricName(const Project& project,
+                                    const MetricDefinition& metric);
+
+  // Returns the string <customer_name>(<id>).<project_name>(<id>)
   std::string FullyQualifiedName() const;
+
+  // Returns the string
+  // <customer_name>(<id>).<project_name>(<id>).<metric_name>(<id>)
+  std::string FullMetricName(const MetricDefinition& metric_definition) const;
 
  private:
   // Constructs an instance of ProjectContext that may or may not own the
