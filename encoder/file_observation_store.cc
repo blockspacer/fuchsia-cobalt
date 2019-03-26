@@ -78,6 +78,10 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   auto fields = protected_fields_.lock();
 
   auto active_file = GetActiveFile(&fields);
+  if (active_file == nullptr) {
+    return kWriteFailed;
+  }
+
   auto metadata_str = metadata->SerializeAsString();
 
   // "+1" below is for the |scheme| field of EncryptedMessage.
@@ -198,8 +202,13 @@ google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
 
   if (f->active_file == nullptr) {
     f->active_fstream.open(active_file_name_);
-    CHECK(f->active_fstream.is_open()) << "Failed to open " << active_file_name_
-                                       << ": " << std::strerror(errno);
+
+    if (!f->active_fstream.is_open()) {
+      LOG(ERROR) << "Failed to open file. (Perhaps the disk is full): "
+                 << active_file_name_ << " (" << std::strerror(errno) << ")";
+      return nullptr;
+    }
+
     f->active_file.reset(
         new google::protobuf::io::OstreamOutputStream(&f->active_fstream));
   }

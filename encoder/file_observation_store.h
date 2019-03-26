@@ -153,6 +153,9 @@ class FileObservationStore : public ObservationStore {
 
   // GetActiveFile returns a pointer to the current OstreamOutputStream. If the
   // file is not yet opened, it will be opened by this function.
+  //
+  // If this function is unable to open a file (if the file system is full for
+  // example) it will return nullptr.
   google::protobuf::io::OstreamOutputStream *GetActiveFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
