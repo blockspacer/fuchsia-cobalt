@@ -74,6 +74,10 @@ add_library(config_ids
             id.cc)
 target_link_libraries(config_ids)
 
+add_library(packed_event_codes
+            packed_event_codes.cc)
+target_link_libraries(packed_event_codes)
+
 # Build the config_gen tool
 add_executable(config_gen config_gen.cc ${CONFIG_PROTO_HDRS})
 add_cobalt_dependencies(config_gen)
@@ -86,13 +90,15 @@ add_executable(config_tests
                config_test.cc
                buckets_config_test.cc
                id_test.cc
+               packed_event_codes_test.cc
                ${CONFIG_PROTO_HDRS})
 target_link_libraries(config_tests
                       analyzer_config
                       buckets_config
                       client_config
                       project_configs
-                      config_ids)
+                      config_ids
+                      packed_event_codes)
 add_cobalt_test_dependencies(config_tests ${DIR_GTESTS})
 
 set(CONFIG_DIR "${CMAKE_SOURCE_DIR}/third_party/config")

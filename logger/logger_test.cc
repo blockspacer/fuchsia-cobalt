@@ -484,7 +484,7 @@ TEST_F(LoggerTest, LogMemoryUsageMultiDimension) {
   ASSERT_EQ(kOK, logger_->LogMemoryUsage(
                      testing::all_report_types::kLedgerMemoryUsageMetricId,
                      std::vector<uint32_t>({1, 46}), "component6", 606));
-  uint32_t expected_packed_event_code = 1 << 10 | 46;
+  uint64_t expected_packed_event_code = (1) | (46 << 10);
 
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, expected_packed_event_code, "component6", 606,
@@ -497,7 +497,7 @@ TEST_F(LoggerTest, LogMemoryUsageMultiDimension) {
   ASSERT_EQ(kOK, logger_->LogMemoryUsage(
                      testing::all_report_types::kLedgerMemoryUsageMetricId,
                      std::vector<uint32_t>({0, 46}), "component6", 606));
-  expected_packed_event_code = 0 << 10 | 46;
+  expected_packed_event_code = (0) | (46 << 10);
 
   EXPECT_TRUE(CheckNumericEventObservations(
       expected_report_ids, expected_packed_event_code, "component6", 606,

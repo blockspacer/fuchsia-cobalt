@@ -16,6 +16,7 @@
 #include "./logging.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
+#include "config/packed_event_codes.h"
 #include "encoder/fake_system_data.h"
 #include "logger/project_context.h"
 #include "logger/project_context_factory.h"
@@ -252,15 +253,6 @@ void CheckResult(const Encoder::Result& result, uint32_t expected_metric_id,
   EXPECT_EQ(expected_day_index, result.metadata->day_index());
 }
 
-std::vector<uint32_t> UnpackEventCodes(uint64_t event_code) {
-  std::vector<uint32_t> event_codes;
-  while (event_code != 0) {
-    event_codes.insert(event_codes.begin(), event_code & 0x3FF);
-    event_code >>= 10;
-  }
-  return event_codes;
-}
-
 }  // namespace
 
 class EncoderTest : public ::testing::Test {
@@ -392,7 +384,7 @@ TEST_F(EncoderTest, MultipleEventCodes) {
                      SystemProfile::UNKNOWN_ARCH, "", "");
   ASSERT_TRUE(result.observation->has_numeric_event());
   const IntegerEventObservation& obs = result.observation->numeric_event();
-  auto codes = UnpackEventCodes(obs.event_code());
+  auto codes = config::UnpackEventCodes(obs.event_code());
   EXPECT_EQ(kEventCode1, codes[0]);
   EXPECT_EQ(kEventCode2, codes[1]);
   EXPECT_EQ(obs.component_name_hash().size(), 32u);

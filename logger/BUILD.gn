@@ -110,6 +110,7 @@ source_set("encoder") {
     "//garnet/public/lib/fxl",
     "//third_party/abseil-cpp",
     "//third_party/cobalt/config:cobalt_registry_proto",
+    "//third_party/cobalt/config:packed_event_codes",
     "//third_party/cobalt/encoder",
     "//third_party/cobalt/util/crypto_util",
   ]
@@ -153,6 +154,7 @@ source_set("event_aggregator") {
     "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:cobalt_registry_proto",
+    "//third_party/cobalt/config:packed_event_codes",
     "//third_party/cobalt/util:consistent_proto_store",
     "//third_party/cobalt/util:proto_util",
   ]

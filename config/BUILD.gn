@@ -75,3 +75,12 @@ source_set("id") {
 
   configs += [ "//third_party/cobalt:cobalt_config" ]
 }
+
+source_set("packed_event_codes") {
+  sources = [
+    "packed_event_codes.cc",
+    "packed_event_codes.h",
+  ]
+
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+}

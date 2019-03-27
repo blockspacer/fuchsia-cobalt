@@ -12,6 +12,7 @@
 #include "algorithms/forculus/forculus_encrypter.h"
 #include "algorithms/rappor/rappor_config_helper.h"
 #include "algorithms/rappor/rappor_encoder.h"
+#include "config/packed_event_codes.h"
 #include "logger/project_context.h"
 
 namespace cobalt {
@@ -68,23 +69,6 @@ Status TranslateBasicRapporEncoderStatus(MetricRef metric,
                  << metric.ProjectDebugString() << ".";
       return kInvalidArguments;
   }
-}
-
-// PackEventCodes converts a list of event_codes into an int64_t, for putting
-// into an Observation.
-//
-// |event_codes| The list of event_codes to be packed into the int64_t. Each
-//               value gets a separate section of 10 bits, and as such this must
-//               be no longer than 5.
-uint64_t PackEventCodes(const RepeatedField<uint32_t>& event_codes) {
-  CHECK_LE(event_codes.size(), 5);
-
-  uint64_t event_code = 0;
-  for (int i = 0; i < event_codes.size(); i++) {
-    event_code <<= 10;
-    event_code |= event_codes.Get(i);
-  }
-  return event_code;
 }
 
 }  // namespace
@@ -219,7 +203,8 @@ Encoder::Result Encoder::EncodeIntegerEventObservation(
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* integer_event_observation = observation->mutable_numeric_event();
-  integer_event_observation->set_event_code(PackEventCodes(event_codes));
+  integer_event_observation->set_event_code(
+      config::PackEventCodes(event_codes));
   if (!HashComponentNameIfNotEmpty(
           component,
           integer_event_observation->mutable_component_name_hash())) {
@@ -240,7 +225,7 @@ Encoder::Result Encoder::EncodeHistogramObservation(
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* histogram_observation = observation->mutable_histogram();
-  histogram_observation->set_event_code(PackEventCodes(event_codes));
+  histogram_observation->set_event_code(config::PackEventCodes(event_codes));
   if (!HashComponentNameIfNotEmpty(
           component, histogram_observation->mutable_component_name_hash())) {
     LOG(ERROR) << "Hashing the component name failed for: Report "

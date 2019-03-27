@@ -12,6 +12,7 @@
 
 #include "algorithms/rappor/rappor_config_helper.h"
 #include "config/metric_definition.pb.h"
+#include "config/packed_event_codes.h"
 #include "logger/project_context.h"
 #include "util/datetime_util.h"
 #include "util/proto_util.h"
@@ -101,31 +102,9 @@ Status MaybeInsertReportConfig(const ProjectContext& project_context,
   return kOK;
 }
 
-// PackEventCodes converts a list of event_codes into an int64_t, for putting
-// into an Observation.
-//
-// |event_codes| The list of event_codes to be packed into the int64_t. Each
-//               value gets a separate section of 10 bits, and as such this must
-//               be no longer than 5.
-uint64_t PackEventCodes(const RepeatedField<uint32_t>& event_codes) {
-  CHECK_LE(event_codes.size(), 5);
-
-  uint64_t event_code = 0;
-  for (int i = 0; i < event_codes.size(); i++) {
-    event_code <<= 10;
-    event_code |= event_codes.Get(i);
-  }
-  return event_code;
-}
-
-RepeatedField<uint32_t> UnpackEventCodes(uint64_t event_code) {
-  std::vector<uint32_t> event_codes;
-  while (event_code != 0) {
-    event_codes.insert(event_codes.begin(), event_code & 0x3FF);
-    event_code >>= 10;
-  }
+RepeatedField<uint32_t> UnpackEventCodesProto(uint64_t packed_event_codes) {
   RepeatedField<uint32_t> fields;
-  for (auto code : event_codes) {
+  for (auto code : config::UnpackEventCodes(packed_event_codes)) {
     *fields.Add() = code;
   }
   return fields;
@@ -318,7 +297,7 @@ Status EventAggregator::LogCountEvent(uint32_t report_id,
   const CountEvent& count_event = event_record->event->count_event();
   return LogNumericEvent(
       key, event_record->event->day_index(), count_event.component(),
-      PackEventCodes(count_event.event_code()), count_event.count());
+      config::PackEventCodes(count_event.event_code()), count_event.count());
 }
 
 Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id,
@@ -336,10 +315,10 @@ Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id,
   }
   const ElapsedTimeEvent& elapsed_time_event =
       event_record->event->elapsed_time_event();
-  return LogNumericEvent(key, event_record->event->day_index(),
-                         elapsed_time_event.component(),
-                         PackEventCodes(elapsed_time_event.event_code()),
-                         elapsed_time_event.elapsed_micros());
+  return LogNumericEvent(
+      key, event_record->event->day_index(), elapsed_time_event.component(),
+      config::PackEventCodes(elapsed_time_event.event_code()),
+      elapsed_time_event.elapsed_micros());
 }
 
 Status EventAggregator::LogNumericEvent(const std::string& report_key,
@@ -925,7 +904,7 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     uint32_t window_size, int64_t sum) const {
   auto encoder_result = encoder_->EncodePerDeviceNumericObservation(
       metric_ref, report, obs_day_index, component,
-      UnpackEventCodes(event_code), sum, window_size);
+      UnpackEventCodesProto(event_code), sum, window_size);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }

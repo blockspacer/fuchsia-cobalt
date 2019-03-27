@@ -41,7 +41,8 @@ add_library(event_aggregator
             event_aggregator.cc)
 target_link_libraries(event_aggregator
                       local_aggregation_proto_lib
-                      proto_util)
+                      proto_util
+                      packed_event_codes)
 add_cobalt_dependencies(event_aggregator)
 
 add_library(encoder2
@@ -51,7 +52,8 @@ target_link_libraries(encoder2
                       forculus_encrypter
                       project_context
                       rappor_config_helper
-                      rappor_encoder)
+                      rappor_encoder
+                      packed_event_codes)
 add_cobalt_dependencies(encoder2)
 
 add_library(logger
