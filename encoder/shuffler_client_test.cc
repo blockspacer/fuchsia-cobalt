@@ -49,13 +49,13 @@ TEST_F(ShufflerClientTest, SmokeTest) {
   // and there is no actual Shuffler service to connect to we expect
   // SendToShuffler() to fail. Here we are only testing that it fails in
   // the expected way. We set the gRPC timeout to the current time and
-  // expect a DEADLINE_EXCEEDED error. Note that if we don't set a timeout
-  // then the call hangs forever.
+  // expect an error. Note that if we don't set a timeout then the call hangs
+  // forever.
   std::unique_ptr<grpc::ClientContext> context(new grpc::ClientContext());
   context->set_deadline(std::chrono::system_clock::now());
   auto status =
       shuffler_client->SendToShuffler(encrypted_message, context.get());
-  EXPECT_EQ(grpc::DEADLINE_EXCEEDED, status.error_code());
+  EXPECT_NE(grpc::OK, status.error_code());
 
   // Try again with use_tls = true.
   use_tls = true;
@@ -64,7 +64,7 @@ TEST_F(ShufflerClientTest, SmokeTest) {
   context->set_deadline(std::chrono::system_clock::now());
   status =
       shuffler_client->SendToShuffler(encrypted_message, context.get());
-  EXPECT_EQ(grpc::DEADLINE_EXCEEDED, status.error_code());
+  EXPECT_NE(grpc::OK, status.error_code());
 }
 
 }  // namespace encoder
