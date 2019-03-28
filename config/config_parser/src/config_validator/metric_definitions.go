@@ -127,13 +127,13 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 		return fmt.Errorf("there can be at most 5 dimensions in metric_dimensions")
 	}
 
-	seen_names := make(map[string]bool)
-	num_options := 1
+	seenNames := make(map[string]bool)
+	numOptions := 1
 	for i, md := range m.MetricDimensions {
-		if seen_names[md.Dimension] {
+		if seenNames[md.Dimension] {
 			return fmt.Errorf("duplicate dimension name in metric_dimensions %s", md.Dimension)
 		}
-		seen_names[md.Dimension] = true
+		seenNames[md.Dimension] = true
 
 		if len(md.EventCodes) == 0 {
 			return fmt.Errorf("no event_codes listed for metric_dimension %v", i)
@@ -141,26 +141,26 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 		if md.MaxEventCode != 0 {
 			for j, _ := range md.EventCodes {
 				if j > md.MaxEventCode {
-					return fmt.Errorf("Event index %v in metric_dimension %v is greater than max_event_code %v.", j, i, md.MaxEventCode)
+					return fmt.Errorf("event index %v in metric_dimension %v is greater than max_event_code %v", j, i, md.MaxEventCode)
 				}
 			}
-			num_options *= int(md.MaxEventCode + 1)
+			numOptions *= int(md.MaxEventCode + 1)
 		} else {
-			has_zero := false
+			hasZero := false
 			for j, _ := range md.EventCodes {
 				if j == 0 {
-					has_zero = true
+					hasZero = true
 				}
 			}
-			if has_zero {
-				num_options *= len(md.EventCodes)
+			if hasZero {
+				numOptions *= len(md.EventCodes)
 			} else {
-				num_options *= len(md.EventCodes) + 1
+				numOptions *= len(md.EventCodes) + 1
 			}
 		}
 	}
-	if num_options >= 1024 {
-		return fmt.Errorf("metric_dimensions have too many possible representations: %v. May be no more than 1024", num_options)
+	if numOptions >= 1024 {
+		return fmt.Errorf("metric_dimensions have too many possible representations: %v. May be no more than 1024", numOptions)
 	}
 
 	return nil

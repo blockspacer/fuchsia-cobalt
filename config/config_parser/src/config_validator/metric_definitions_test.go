@@ -40,20 +40,20 @@ func makeValidMetric() config.MetricDefinition {
 
 // makeValidMetric returns a valid instance of config.MetricDefinition which
 // can be modified to fail various validation checks for testing purposes.
-func makeValidMetricWithName(name string, num_dimesnsions int) config.MetricDefinition {
+func makeValidMetricWithName(name string, numDimensions int) config.MetricDefinition {
 	metadata := makeValidMetadata()
-	metric_definition := config.MetricDefinition{
+	metricDefinition := config.MetricDefinition{
 		Id:         config_parser.IdFromName(name),
 		MetricName: name,
 		MetricType: config.MetricDefinition_EVENT_COUNT,
 		MetaData:   &metadata,
 	}
-	for i := 0; i < num_dimesnsions; i++ {
-		metric_definition.MetricDimensions = append(metric_definition.MetricDimensions, &config.MetricDefinition_MetricDimension{
+	for i := 0; i < numDimensions; i++ {
+		metricDefinition.MetricDimensions = append(metricDefinition.MetricDimensions, &config.MetricDefinition_MetricDimension{
 			EventCodes: map[uint32]string{1: "hello_world"},
 		})
 	}
-	return metric_definition
+	return metricDefinition
 }
 
 // Test that makeValidMetric returns a valid metric.
