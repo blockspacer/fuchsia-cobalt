@@ -45,7 +45,7 @@ static_library("client_config") {
 
   deps = [
     ":cobalt_registry_proto",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
   ]
 }
@@ -62,7 +62,7 @@ source_set("project_configs") {
   ]
 
   public_deps = [
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/config:cobalt_registry_proto",
   ]
 }

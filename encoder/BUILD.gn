@@ -14,7 +14,7 @@ static_library("legacy_project_context") {
 
   deps = [
     ":client_secret",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/config:client_config",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -63,7 +63,7 @@ static_library("encoder") {
     # cobalt_registry_proto from public_deps after Fuchsia code switches
     # to ProjectContextFactory
     ":legacy_project_context",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:client_config",
     "//third_party/cobalt/config:cobalt_registry_proto",

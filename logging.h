@@ -15,7 +15,7 @@
 }
 
 #elif defined(__Fuchsia__)
-#include "lib/fxl/logging.h"
+#include "src/lib/fxl/logging.h"
 
 #define INIT_LOGGING(val)
 

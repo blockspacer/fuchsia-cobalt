@@ -19,7 +19,7 @@ source_set("encrypted_message_util") {
 
   public_deps = [
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/tink/cc:hybrid_encrypt",
     "//third_party/tink/cc/hybrid:hybrid_config",
@@ -46,7 +46,7 @@ static_library("file_util") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/util/crypto_util",
   ]
 }
@@ -59,7 +59,7 @@ static_library("pem_util") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
     ":file_util",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/util/crypto_util",
   ]
 }
@@ -101,7 +101,7 @@ static_library("proto_util") {
   ]
   configs += [ "//third_party/cobalt:cobalt_config" ]
   deps = [
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/util/crypto_util",
     "//third_party/protobuf:protobuf_lite",
   ]

@@ -14,7 +14,7 @@ static_library("rappor_encoder") {
   configs += [ "//third_party/cobalt:cobalt_config" ]
 
   public_deps = [
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:cobalt_registry_proto",
     "//third_party/cobalt/encoder:client_secret",

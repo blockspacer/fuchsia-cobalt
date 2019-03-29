@@ -67,7 +67,7 @@ source_set("project_context") {
 
   public_deps = [
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/config:cobalt_registry_proto",
     "//third_party/cobalt/config:project_configs",
   ]
@@ -107,7 +107,7 @@ source_set("encoder") {
 
   public_deps = [
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/abseil-cpp",
     "//third_party/cobalt/config:cobalt_registry_proto",
     "//third_party/cobalt/config:packed_event_codes",
@@ -126,7 +126,7 @@ source_set("observation_writer") {
 
   public_deps = [
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/encoder",
     "//third_party/cobalt/util:encrypted_message_util",
@@ -150,7 +150,7 @@ source_set("event_aggregator") {
     ":event_record",
     ":observation_writer",
     ":status",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
     "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/config:cobalt_registry_proto",
@@ -184,7 +184,7 @@ source_set("internal_metrics") {
   public_deps = [
     ":internal_metrics_config_cc",
     ":logger_interface",
-    "//garnet/public/lib/fxl",
+    "//src/lib/fxl",
   ]
 }
 
