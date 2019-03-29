@@ -98,7 +98,8 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
           << metadata->customer_id() << "," << metadata->project_id() << ","
           << metadata->metric_id() << "), size=" << obs_size << ".";
 
-  size_t estimated_new_byte_count = active_file->ByteCount() + obs_size;
+  size_t estimated_new_byte_count =
+      fields->finalized_bytes + active_file->ByteCount() + obs_size;
   if (estimated_new_byte_count > max_bytes_total_) {
     VLOG(4) << name_
             << ": The observation store is full. estimated_new_byte_count="

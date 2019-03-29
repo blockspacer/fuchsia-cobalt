@@ -33,7 +33,7 @@ const uint32_t kProjectId = 1;
 const size_t kNoOpEncodingByteOverhead = 34;
 const size_t kMaxBytesPerObservation = 100;
 const size_t kMaxBytesPerEnvelope = 400;
-const size_t kMaxBytesTotal = 1000;
+const size_t kMaxBytesTotal = 10000;
 
 const std::string &test_dir_base = "/tmp/fos_test";
 
@@ -155,7 +155,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
 
 TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
   for (int i = 0; i < 5 * 4; i++) {
-    EXPECT_EQ(ObservationStore::kOk, AddObservation(100));
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(100)) << "i=" << i;
   }
 
   for (int i = 0; i < 5; i++) {
@@ -184,6 +184,70 @@ TEST_F(FileObservationStoreTest, Add2FullAndReturn1) {
 
   store_->ReturnEnvelopeHolder(std::move(first_envelope));
   EXPECT_FALSE(store_->Empty());
+}
+
+// Tests that kStoreFull is returned when the store becomes full.
+TEST_F(FileObservationStoreTest, StoreFull) {
+  constexpr int kObservationSize = 100;
+
+  // Note that kNumObservationsThatWillFit is discovered by experiment
+  // since the precise size of an observation is awkward to arrange since
+  // it depends on protobuf serialization and details of encryption.
+  constexpr int kNumObservationsThatWillFit = 96;
+
+  // Fill the store until its full.
+  for (int i = 0; i < kNumObservationsThatWillFit; i++) {
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(kObservationSize))
+        << "i=" << i;
+  }
+
+  // Check that kStoreFull is returned repeatedly.
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
+        << "i=" << i;
+  }
+
+  // Now let's empty the store
+  for (int i = 0; i < 100; i++) {
+    if (store_->TakeNextEnvelopeHolder() == nullptr) {
+      break;
+    }
+  }
+  ASSERT_TRUE(store_->Empty());
+  ASSERT_TRUE(store_->TakeNextEnvelopeHolder() == nullptr);
+
+  // Now we do a second slightly more complicated experiment. This time
+  // as we are filling the store we also periodically make some withdrawels,
+  // but not enough withdrawels to keep the store from becoming full.
+
+  // For each iteration we add kNumStepsPerIteration observations and then
+  // we take one envelope. At some point in this process we expect the
+  // store to become full. Again these constants are determined by
+  // experimentation.
+  constexpr int kExpectedFullIteration = 18;
+  constexpr int kExpectedFullStep = 6;
+  constexpr int kNumStepsPerIteration = 10;
+
+  int iteration = 0;
+  int step = 0;
+  while (true) {
+    if (step == kExpectedFullStep && iteration == kExpectedFullIteration) {
+      break;
+    }
+    ASSERT_EQ(ObservationStore::kOk, AddObservation(kObservationSize))
+        << "iteration=" << iteration << " step=" << step;
+    if (++step == kNumStepsPerIteration - 1) {
+      step = 0;
+      iteration++;
+      ASSERT_TRUE(store_->TakeNextEnvelopeHolder() != nullptr);
+    }
+  }
+
+  // Check that kStoreFull is returned repeatedly.
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
+        << "i=" << i;
+  }
 }
 
 TEST_F(FileObservationStoreTest, RecoverAfterCrashWithNoObservations) {
