@@ -1029,7 +1029,7 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
       {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
 
-  for (uint32_t offset = 0; offset < 1; offset++) {
+  for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex(MetricDefinition::UTC);
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && offset % event_code == 0) {
@@ -1147,7 +1147,7 @@ TEST_F(PerDeviceNumericLoggerTest, ElapsedTimeCheckObservationValues) {
       {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
       {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
 
-  for (uint32_t offset = 0; offset < 1; offset++) {
+  for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex(MetricDefinition::UTC);
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
       if (offset > 0 && offset % event_code == 0) {

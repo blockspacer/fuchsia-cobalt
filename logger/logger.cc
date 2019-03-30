@@ -836,7 +836,15 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
           EventCodes(event), Component(event), IntValue(event));
       break;
     }
-
+    // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
+    // generation of an immediate observation.
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      Encoder::Result result;
+      result.status = kOK;
+      result.observation = nullptr;
+      result.metadata = nullptr;
+      return result;
+    }
     default:
       return BadReportType(metric, report);
   }
