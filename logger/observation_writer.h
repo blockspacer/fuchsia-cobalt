@@ -41,8 +41,7 @@ class ObservationWriter {
                     util::EncryptedMessageMaker* observation_encrypter)
       : observation_store_(observation_store),
         update_recipient_(update_recipient),
-        observation_encrypter_(observation_encrypter),
-        non_encrypter_(util::EncryptedMessageMaker::MakeUnencrypted())
+        observation_encrypter_(observation_encrypter)
   {}
 
   // Given an Observation |observation| and an ObservationMetadata |metadata|,
@@ -56,8 +55,6 @@ class ObservationWriter {
   encoder::ObservationStoreWriterInterface* observation_store_;
   encoder::ObservationStoreUpdateRecipient* update_recipient_;
   util::EncryptedMessageMaker* observation_encrypter_;
-  // TODO(azani): To be deleted when we start encrypting everything.
-  std::unique_ptr<util::EncryptedMessageMaker> non_encrypter_;
 };
 
 }  // namespace logger
