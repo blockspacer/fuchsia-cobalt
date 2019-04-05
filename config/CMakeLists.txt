@@ -103,6 +103,8 @@ add_cobalt_test_dependencies(config_tests ${DIR_GTESTS})
 
 set(CONFIG_DIR "${CMAKE_SOURCE_DIR}/third_party/config")
 set(CONFIG_PROTO "${CMAKE_BINARY_DIR}/third_party/config/cobalt_config.binproto")
+file(GLOB_RECURSE REGISTRY_FILES ${CONFIG_DIR}/*.yaml)
+
 add_custom_command(OUTPUT ${CONFIG_PROTO}
     COMMAND ${CONFIG_PARSER_BINARY}
     ARGS --config_dir ${CONFIG_DIR}
@@ -110,6 +112,7 @@ add_custom_command(OUTPUT ${CONFIG_PROTO}
     ARGS --config_validator_bin ${CONFIG_VALIDATOR_BINARY}
     DEPENDS ${CONFIG_PARSER_BINARY}
     DEPENDS ${CONFIG_VALIDATOR_BINARY}
+    DEPENDS ${REGISTRY_FILES}
 )
 
 add_custom_target(build_config_proto ALL
