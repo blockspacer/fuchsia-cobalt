@@ -94,11 +94,11 @@ message ReportDefinition {
     // or more event types, associated with one or more components
     //
     // Supported Input Types:
-    //   - Metric types: ELAPSED_TIME, FRAME_RATE, MEMORY_USAGE
+    //   - Metric types: ELAPSED_TIME, EVENT_COUNT, FRAME_RATE, MEMORY_USAGE
     //     Encoding: component name is hashed
     //     Observation type: IntegerEventObservation
     //     Observation value field: Respectively, duration_microseconds
-    //                              round(fps * 100), bytes
+    //                              occurrences, round(fps * 100), bytes
     //
     // ReportDefinition fields particular to this type:
     //   - candidate_list # All known component names

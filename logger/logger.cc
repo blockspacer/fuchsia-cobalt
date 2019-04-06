@@ -779,7 +779,8 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
     // Each report type has its own logic for generating immediate
     // observations.
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT:
-    case ReportDefinition::INT_RANGE_HISTOGRAM: {
+    case ReportDefinition::INT_RANGE_HISTOGRAM:
+    case ReportDefinition::NUMERIC_AGGREGATION: {
       std::string component;
       if (may_invalidate) {
         component = std::move(*count_event->mutable_component());

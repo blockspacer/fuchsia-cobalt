@@ -233,7 +233,8 @@ TEST_F(LoggerTest, LogEvent) {
 TEST_F(LoggerTest, LogEventCount) {
   std::vector<uint32_t> expected_report_ids = {
       testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId};
+      testing::all_report_types::kReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitStatsReportId};
 
   // Attempt to use an event code larger than max_event_code.
   ASSERT_EQ(
@@ -298,7 +299,8 @@ TEST_F(LoggerTest, LogEventCountMultiDimension) {
 
   std::vector<uint32_t> expected_report_ids = {
       testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId};
+      testing::all_report_types::kReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitStatsReportId};
   EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 43u, "", 303,
                                             observation_store_.get(),
                                             update_recipient_.get()));

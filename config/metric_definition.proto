@@ -95,6 +95,7 @@ message MetricDefinition {
     // Compatible report types:
     // - EVENT_COMPONENT_OCCURRENCE_COUNT
     // - INT_RANGE_HISTOGRAM
+    // - NUMERIC_AGGREGATION
     // - PER_DEVICE_NUMERIC_STATS
     EVENT_COUNT = 2;
 
