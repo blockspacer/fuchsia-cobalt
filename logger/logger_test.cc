@@ -574,7 +574,10 @@ TEST_F(LoggerTest, LogCustomEvent) {
   const CustomObservation& custom_observation = observation.custom();
   for (auto i = 0u; i < values.size(); i++) {
     auto obs_dimension = custom_observation.values().at(dimension_names[i]);
+#ifdef PROTO_LITE
+#else
     EXPECT_TRUE(MessageDifferencer::Equals(obs_dimension, values[i]));
+#endif
   }
 }
 

@@ -59,6 +59,7 @@ static_library("encoder") {
   public_deps = [
     ":client_secret",
     ":file_observation_store_internal_proto",
+
     # TODO(rudominer) Remove legacy_project_context, client_config, and
     # cobalt_registry_proto from public_deps after Fuchsia code switches
     # to ProjectContextFactory

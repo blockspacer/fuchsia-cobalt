@@ -11,8 +11,8 @@ config("proto_config") {
 proto_library("cobalt_registry_proto") {
   proto_in_dir = "//third_party/cobalt"
   sources = [
-    "cobalt_registry.proto",
     "annotations.proto",
+    "cobalt_registry.proto",
     "encodings.proto",
     "metric_definition.proto",
     "metrics.proto",
@@ -50,6 +50,20 @@ static_library("client_config") {
   ]
 }
 
+source_set("client_config_test") {
+  testonly = true
+  sources = [
+    "client_config_test.cc",
+  ]
+  deps = [
+    ":client_config",
+    ":cobalt_registry_proto",
+    "//garnet/public/lib/fxl",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+}
+
 source_set("project_configs") {
   sources = [
     "project_configs.cc",
@@ -67,12 +81,38 @@ source_set("project_configs") {
   ]
 }
 
+source_set("project_configs_test") {
+  testonly = true
+  sources = [
+    "project_configs_test.cc",
+  ]
+  deps = [
+    ":project_configs",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+}
+
 source_set("id") {
   sources = [
     "id.cc",
     "id.h",
   ]
 
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+}
+
+source_set("id_test") {
+  testonly = true
+  sources = [
+    "id_test.cc",
+  ]
+  deps = [
+    ":id",
+    "//third_party/gflags",
+    "//third_party/glog",
+    "//third_party/googletest:gtest",
+  ]
   configs += [ "//third_party/cobalt:cobalt_config" ]
 }
 
@@ -83,4 +123,28 @@ source_set("packed_event_codes") {
   ]
 
   configs += [ "//third_party/cobalt:cobalt_config" ]
+}
+source_set("packed_event_codes_test") {
+  testonly = true
+
+  sources = [
+    "packed_event_codes_test.cc",
+  ]
+
+  deps = [
+    ":packed_event_codes",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "//third_party/cobalt:cobalt_config" ]
+}
+group("tests") {
+  testonly = true
+
+  deps = [
+    ":client_config_test",
+    ":id_test",
+    ":packed_event_codes_test",
+    ":project_configs_test",
+  ]
 }

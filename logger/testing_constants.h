@@ -9,19 +9,19 @@
 
 // Generated from all_reports_test_registry.yaml
 // Namespace: cobalt::logger::testing::all_report_types
-#include "logger/test_registries/all_report_types_test_registry.h"
+#include "logger/test_registries/all_report_types_test_registry.cb.h"
 // Generated from mixed_time_zone_test_registry.yaml
 // Namespace: cobalt::logger::testing::mixed_time_zone
-#include "logger/test_registries/mixed_time_zone_test_registry.h"
+#include "logger/test_registries/mixed_time_zone_test_registry.cb.h"
 // Generated from per_device_numeric_stats_test_registry.yaml
 // Namespace: cobalt::logger::testing::per_device_numeric_stats
-#include "logger/test_registries/per_device_numeric_stats_test_registry.h"
+#include "logger/test_registries/per_device_numeric_stats_test_registry.cb.h"
 // Generated from unique_actives_noise_free_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives_noise_free
-#include "logger/test_registries/unique_actives_noise_free_test_registry.h"
+#include "logger/test_registries/unique_actives_noise_free_test_registry.cb.h"
 // Generated from unique_actives_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives
-#include "logger/test_registries/unique_actives_test_registry.h"
+#include "logger/test_registries/unique_actives_test_registry.cb.h"
 
 namespace cobalt {
 namespace logger {

@@ -22,8 +22,8 @@ source_set("encrypted_message_util") {
     "//src/lib/fxl",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/tink/cc:hybrid_encrypt",
-    "//third_party/tink/cc/hybrid:hybrid_config",
     "//third_party/tink/cc:keyset_handle",
+    "//third_party/tink/cc/hybrid:hybrid_config",
   ]
 }
 

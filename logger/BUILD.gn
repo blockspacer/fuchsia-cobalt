@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/protobuf/proto_library.gni")
 import("//third_party/cobalt_config/metrics_registry.gni")
+import("//third_party/protobuf/proto_library.gni")
 
 metrics_registry("internal_metrics_config") {
   customer_id = 2147483647
@@ -86,6 +86,7 @@ source_set("project_context_factory") {
 
   deps = [
     "//third_party/cobalt/config:cobalt_registry_proto",
+
     # This is for base64 decoding.
     "//third_party/cobalt/util/crypto_util",
   ]
@@ -95,7 +96,6 @@ source_set("project_context_factory") {
     "//third_party/cobalt/encoder:legacy_project_context",
   ]
 }
-
 
 source_set("encoder") {
   sources = [
@@ -153,6 +153,7 @@ source_set("event_aggregator") {
     "//src/lib/fxl",
     "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt:cobalt_proto",
+    "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt/config:cobalt_registry_proto",
     "//third_party/cobalt/config:packed_event_codes",
     "//third_party/cobalt/util:consistent_proto_store",
@@ -203,10 +204,68 @@ source_set("logger") {
     ":internal_metrics",
     ":logger_interface",
     ":observation_writer",
+
     # TODO(rudominer) Remove :project_context from public_deps after
     # Fuchsia code switches to ProjectContextFactory.
     ":project_context",
     ":status",
     "//third_party/cobalt/config:id",
+  ]
+}
+
+source_set("testing_constants") {
+  testonly = true
+
+  sources = [
+    "testing_constants.h",
+  ]
+
+  public_deps = [
+    "test_registries:all_report_types_test_registry",
+    "test_registries:mixed_time_zone_test_registry",
+    "test_registries:per_device_numeric_stats_test_registry",
+    "test_registries:unique_actives_noise_free_test_registry",
+    "test_registries:unique_actives_test_registry",
+  ]
+
+  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+}
+
+source_set("logger_test_utils") {
+  testonly = true
+  sources = [
+    "logger_test_utils.cc",
+    "logger_test_utils.h",
+  ]
+  deps = [
+    ":project_context_factory",
+    "//third_party/cobalt/config:project_configs",
+    "//third_party/cobalt/encoder",
+    "//third_party/cobalt/util:posix_file_system",
+    "//third_party/googletest:gtest",
+  ]
+  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+}
+
+source_set("logger_test") {
+  testonly = true
+
+  sources = [
+    "logger_test.cc",
+  ]
+
+  public_deps = [
+    ":logger",
+    ":logger_test_utils",
+    ":testing_constants",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+group("tests") {
+  testonly = true
+
+  deps = [
+    ":logger_test",
   ]
 }

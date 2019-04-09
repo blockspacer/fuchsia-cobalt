@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/test/test_package.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 config("cobalt_config") {
@@ -27,5 +28,30 @@ proto_library("cobalt_proto") {
   deps = [
     "//third_party/boringssl",
     "//third_party/cobalt/third_party/clearcut:clearcut_proto",
+  ]
+}
+
+executable("cobalt_core_unittests") {
+  testonly = true
+
+  output_name = "cobalt_core_tests"
+
+  deps = [
+    "config:tests",
+    "logger:tests",
+    "encoder:unittests",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+test_package("cobalt_core_tests") {
+  deps = [
+    ":cobalt_core_unittests",
+  ]
+
+  tests = [
+    {
+      name = "cobalt_core_tests"
+    },
   ]
 }
