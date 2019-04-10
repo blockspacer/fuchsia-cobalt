@@ -264,6 +264,21 @@ func TestValidateEventCodesIndexLargerThanMax(t *testing.T) {
 	}
 }
 
+func TestAllowNoEventCodesWhenMaxEventCodeIsSet(t *testing.T) {
+	m := makeValidMetric()
+	m.MetricDimensions[0].EventCodes = nil
+
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted metric without max_event_code and without any event_codes.")
+	}
+
+	m.MetricDimensions[0].MaxEventCode = 100
+
+	if err := validateMetricDimensions(m); err != nil {
+		t.Error("Did not accept metric with max_event_code set and no event codes defined.")
+	}
+}
+
 func TestValidateEventCodesNoEventCodes(t *testing.T) {
 	m := makeValidMetric()
 	m.MetricDimensions[0].EventCodes = map[uint32]string{}

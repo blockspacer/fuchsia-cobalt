@@ -135,8 +135,8 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 		}
 		seenNames[md.Dimension] = true
 
-		if len(md.EventCodes) == 0 {
-			return fmt.Errorf("no event_codes listed for metric_dimension %v", i)
+		if len(md.EventCodes) == 0 && md.MaxEventCode == 0 {
+			return fmt.Errorf("For metric dimension %v, you must either define max_event_code or explicitly define at least one event code.", i)
 		}
 		if md.MaxEventCode != 0 {
 			for j, _ := range md.EventCodes {

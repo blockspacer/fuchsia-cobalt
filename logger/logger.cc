@@ -586,9 +586,9 @@ Status EventLogger::ValidateEventCodes(
   // no way of distinguishing here that case from the case in which the user
   // invoked the other version of the method and explicitly passed a vector of
   // length one containing a single zero event code. Therefore we must accept
-  // a single 0 event code when there are no metric dimensions defined. *NOTE*
+  // a single 0 event code when there are no metric dimensions defined.
   // The packing of multiple event codes into a single integer field in an
-  // Observation (see PackEventCodes() in encoder.cc) does not distinguish
+  // Observation (see config/packed_event_codes.h) does not distinguish
   // between a single event code with value 0 and an empty list of event codes.
   // Therefore the server also cannot tell the difference between these two
   // cases just by looking at an Observation and relies on the metric definition
