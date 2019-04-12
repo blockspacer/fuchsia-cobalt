@@ -151,7 +151,6 @@ source_set("event_aggregator") {
     ":observation_writer",
     ":status",
     "//src/lib/fxl",
-    "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/algorithms/rappor:rappor_encoder",
     "//third_party/cobalt/config:cobalt_registry_proto",
@@ -238,6 +237,7 @@ source_set("logger_test_utils") {
     "logger_test_utils.h",
   ]
   deps = [
+    ":cobalt_local_aggregation_proto",
     ":project_context_factory",
     "//third_party/cobalt/config:project_configs",
     "//third_party/cobalt/encoder",
