@@ -16,11 +16,13 @@
 
 #elif defined(__Fuchsia__)
 #include "src/lib/fxl/logging.h"
+#include "lib/syslog/cpp/logger.h"
 
 #define INIT_LOGGING(val)
 
 #define VLOG(verboselevel) FXL_VLOG(verboselevel)
-#define LOG(level) FXL_LOG(level)
+#define LOG(level) FX_LOGS(level)
+#define LOG_FIRST_N(verboselevel, n) FX_LOGS_FIRST_N(verboselevel, n)
 
 #define CHECK(condition) FXL_CHECK(condition)
 #define CHECK_EQ(val1, val2) FXL_CHECK((val1 == val2))

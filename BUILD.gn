@@ -7,8 +7,10 @@ import("//third_party/protobuf/proto_library.gni")
 
 config("cobalt_config") {
   include_dirs = [
+    "//garnet/public/lib/syslog/cpp",
     "//third_party/cobalt",
     "$root_gen_dir/third_party/cobalt",
+    "//zircon/system/ulib/syslog/include",
   ]
 }
 
