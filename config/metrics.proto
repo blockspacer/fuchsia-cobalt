@@ -27,6 +27,7 @@ enum SystemProfileField {
   BOARD_NAME = 2;
   PRODUCT_NAME = 3;
   SYSTEM_VERSION = 4;
+  CHANNEL = 5;
 }
 
 // ExponentialIntegerBuckets is used to define a partition of the integers into

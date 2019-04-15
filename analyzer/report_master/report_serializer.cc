@@ -511,6 +511,9 @@ grpc::Status ReportSerializer::AppendCSVHeaderRowSystemProfileFields(
       case cobalt::SystemProfileField::SYSTEM_VERSION:
         (*stream) << "System_Version";
         break;
+      case cobalt::SystemProfileField::CHANNEL:
+        (*stream) << "Channel";
+        break;
     }
   }
   return grpc::Status::OK;
@@ -620,6 +623,9 @@ grpc::Status ReportSerializer::AppendCSVSystemProfileFields(
           break;
         case SystemProfileField::SYSTEM_VERSION:
           (*stream) << ToCSVString(profile.system_version());
+          break;
+        case SystemProfileField::CHANNEL:
+          (*stream) << ToCSVString(profile.channel());
           break;
       }
     }

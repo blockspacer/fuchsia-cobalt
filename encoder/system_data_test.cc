@@ -5,6 +5,7 @@
 #include "encoder/system_data.h"
 
 #include <stdio.h>
+
 #include <set>
 #include <string>
 #include <utility>
@@ -64,6 +65,13 @@ TEST(SystemDataTest, SetExperimentTest) {
 
   EXPECT_EQ(system_data.experiments().front().experiment_id(), kExperimentId);
   EXPECT_EQ(system_data.experiments().front().arm_id(), kArmId);
+}
+
+TEST(SystemDataTest, SetChannelTest) {
+  SystemData system_data("test_product", "", "test_version");
+  EXPECT_EQ(system_data.system_profile().channel(), "");
+  system_data.SetChannel("Channel");
+  EXPECT_EQ(system_data.system_profile().channel(), "Channel");
 }
 
 }  // namespace encoder

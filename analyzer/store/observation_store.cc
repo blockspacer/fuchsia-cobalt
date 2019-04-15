@@ -239,6 +239,10 @@ void WriteFilteredSystemProfile(SystemProfile* dst,
           break;
         case SystemProfileField::SYSTEM_VERSION:
           dst->set_allocated_system_version(src->release_system_version());
+          break;
+        case SystemProfileField::CHANNEL:
+          dst->set_allocated_channel(src->release_channel());
+          break;
       }
     }
   }

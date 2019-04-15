@@ -5,9 +5,8 @@
 #ifndef COBALT_ENCODER_SYSTEM_DATA_H_
 #define COBALT_ENCODER_SYSTEM_DATA_H_
 
-#include <string>
-
 #include <mutex>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -74,6 +73,9 @@ class SystemData : public SystemDataInterface {
     absl::WriterMutexLock lock(&experiments_mutex_);
     experiments_ = std::move(experiments);
   }
+
+  // Resets the current channel value.
+  void SetChannel(const std::string& channel);
 
   // Overrides the stored SystemProfile. Useful for testing.
   void OverrideSystemProfile(const SystemProfile& profile);

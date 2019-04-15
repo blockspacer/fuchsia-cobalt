@@ -423,6 +423,10 @@ Encoder::Result Encoder::Encode(uint32_t metric_id, const Value& value) {
           result.metadata->mutable_system_profile()->set_system_version(
               profile.system_version());
           break;
+        case SystemProfileField::CHANNEL:
+          result.metadata->mutable_system_profile()->set_channel(
+              profile.channel());
+          break;
       }
     }
   }
