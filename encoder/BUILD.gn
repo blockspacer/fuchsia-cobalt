@@ -145,6 +145,7 @@ source_set("unittests") {
     ":generate_envelope_maker_test_config",
     ":generate_shipping_manager_test_config",
     ":legacy_project_context",
+    "//garnet/public/lib/syslog/cpp",
     "//third_party/abseil-cpp",
     "//third_party/gflags",
     "//third_party/googletest:gtest_main",
