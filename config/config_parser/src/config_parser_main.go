@@ -114,8 +114,8 @@ func main() {
 		glog.Exit("'output_file' does not make sense if 'check_only' is set.")
 	}
 
-	if *depFile != "" && *configDir == "" {
-		glog.Exit("-dep_file requires -config_dir")
+	if *depFile != "" && (*configDir == "" && *configFile == "") {
+		glog.Exit("-dep_file requires -config_dir or -config_file")
 	}
 
 	if *depFile != "" && (*outFile == "" && *outFilename == "") {
@@ -146,12 +146,17 @@ func main() {
 	outFormats := strings.FieldsFunc(*outFormat, func(c rune) bool { return c == ' ' })
 
 	if *depFile != "" {
-		files, err := config_parser.GetConfigFilesListFromConfigDir(configLocation)
-		if err != nil {
-			glog.Exit(err)
+		var configFiles []string
+		if *configFile != "" {
+			configFiles = append(configFiles, *configFile)
+		} else if *configDir != "" {
+			var err error
+			configFiles, err = config_parser.GetConfigFilesListFromConfigDir(*configDir)
+			if err != nil {
+				glog.Exit(err)
+			}
 		}
-
-		if err := writeDepFile(outFormats, files, *depFile); err != nil {
+		if err := writeDepFile(outFormats, configFiles, *depFile); err != nil {
 			glog.Exit(err)
 		}
 	}
