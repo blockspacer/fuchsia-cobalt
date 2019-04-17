@@ -16,7 +16,8 @@ metric_definitions:
 - id: 1
   metric_name: "DeviceBoots"
   metric_type: EVENT_OCCURRED
-  max_event_code: 2
+  metric_dimensions:
+    - max_event_code: 2
   time_zone_policy: LOCAL
   reports:
     # Report ID: 131134909
@@ -29,7 +30,8 @@ metric_definitions:
 - id: 2
   metric_name: "FeaturesActive"
   metric_type: EVENT_OCCURRED
-  max_event_code: 2
+  metric_dimensions:
+    - max_event_code: 2
   time_zone_policy: UTC
   reports:
     # Report ID: 635837989

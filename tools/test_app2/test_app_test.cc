@@ -47,6 +47,7 @@ customers {
       project_id: 1
       id: 1
       metric_dimensions: {
+        dimension: "Event"
         max_event_code: 100
       }
       reports: {
@@ -155,7 +156,10 @@ customers {
       customer_id: 1
       project_id: 1
       id: 7
-      max_event_code: 9
+      metric_dimensions: {
+        dimension: "Feature"
+        max_event_code: 9
+      }
       reports: {
         report_name: "FeaturesActiveUniqueDevices"
         id: 301

@@ -126,23 +126,19 @@ float RapporConfigHelper::ProbBitFlip(const ReportDefinition& report_definition,
 
 // Calculates the number of categories based on the metric_definition.
 //
-// - If there are no metric_dimensions, returns max_event_code() + 1 (this
-//   assumes an old registry)
-//
 // - If there is exactly 1 metric_dimensions, return
 //   metric_dimensions[0].max_event_code() + 1 (this is the new registry).
 //
 // - Otherwise, return 0 and report an error (this is not a supported registry).
 size_t RapporConfigHelper::BasicRapporNumCategories(
     const MetricDefinition& metric_definition) {
-  if (metric_definition.metric_dimensions_size() == 0) {
-    return metric_definition.max_event_code() + 1;
-  } else if (metric_definition.metric_dimensions_size() == 1) {
+  if (metric_definition.metric_dimensions_size() == 1) {
     return metric_definition.metric_dimensions(0).max_event_code() + 1;
   } else {
     LOG(ERROR) << "Invalid Cobalt registry: Metric "
-               << metric_definition.metric_name()
-               << " has too many metric_dimensions.";
+               << metric_definition.metric_name() << " has "
+               << metric_definition.metric_dimensions_size()
+               << " metric_dimensions. (expected exactly 1)";
     return 0;
   }
 }

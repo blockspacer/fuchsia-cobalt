@@ -188,13 +188,6 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	}
 
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
-		events := make(map[uint32]string)
-		// TODO(zmbush): Remove once EventCodes deprecation is complete.
-		for value, name := range metric.EventCodes {
-			events[value] = name
-		}
-		so.writeEnum(metric.MetricName, "EventCode", events)
-
 		if len(metric.MetricDimensions) > 0 {
 			for i, md := range metric.MetricDimensions {
 				events := make(map[uint32]string)
@@ -205,10 +198,10 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 				if md.Dimension != "" {
 					varname = "Metric Dimension " + md.Dimension
 				}
-				so.writeEnum(metric.MetricName, varname, events)
 				if md.AlsoTreatAsLegacy {
 					so.writeEnum(metric.MetricName, "EventCode", events)
 				}
+				so.writeEnum(metric.MetricName, varname, events)
 			}
 		}
 	}

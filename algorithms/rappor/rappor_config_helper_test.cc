@@ -37,7 +37,7 @@ TEST(RapporConfigHelperTest, ProbBitFlip) {
 
 TEST(RapporConfigHelperTest, BasicRapporNumCategories) {
   MetricDefinition metric_definition;
-  EXPECT_EQ(1u,
+  EXPECT_EQ(0u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 
   metric_definition.add_metric_dimensions()->set_max_event_code(0);
@@ -46,6 +46,10 @@ TEST(RapporConfigHelperTest, BasicRapporNumCategories) {
 
   metric_definition.mutable_metric_dimensions(0)->set_max_event_code(10);
   EXPECT_EQ(11u,
+            RapporConfigHelper::BasicRapporNumCategories(metric_definition));
+
+  metric_definition.add_metric_dimensions()->set_max_event_code(10);
+  EXPECT_EQ(0u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 }
 

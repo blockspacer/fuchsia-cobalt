@@ -277,25 +277,6 @@ message MetricDefinition {
   // This field is used in most Metric types.
   repeated MetricDimension metric_dimensions = 16;
 
-  // The enumerated set of event codes.
-  //
-  // This field is used in most Metric types.
-  //
-  // The keys are the numeric codes and the values are the human-readable labels
-  // for the codes. It is OK to add new elements to this map or to change the
-  // spelling of labels after data collection has started. It is not OK to
-  // change the meaning of any of the codes.
-  map<uint32, string> event_codes = 6
-      [(cobalt_options).hide_on_client = true, deprecated = true];
-
-  // Only needed with Metrics of type EVENT_OCCURRED.
-  // While additional event_codes may be added after data collection has begun,
-  // this value may not be changed and the event type indices must not exceed
-  // this value. Leave room for future growth of event_codes but set
-  // as small as possible because this affects the size of the Observations
-  // sent to the server for this Metric. This value must be < 1024.
-  uint32 max_event_code = 7;
-
   // The set of buckets for the histograms for this metric. This field is used
   // only with metrics of type INT_HISTOGRAM
   IntegerBuckets int_buckets = 8;
