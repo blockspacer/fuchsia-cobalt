@@ -56,7 +56,7 @@ class EventAggregator {
   static const size_t kMaxAllowedBackfillDays = 1000;
   // GenerateObservations() ignores all aggregation window sizes larger than
   // this value.
-  static const size_t kMaxAllowedAggregationWindowSize = 365;
+  static const uint32_t kMaxAllowedAggregationWindowSize = 365;
 
   // Constructs an EventAggregator.
   //

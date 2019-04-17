@@ -40,12 +40,32 @@ bool PopulateReportAggregates(const ProjectContext& project_context,
                               const MetricDefinition& metric,
                               const ReportDefinition& report,
                               ReportAggregates* report_aggregates) {
+  if (report.window_size_size() == 0) {
+    LOG(ERROR) << "Report must have at least one window size.";
+    return false;
+  }
   AggregationConfig* aggregation_config =
       report_aggregates->mutable_aggregation_config();
   *aggregation_config->mutable_project() = project_context.project();
   *aggregation_config->mutable_metric() =
       *project_context.GetMetric(metric.id());
   *aggregation_config->mutable_report() = report;
+
+  std::vector<uint32_t> window_sizes;
+  for (const uint32_t window_size : report.window_size()) {
+    if (window_size == 0 ||
+        window_size > EventAggregator::kMaxAllowedAggregationWindowSize) {
+      LOG(ERROR) << "Window size must be positive and cannot exceed "
+                 << EventAggregator::kMaxAllowedAggregationWindowSize;
+      return false;
+    }
+    window_sizes.push_back(window_size);
+  }
+  std::sort(window_sizes.begin(), window_sizes.end());
+  for (const uint32_t window_size : window_sizes) {
+    aggregation_config->add_window_size(window_size);
+  }
+
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
       report_aggregates->set_allocated_unique_actives_aggregates(
@@ -192,12 +212,6 @@ void EventAggregator::Start() {
   worker_thread_ = std::move(t);
 }
 
-// TODO(pesk): Have the config parser verify that each locally
-// aggregated report has at least one window size and that all window
-// sizes are <= |kMaxAllowedAggregationWindowSize|. Additionally, have
-// this method filter out any window sizes larger than
-// |kMaxAllowedAggregationWindowSize|.
-//
 // TODO(pesk): update the EventAggregator's view of a Metric
 // or ReportDefinition when appropriate.
 Status EventAggregator::UpdateAggregationConfigs(
@@ -497,21 +511,11 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
     }
 
     const auto& report = config.report();
-    auto max_window_size = 0u;
-    for (uint32_t window_size : report.window_size()) {
-      if (window_size > kMaxAllowedAggregationWindowSize) {
-        LOG(WARNING) << "Window size exceeding "
-                        "kMaxAllowedAggregationWindowSize will be "
-                        "ignored by GenerateObservations";
-      } else if (window_size > max_window_size) {
-        max_window_size = window_size;
-      }
-    }
-    if (max_window_size == 0) {
-      LOG(ERROR) << "Each locally aggregated report must specify a positive "
-                    "window size.";
-      return kInvalidConfig;
-    }
+    // PopulateReportAggregates has checked that there is at least one window
+    // size and that all window sizes are positive and <=
+    // kMaxAllowedAggregationWindowSize, and has sorted the elements of
+    // config.window_size() in increasing order.
+    auto max_window_size = config.window_size(config.window_size_size() - 1);
     if (final_day_index < max_window_size) {
       LOG(ERROR) << "final_day_index must be >= max_window_size.";
       return kInvalidArguments;
@@ -587,21 +591,8 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
         LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
         return kInvalidConfig;
     }
-    // Determine the largest window size in the report associated to this
-    // key-value pair.
-    uint32_t max_window_size = 1;
-    for (uint32_t window_size :
-         pair.second.aggregation_config().report().window_size()) {
-      if (window_size > max_window_size &&
-          window_size <= kMaxAllowedAggregationWindowSize) {
-        max_window_size = window_size;
-      }
-    }
-    if (max_window_size == 0) {
-      LOG(ERROR) << "Each locally aggregated report must specify a positive "
-                    "window size.";
-      return kInvalidConfig;
-    }
+    uint32_t max_window_size = pair.second.aggregation_config().window_size(
+        pair.second.aggregation_config().window_size_size() - 1);
     // For each ReportAggregates, descend to and iterate over the sub-map of
     // local aggregates keyed by day index. Keep buckets with day indices
     // greater than |day_index| - |backfill_days_| - |max_window_size|, and
@@ -709,8 +700,7 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
   return kOK;
 }
 
-////////// GenerateUniqueActivesObservations and helper methods
-//////////////////
+////////// GenerateUniqueActivesObservations and helper methods ////////////////
 
 // Given the set of daily aggregates for a fixed event code, and the size and
 // end date of an aggregation window, returns the first day index within that
@@ -925,21 +915,6 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
 Status EventAggregator::GeneratePerDeviceNumericObservations(
     const MetricRef metric_ref, const std::string& report_key,
     const ReportAggregates& report_aggregates, uint32_t final_day_index) {
-  // Get the window sizes for this report and sort them in increasing order.
-  // TODO(pesk): Instead, have UpdateAggregationConfigs() store the window
-  // sizes in increasing order.
-  std::vector<uint32_t> window_sizes;
-  for (uint32_t window_size :
-       report_aggregates.aggregation_config().report().window_size()) {
-    if (window_size > kMaxAllowedAggregationWindowSize) {
-      LOG(WARNING) << "GeneratePerDeviceNumericObservations ignoring a window "
-                      "size exceeding the maximum allowed value";
-      continue;
-    }
-    window_sizes.push_back(window_size);
-  }
-  std::sort(window_sizes.begin(), window_sizes.end());
-
   // The first day index for which we might have to generate an Observation.
   // GenerateObservations() has checked that this value is > 0.
   auto backfill_period_start = uint32_t(final_day_index - backfill_days_);
@@ -956,7 +931,8 @@ Status EventAggregator::GeneratePerDeviceNumericObservations(
       // index is the list of window sizes, in increasing order, for which an
       // Observation should be generated for that day index.
       std::map<uint32_t, std::vector<uint32_t>> window_sizes_by_obs_day;
-      for (auto window_size : window_sizes) {
+      for (auto window_size :
+           report_aggregates.aggregation_config().window_size()) {
         auto last_gen = PerDeviceNumericLastGeneratedDayIndex(
             report_key, component, event_code, window_size);
         auto first_day_index = std::max(last_gen + 1, backfill_period_start);

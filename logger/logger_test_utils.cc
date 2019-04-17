@@ -6,6 +6,8 @@
 
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/message_differencer.h>
+
+#include <algorithm>
 #include <utility>
 
 #include "./observation.pb.h"
@@ -94,6 +96,14 @@ AggregationConfig MakeAggregationConfig(
       *config.mutable_project() = project_context.project();
       *config.mutable_metric() = *metric;
       *config.mutable_report() = report;
+      std::vector<uint32_t> window_sizes;
+      for (const auto& window_size : report.window_size()) {
+        window_sizes.push_back(window_size);
+      }
+      std::sort(window_sizes.begin(), window_sizes.end());
+      for (const auto& window_size : window_sizes) {
+        config.add_window_size(window_size);
+      }
       break;
     }
   }
