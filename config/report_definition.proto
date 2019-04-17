@@ -287,6 +287,7 @@ message ReportDefinition {
     //    - candidate_list # All known component names.
     //    - candidate_file # File with all known component names.
     //    - window_size # A list of window sizes in days
+    //    - aggregation_type # How numeric values should be aggregated on-device
     //
     // Report row type: PerDeviceNumericStatsReportRow.
     // (See report_row.proto)
@@ -413,6 +414,29 @@ message ReportDefinition {
   // |reporting_threshold| number of distinct devices reporting Observations
   // with the same ObservationMetadata.
   uint32 reporting_threshold = 13;
+
+  // How to aggregate numeric values on a device.
+  enum OnDeviceAggregationType {
+    // Sum the values.
+    SUM = 0;
+
+    // Take the minimum value.
+    MIN = 1;
+
+    // Take the maximum value.
+    MAX = 2;
+  }
+
+  // This field is required for the PER_DEVICE_NUMERIC_STATS report type.
+  // It is not used with any other report type.
+  //
+  // Used to specify how numeric values should be aggregated on-device.
+  // If SUM is chosen, each device will generate an Observation containing
+  // the sum of logged numeric values over a specified aggregation window.
+  // If MIN (resp., MAX) is chosen, an Observation for this report will
+  // contain the minimum (resp., maximum) numeric value logged during the
+  // aggregation window.
+  OnDeviceAggregationType aggregation_type = 14;
 
   ///////////////////  Fields used by all metric types ///////////////////
 
