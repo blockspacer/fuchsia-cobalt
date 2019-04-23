@@ -9,6 +9,7 @@ pub const THE_OTHER_METRIC_NAME_METRIC_ID: u32 = 200;
 pub const EVENT_GROUPS_METRIC_ID: u32 = 300;
 
 // Enum for the_other_metric_name (EventCode)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum TheOtherMetricNameEventCode {
   AnEvent = 0,
   AnotherEvent = 1,
@@ -16,6 +17,7 @@ pub enum TheOtherMetricNameEventCode {
 }
 
 // Enum for the_other_metric_name (Metric Dimension 0)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum TheOtherMetricNameMetricDimension0 {
   AnEvent = 0,
   AnotherEvent = 1,
@@ -23,6 +25,7 @@ pub enum TheOtherMetricNameMetricDimension0 {
 }
 
 // Enum for event groups (Metric Dimension The First Group)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum EventGroupsMetricDimensionTheFirstGroup {
   AnEvent = 0,
   AnotherEvent = 1,
@@ -30,6 +33,7 @@ pub enum EventGroupsMetricDimensionTheFirstGroup {
 }
 
 // Enum for event groups (Metric Dimension A second group)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum EventGroupsMetricDimensionASecondGroup {
   This = 1,
   Is = 2,
@@ -38,6 +42,7 @@ pub enum EventGroupsMetricDimensionASecondGroup {
 }
 
 // Enum for event groups (Metric Dimension 2)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum EventGroupsMetricDimension2 {
   ThisMetric = 0,
   HasNo = 2,

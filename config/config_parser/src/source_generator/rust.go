@@ -12,6 +12,7 @@ func (_ Rust) getCommentPrefix() string { return "//" }
 func (_ Rust) writeExtraHeader(so *sourceOutputter) {}
 
 func (_ Rust) writeEnumBegin(so *sourceOutputter, name ...string) {
+	so.writeLine("#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]")
 	so.writeLineFmt("pub enum %s {", toPascalCase(name...))
 }
 
