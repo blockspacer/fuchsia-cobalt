@@ -69,7 +69,7 @@ TEST(SystemDataTest, SetExperimentTest) {
 
 TEST(SystemDataTest, SetChannelTest) {
   SystemData system_data("test_product", "", "test_version");
-  EXPECT_EQ(system_data.system_profile().channel(), "");
+  EXPECT_EQ(system_data.system_profile().channel(), "<unset>");
   system_data.SetChannel("Channel");
   EXPECT_EQ(system_data.system_profile().channel(), "Channel");
 }

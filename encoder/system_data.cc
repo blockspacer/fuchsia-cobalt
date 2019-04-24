@@ -97,6 +97,7 @@ SystemData::SystemData(const std::string& product_name,
   system_profile_.set_product_name(product_name);
   system_profile_.set_board_name(board_name_suggestion);
   system_profile_.set_system_version(version);
+  system_profile_.set_channel("<unset>");
   PopulateSystemProfile();
 }
 
