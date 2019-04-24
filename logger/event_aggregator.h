@@ -205,12 +205,26 @@ class EventAggregator {
   void DoScheduledTasks(std::chrono::system_clock::time_point current_time);
 
   // Writes a snapshot of the LocalAggregateStore to
-  // |local_aggregate_proto_store_|. Does not assume that the caller holds the
-  // mutex of |protected_aggregate_store_|.
+  // |local_aggregate_proto_store_|.
   Status BackUpLocalAggregateStore();
 
   // Writes a snapshot of |obs_history_|to |obs_history_proto_store_|.
   Status BackUpObservationHistory();
+
+  // Removes from the LocalAggregateStore all daily aggregates that are too
+  // old to contribute to their parent report's largest rolling window on the
+  // day which is |backfill_days| before |day_index_utc| (if the parent
+  // MetricDefinitions' time zone policy is UTC) or which is |backfill_days|
+  // before |day_index_local| (if the parent MetricDefinition's time zone policy
+  // is LOCAL). If |day_index_local| is 0, then we set |day_index_local| =
+  // |day_index_utc|.
+  //
+  // If the time zone policy of a report's parent metric is UTC (resp., LOCAL)
+  // and if day_index is the largest value of the |day_index_utc| (resp.,
+  // |day_index_local|) argument with which GarbageCollect() has been called,
+  // then the LocalAggregateStore contains the data needed to generate
+  // Observations for that report for day index (day_index + k) for any k >= 0.
+  Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u);
 
   // Generates one or more Observations for all of the registered locally
   // aggregated reports known to this EventAggregator, for rolling windows
@@ -223,11 +237,10 @@ class EventAggregator {
   // |final_day_index_utc|. For all MetricDefinitions whose Events are logged
   // with respect to local time, this method generates Observations for rolling
   // windows ending on |final_day_index_local|. If |final_day_index_local| is
-  // not specified, it is assumed that the local time zone is UTC.
+  // 0, then we set |final_day_index_local| = |final_day_index_utc|.
   //
-  // The generated Observations are written to the
-  // |observation_writer| passed to the constructor. Does not assume that the
-  // caller holds the mutex of |protected_aggregate_store_|.
+  // The generated Observations are written to the |observation_writer| passed
+  // to the constructor.
   //
   // This class maintains a history of generated Observations and this method
   // additionally performs backfill: Observations are also generated for
@@ -242,23 +255,6 @@ class EventAggregator {
   // |kMaxAllowedAggregationWindowSize|.
   Status GenerateObservations(uint32_t final_day_index_utc,
                               uint32_t final_day_index_local = 0u);
-
-  // Removes from the LocalAggregateStore all daily aggregates which are too
-  // old to contribute to their parent report's largest rolling window on the
-  // day which is |backfill_days| before |day_index_utc| (if the parent
-  // MetricDefinitions' time zone policy is UTC) or which is |backfill_days|
-  // before |day_index_local| (if the parent MetricDefinition's time zone policy
-  // is LOCAL). If |day_index_local| is not specified, then it is assumed that
-  // the local time zone is UTC.
-  //
-  // If |day_index| is the latest day index for which GarbageCollect() has
-  // been applied for a given report, then the LocalAggregateStore contains the
-  // data needed to generate Observations for that report for |day_index + k|
-  // for any k >= 0.
-  //
-  // Does not assume that the caller holds the mutex of
-  // |protected_aggregate_store_|.
-  Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u);
 
   // Logs a numeric value to the LocalAggregateStore by adding |value| to the
   // current daily aggregate in the bucket indexed by |report_key|, |day_index|,
@@ -351,8 +347,6 @@ class EventAggregator {
       const MetricRef metric_ref, const ReportDefinition* report,
       uint32_t obs_day_index) const;
 
-  // Returns a copy of the LocalAggregateStore. Does not assume that the
-  // caller holds the mutex of |protected_aggregate_store_|.
   LocalAggregateStore CopyLocalAggregateStore() {
     auto local_aggregate_store =
         protected_aggregate_store_.lock()->local_aggregate_store;

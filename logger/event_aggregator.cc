@@ -101,10 +101,10 @@ bool PopulateReportKey(uint32_t customer_id, uint32_t project_id,
 // not, creates and inserts a new key and value. Returns kInvalidArguments if
 // creation of the key or value fails, and kOK otherwise. The caller should hold
 // the mutex protecting the LocalAggregateStore.
-Status MaybeInsertReportConfig(const ProjectContext& project_context,
-                               const MetricDefinition& metric,
-                               const ReportDefinition& report,
-                               LocalAggregateStore* store) {
+Status MaybeInsertReportConfigLocked(const ProjectContext& project_context,
+                                     const MetricDefinition& metric,
+                                     const ReportDefinition& report,
+                                     LocalAggregateStore* store) {
   std::string key;
   if (!PopulateReportKey(project_context.project().customer_id(),
                          project_context.project().project_id(), metric.id(),
@@ -224,9 +224,9 @@ Status EventAggregator::UpdateAggregationConfigs(
         for (const auto& report : metric.reports()) {
           switch (report.report_type()) {
             case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-              status =
-                  MaybeInsertReportConfig(project_context, metric, report,
-                                          &(locked->local_aggregate_store));
+              status = MaybeInsertReportConfigLocked(
+                  project_context, metric, report,
+                  &(locked->local_aggregate_store));
               if (status != kOK) {
                 return status;
               }
@@ -241,9 +241,9 @@ Status EventAggregator::UpdateAggregationConfigs(
         for (const auto& report : metric.reports()) {
           switch (report.report_type()) {
             case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
-              status =
-                  MaybeInsertReportConfig(project_context, metric, report,
-                                          &(locked->local_aggregate_store));
+              status = MaybeInsertReportConfigLocked(
+                  project_context, metric, report,
+                  &(locked->local_aggregate_store));
               if (status != kOK) {
                 return status;
               }
@@ -476,6 +476,122 @@ void EventAggregator::DoScheduledTasks(
   }
 }
 
+////////////////////// GarbageCollect and helper functions /////////////////////
+
+namespace {
+
+void GarbageCollectUniqueActivesReportAggregates(
+    uint32_t day_index, uint32_t max_window_size, uint32_t backfill_days,
+    UniqueActivesReportAggregates* report_aggregates) {
+  auto map_by_event_code = report_aggregates->mutable_by_event_code();
+  for (auto event_code = map_by_event_code->begin();
+       event_code != map_by_event_code->end();) {
+    auto map_by_day = event_code->second.mutable_by_day_index();
+    for (auto day = map_by_day->begin(); day != map_by_day->end();) {
+      if (day->first <= day_index - backfill_days - max_window_size) {
+        day = map_by_day->erase(day);
+      } else {
+        ++day;
+      }
+    }
+    if (map_by_day->empty()) {
+      event_code = map_by_event_code->erase(event_code);
+    } else {
+      ++event_code;
+    }
+  }
+}
+
+void GarbageCollectNumericReportAggregates(
+    uint32_t day_index, uint32_t max_window_size, uint32_t backfill_days,
+    PerDeviceNumericAggregates* report_aggregates) {
+  auto map_by_component = report_aggregates->mutable_by_component();
+  for (auto component = map_by_component->begin();
+       component != map_by_component->end();) {
+    auto map_by_event_code = component->second.mutable_by_event_code();
+    for (auto event_code = map_by_event_code->begin();
+         event_code != map_by_event_code->end();) {
+      auto map_by_day = event_code->second.mutable_by_day_index();
+      for (auto day = map_by_day->begin(); day != map_by_day->end();) {
+        if (day->first <= day_index - backfill_days - max_window_size) {
+          day = map_by_day->erase(day);
+        } else {
+          ++day;
+        }
+      }
+      if (map_by_day->empty()) {
+        event_code = map_by_event_code->erase(event_code);
+      } else {
+        ++event_code;
+      }
+    }
+    if (map_by_event_code->empty()) {
+      component = map_by_component->erase(component);
+    } else {
+      ++component;
+    }
+  }
+}
+
+}  // namespace
+
+Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
+                                       uint32_t day_index_local) {
+  if (day_index_local == 0u) {
+    day_index_local = day_index_utc;
+  }
+  if (std::min(day_index_utc, day_index_local) <
+      backfill_days_ + kMaxAllowedAggregationWindowSize) {
+    LOG(ERROR) << "GarbageCollect: Day index must be >= backfill_days_ + "
+                  "kMaxAllowedAggregationWindowSize.";
+    return kInvalidArguments;
+  }
+  auto locked = protected_aggregate_store_.lock();
+  for (auto pair : locked->local_aggregate_store.by_report_key()) {
+    uint32_t day_index;
+    switch (pair.second.aggregation_config().metric().time_zone_policy()) {
+      case MetricDefinition::UTC: {
+        day_index = day_index_utc;
+        break;
+      }
+      case MetricDefinition::LOCAL: {
+        day_index = day_index_local;
+        break;
+      }
+      default:
+        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
+        return kInvalidConfig;
+    }
+    uint32_t max_window_size = pair.second.aggregation_config().window_size(
+        pair.second.aggregation_config().window_size_size() - 1);
+    // For each ReportAggregates, descend to and iterate over the sub-map of
+    // local aggregates keyed by day index. Keep buckets with day indices
+    // greater than |day_index| - |backfill_days_| - |max_window_size|, and
+    // remove all buckets with smaller day indices.
+    switch (pair.second.type_case()) {
+      case ReportAggregates::kUniqueActivesAggregates: {
+        GarbageCollectUniqueActivesReportAggregates(
+            day_index, max_window_size, backfill_days_,
+            locked->local_aggregate_store.mutable_by_report_key()
+                ->at(pair.first)
+                .mutable_unique_actives_aggregates());
+        break;
+      }
+      case ReportAggregates::kNumericAggregates: {
+        GarbageCollectNumericReportAggregates(
+            day_index, max_window_size, backfill_days_,
+            locked->local_aggregate_store.mutable_by_report_key()
+                ->at(pair.first)
+                .mutable_numeric_aggregates());
+        break;
+      }
+      default:
+        continue;
+    }
+  }
+  return kOK;
+}
+
 Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
                                              uint32_t final_day_index_local) {
   if (final_day_index_local == 0u) {
@@ -564,143 +680,9 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
   return kOK;
 }
 
-Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
-                                       uint32_t day_index_local) {
-  if (day_index_local == 0u) {
-    day_index_local = day_index_utc;
-  }
-  if (std::min(day_index_utc, day_index_local) <
-      backfill_days_ + kMaxAllowedAggregationWindowSize) {
-    LOG(ERROR) << "GarbageCollect: Day index must be >= backfill_days_ + "
-                  "kMaxAllowedAggregationWindowSize.";
-    return kInvalidArguments;
-  }
-  auto locked = protected_aggregate_store_.lock();
-  for (auto pair : locked->local_aggregate_store.by_report_key()) {
-    uint32_t day_index;
-    switch (pair.second.aggregation_config().metric().time_zone_policy()) {
-      case MetricDefinition::UTC: {
-        day_index = day_index_utc;
-        break;
-      }
-      case MetricDefinition::LOCAL: {
-        day_index = day_index_local;
-        break;
-      }
-      default:
-        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
-        return kInvalidConfig;
-    }
-    uint32_t max_window_size = pair.second.aggregation_config().window_size(
-        pair.second.aggregation_config().window_size_size() - 1);
-    // For each ReportAggregates, descend to and iterate over the sub-map of
-    // local aggregates keyed by day index. Keep buckets with day indices
-    // greater than |day_index| - |backfill_days_| - |max_window_size|, and
-    // remove all buckets with smaller day indices.
-    switch (pair.second.type_case()) {
-      case ReportAggregates::kUniqueActivesAggregates: {
-        for (auto event_code_aggregates :
-             pair.second.unique_actives_aggregates().by_event_code()) {
-          for (auto day_aggregates :
-               event_code_aggregates.second.by_day_index()) {
-            if (day_aggregates.first <=
-                day_index - backfill_days_ - max_window_size) {
-              locked->local_aggregate_store.mutable_by_report_key()
-                  ->at(pair.first)
-                  .mutable_unique_actives_aggregates()
-                  ->mutable_by_event_code()
-                  ->at(event_code_aggregates.first)
-                  .mutable_by_day_index()
-                  ->erase(day_aggregates.first);
-            }
-          }
-          // If the day index map under this event code is empty, remove the
-          // event code from the event code-keyed map under this
-          // ReportAggregationKey.
-          if (locked->local_aggregate_store.by_report_key()
-                  .at(pair.first)
-                  .unique_actives_aggregates()
-                  .by_event_code()
-                  .at(event_code_aggregates.first)
-                  .by_day_index()
-                  .empty()) {
-            locked->local_aggregate_store.mutable_by_report_key()
-                ->at(pair.first)
-                .mutable_unique_actives_aggregates()
-                ->mutable_by_event_code()
-                ->erase(event_code_aggregates.first);
-          }
-        }
-        break;
-      }
-      case ReportAggregates::kNumericAggregates: {
-        for (auto component_aggregates :
-             pair.second.numeric_aggregates().by_component()) {
-          for (auto event_code_aggregates :
-               component_aggregates.second.by_event_code()) {
-            for (auto day_aggregates :
-                 event_code_aggregates.second.by_day_index()) {
-              if (day_aggregates.first <=
-                  day_index - backfill_days_ - max_window_size) {
-                locked->local_aggregate_store.mutable_by_report_key()
-                    ->at(pair.first)
-                    .mutable_numeric_aggregates()
-                    ->mutable_by_component()
-                    ->at(component_aggregates.first)
-                    .mutable_by_event_code()
-                    ->at(event_code_aggregates.first)
-                    .mutable_by_day_index()
-                    ->erase(day_aggregates.first);
-              }
-            }
-            // If the day index map under this event code is empty, remove the
-            // event code from the event code-keyed map under this
-            // ReportAggregationKey.
-            if (locked->local_aggregate_store.by_report_key()
-                    .at(pair.first)
-                    .numeric_aggregates()
-                    .by_component()
-                    .at(component_aggregates.first)
-                    .by_event_code()
-                    .at(event_code_aggregates.first)
-                    .by_day_index()
-                    .empty()) {
-              locked->local_aggregate_store.mutable_by_report_key()
-                  ->at(pair.first)
-                  .mutable_numeric_aggregates()
-                  ->mutable_by_component()
-                  ->at(component_aggregates.first)
-                  .mutable_by_event_code()
-                  ->erase(event_code_aggregates.first);
-            }
-          }
-          // If the event code map under this component string is empty,
-          // remove the component string from the component-keyed map under
-          // this ReportAggregationKey.
-          if (locked->local_aggregate_store.by_report_key()
-                  .at(pair.first)
-                  .numeric_aggregates()
-                  .by_component()
-                  .at(component_aggregates.first)
-                  .by_event_code()
-                  .empty()) {
-            locked->local_aggregate_store.mutable_by_report_key()
-                ->at(pair.first)
-                .mutable_numeric_aggregates()
-                ->mutable_by_component()
-                ->erase(component_aggregates.first);
-          }
-        }
-        break;
-      }
-      default:
-        continue;
-    }
-  }
-  return kOK;
-}
-
 ////////// GenerateUniqueActivesObservations and helper methods ////////////////
+
+namespace {
 
 // Given the set of daily aggregates for a fixed event code, and the size and
 // end date of an aggregation window, returns the first day index within that
@@ -729,6 +711,8 @@ bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
   return (active_day_index <= obs_day_index &&
           active_day_index > obs_day_index - window_size);
 }
+
+}  // namespace
 
 uint32_t EventAggregator::UniqueActivesLastGeneratedDayIndex(
     const std::string& report_key, uint32_t event_code,
@@ -888,6 +872,15 @@ uint32_t EventAggregator::PerDeviceNumericLastGeneratedDayIndex(
   return window_size_history->second;
 }
 
+uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
+    const std::string& report_key) const {
+  const auto& report_history = obs_history_.by_report_key().find(report_key);
+  if (report_history == obs_history_.by_report_key().end()) {
+    return 0u;
+  }
+  return report_history->second.report_participation_history().last_generated();
+}
+
 Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     const MetricRef metric_ref, const ReportDefinition* report,
     uint32_t obs_day_index, const std::string& component, uint32_t event_code,
@@ -901,6 +894,28 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
   if (encoder_result.observation == nullptr ||
       encoder_result.metadata == nullptr) {
     LOG(ERROR) << "Failed to encode PerDeviceNumericObservation";
+    return kOther;
+  }
+
+  const auto& writer_status = observation_writer_->WriteObservation(
+      *encoder_result.observation, std::move(encoder_result.metadata));
+  if (writer_status != kOK) {
+    return writer_status;
+  }
+  return kOK;
+}
+
+Status EventAggregator::GenerateSingleReportParticipationObservation(
+    const MetricRef metric_ref, const ReportDefinition* report,
+    uint32_t obs_day_index) const {
+  auto encoder_result = encoder_->EncodeReportParticipationObservation(
+      metric_ref, report, obs_day_index);
+  if (encoder_result.status != kOK) {
+    return encoder_result.status;
+  }
+  if (encoder_result.observation == nullptr ||
+      encoder_result.metadata == nullptr) {
+    LOG(ERROR) << "Failed to encode ReportParticipationObservation";
     return kOther;
   }
 
@@ -1004,37 +1019,6 @@ Status EventAggregator::GeneratePerDeviceNumericObservations(
     (*obs_history_.mutable_by_report_key())[report_key]
         .mutable_report_participation_history()
         ->set_last_generated(obs_day_index);
-  }
-  return kOK;
-}
-
-uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
-    const std::string& report_key) const {
-  const auto& report_history = obs_history_.by_report_key().find(report_key);
-  if (report_history == obs_history_.by_report_key().end()) {
-    return 0u;
-  }
-  return report_history->second.report_participation_history().last_generated();
-}
-
-Status EventAggregator::GenerateSingleReportParticipationObservation(
-    const MetricRef metric_ref, const ReportDefinition* report,
-    uint32_t obs_day_index) const {
-  auto encoder_result = encoder_->EncodeReportParticipationObservation(
-      metric_ref, report, obs_day_index);
-  if (encoder_result.status != kOK) {
-    return encoder_result.status;
-  }
-  if (encoder_result.observation == nullptr ||
-      encoder_result.metadata == nullptr) {
-    LOG(ERROR) << "Failed to encode ReportParticipationObservation";
-    return kOther;
-  }
-
-  const auto& writer_status = observation_writer_->WriteObservation(
-      *encoder_result.observation, std::move(encoder_result.metadata));
-  if (writer_status != kOK) {
-    return writer_status;
   }
   return kOK;
 }
