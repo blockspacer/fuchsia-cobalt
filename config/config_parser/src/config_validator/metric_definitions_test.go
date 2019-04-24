@@ -251,6 +251,23 @@ func TestValidateEventCodesMaxEventCodeTooBig(t *testing.T) {
 	}
 }
 
+func TestValidateMetricDimensionsTooManyVariants(t *testing.T) {
+	tenCodes := map[uint32]string{1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H", 9: "I", 10: "J"}
+	m := makeValidMetric()
+	m.MetricDimensions[0].EventCodes = tenCodes
+	m.MetricDimensions = append(m.MetricDimensions, &config.MetricDefinition_MetricDimension{Dimension: "Dimension 2", EventCodes: tenCodes})
+	m.MetricDimensions = append(m.MetricDimensions, &config.MetricDefinition_MetricDimension{Dimension: "Dimension 3", EventCodes: tenCodes})
+
+	if err := validateMetricDimensions(m); err != nil {
+		t.Error("Rejected valid metric with 10^3 (1000) event codes")
+	}
+
+	m.MetricDimensions[0].EventCodes[11] = "K"
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with 11*10*10 (1100) event codes")
+	}
+}
+
 func TestValidateEventCodesIndexLargerThanMax(t *testing.T) {
 	m := makeValidMetric()
 	m.MetricDimensions[0].MaxEventCode = 100

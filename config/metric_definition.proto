@@ -257,8 +257,8 @@ message MetricDefinition {
     //    explicitly registered values (event_codes).
     // 3. For the purposes of validation, each dimension is assigned a number
     //    which is equal to max_event_code+1 if max_event_code is set, or else
-    //    equal to the number of registered values (+1 if there is no zero
-    //    value). The product of all of these values must not exceed 1024.
+    //    equal to the number of registered values. The product of all of these
+    //    values must not exceed 1024.
     // 4. Adding, removing, or changing max_event_code is allowed so long as the
     //    above rules are not violated.
     // 5. For metrics of the type EVENT_OCCURRED, there may be only 1 dimension.

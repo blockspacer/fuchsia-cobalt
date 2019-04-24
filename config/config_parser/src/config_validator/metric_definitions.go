@@ -129,34 +129,26 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 
 	seenNames := make(map[string]bool)
 	numOptions := 1
-	for i, md := range m.MetricDimensions {
+	for _, md := range m.MetricDimensions {
 		if seenNames[md.Dimension] {
 			return fmt.Errorf("duplicate dimension name in metric_dimensions %s", md.Dimension)
 		}
 		seenNames[md.Dimension] = true
 
+		name := md.Dimension
+
 		if len(md.EventCodes) == 0 && md.MaxEventCode == 0 {
-			return fmt.Errorf("For metric dimension %v, you must either define max_event_code or explicitly define at least one event code.", i)
+			return fmt.Errorf("For metric dimension %v, you must either define max_event_code or explicitly define at least one event code.", name)
 		}
 		if md.MaxEventCode != 0 {
 			for j, _ := range md.EventCodes {
 				if j > md.MaxEventCode {
-					return fmt.Errorf("event index %v in metric_dimension %v is greater than max_event_code %v", j, i, md.MaxEventCode)
+					return fmt.Errorf("event index %v in metric_dimension %v is greater than max_event_code %v", j, name, md.MaxEventCode)
 				}
 			}
 			numOptions *= int(md.MaxEventCode + 1)
 		} else {
-			hasZero := false
-			for j, _ := range md.EventCodes {
-				if j == 0 {
-					hasZero = true
-				}
-			}
-			if hasZero {
-				numOptions *= len(md.EventCodes)
-			} else {
-				numOptions *= len(md.EventCodes) + 1
-			}
+			numOptions *= len(md.EventCodes)
 		}
 	}
 	if numOptions >= 1024 {
