@@ -91,6 +91,7 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 		if len(e.EventCodes) > 0 {
 			e.MetricDimensions = []*config.MetricDefinition_MetricDimension{
 				&config.MetricDefinition_MetricDimension{
+					Dimension:    "legacy",
 					EventCodes:   e.EventCodes,
 					MaxEventCode: e.MaxEventCode,
 				},

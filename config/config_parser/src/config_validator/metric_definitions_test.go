@@ -50,6 +50,7 @@ func makeValidMetricWithName(name string, numDimensions int) config.MetricDefini
 	}
 	for i := 0; i < numDimensions; i++ {
 		metricDefinition.MetricDimensions = append(metricDefinition.MetricDimensions, &config.MetricDefinition_MetricDimension{
+			Dimension:  "Dimension 1",
 			EventCodes: map[uint32]string{1: "hello_world"},
 		})
 	}
@@ -265,6 +266,28 @@ func TestValidateMetricDimensionsTooManyVariants(t *testing.T) {
 	m.MetricDimensions[0].EventCodes[11] = "K"
 	if err := validateMetricDimensions(m); err == nil {
 		t.Error("Accepted invalid metric with 11*10*10 (1100) event codes")
+	}
+}
+
+func TestValidateMetricDimensionsDimensionNames(t *testing.T) {
+	m := makeValidMetric()
+	m.MetricDimensions[0].EventCodes = nil
+	m.MetricDimensions[0].MaxEventCode = 1
+	m.MetricDimensions = append(m.MetricDimensions, &config.MetricDefinition_MetricDimension{MaxEventCode: 1})
+
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with an unnamed metric dimension")
+	}
+
+	m.MetricDimensions[1].Dimension = "Dimension 2"
+	if err := validateMetricDimensions(m); err != nil {
+		t.Error("Rejected valid metric with two distinctly named metric dimensions")
+	}
+
+	m.MetricDimensions[0].Dimension = "Dimension 1"
+	m.MetricDimensions[1].Dimension = "Dimension 1"
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with two identically named metric dimensions")
 	}
 }
 

@@ -129,7 +129,11 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 
 	seenNames := make(map[string]bool)
 	numOptions := 1
-	for _, md := range m.MetricDimensions {
+	for i, md := range m.MetricDimensions {
+		if md.Dimension == "" {
+			return fmt.Errorf("dimension %d has no 'dimension' name", i)
+		}
+
 		if seenNames[md.Dimension] {
 			return fmt.Errorf("duplicate dimension name in metric_dimensions %s", md.Dimension)
 		}
