@@ -2,6 +2,8 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 #pragma once
 
+const char kCustomerName[] = "customer";
+const char kProjectName[] = "project";
 // Metric ID Constants
 // the_metric_name
 const uint32_t kTheMetricNameMetricId = 100;

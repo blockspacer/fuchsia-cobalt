@@ -172,6 +172,7 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	if len(c.Customers) > 1 || len(c.Customers[0].Projects) > 1 {
 		return fmt.Errorf("Cobalt v1.0 output can only be used with a single project config.")
 	}
+	so.writeNames(c)
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		if metric.MetricName != "" {
 			metrics[metric.Id] = metric.MetricName
@@ -209,6 +210,11 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	return nil
 }
 
+func (so *sourceOutputter) writeNames(c *config.CobaltRegistry) {
+	so.language.writeStringConstant(so, c.Customers[0].CustomerName, "Customer Name")
+	so.language.writeStringConstant(so, c.Customers[0].Projects[0].ProjectName, "Project Name")
+}
+
 func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	so.writeGenerationWarning()
 
@@ -219,7 +225,9 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	}
 
 	if len(c.Customers) > 0 {
-		so.writeV1Constants(c)
+		if err := so.writeV1Constants(c); err != nil {
+			return err
+		}
 	} else {
 		so.writeLegacyConstants(c)
 	}
