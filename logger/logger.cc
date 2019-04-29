@@ -30,6 +30,8 @@ using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
+typedef LoggerCallsMadeMetricDimensionLoggerMethod LoggerMethod;
+
 // EventLogger is an abstract interface used internally in logger.cc to
 // dispatch logging logic based on Metric type. Below we create subclasses
 // of EventLogger for each of several Metric types.
@@ -282,7 +284,7 @@ Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
           << ") project=" << project_context_->FullyQualifiedName();
   EventRecord event_record;
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEvent);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogEvent);
   auto* occurrence_event = event_record.event->mutable_occurrence_event();
   occurrence_event->set_event_code(event_code);
   auto event_logger = std::make_unique<OccurrenceEventLogger>(this);
@@ -294,7 +296,7 @@ Status Logger::LogEventCount(uint32_t metric_id,
                              const std::vector<uint32_t>& event_codes,
                              const std::string& component,
                              int64_t period_duration_micros, uint32_t count) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogEventCount);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogEventCount);
   EventRecord event_record;
   auto* count_event = event_record.event->mutable_count_event();
   CopyEventCodesAndComponent(event_codes, component, count_event);
@@ -309,7 +311,7 @@ Status Logger::LogElapsedTime(uint32_t metric_id,
                               const std::vector<uint32_t>& event_codes,
                               const std::string& component,
                               int64_t elapsed_micros) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogElapsedTime);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogElapsedTime);
   EventRecord event_record;
   auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
   CopyEventCodesAndComponent(event_codes, component, elapsed_time_event);
@@ -322,7 +324,7 @@ Status Logger::LogElapsedTime(uint32_t metric_id,
 Status Logger::LogFrameRate(uint32_t metric_id,
                             const std::vector<uint32_t>& event_codes,
                             const std::string& component, float fps) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogFrameRate);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogFrameRate);
   EventRecord event_record;
   auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
   CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
@@ -335,7 +337,7 @@ Status Logger::LogFrameRate(uint32_t metric_id,
 Status Logger::LogMemoryUsage(uint32_t metric_id,
                               const std::vector<uint32_t>& event_codes,
                               const std::string& component, int64_t bytes) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogMemoryUsage);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogMemoryUsage);
   EventRecord event_record;
   auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
   CopyEventCodesAndComponent(event_codes, component, memory_usage_event);
@@ -349,7 +351,7 @@ Status Logger::LogIntHistogram(uint32_t metric_id,
                                const std::vector<uint32_t>& event_codes,
                                const std::string& component,
                                HistogramPtr histogram) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogIntHistogram);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogIntHistogram);
   EventRecord event_record;
   auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
   CopyEventCodesAndComponent(event_codes, component, int_histogram_event);
@@ -360,7 +362,7 @@ Status Logger::LogIntHistogram(uint32_t metric_id,
 }
 
 Status Logger::LogString(uint32_t metric_id, const std::string& str) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogString);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogString);
   EventRecord event_record;
   auto* string_used_event = event_record.event->mutable_string_used_event();
   string_used_event->set_str(str);
@@ -370,7 +372,7 @@ Status Logger::LogString(uint32_t metric_id, const std::string& str) {
 }
 
 Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
-  internal_metrics_->LoggerCalled(LoggerCallsMadeEventCode::LogCustomEvent);
+  internal_metrics_->LoggerCalled(LoggerMethod::LogCustomEvent);
   EventRecord event_record;
   auto* custom_event = event_record.event->mutable_custom_event();
   custom_event->mutable_values()->swap(*event_values);

@@ -8,9 +8,8 @@
 #include <memory>
 #include <string>
 
-#include "logger/logger_interface.h"
-
 #include "logger/internal_metrics_config.cb.h"
+#include "logger/logger_interface.h"
 
 namespace cobalt {
 namespace logger {
@@ -21,7 +20,8 @@ class InternalMetrics {
  public:
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) is logged for
   // every call to Logger along with which method was called.
-  virtual void LoggerCalled(LoggerCallsMadeEventCode event_code) = 0;
+  virtual void LoggerCalled(
+      LoggerCallsMadeMetricDimensionLoggerMethod method) = 0;
 
   virtual ~InternalMetrics() {}
 };
@@ -31,7 +31,8 @@ class InternalMetrics {
 // InternalMetrics interface, allowing code to safely make these calls even if
 // no LoggerInterface* was provided.
 class NoOpInternalMetrics : public InternalMetrics {
-  void LoggerCalled(LoggerCallsMadeEventCode event_code) override {}
+  void LoggerCalled(
+      LoggerCallsMadeMetricDimensionLoggerMethod method) override {}
 
   ~NoOpInternalMetrics() override {}
 };
@@ -43,7 +44,7 @@ class InternalMetricsImpl : public InternalMetrics {
  public:
   explicit InternalMetricsImpl(LoggerInterface* logger);
 
-  void LoggerCalled(LoggerCallsMadeEventCode event_code) override;
+  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method) override;
 
   ~InternalMetricsImpl() override {}
 
