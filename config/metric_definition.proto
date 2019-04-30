@@ -241,9 +241,6 @@ message MetricDefinition {
 
   // A container for enumerated sets of event codes.
   message MetricDimension {
-    reserved 4;
-    reserved "also_treat_as_legacy";
-
     string dimension = 1;
 
     // The enumerated set of event codes for this dimension.
@@ -269,6 +266,13 @@ message MetricDefinition {
     //    above rules are not violated.
     // 5. For metrics of the type EVENT_OCCURRED, there may be only 1 dimension.
     uint32 max_event_code = 3;
+
+    // Enables soft transitions in the source_generator. Will generate enums for
+    // this dimension, as well as enums as if this was a legacy event_codes map.
+    // This is only a temporary field, and will only work properly if there is
+    // only one dimension with this field set.  TODO(zmbush): Remove once
+    // metric_dimension migration is complete.
+    bool also_treat_as_legacy = 4;
   }
 
   // A list of MetricDimensions.
