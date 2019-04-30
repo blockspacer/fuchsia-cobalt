@@ -33,6 +33,9 @@ option go_package = "config";
 //
 // Next ID: 17
 message MetricDefinition {
+  reserved 6, 7;
+  reserved "event_codes", "max_event_code";
+
   // Unique name for this Metric within its owning project.
   // The name must obey the syntax of a C variable name and must have length
   // at most 64.
