@@ -71,14 +71,12 @@ message ActivityDailyAggregate {
   bool activity_indicator = 1;
 }
 
-// A representation of the number of occurrences of a particular event code,
-// with a particular component label, on a given day.
-message CountDailyAggregate {
-  int64 count = 1;
-}
-
+// An aggregate of the numeric values with a particular event code and
+// component label, for a given day. The way in which numeric values are
+// aggregated (e.g. summing, taking the max or min) is determined by the
+// aggregation_type field of the ReportDefinition.
 message NumericDailyAggregate {
-  int64 sum = 1;
+  int64 value = 1;
 }
 
 // A representation of the configuration of a locally aggregated report and

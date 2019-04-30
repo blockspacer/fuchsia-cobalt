@@ -6,6 +6,7 @@
 
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/message_differencer.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -73,10 +74,12 @@ typedef std::map<std::string, std::map<uint32_t, std::set<uint32_t>>>
 // A map used in tests as a record, external to the LocalAggregateStore, of the
 // activity logged for PER_DEVICE_NUMERIC_STATS reports. The keys are, in
 // descending order, serialized ReportAggregationKeys, components, event codes,
-// and day indices. The innermost value is a count.
+// and day indices. Each day index maps to a vector of numeric values that were
+// logged for that day index..
 typedef std::map<
     std::string,
-    std::map<std::string, std::map<uint32_t, std::map<uint32_t, int64_t>>>>
+    std::map<std::string,
+             std::map<uint32_t, std::map<uint32_t, std::vector<int64_t>>>>>
     LoggedValues;
 
 }  // namespace
@@ -235,7 +238,7 @@ class EventAggregatorTest : public ::testing::Test {
             MakeAggregationKey(project_context, metric_report_id), &key)) {
       return kInvalidArguments;
     }
-    (*logged_values)[key][component][event_code][day_index] += count;
+    (*logged_values)[key][component][event_code][day_index].push_back(count);
     return status;
   }
 
@@ -268,7 +271,7 @@ class EventAggregatorTest : public ::testing::Test {
             MakeAggregationKey(project_context, metric_report_id), &key)) {
       return kInvalidArguments;
     }
-    (*logged_values)[key][component][event_code][day_index] += micros;
+    (*logged_values)[key][component][event_code][day_index].push_back(micros);
     return status;
   }
 
@@ -499,6 +502,10 @@ class EventAggregatorTest : public ::testing::Test {
           ReportAggregates::kNumericAggregates) {
         return false;
       }
+      const auto& aggregation_type =
+          report_aggregates->second.aggregation_config()
+              .report()
+              .aggregation_type();
       // Compute the earliest day index that should appear among the aggregates
       // for this report.
       auto earliest_allowed = EarliestAllowedDayIndex(
@@ -544,7 +551,7 @@ class EventAggregatorTest : public ::testing::Test {
               // the expected value.
               for (const auto& logged_day_pair : logged_day_map) {
                 auto logged_day_index = logged_day_pair.first;
-                auto logged_value = logged_day_pair.second;
+                auto logged_values = logged_day_pair.second;
                 auto day_aggregate =
                     event_code_aggregates->second.by_day_index().find(
                         logged_day_index);
@@ -555,11 +562,33 @@ class EventAggregatorTest : public ::testing::Test {
                       event_code_aggregates->second.by_day_index().end()) {
                     return false;
                   }
+                  int64_t aggregate_from_logged_values = 0;
+                  for (size_t index = 0; index < logged_values.size();
+                       index++) {
+                    switch (aggregation_type) {
+                      case ReportDefinition::SUM:
+                        aggregate_from_logged_values += logged_values[index];
+                        break;
+                      case ReportDefinition::MAX:
+                        aggregate_from_logged_values = std::max(
+                            aggregate_from_logged_values, logged_values[index]);
+                        break;
+                      case ReportDefinition::MIN:
+                        if (index == 0) {
+                          aggregate_from_logged_values = logged_values[0];
+                        }
+                        aggregate_from_logged_values = std::min(
+                            aggregate_from_logged_values, logged_values[index]);
+                        break;
+                      default:
+                        return false;
+                    }
+                  }
                   EXPECT_EQ(
-                      day_aggregate->second.numeric_daily_aggregate().sum(),
-                      logged_value);
-                  if (day_aggregate->second.numeric_daily_aggregate().sum() !=
-                      logged_value) {
+                      day_aggregate->second.numeric_daily_aggregate().value(),
+                      aggregate_from_logged_values);
+                  if (day_aggregate->second.numeric_daily_aggregate().value() !=
+                      aggregate_from_logged_values) {
                     return false;
                   }
                 }
@@ -2057,10 +2086,10 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
 
 // Tests GarbageCollect() for PerDeviceNumericReportAggregates.
 //
-// For each value of N in the range [0, 34], logs some CountEvents for a
-// PerDeviceNumeric report each day for N consecutive days, and then
-// garbage-collects the LocalAggregateStore. After garbage collection, verifies
-// the contents of the LocalAggregateStore.
+// For each value of N in the range [0, 34], logs some CountEvents and
+// ElapsedTimeEvents for PerDeviceNumeric reports each day for N consecutive
+// days, and then garbage-collects the LocalAggregateStore. After garbage
+// collection, verifies the contents of the LocalAggregateStore.
 TEST_F(PerDeviceNumericEventAggregatorTest, GarbageCollect) {
   uint32_t max_days_before_gc = 35;
   for (uint32_t days_before_gc = 0; days_before_gc < max_days_before_gc;
@@ -2068,26 +2097,44 @@ TEST_F(PerDeviceNumericEventAggregatorTest, GarbageCollect) {
     SetUp();
     day_last_garbage_collected_ = 0u;
     LoggedValues logged_values;
+    std::vector<MetricReportId> count_metric_report_ids = {
+        testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
+        testing::per_device_numeric_stats::kConnectionFailuresMetricReportId};
+    std::vector<MetricReportId> elapsed_time_metric_report_ids = {
+        testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
+        testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
+        testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId};
     for (uint32_t offset = 0; offset < days_before_gc; offset++) {
       auto day_index = CurrentDayIndex();
-      for (const auto& metric_report_id :
-           testing::per_device_numeric_stats::kExpectedAggregationParams
-               .metric_report_ids) {
+      for (const auto& id : count_metric_report_ids) {
         for (const auto& component :
              {"component_A", "component_B", "component_C"}) {
           // Log 2 events with event code 0, for each component A, B, C.
-          EXPECT_EQ(kOK,
-                    LogPerDeviceCountEvent(metric_report_id, day_index,
-                                           component, 0u, 2, &logged_values));
-          EXPECT_EQ(kOK,
-                    LogPerDeviceCountEvent(metric_report_id, day_index,
-                                           component, 0u, 3, &logged_values));
+          EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 2,
+                                                &logged_values));
+          EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 3,
+                                                &logged_values));
         }
         if (offset < 3) {
           // Log 1 event for component D and event code 1.
-          EXPECT_EQ(kOK, LogPerDeviceCountEvent(metric_report_id, day_index,
-                                                "component_D", 1u, 4,
-                                                &logged_values));
+          EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, "component_D",
+                                                1u, 4, &logged_values));
+        }
+      }
+      for (const auto& id : elapsed_time_metric_report_ids) {
+        for (const auto& component :
+             {"component_A", "component_B", "component_C"}) {
+          // Log 2 events with event code 0, for each component A, B, C.
+          EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, component,
+                                                      0u, 2, &logged_values));
+          EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, component,
+                                                      0u, 3, &logged_values));
+        }
+        if (offset < 3) {
+          // Log 1 event for component D and event code 1.
+          EXPECT_EQ(kOK,
+                    LogPerDeviceElapsedTimeEvent(id, day_index, "component_D",
+                                                 1u, 4, &logged_values));
         }
       }
       AdvanceClock(kDay);
@@ -2236,8 +2283,8 @@ TEST_F(PerDeviceNumericEventAggregatorTest, GenerateObservationsWithGc) {
 //
 // Logging pattern:
 // For 35 days, logs 2 events each day for the
-// SomeErrorsOccurred_UniqueDevices report and 2 events for the
-// SomeFeaturesActive_Unique_Devices report, all with event code 0.
+// ConnectionFailures_PerDeviceCount report and 2 events for the
+// SettingsChanged_PerDeviceCount report, all with event code 0.
 //
 // Observation generation pattern:
 // Calls GenerateObservations() on the 1st through 5th and the 7th out of
@@ -2427,8 +2474,8 @@ TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesNoEvents) {
 
 // Check that the expected PerDeviceNumericObservations and
 // ReportParticipationObservations are generated when GenerateObservations() is
-// called after logging some events for PER_DEVICE_NUMERIC_STATS reports
-// over a single day index.
+// called after logging some CountEvents and ElapsedTimeEvents for
+// PER_DEVICE_NUMERIC_STATS reports over a single day index.
 TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesSingleDay) {
   const auto day_index = CurrentDayIndex();
   // Log several events on |day_index|.
@@ -2462,18 +2509,19 @@ TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesSingleDay) {
       LogPerDeviceCountEvent(
           testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
           day_index, "component_C", 0u, 5));
-  EXPECT_EQ(kOK,
-            LogPerDeviceElapsedTimeEvent(
-                testing::per_device_numeric_stats::kStreamingTimeMetricReportId,
-                day_index, "component_D", 0u, 10));
-  EXPECT_EQ(kOK,
-            LogPerDeviceElapsedTimeEvent(
-                testing::per_device_numeric_stats::kStreamingTimeMetricReportId,
-                day_index, "component_D", 0u, 15));
-  EXPECT_EQ(kOK,
-            LogPerDeviceElapsedTimeEvent(
-                testing::per_device_numeric_stats::kStreamingTimeMetricReportId,
-                day_index, "component_D", 1u, 5));
+
+  std::vector<MetricReportId> streaming_time_ids = {
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId};
+  for (const auto& id : streaming_time_ids) {
+    EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, "component_D",
+                                                0u, 15));
+    EXPECT_EQ(
+        kOK, LogPerDeviceElapsedTimeEvent(id, day_index, "component_D", 1u, 5));
+    EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, "component_D",
+                                                0u, 10));
+  }
   // Generate locally aggregated Observations for |day_index|.
   EXPECT_EQ(kOK, GenerateObservations(day_index));
 
@@ -2494,22 +2542,39 @@ TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesSingleDay) {
       testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
       day_index}][30] = {{"component_C", 0u, 10}};
   expected_per_device_numeric_obs[{
-      testing::per_device_numeric_stats::kStreamingTimeMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
       day_index}][1] = {{"component_D", 0u, 25}, {"component_D", 1u, 5}};
   expected_per_device_numeric_obs[{
-      testing::per_device_numeric_stats::kStreamingTimeMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
       day_index}][7] = {{"component_D", 0u, 25}, {"component_D", 1u, 5}};
+  // The 7-day minimum value for the StreamingTime metric is 0 for all event
+  // codes and components, so we don't expect a PerDeviceNumericObservation with
+  // a 7-day window for the StreamingTime_PerDeviceMin report.
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
+      day_index}][1] = {{"component_D", 0u, 10}, {"component_D", 1u, 5}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
+      day_index}][7] = {{"component_D", 0u, 10}, {"component_D", 1u, 5}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId,
+      day_index}][1] = {{"component_D", 0u, 15}, {"component_D", 1u, 5}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId,
+      day_index}][7] = {{"component_D", 0u, 15}, {"component_D", 1u, 5}};
+
   EXPECT_TRUE(CheckPerDeviceNumericObservations(
       expected_per_device_numeric_obs, expected_report_participation_obs,
       observation_store_.get(), update_recipient_.get()));
 }
 
 // Checks that PerDeviceNumericObservations with the expected values are
-// generated when some events have been logged for an EVENT_COUNT metric with a
-// PER_DEVICE_NUMERIC_STATS report over multiple days and GenerateObservations()
-// is called each day, without garbage collection or backfill.
+// generated when some events have been logged for an EVENT_COUNT metric with
+// a PER_DEVICE_NUMERIC_STATS report over multiple days and
+// GenerateObservations() is called each day, without garbage collection or
+// backfill.
 //
-// Logged events for the SettingsChanged_PerDeviceNumeric metric on the i-th
+// Logged events for the SettingsChanged_PerDeviceCount report on the i-th
 // day:
 //
 //  i            (component, event code, count)
@@ -2551,8 +2616,8 @@ TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesSingleDay) {
 // (9, 7)     ("A", 1, 21),  ("A", 2,  9), ("B", 1, 6), ("B", 2, 4)
 // (9, 30)    ("A", 1, 27),  ("A", 2, 12), ("B", 1, 8), ("B", 2, 4)
 //
-// In addition, expect 1 ReportParticipationObservation each day for each of the
-// reports in the registry.
+// In addition, expect 1 ReportParticipationObservation each day for each of
+// the reports in the registry.
 TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesMultiDay) {
   auto start_day_index = CurrentDayIndex();
   const auto& expected_id =
@@ -2709,9 +2774,9 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
 // backfilled for some days during that period, without any garbage-collection
 // of the LocalAggregateStore.
 //
-// The logging pattern and set of Observations for each day index is the same as
-// in PerDeviceNumericEventAggregatorTest::CheckObservationValuesMultiDay. See
-// that test for documentation.
+// The logging pattern and set of Observations for each day index is the same
+// as in PerDeviceNumericEventAggregatorTest::CheckObservationValuesMultiDay.
+// See that test for documentation.
 TEST_F(PerDeviceNumericEventAggregatorTest,
        CheckObservationValuesWithBackfill) {
   auto start_day_index = CurrentDayIndex();
@@ -2850,10 +2915,10 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
   }
 }
 
-// Tests that the expected Observations are generated for PerDeviceNumericStats
-// reports when events are logged for over multiple days for an EVENT_COUNT
-// metric with a PER_DEVICE_NUMERIC_STATS report, when Observations are
-// backfilled for some days during that period, and when the
+// Tests that the expected Observations are generated for
+// PerDeviceNumericStats reports when events are logged for over multiple days
+// for an EVENT_COUNT metric with a PER_DEVICE_NUMERIC_STATS report, when
+// Observations are backfilled for some days during that period, and when the
 // LocalAggregatedStore is garbage-collected after each call to
 // GenerateObservations().
 //
@@ -3002,15 +3067,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
   }
 }
 
-// Tests that the expected Observations are generated for PerDeviceNumericStats
-// reports when events are logged for over multiple days for an ELAPSED_TIME
-// metric with a PER_DEVICE_NUMERIC_STATS report, when Observations are
-// backfilled for some days during that period, and when the
-// LocalAggregatedStore is garbage-collected after each call to
-// GenerateObservations().
+// Tests that the expected Observations are generated for
+// PerDeviceNumericStats reports when events are logged for over multiple days
+// for an ELAPSED_TIME metric with PER_DEVICE_NUMERIC_STATS reports with
+// multiple aggregation types, when Observations are backfilled for some days
+// during that period, and when the LocalAggregatedStore is garbage-collected
+// after each call to GenerateObservations().
 //
-// Logged events for the StreamingTime_PerDeviceTotal metric on the i-th
-// day:
+// Logged events for the StreamingTime_PerDevice{Total, Min, Max} reports on the
+// i-th day:
 //
 //  i            (component, event code, count)
 // -----------------------------------------------------------------------
@@ -3025,7 +3090,7 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
 //  8          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
 //
 // Expected PerDeviceNumericObservations for the
-// SettingsChanged_PerDeviceNumeric report on the i-th day:
+// StreamingTime_PerDeviceTotal report on the i-th day:
 //
 // (day, window size)            (event code, component, total)
 // ---------------------------------------------------------------------------
@@ -3048,13 +3113,67 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
 // (8, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2), ("B", 2, 2)
 // (8, 7)     ("A", 1, 21), ("A", 2, 12), ("B", 1, 8), ("B", 2, 4)
 //
-// In addition, expect 1 ReportParticipationObservation each day for each report
-// in the registry.
+// Expected PerDeviceNumericObservations for the
+// StreamingTime_PerDeviceMin report on the i-th day:
+//
+// (day, window size)            (event code, component, total)
+// ---------------------------------------------------------------------------
+// (0, 1)
+// (0. 7)
+// (1, 1)     ("A", 1, 3)
+// (1, 7)     ("A", 1, 3)
+// (2, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (2, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (3, 1)     ("A", 1, 3)
+// (3, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (4, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (4, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (5, 1)     ("A", 1, 3)
+// (5, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (6, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (6, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (7, 1)     ("A", 1, 3)
+// (7, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//
+// Expected PerDeviceNumericObservations for the
+// StreamingTime_PerDeviceMax report on the i-th day:
+//
+// (day, window size)            (event code, component, total)
+// ---------------------------------------------------------------------------
+// (0, 1)
+// (0. 7)
+// (1, 1)     ("A", 1, 3)
+// (1, 7)     ("A", 1, 3)
+// (2, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (2, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (3, 1)     ("A", 1, 3)
+// (3, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (4, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (4, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (5, 1)     ("A", 1, 3)
+// (5, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (6, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (6, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (7, 1)     ("A", 1, 3)
+// (7, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//
+// In addition, expect 1 ReportParticipationObservation each day for each
+// report in the registry.
 TEST_F(PerDeviceNumericEventAggregatorTest,
        ElapsedTimeCheckObservationValuesWithBackfillAndGc) {
   auto start_day_index = CurrentDayIndex();
-  const auto& expected_id =
-      testing::per_device_numeric_stats::kStreamingTimeMetricReportId;
+  const auto& total_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId;
+  const auto& min_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId;
+  const auto& max_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId;
+  std::vector<MetricReportId> streaming_time_ids = {
+      total_report_id, min_report_id, max_report_id};
   const auto& expected_params =
       testing::per_device_numeric_stats::kExpectedAggregationParams;
   // Set |backfill_days_| to 3.
@@ -3067,15 +3186,18 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
     auto day_index = CurrentDayIndex();
     ResetObservationStore();
     for (uint32_t event_code = 1; event_code < 3; event_code++) {
-      if (offset > 0 && (offset % event_code == 0)) {
-        EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(expected_id, day_index, "A",
-                                                    event_code, 3));
-      }
-      if (offset > 0 && offset % (2 * event_code) == 0) {
-        EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(expected_id, day_index, "B",
-                                                    event_code, 2));
+      for (const auto& report_id : streaming_time_ids) {
+        if (offset > 0 && (offset % event_code == 0)) {
+          EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(report_id, day_index, "A",
+                                                      event_code, 3));
+        }
+        if (offset > 0 && offset % (2 * event_code) == 0) {
+          EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(report_id, day_index, "B",
+                                                      event_code, 2));
+        }
       }
     }
+
     // Advance |mock_clock_| by 1 day.
     AdvanceClock(kDay);
     if (offset < 6 || offset == 8) {
@@ -3104,7 +3226,11 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 1: {
-        expected_per_device_numeric_obs[{expected_id, day_index}] = {
+        expected_per_device_numeric_obs[{total_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
+        expected_per_device_numeric_obs[{min_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
+        expected_per_device_numeric_obs[{max_report_id, day_index}] = {
             {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
         expected_report_participation_obs =
             MakeExpectedReportParticipationObservations(expected_params,
@@ -3116,9 +3242,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 2: {
-        expected_per_device_numeric_obs[{expected_id, day_index}] = {
+        expected_per_device_numeric_obs[{total_report_id, day_index}] = {
             {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
             MakeExpectedReportParticipationObservations(expected_params,
                                                         day_index);
@@ -3128,9 +3260,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 3: {
-        expected_per_device_numeric_obs[{expected_id, day_index}] = {
+        expected_per_device_numeric_obs[{total_report_id, day_index}] = {
             {1, {{"A", 1u, 3}}},
             {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
         expected_report_participation_obs =
             MakeExpectedReportParticipationObservations(expected_params,
                                                         day_index);
@@ -3140,9 +3278,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 4: {
-        expected_per_device_numeric_obs[{expected_id, day_index}] = {
+        expected_per_device_numeric_obs[{total_report_id, day_index}] = {
             {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
             {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
             MakeExpectedReportParticipationObservations(expected_params,
                                                         day_index);
@@ -3152,9 +3296,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 5: {
-        expected_per_device_numeric_obs[{expected_id, day_index}] = {
+        expected_per_device_numeric_obs[{total_report_id, day_index}] = {
             {1, {{"A", 1u, 3}}},
             {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, day_index}] = {
+            {1, {{"A", 1u, 3}}},
+            {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
         expected_report_participation_obs =
             MakeExpectedReportParticipationObservations(expected_params,
                                                         day_index);
@@ -3164,15 +3314,39 @@ TEST_F(PerDeviceNumericEventAggregatorTest,
         break;
       }
       case 8: {
-        expected_per_device_numeric_obs[{expected_id, start_day_index + 6}] = {
+        expected_per_device_numeric_obs[{total_report_id,
+                                         start_day_index + 6}] = {
             {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
             {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_numeric_obs[{expected_id, start_day_index + 7}] = {
+        expected_per_device_numeric_obs[{total_report_id,
+                                         start_day_index + 7}] = {
             {1, {{"A", 1u, 3}}},
             {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-        expected_per_device_numeric_obs[{expected_id, start_day_index + 8}] = {
+        expected_per_device_numeric_obs[{total_report_id,
+                                         start_day_index + 8}] = {
             {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
             {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
+
+        expected_per_device_numeric_obs[{min_report_id, start_day_index + 6}] =
+            {{1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, start_day_index + 7}] =
+            {{1, {{"A", 1u, 3}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{min_report_id, start_day_index + 8}] =
+            {{1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+
+        expected_per_device_numeric_obs[{max_report_id, start_day_index + 6}] =
+            {{1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, start_day_index + 7}] =
+            {{1, {{"A", 1u, 3}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+        expected_per_device_numeric_obs[{max_report_id, start_day_index + 8}] =
+            {{1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+             {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+
         for (uint32_t day_index = start_day_index + 6;
              day_index <= start_day_index + 8; day_index++) {
           for (const auto& pair : MakeExpectedReportParticipationObservations(

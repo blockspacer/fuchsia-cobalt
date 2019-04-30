@@ -42,23 +42,30 @@ const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
 const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
-const MetricReportId kStreamingTimeMetricReportId = MetricReportId(
+const MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
     kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
+const MetricReportId kStreamingTimeMinMetricReportId =
+    MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
+const MetricReportId kStreamingTimeMaxMetricReportId =
+    MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    30,
+    32,
 
     {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
      kEventsOccurredMetricReportId, kSettingsChangedMetricReportId,
-     kConnectionFailuresMetricReportId, kStreamingTimeMetricReportId},
+     kConnectionFailuresMetricReportId, kStreamingTimeTotalMetricReportId,
+     kStreamingTimeMinMetricReportId, kStreamingTimeMaxMetricReportId},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 15},
      {kEventsOccurredMetricReportId, 10},
      {kSettingsChangedMetricReportId, 1},
      {kConnectionFailuresMetricReportId, 1},
-     {kStreamingTimeMetricReportId, 1}},
+     {kStreamingTimeTotalMetricReportId, 1},
+     {kStreamingTimeMinMetricReportId, 1},
+     {kStreamingTimeMaxMetricReportId, 1}},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 5},
@@ -69,7 +76,9 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
      {kEventsOccurredMetricReportId, {1, 7}},
      {kSettingsChangedMetricReportId, {7, 30}},
      {kConnectionFailuresMetricReportId, {1}},
-     {kStreamingTimeMetricReportId, {1, 7}}}};
+     {kStreamingTimeTotalMetricReportId, {1, 7}},
+     {kStreamingTimeMinMetricReportId, {1, 7}},
+     {kStreamingTimeMaxMetricReportId, {1, 7}}}};
 
 }  // namespace all_report_types
 
@@ -106,25 +115,34 @@ const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
 const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
-const MetricReportId kStreamingTimeMetricReportId = MetricReportId(
+const MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
     kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
+const MetricReportId kStreamingTimeMinMetricReportId =
+    MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
+const MetricReportId kStreamingTimeMaxMetricReportId =
+    MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    3,
+    5,
 
     {kSettingsChangedMetricReportId, kConnectionFailuresMetricReportId,
-     kStreamingTimeMetricReportId},
+     kStreamingTimeTotalMetricReportId, kStreamingTimeMinMetricReportId,
+     kStreamingTimeMaxMetricReportId},
 
     {{kSettingsChangedMetricReportId, 1},
      {kConnectionFailuresMetricReportId, 1},
-     {kStreamingTimeMetricReportId, 1}},
+     {kStreamingTimeTotalMetricReportId, 1},
+     {kStreamingTimeMinMetricReportId, 1},
+     {kStreamingTimeMaxMetricReportId, 1}},
 
     {},
 
     {{kSettingsChangedMetricReportId, {7, 30}},
      {kConnectionFailuresMetricReportId, {1}},
-     {kStreamingTimeMetricReportId, {1, 7}}}};
+     {kStreamingTimeTotalMetricReportId, {1, 7}},
+     {kStreamingTimeMinMetricReportId, {1, 7}},
+     {kStreamingTimeMaxMetricReportId, {1, 7}}}};
 
 }  // namespace per_device_numeric_stats
 

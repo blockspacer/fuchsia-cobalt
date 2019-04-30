@@ -1066,13 +1066,12 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
 }
 
 // Tests that the expected Observations are generated when events are logged for
-// over multiple days for an ELAPSED_TIME metric with a PER_DEVICE_NUMERIC_STATS
-// report, when Observations are backfilled for some days during that period,
-// and when the LocalAggregatedStore is garbage-collected after each call to
-// GenerateObservations().
+// over multiple days for an ELAPSED_TIME metric with PER_DEVICE_NUMERIC_STATS
+// reports with multiple aggregation types, when Observations are backfilled for
+// some days during that period, and when the LocalAggregatedStore is
+// garbage-collected after each call to GenerateObservations().
 //
-// Logged events for the StreamingTime_PerDeviceTotal metric on the i-th
-// day:
+// Logged events for the StreamingTime metric on the i-th day:
 //
 //  i            (component, event code, count)
 // -----------------------------------------------------------------------
@@ -1087,7 +1086,7 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
 //  8          ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
 //
 // Expected PerDeviceNumericObservations for the
-// SettingsChanged_PerDeviceNumeric report on the i-th day:
+// StreamingTime_PerDeviceTotal report on the i-th day:
 //
 // (day, window size)            (event code, component, total)
 // ---------------------------------------------------------------------------
@@ -1110,12 +1109,65 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
 // (8, 1)     ("A", 1,  3), ("A", 2,  3), ("B", 1, 2), ("B", 2, 2)
 // (8, 7)     ("A", 1, 21), ("A", 2, 12), ("B", 1, 8), ("B", 2, 4)
 //
-// In addition, expect 1 ReportParticipationObservation each day for each report
-// in the registry.
+//
+// Expected PerDeviceNumericObservations for the
+// StreamingTime_PerDeviceMin report on the i-th day:
+//
+// (day, window size)            (event code, component, total)
+// ---------------------------------------------------------------------------
+// (0, 1)
+// (0. 7)
+// (1, 1)     ("A", 1, 3)
+// (1, 7)     ("A", 1, 3)
+// (2, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (2, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (3, 1)     ("A", 1, 3)
+// (3, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (4, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (4, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (5, 1)     ("A", 1, 3)
+// (5, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (6, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (6, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (7, 1)     ("A", 1, 3)
+// (7, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//
+// Expected PerDeviceNumericObservations for the
+// StreamingTime_PerDeviceMax report on the i-th day:
+//
+// (day, window size)            (event code, component, total)
+// ---------------------------------------------------------------------------
+// (0, 1)
+// (0. 7)
+// (1, 1)     ("A", 1, 3)
+// (1, 7)     ("A", 1, 3)
+// (2, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (2, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (3, 1)     ("A", 1, 3)
+// (3, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (4, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (4, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (5, 1)     ("A", 1, 3)
+// (5, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (6, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2)
+// (6, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (7, 1)     ("A", 1, 3)
+// (7, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 1)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+// (8, 7)     ("A", 1, 3), ("A", 2, 3), ("B", 1, 2), ("B", 2, 2)
+//
+// In addition, expect 1 ReportParticipationObservation each day for each
+// report in the registry.
 TEST_F(PerDeviceNumericLoggerTest, ElapsedTimeCheckObservationValues) {
   const auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
-  const auto& expected_id =
-      testing::per_device_numeric_stats::kStreamingTimeMetricReportId;
+  const auto& total_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId;
+  const auto& min_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId;
+  const auto& max_report_id =
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId;
   // Form expected Observations for the 9 days of logging.
   uint32_t num_days = 9;
   std::vector<ExpectedPerDeviceNumericObservations>
@@ -1129,28 +1181,77 @@ TEST_F(PerDeviceNumericLoggerTest, ElapsedTimeCheckObservationValues) {
             expected_aggregation_params_, start_day_index + offset);
   }
   expected_per_device_numeric_obs[0] = {};
-  expected_per_device_numeric_obs[1][{expected_id, start_day_index + 1}] = {
+  expected_per_device_numeric_obs[1][{total_report_id, start_day_index + 1}] = {
       {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
-  expected_per_device_numeric_obs[2][{expected_id, start_day_index + 2}] = {
+  expected_per_device_numeric_obs[2][{total_report_id, start_day_index + 2}] = {
       {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_numeric_obs[3][{expected_id, start_day_index + 3}] = {
+  expected_per_device_numeric_obs[3][{total_report_id, start_day_index + 3}] = {
       {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_numeric_obs[4][{expected_id, start_day_index + 4}] = {
+  expected_per_device_numeric_obs[4][{total_report_id, start_day_index + 4}] = {
       {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
       {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[5][{expected_id, start_day_index + 5}] = {
+  expected_per_device_numeric_obs[5][{total_report_id, start_day_index + 5}] = {
       {1, {{"A", 1u, 3}}},
       {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[6][{expected_id, start_day_index + 6}] = {
+  expected_per_device_numeric_obs[6][{total_report_id, start_day_index + 6}] = {
       {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
       {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[7][{expected_id, start_day_index + 7}] = {
+  expected_per_device_numeric_obs[7][{total_report_id, start_day_index + 7}] = {
       {1, {{"A", 1u, 3}}},
       {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[8][{expected_id, start_day_index + 8}] = {
+  expected_per_device_numeric_obs[8][{total_report_id, start_day_index + 8}] = {
       {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
       {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
+
+  expected_per_device_numeric_obs[1][{min_report_id, start_day_index + 1}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
+  expected_per_device_numeric_obs[2][{min_report_id, start_day_index + 2}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[3][{min_report_id, start_day_index + 3}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[4][{min_report_id, start_day_index + 4}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[5][{min_report_id, start_day_index + 5}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[6][{min_report_id, start_day_index + 6}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[7][{min_report_id, start_day_index + 7}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[8][{min_report_id, start_day_index + 8}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+
+  expected_per_device_numeric_obs[8][{max_report_id, start_day_index + 8}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[1][{max_report_id, start_day_index + 1}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}}}};
+  expected_per_device_numeric_obs[2][{max_report_id, start_day_index + 2}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[3][{max_report_id, start_day_index + 3}] = {
+      {1, {{"A", 1u, 3}}}, {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+  expected_per_device_numeric_obs[4][{max_report_id, start_day_index + 4}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[5][{max_report_id, start_day_index + 5}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[6][{max_report_id, start_day_index + 6}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[7][{max_report_id, start_day_index + 7}] = {
+      {1, {{"A", 1u, 3}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
+  expected_per_device_numeric_obs[8][{max_report_id, start_day_index + 8}] = {
+      {1, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}},
+      {7, {{"A", 1u, 3}, {"A", 2u, 3}, {"B", 1u, 2}, {"B", 2u, 2}}}};
 
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex(MetricDefinition::UTC);

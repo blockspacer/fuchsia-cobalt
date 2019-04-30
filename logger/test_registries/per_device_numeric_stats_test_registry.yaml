@@ -44,6 +44,7 @@ metric_definitions:
     # Report ID: 1059892875
     - report_name: "ConnectionFailures_PerDeviceCount"
       report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: SUM
       window_size:
         - 1
 
@@ -59,6 +60,22 @@ metric_definitions:
     # Report ID: 2917574296
     - report_name: "StreamingTime_PerDeviceTotal"
       report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: SUM
       window_size:
         - 1
         - 7
+    # Report ID: 1177128518
+    - report_name: "StreamingTime_PerDeviceMin"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MIN
+      window_size:
+        - 1
+        - 7
+    # Report ID: 1042907624
+    - report_name: "StreamingTime_PerDeviceMax"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MAX
+      window_size:
+        - 1
+        - 7
+

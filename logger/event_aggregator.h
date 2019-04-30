@@ -317,9 +317,10 @@ class EventAggregator {
   // size) for which a numeric event was logged for that event code and
   // component during the window of that size ending on |final_day_index|,
   // unless an Observation with those parameters has been generated in the past.
-  // The value of the Observation is the sum of all numeric events logged for
-  // that report during the window. Also generates PerDeviceNumericObservations
-  // for days in the backfill period if needed.
+  // The value of the Observation is the sum, max, or min (depending on the
+  // aggregation_type field of the report definition) of all numeric events
+  // logged for that report during the window. Also generates
+  // PerDeviceNumericObservations for days in the backfill period if needed.
   //
   // In addition to PerDeviceNumericObservations, generates a
   // ReportParticipationObservation for |final_day_index| and any needed days in

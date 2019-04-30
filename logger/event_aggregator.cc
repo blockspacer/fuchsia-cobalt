@@ -352,13 +352,34 @@ Status EventAggregator::LogNumericEvent(const std::string& report_key,
                   "compatible type.";
     return kInvalidArguments;
   }
-  auto daily_aggregate = (*(*(*aggregates->second.mutable_numeric_aggregates()
+  auto aggregates_by_day = (*(*aggregates->second.mutable_numeric_aggregates()
                                    ->mutable_by_component())[component]
                                  .mutable_by_event_code())[event_code]
-                               .mutable_by_day_index())[day_index]
-                             .mutable_numeric_daily_aggregate();
-  daily_aggregate->set_sum(daily_aggregate->sum() + value);
-  return kOK;
+                               .mutable_by_day_index();
+  bool first_event_today =
+      ((*aggregates_by_day).find(day_index) == aggregates_by_day->end());
+  auto day_aggregate =
+      (*aggregates_by_day)[day_index].mutable_numeric_daily_aggregate();
+  const auto& aggregation_type =
+      aggregates->second.aggregation_config().report().aggregation_type();
+  switch (aggregation_type) {
+    case ReportDefinition::SUM:
+      day_aggregate->set_value(value + day_aggregate->value());
+      return kOK;
+    case ReportDefinition::MAX:
+      day_aggregate->set_value(std::max(value, day_aggregate->value()));
+      return kOK;
+    case ReportDefinition::MIN:
+      if (first_event_today) {
+        day_aggregate->set_value(value);
+      } else {
+        day_aggregate->set_value(std::min(value, day_aggregate->value()));
+      }
+      return kOK;
+    default:
+      LOG(ERROR) << "Unexpected aggregation type " << aggregation_type;
+      return kInvalidArguments;
+  }
 }
 
 Status EventAggregator::GenerateObservationsNoWorker(
@@ -884,10 +905,10 @@ uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
 Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     const MetricRef metric_ref, const ReportDefinition* report,
     uint32_t obs_day_index, const std::string& component, uint32_t event_code,
-    uint32_t window_size, int64_t sum) const {
+    uint32_t window_size, int64_t value) const {
   auto encoder_result = encoder_->EncodePerDeviceNumericObservation(
       metric_ref, report, obs_day_index, component,
-      UnpackEventCodesProto(event_code), sum, window_size);
+      UnpackEventCodesProto(event_code), value, window_size);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -960,36 +981,75 @@ Status EventAggregator::GeneratePerDeviceNumericObservations(
       // to generate an Observation. For each day index, generate an
       // Observation for each needed window size.
       //
-      // More precisely, for each needed window size, compute the sum over
-      // the window and generate a PerDeviceNumericObservation only if the sum
-      // is nonzero. Whether or not the sum was zero, update the
-      // AggregatedObservationHistory for this report, component, event code,
-      // and window size with |obs_day_index| as the most recent date of
-      // Observation generation. This reflects the fact that the sum was
-      // computed for the window ending on that date, even though an
-      // Observation is only sent if the sum is nonzero.
+      // More precisely, for each needed window size, iterate over the days
+      // within that window. If at least one numeric event was logged during the
+      // window, compute the aggregate of the numeric values over the window and
+      // generate a PerDeviceNumericObservation. Whether or not a numeric event
+      // was found, update the AggregatedObservationHistory for this report,
+      // component, event code, and window size with |obs_day_index| as the most
+      // recent date of Observation generation. This reflects the fact that all
+      // needed Observations were generated for the window ending on that date.
       for (auto obs_day_index = backfill_period_start;
            obs_day_index <= final_day_index; obs_day_index++) {
         const auto& window_sizes = window_sizes_by_obs_day.find(obs_day_index);
         if (window_sizes == window_sizes_by_obs_day.end()) {
           continue;
         }
-        int64_t sum = 0;
+        bool found_value_for_window = false;
+        int64_t window_aggregate = 0;
         uint32_t num_days = 0;
         for (auto window_size : window_sizes->second) {
           while (num_days < window_size) {
+            bool found_value_for_day = false;
             const auto& day_aggregates =
                 event_code_aggregates.by_day_index().find(obs_day_index -
                                                           num_days);
             if (day_aggregates != event_code_aggregates.by_day_index().end()) {
-              sum += day_aggregates->second.numeric_daily_aggregate().sum();
+              found_value_for_day = true;
+            }
+            const auto& aggregation_type =
+                report_aggregates.aggregation_config()
+                    .report()
+                    .aggregation_type();
+            switch (aggregation_type) {
+              case ReportDefinition::SUM:
+                if (found_value_for_day) {
+                  window_aggregate +=
+                      day_aggregates->second.numeric_daily_aggregate().value();
+                  found_value_for_window = true;
+                }
+                break;
+              case ReportDefinition::MAX:
+                if (found_value_for_day) {
+                  window_aggregate = std::max(
+                      window_aggregate,
+                      day_aggregates->second.numeric_daily_aggregate().value());
+                  found_value_for_window = true;
+                }
+                break;
+              case ReportDefinition::MIN:
+                if (found_value_for_day && !found_value_for_window) {
+                  window_aggregate =
+                      day_aggregates->second.numeric_daily_aggregate().value();
+                  found_value_for_window = true;
+                } else if (found_value_for_day) {
+                  window_aggregate = std::min(
+                      window_aggregate,
+                      day_aggregates->second.numeric_daily_aggregate().value());
+                }
+                break;
+              default:
+                LOG(ERROR) << "Unexpected aggregation type "
+                           << aggregation_type;
+                return kInvalidArguments;
             }
             num_days++;
           }
-          if (sum != 0) {
+          if (found_value_for_window) {
             auto status = GenerateSinglePerDeviceNumericObservation(
                 metric_ref, &report_aggregates.aggregation_config().report(),
-                obs_day_index, component, event_code, window_size, sum);
+                obs_day_index, component, event_code, window_size,
+                window_aggregate);
             if (status != kOK) {
               return status;
             }
