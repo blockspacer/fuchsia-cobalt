@@ -131,7 +131,6 @@ metric_definitions:
         1: AnotherEvent
         2: A third event
       max_event_code: 200
-      also_treat_as_legacy: true
   reports:
   - report_name: the_report
     report_type: NUMERIC_PERF_RAW_DUMP
