@@ -20,15 +20,22 @@ uint32_t ReadVersion(uint64_t packed_event_codes) {
 std::vector<uint32_t> UnpackEventCodes(uint64_t packed_event_codes) {
   std::vector<uint32_t> event_codes;
 
-  if (ReadVersion(packed_event_codes) != 0) {
-    return ((std::vector<uint32_t>){0, 0, 0, 0, 0});
+  switch (ReadVersion(packed_event_codes)) {
+    case 0:
+      for (int i = 0; i < 5; i++) {
+        event_codes.push_back(
+            (packed_event_codes & (kEventCodeMask << (10 * i))) >> (10 * i));
+      }
+      return event_codes;
+    case 1:
+      for (int i = 0; i < 4; i++) {
+        event_codes.push_back(
+            (packed_event_codes & (kV1EventCodeMask << (15 * i))) >> (15 * i));
+      }
+      return event_codes;
+    default:
+      return ((std::vector<uint32_t>){0, 0, 0, 0, 0});
   }
-
-  for (int i = 0; i < 5; i++) {
-    event_codes.push_back((packed_event_codes & (kEventCodeMask << (10 * i))) >>
-                          (10 * i));
-  }
-  return event_codes;
 }
 
 }  // namespace config

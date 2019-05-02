@@ -123,6 +123,7 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 		// A metric definition is allowed to not have any metric dimensions.
 		return nil
 	}
+
 	if len(m.MetricDimensions) > 5 {
 		return fmt.Errorf("there can be at most 5 dimensions in metric_dimensions")
 	}
@@ -152,6 +153,14 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 			}
 			numOptions *= int(md.MaxEventCode + 1)
 		} else {
+			for j, _ := range md.EventCodes {
+				if j >= 1024 && len(m.MetricDimensions) > 4 {
+					return fmt.Errorf("event index %v in metric_dimension %v is greater than 1023, which means that this metric cannot support more than 4 metric_dimensions", j, name)
+				}
+				if j >= 32768 {
+					return fmt.Errorf("event index %v in metric_dimension %v is is too large (greater than 32,767)", j, name)
+				}
+			}
 			numOptions *= len(md.EventCodes)
 		}
 	}

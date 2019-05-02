@@ -44,14 +44,20 @@ TEST(PackEventCodes, IgnoresExtraElements) {
 }
 
 TEST(PackEventCodes, DoesNotOverflow) {
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){1025}), 1u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 1025}), 0b10000000000u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 1025}),
-            0b100000000000000000000u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 0, 1025}),
-            0b1000000000000000000000000000000u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 0, 0, 1025}),
-            0b10000000000000000000000000000000000000000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){32769}),
+            0x1000000000000001u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 32769}),
+            0x1000000000008000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 32769}),
+            0x1000000040000000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 0, 32769}),
+            0x1000200000000000u);
+}
+
+TEST(PackEventCodes, UpgradesToV1) {
+  ASSERT_EQ(PackEventCodes(std::vector<uint32_t>{1023}), 1023u);
+  // Sets version field and encodes using 15 bits.
+  ASSERT_EQ(PackEventCodes(std::vector<uint32_t>{1024}), 0x1000000000000400u);
 }
 
 TEST(UnpackEventCodes, AcceptsNullEventCodes) {
@@ -74,19 +80,34 @@ TEST(UnpackEventCodes, UnpacksFiveElements) {
       }));
 }
 
+TEST(UnpackEventCodes, UnpacksFourV1Elements) {
+  ASSERT_EQ(
+      UnpackEventCodes(
+          0b1101101010010101101011111010110110111101111100111001111100000u),
+      ((std::vector<uint32_t>){
+          0b111001111100000u,
+          0b110111101111100u,
+          0b101011111010110u,
+          0b101101010010101u,
+      }));
+}
+
 TEST(UnpackEventCodes, ReturnsZeroesOnUnknownVersion) {
   ASSERT_EQ(
-      // This packed_event_codes has a version of 1, which we don't know how to
+      // This packed_event_codes has a version of 2, which we don't know how to
       // decode.
-      UnpackEventCodes(0x100ABCDEF1234567),
+      UnpackEventCodes(0x200ABCDEF1234567),
       ((std::vector<uint32_t>){0, 0, 0, 0, 0}));
 }
 
 TEST(BackAndForth, PackUnpackIsStable) {
   std::vector<std::vector<uint32_t>> tests = {
-      {0, 0, 0, 0, 0},       {100, 0, 0, 0, 0},       {100, 200, 0, 0, 0},
-      {100, 200, 300, 0, 0}, {100, 200, 300, 400, 0}, {100, 200, 300, 400, 500},
-  };
+      {0, 0, 0, 0, 0},          {100, 0, 0, 0, 0},
+      {100, 200, 0, 0, 0},      {100, 200, 300, 0, 0},
+      {100, 200, 300, 400, 0},  {100, 200, 300, 400, 500},
+      {1023, 0, 0, 0, 0},       {1024, 0, 0, 0},
+      {1024, 3005, 0, 0},       {1024, 3005, 4010, 0},
+      {1024, 3005, 4010, 30000}};
 
   for (auto test : tests) {
     ASSERT_EQ(UnpackEventCodes(PackEventCodes(test)), test);
