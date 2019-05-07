@@ -48,15 +48,8 @@ ShufflerClient::ShufflerClient(const std::string& uri, bool use_tls,
 
 grpc::Status ShufflerClient::SendToShuffler(
     const EncryptedMessage& encrypted_message, grpc::ClientContext* context) {
-  std::unique_ptr<grpc::ClientContext> temp_context;
-  if (context == nullptr) {
-    temp_context.reset(new grpc::ClientContext());
-    context = temp_context.get();
-  }
-  shuffler::ShufflerResponse resp;
-  // TODO(rudominer): Re-enable when can be confirmed to work with endpoints.
-  // context->set_idempotent(true);
-  return shuffler_stub_->Process(context, encrypted_message, &resp);
+  // Cobalt v0.1 is diabled.
+  return grpc::Status::OK;
 }
 
 }  // namespace encoder

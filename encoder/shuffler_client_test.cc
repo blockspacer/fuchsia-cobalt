@@ -26,9 +26,9 @@
 namespace cobalt {
 namespace encoder {
 
-class ShufflerClientTest : public ::testing::Test {
+class DISABLED_ShufflerClientTest : public ::testing::Test {
  public:
-  ShufflerClientTest() {}
+  DISABLED_ShufflerClientTest() {}
 
  protected:
 };
@@ -37,7 +37,7 @@ class ShufflerClientTest : public ::testing::Test {
 // can test in the unit test environment--since ShufflerClient is a thin wrapper
 // around gRPC there is no sensible place to insert a mock. ShufflerClient is
 // thouroughly tested by our integration tests.
-TEST_F(ShufflerClientTest, SmokeTest) {
+TEST_F(DISABLED_ShufflerClientTest, SmokeTest) {
   static const std::string kUri = "www.not.really.a.uri";
   static const EncryptedMessage encrypted_message;
 

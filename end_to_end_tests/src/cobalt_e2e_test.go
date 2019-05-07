@@ -769,6 +769,7 @@ func getCSVReport(reportConfigId uint32, includeStdErr bool, t *testing.T) strin
 // Report Config 1. This uses Forculus with a threshold of 20 to count
 // URLs.
 func TestForculusEncodingOfUrls(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestForculusEncodingOfUrls")
 	// We send some observations to the Shuffler.
 	sendForculusUrlObservations("www.AAAA.com", 18, 1, t)
@@ -831,6 +832,7 @@ www.FFFF.com,CobaltE2EBoardName2,36.000
 // Report Config 2. This uses Basic RAPPOR with integer categories for the
 // 24 hours of the day.
 func TestBasicRapporEncodingOfHours(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestBasicRapporEncodingOfHours")
 	sendBasicRapporHourObservations(8, 501, 1, t)
 	sendBasicRapporHourObservations(9, 1002, 1, t)
@@ -905,6 +907,7 @@ func TestBasicRapporEncodingOfHours(t *testing.T) {
 // which some of the indices have been associated with labels in the
 // report config.
 func TestBasicRapporEncodingOfEvents(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestBasicRapporEncodingOfEvents")
 	// Send observations for indices 0 through 29.
 	for index := 0; index < 30; index++ {
@@ -976,6 +979,7 @@ func TestBasicRapporEncodingOfEvents(t *testing.T) {
 // We run the full Cobalt pipeline using Metric 5, Encoding Config 6 and
 // Report Config 5. This uses the NoOp encoding with module names as strings.
 func TestUnencodedModules(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestUnencodedModules")
 	// We send some observations to the Shuffler.
 	// Note that the third parameter below is repeatCount meaning that we
@@ -1014,6 +1018,7 @@ Module F,69.000
 // Report Config 6. This uses the NoOp encoding. Indices 0, 1 and 25 have
 // been given labels in the report config.
 func TestUnencodedDeviceIndexes(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestUnencodedDeviceIndexes")
 	// Send observations for indices 0 through 29.
 	for index := 0; index < 30; index++ {
@@ -1085,6 +1090,7 @@ func TestUnencodedDeviceIndexes(t *testing.T) {
 // keyword prompts the creation of modules of the form "Module_XXXXX"
 // where XXXXX is a zero-padded number).
 func TestStringRapporEncodingOfModules(t *testing.T) {
+	t.Skip("Skipping e2e tests for Cobalt 0.1.")
 	fmt.Println("TestStringRapporEncodingOfModules")
 	// Send observations for selected modules.
 	sendStringRapporModuleObservations("Module_00201", 300, 1, t)
