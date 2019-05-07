@@ -79,3 +79,48 @@ metric_definitions:
         - 1
         - 7
 
+- id: 4
+  metric_name: "LoginModuleFrameRate"
+  metric_type: FRAME_RATE
+  metric_dimensions:
+    - dimension: status
+      event_codes:
+        0: Success
+        1: ErrorCode1
+        2: ErrorCode2
+  reports:
+    # Report ID: 1444372300
+    - report_name: "LoginModuleFrameRate_Aggregated"
+      report_type: NUMERIC_AGGREGATION
+    # Report ID: 63534081
+    - report_name: "LoginModuleFrameRate_PerDeviceMin"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MIN
+      window_size:
+        - 1
+        - 7
+
+- id: 5
+  metric_name: "LedgerMemoryUsage"
+  metric_type: MEMORY_USAGE
+  metric_dimensions:
+    - dimension: status
+      event_codes:
+        0: Success
+        1: ErrorCode1
+        2: ErrorCode2
+    - dimension: action
+      event_codes:
+        0: Action0
+        1: Action1
+  reports:
+    # Report ID: 4291656504
+    - report_name: "LedgerMemoryUsage_Aggregated"
+      report_type: NUMERIC_AGGREGATION
+    # Report ID: 3379988036
+    - report_name: "LedgerMemoryUsage_PerDeviceMax"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MAX
+      window_size:
+        - 1
+        - 7

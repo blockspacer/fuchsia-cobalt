@@ -48,15 +48,21 @@ const MetricReportId kStreamingTimeMinMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
 const MetricReportId kStreamingTimeMaxMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
+const MetricReportId kLoginModuleFrameRateMinMetricReportId = MetricReportId(
+    kLoginModuleFrameRateMetricId, kLoginModuleFrameRatePerDeviceMinReportId);
+const MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
+    kLedgerMemoryUsageMetricId, kLedgerMemoryUsagePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    32,
+    34,
 
     {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
      kEventsOccurredMetricReportId, kSettingsChangedMetricReportId,
      kConnectionFailuresMetricReportId, kStreamingTimeTotalMetricReportId,
-     kStreamingTimeMinMetricReportId, kStreamingTimeMaxMetricReportId},
+     kStreamingTimeMinMetricReportId, kStreamingTimeMaxMetricReportId,
+     kLoginModuleFrameRateMinMetricReportId,
+     kLedgerMemoryUsageMaxMetricReportId},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 15},
@@ -65,7 +71,9 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
      {kConnectionFailuresMetricReportId, 1},
      {kStreamingTimeTotalMetricReportId, 1},
      {kStreamingTimeMinMetricReportId, 1},
-     {kStreamingTimeMaxMetricReportId, 1}},
+     {kStreamingTimeMaxMetricReportId, 1},
+     {kLoginModuleFrameRateMinMetricReportId, 1},
+     {kLedgerMemoryUsageMaxMetricReportId, 1}},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 5},
@@ -78,7 +86,9 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
      {kConnectionFailuresMetricReportId, {1}},
      {kStreamingTimeTotalMetricReportId, {1, 7}},
      {kStreamingTimeMinMetricReportId, {1, 7}},
-     {kStreamingTimeMaxMetricReportId, {1, 7}}}};
+     {kStreamingTimeMaxMetricReportId, {1, 7}},
+     {kLoginModuleFrameRateMinMetricReportId, {1, 7}},
+     {kLedgerMemoryUsageMaxMetricReportId, {1, 7}}}};
 
 }  // namespace all_report_types
 
@@ -121,20 +131,27 @@ const MetricReportId kStreamingTimeMinMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
 const MetricReportId kStreamingTimeMaxMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
+const MetricReportId kLoginModuleFrameRateMinMetricReportId = MetricReportId(
+    kLoginModuleFrameRateMetricId, kLoginModuleFrameRatePerDeviceMinReportId);
+const MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
+    kLedgerMemoryUsageMetricId, kLedgerMemoryUsagePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    5,
+    7,
 
     {kSettingsChangedMetricReportId, kConnectionFailuresMetricReportId,
      kStreamingTimeTotalMetricReportId, kStreamingTimeMinMetricReportId,
-     kStreamingTimeMaxMetricReportId},
+     kStreamingTimeMaxMetricReportId, kLoginModuleFrameRateMinMetricReportId,
+     kLedgerMemoryUsageMaxMetricReportId},
 
     {{kSettingsChangedMetricReportId, 1},
      {kConnectionFailuresMetricReportId, 1},
      {kStreamingTimeTotalMetricReportId, 1},
      {kStreamingTimeMinMetricReportId, 1},
-     {kStreamingTimeMaxMetricReportId, 1}},
+     {kStreamingTimeMaxMetricReportId, 1},
+     {kLoginModuleFrameRateMinMetricReportId, 1},
+     {kLedgerMemoryUsageMaxMetricReportId, 1}},
 
     {},
 
@@ -142,7 +159,9 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
      {kConnectionFailuresMetricReportId, {1}},
      {kStreamingTimeTotalMetricReportId, {1, 7}},
      {kStreamingTimeMinMetricReportId, {1, 7}},
-     {kStreamingTimeMaxMetricReportId, {1, 7}}}};
+     {kStreamingTimeMaxMetricReportId, {1, 7}},
+     {kLoginModuleFrameRateMinMetricReportId, {1, 7}},
+     {kLedgerMemoryUsageMaxMetricReportId, {1, 7}}}};
 
 }  // namespace per_device_numeric_stats
 

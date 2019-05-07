@@ -75,6 +75,13 @@ metric_definitions:
     # Report ID: 1067664280
     - report_name: "LoginModuleFrameRate_RawDump"
       report_type: NUMERIC_PERF_RAW_DUMP
+    # Report ID: 63534081
+    - report_name: "LoginModuleFrameRate_PerDeviceMin"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MIN
+      window_size:
+        - 1
+        - 7
 
 - id: 5
   metric_name: "LedgerMemoryUsage"
@@ -86,7 +93,7 @@ metric_definitions:
       event_codes:
         45: CODE45
       max_event_code: 100
-    # The second dimension does not max_event_code set
+    # The second dimension does not have max_event_code set
     - dimension: SecondDimension
       event_codes:
         46: CODE46
@@ -98,6 +105,12 @@ metric_definitions:
     # Report ID: 253462951
     - report_name: "LedgerMemoryUsage_Histogram"
       report_type: INT_RANGE_HISTOGRAM
+    - report_name: "LedgerMemoryUsage_PerDeviceMax"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_type: MAX
+      window_size:
+        - 1
+        - 7
 
 - id: 6
   metric_name: "FileSystemWriteTimes"

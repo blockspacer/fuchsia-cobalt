@@ -70,9 +70,11 @@ typedef std::map<std::pair<MetricReportId, uint32_t>,
 //
 // The outer map is keyed by pairs (MetricReportId, day_index), where the day
 // index represents the day index of the expected Observation.
+//
+// The values of the inner map are tuples (component, packed event code, value).
 typedef std::map<
     std::pair<MetricReportId, uint32_t>,
-    std::map<uint32_t, std::set<std::tuple<std::string, uint32_t, int64_t>>>>
+    std::map<uint32_t, std::set<std::tuple<std::string, uint64_t, int64_t>>>>
     ExpectedPerDeviceNumericObservations;
 
 // A representation of a set of expected ReportParticipationObservations. Used

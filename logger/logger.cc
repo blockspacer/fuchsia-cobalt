@@ -185,6 +185,8 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
+  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                     EventRecord* event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type MEMORY_USAGE.
@@ -199,6 +201,8 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
   std::string Component(const Event& event) override;
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
+  Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                     EventRecord* event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type INT_HISTOGRAM.
@@ -915,6 +919,17 @@ Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
       event_record.event->frame_rate_event().event_code());
 }
 
+Status FrameRateEventLogger::MaybeUpdateLocalAggregation(
+    const ReportDefinition& report, EventRecord* event_record) {
+  switch (report.report_type()) {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      return event_aggregator()->LogFrameRateEvent(report.id(), event_record);
+    }
+    default:
+      return kOK;
+  }
+}
+
 ////////////// MemoryUsageEventLogger method implementations
 //////////////////////
 const RepeatedField<uint32_t>& MemoryUsageEventLogger::EventCodes(
@@ -938,6 +953,17 @@ Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
   return ValidateEventCodes(
       *event_record.metric,
       event_record.event->memory_usage_event().event_code());
+}
+
+Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(
+    const ReportDefinition& report, EventRecord* event_record) {
+  switch (report.report_type()) {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      return event_aggregator()->LogMemoryUsageEvent(report.id(), event_record);
+    }
+    default:
+      return kOK;
+  }
 }
 
 /////////////// IntHistogramEventLogger method implementations

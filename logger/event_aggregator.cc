@@ -237,7 +237,9 @@ Status EventAggregator::UpdateAggregationConfigs(
         }
       }
       case MetricDefinition::EVENT_COUNT:
-      case MetricDefinition::ELAPSED_TIME: {
+      case MetricDefinition::ELAPSED_TIME:
+      case MetricDefinition::FRAME_RATE:
+      case MetricDefinition::MEMORY_USAGE: {
         for (const auto& report : metric.reports()) {
           switch (report.report_type()) {
             case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
@@ -297,8 +299,8 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id,
 
 Status EventAggregator::LogCountEvent(uint32_t report_id,
                                       EventRecord* event_record) {
-  if (!event_record->event->has_count_event()) {
-    LOG(ERROR) << "EventAggregator::LogCountEvent can only accept "
+  if (event_record->event->type_case() != Event::kCountEvent) {
+    LOG(ERROR) << "EventAggregator: LogCountEvent can only accept "
                   "CountEvents.";
     return kInvalidArguments;
   }
@@ -333,6 +335,48 @@ Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id,
       key, event_record->event->day_index(), elapsed_time_event.component(),
       config::PackEventCodes(elapsed_time_event.event_code()),
       elapsed_time_event.elapsed_micros());
+}
+
+Status EventAggregator::LogFrameRateEvent(uint32_t report_id,
+                                          EventRecord* event_record) {
+  if (event_record->event->type_case() != Event::kFrameRateEvent) {
+    LOG(ERROR) << "EventAggregator: LogFrameRateEvent can only accept "
+                  "FrameRateEvents.";
+    return kInvalidArguments;
+  }
+  std::string key;
+  if (!PopulateReportKey(event_record->metric->customer_id(),
+                         event_record->metric->project_id(),
+                         event_record->metric->id(), report_id, &key)) {
+    return kInvalidArguments;
+  }
+  const FrameRateEvent& frame_rate_event =
+      event_record->event->frame_rate_event();
+  return LogNumericEvent(key, event_record->event->day_index(),
+                         frame_rate_event.component(),
+                         config::PackEventCodes(frame_rate_event.event_code()),
+                         frame_rate_event.frames_per_1000_seconds());
+}
+
+Status EventAggregator::LogMemoryUsageEvent(uint32_t report_id,
+                                            EventRecord* event_record) {
+  if (event_record->event->type_case() != Event::kMemoryUsageEvent) {
+    LOG(ERROR) << "EventAggregator: LogMemoryUsageEvent can only accept "
+                  "MemoryUsageEvents.";
+    return kInvalidArguments;
+  }
+  std::string key;
+  if (!PopulateReportKey(event_record->metric->customer_id(),
+                         event_record->metric->project_id(),
+                         event_record->metric->id(), report_id, &key)) {
+    return kInvalidArguments;
+  }
+  const MemoryUsageEvent& memory_usage_event =
+      event_record->event->memory_usage_event();
+  return LogNumericEvent(
+      key, event_record->event->day_index(), memory_usage_event.component(),
+      config::PackEventCodes(memory_usage_event.event_code()),
+      memory_usage_event.bytes());
 }
 
 Status EventAggregator::LogNumericEvent(const std::string& report_key,
@@ -679,7 +723,9 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
         break;
       }
       case MetricDefinition::EVENT_COUNT:
-      case MetricDefinition::ELAPSED_TIME: {
+      case MetricDefinition::ELAPSED_TIME:
+      case MetricDefinition::FRAME_RATE:
+      case MetricDefinition::MEMORY_USAGE: {
         switch (report.report_type()) {
           case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
             auto status = GeneratePerDeviceNumericObservations(

@@ -15,6 +15,7 @@
 
 #include "./event.pb.h"
 #include "./gtest.h"
+#include "config/packed_event_codes.h"
 #include "config/project_configs.h"
 #include "logger/logger_test_utils.h"
 #include "logger/testing_constants.h"
@@ -26,6 +27,7 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
+using config::PackEventCodes;
 using config::ProjectConfigs;
 using encoder::ClientSecret;
 using encoder::ObservationStoreUpdateRecipient;
@@ -272,6 +274,78 @@ class EventAggregatorTest : public ::testing::Test {
       return kInvalidArguments;
     }
     (*logged_values)[key][component][event_code][day_index].push_back(micros);
+    return status;
+  }
+
+  // Given a ProjectContext |project_context| and the MetricReportId of a
+  // FRAME_RATE metric with a PER_DEVICE_NUMERIC_STATS report in
+  // |project_context|, as well as a day index, a component string, and an event
+  // code, logs a FrameRateEvent to the EventAggregator for that report, day
+  // index, component, and event code. If a non-null LoggedValues map is
+  // provided, updates the map with information about the logged Event.
+  Status LogPerDeviceFrameRateEvent(const ProjectContext& project_context,
+                                    const MetricReportId& metric_report_id,
+                                    uint32_t day_index,
+                                    const std::string& component,
+                                    uint32_t event_code, float fps,
+                                    LoggedValues* logged_values = nullptr) {
+    EventRecord event_record;
+    event_record.metric = project_context.GetMetric(metric_report_id.first);
+    event_record.event->set_day_index(day_index);
+    auto frame_rate_event = event_record.event->mutable_frame_rate_event();
+    frame_rate_event->set_component(component);
+    frame_rate_event->add_event_code(event_code);
+    int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
+    frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
+    auto status = event_aggregator_->LogFrameRateEvent(metric_report_id.second,
+                                                       &event_record);
+    if (logged_values == nullptr) {
+      return status;
+    }
+    std::string key;
+    if (!SerializeToBase64(
+            MakeAggregationKey(project_context, metric_report_id), &key)) {
+      return kInvalidArguments;
+    }
+    (*logged_values)[key][component][event_code][day_index].push_back(
+        frames_per_1000_seconds);
+    return status;
+  }
+
+  // Given a ProjectContext |project_context| and the MetricReportId of a
+  // MEMORY_USAGE metric with a PER_DEVICE_NUMERIC_STATS report in
+  // |project_context|, as well as a day index, a component string, and an event
+  // code, logs a MemoryUsageEvent to the EventAggregator for that report, day
+  // index, component, and event code. If a non-null LoggedValues map is
+  // provided, updates the map with information about the logged Event.
+  Status LogPerDeviceMemoryUsageEvent(const ProjectContext& project_context,
+                                      const MetricReportId& metric_report_id,
+                                      uint32_t day_index,
+                                      const std::string& component,
+                                      const std::vector<uint32_t> event_codes,
+                                      int64_t bytes,
+                                      LoggedValues* logged_values = nullptr) {
+    EventRecord event_record;
+    event_record.metric = project_context.GetMetric(metric_report_id.first);
+    event_record.event->set_day_index(day_index);
+    auto memory_usage_event = event_record.event->mutable_memory_usage_event();
+    memory_usage_event->set_component(component);
+    for (auto event_code : event_codes) {
+      memory_usage_event->add_event_code(event_code);
+    }
+    memory_usage_event->set_bytes(bytes);
+    auto status = event_aggregator_->LogMemoryUsageEvent(
+        metric_report_id.second, &event_record);
+    if (logged_values == nullptr) {
+      return status;
+    }
+    std::string key;
+    if (!SerializeToBase64(
+            MakeAggregationKey(project_context, metric_report_id), &key)) {
+      return kInvalidArguments;
+    }
+    (*logged_values)[key][component][PackEventCodes(event_codes)][day_index]
+        .push_back(bytes);
     return status;
   }
 
@@ -671,7 +745,7 @@ class EventAggregatorTest : public ::testing::Test {
 
  private:
   std::unique_ptr<SystemDataInterface> system_data_;
-};
+};  // namespace logger
 
 // Creates an EventAggregator and provides it with a ProjectContext generated
 // from a registry.
@@ -719,9 +793,36 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
                                       const std::string& component,
                                       uint32_t event_code, int64_t micros,
                                       LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceCountEvent(
+    return EventAggregatorTest::LogPerDeviceElapsedTimeEvent(
         *project_context_, metric_report_id, day_index, component, event_code,
         micros, logged_values);
+  }
+
+  // Logs a FrameRateEvent for the MetricReportId of a locally
+  // aggregated report of the ProjectContext. Overrides the method
+  // EventAggregatorTest::LogPerDeviceFrameRateEvent.
+  Status LogPerDeviceFrameRateEvent(const MetricReportId& metric_report_id,
+                                    uint32_t day_index,
+                                    const std::string& component,
+                                    uint32_t event_code, float fps,
+                                    LoggedValues* logged_values = nullptr) {
+    return EventAggregatorTest::LogPerDeviceFrameRateEvent(
+        *project_context_, metric_report_id, day_index, component, event_code,
+        fps, logged_values);
+  }
+
+  // Logs a MemoryUsageEvent for the MetricReportId of a locally
+  // aggregated report of the ProjectContext. Overrides the method
+  // EventAggregatorTest::LogPerDeviceMemoryUsageEvent.
+  Status LogPerDeviceMemoryUsageEvent(const MetricReportId& metric_report_id,
+                                      uint32_t day_index,
+                                      const std::string& component,
+                                      std::vector<uint32_t> event_codes,
+                                      int64_t bytes,
+                                      LoggedValues* logged_values = nullptr) {
+    return EventAggregatorTest::LogPerDeviceMemoryUsageEvent(
+        *project_context_, metric_report_id, day_index, component, event_codes,
+        bytes, logged_values);
   }
 
  private:
@@ -2045,40 +2146,71 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
 // LocalAggregateStore each day.
 TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
   LoggedValues logged_values;
+
+  std::vector<MetricReportId> count_metric_report_ids = {
+      testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
+      testing::per_device_numeric_stats::kConnectionFailuresMetricReportId};
+  std::vector<MetricReportId> elapsed_time_metric_report_ids = {
+      testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
+      testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId};
+  MetricReportId frame_rate_metric_report_id =
+      testing::per_device_numeric_stats::kLoginModuleFrameRateMinMetricReportId;
+  MetricReportId memory_usage_metric_report_id =
+      testing::per_device_numeric_stats::kLedgerMemoryUsageMaxMetricReportId;
+
   uint32_t num_days = 35;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(testing::per_device_numeric_stats::
-                                              kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 0u, 5,
-                                          &logged_values));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(testing::per_device_numeric_stats::
-                                              kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 0u, 7,
-                                          &logged_values));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(testing::per_device_numeric_stats::
-                                              kConnectionFailuresMetricReportId,
-                                          day_index, "component_A", 1u, 3,
-                                          &logged_values));
-    EXPECT_EQ(
-        kOK,
-        LogPerDeviceCountEvent(
-            testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
-            day_index, "component_B", 0u, 10, &logged_values));
-    EXPECT_EQ(
-        kOK,
-        LogPerDeviceCountEvent(
-            testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
-            day_index, "component_A", 0u, 2, &logged_values));
-    EXPECT_EQ(kOK, LogPerDeviceCountEvent(testing::per_device_numeric_stats::
-                                              kConnectionFailuresMetricReportId,
-                                          day_index, "component_C", 0u, 15,
-                                          &logged_values));
-    EXPECT_EQ(
-        kOK,
-        LogPerDeviceCountEvent(
-            testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
-            day_index, "component_B", 0u, 4, &logged_values));
+    for (const auto& id : count_metric_report_ids) {
+      for (const auto& component :
+           {"component_A", "component_B", "component_C"}) {
+        // Log 2 events with event code 0, for each component A, B, C.
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 2,
+                                              &logged_values));
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 3,
+                                              &logged_values));
+      }
+      if (offset < 3) {
+        // Log 1 event for component D and event code 1.
+        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, "component_D", 1u,
+                                              4, &logged_values));
+      }
+    }
+    for (const auto& id : elapsed_time_metric_report_ids) {
+      for (const auto& component :
+           {"component_A", "component_B", "component_C"}) {
+        // Log 2 events with event code 0, for each component A, B, C.
+        EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, component,
+                                                    0u, 2, &logged_values));
+        EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(id, day_index, component,
+                                                    0u, 3, &logged_values));
+      }
+      if (offset < 3) {
+        // Log 1 event for component D and event code 1.
+        EXPECT_EQ(kOK,
+                  LogPerDeviceElapsedTimeEvent(id, day_index, "component_D", 1u,
+                                               4, &logged_values));
+      }
+    }
+    for (const auto& component : {"component_A", "component_B"}) {
+      // Log some events for a FRAME_RATE metric with a PerDeviceNumericStats
+      // report.
+      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id,
+                                                day_index, component, 0u, 2.25,
+                                                &logged_values));
+      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id,
+                                                day_index, component, 0u, 1.75,
+                                                &logged_values));
+      // Log some events for a MEMORY_USAGE metric with a
+      // PerDeviceNumericStats report.
+      EXPECT_EQ(kOK, LogPerDeviceMemoryUsageEvent(
+                         memory_usage_metric_report_id, day_index, component,
+                         std::vector<uint32_t>{0u, 0u}, 300, &logged_values));
+      EXPECT_EQ(kOK, LogPerDeviceMemoryUsageEvent(
+                         memory_usage_metric_report_id, day_index, component,
+                         std::vector<uint32_t>{1u, 0u}, 300, &logged_values));
+    }
     EXPECT_TRUE(CheckPerDeviceNumericAggregates(logged_values, day_index));
     AdvanceClock(kDay);
   }
@@ -2086,10 +2218,10 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
 
 // Tests GarbageCollect() for PerDeviceNumericReportAggregates.
 //
-// For each value of N in the range [0, 34], logs some CountEvents and
-// ElapsedTimeEvents for PerDeviceNumeric reports each day for N consecutive
-// days, and then garbage-collects the LocalAggregateStore. After garbage
-// collection, verifies the contents of the LocalAggregateStore.
+// For each value of N in the range [0, 34], logs some events for
+// PerDeviceNumeric reports each day for N consecutive days, and then
+// garbage-collects the LocalAggregateStore. After garbage collection, verifies
+// the contents of the LocalAggregateStore.
 TEST_F(PerDeviceNumericEventAggregatorTest, GarbageCollect) {
   uint32_t max_days_before_gc = 35;
   for (uint32_t days_before_gc = 0; days_before_gc < max_days_before_gc;
@@ -2104,6 +2236,10 @@ TEST_F(PerDeviceNumericEventAggregatorTest, GarbageCollect) {
         testing::per_device_numeric_stats::kStreamingTimeTotalMetricReportId,
         testing::per_device_numeric_stats::kStreamingTimeMinMetricReportId,
         testing::per_device_numeric_stats::kStreamingTimeMaxMetricReportId};
+    MetricReportId frame_rate_metric_report_id = testing::
+        per_device_numeric_stats::kLoginModuleFrameRateMinMetricReportId;
+    MetricReportId memory_usage_metric_report_id =
+        testing::per_device_numeric_stats::kLedgerMemoryUsageMaxMetricReportId;
     for (uint32_t offset = 0; offset < days_before_gc; offset++) {
       auto day_index = CurrentDayIndex();
       for (const auto& id : count_metric_report_ids) {
@@ -2136,6 +2272,20 @@ TEST_F(PerDeviceNumericEventAggregatorTest, GarbageCollect) {
                     LogPerDeviceElapsedTimeEvent(id, day_index, "component_D",
                                                  1u, 4, &logged_values));
         }
+      }
+      for (const auto& component : {"component_A", "component_B"}) {
+        EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id,
+                                                  day_index, component, 0u,
+                                                  2.25, &logged_values));
+        EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id,
+                                                  day_index, component, 0u,
+                                                  1.75, &logged_values));
+        EXPECT_EQ(kOK, LogPerDeviceMemoryUsageEvent(
+                           memory_usage_metric_report_id, day_index, component,
+                           std::vector<uint32_t>{0u, 0u}, 300, &logged_values));
+        EXPECT_EQ(kOK, LogPerDeviceMemoryUsageEvent(
+                           memory_usage_metric_report_id, day_index, component,
+                           std::vector<uint32_t>{1u, 0u}, 300, &logged_values));
       }
       AdvanceClock(kDay);
     }

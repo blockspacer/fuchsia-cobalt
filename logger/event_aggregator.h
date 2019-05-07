@@ -167,6 +167,10 @@ class EventAggregator {
   Status LogCountEvent(uint32_t report_id, EventRecord* event_record);
   // LogElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
   Status LogElapsedTimeEvent(uint32_t report_id, EventRecord* event_record);
+  // LogFrameRateEvent: |event_record| should wrap a FrameRateEvent.
+  Status LogFrameRateEvent(uint32_t report_id, EventRecord* event_record);
+  // LogMemoryUsageEvent: |event_record| should wrap a MemoryUsageEvent.
+  Status LogMemoryUsageEvent(uint32_t report_id, EventRecord* event_record);
 
   // Checks that the worker thread is shut down, and if so, calls the private
   // method GenerateObservations() and returns its result. Returns kOther if the

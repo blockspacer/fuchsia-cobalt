@@ -16,6 +16,7 @@
 #include "./observation2.pb.h"
 #include "algorithms/rappor/rappor_encoder.h"
 #include "config/encodings.pb.h"
+#include "config/packed_event_codes.h"
 #include "encoder/client_secret.h"
 #include "encoder/encoder.h"
 #include "logger/encoder.h"
@@ -33,6 +34,7 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
+using config::PackEventCodes;
 using config::ProjectConfigs;
 
 using encoder::ClientSecret;
@@ -918,6 +920,7 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesSingleDay) {
   EXPECT_TRUE(
       FetchObservations(&immediate_observations, expected_immediate_report_ids,
                         observation_store_.get(), update_recipient_.get()));
+
   // Clear the FakeObservationStore.
   ResetObservationStore();
   // Generate locally aggregated Observations for |day_index|.
@@ -938,6 +941,147 @@ TEST_F(PerDeviceNumericLoggerTest, CheckPerDeviceNumericObsValuesSingleDay) {
   expected_per_device_numeric_obs[{
       testing::per_device_numeric_stats::kSettingsChangedMetricReportId,
       day_index}][30] = {{"component_C", 0u, 10}};
+  EXPECT_TRUE(CheckPerDeviceNumericObservations(
+      expected_per_device_numeric_obs, expected_report_participation_obs,
+      observation_store_.get(), update_recipient_.get()));
+}
+
+// Tests that Observations with the expected values are generated when events
+// have been logged for a FRAME_RATE metric with a PER_DEVICE_NUMERIC_STATS
+// report, on a single day.
+TEST_F(PerDeviceNumericLoggerTest,
+       CheckPerDeviceNumericObsValuesFrameRateSingleDay) {
+  const auto day_index = CurrentDayIndex(MetricDefinition::UTC);
+  // Log several events on |day_index|.
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               0u, "component_A", 5.0));
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               0u, "component_B", 4.2));
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               0u, "component_A", 3.75));
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               1u, "component_A", 2.0));
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               0u, "component_C", 7.9));
+  EXPECT_EQ(
+      kOK, logger_->LogFrameRate(
+               testing::per_device_numeric_stats::kLoginModuleFrameRateMetricId,
+               0u, "component_C", 4.0));
+  // The LoginModuleFrameRate metric has an immediate report of type
+  // NUMERIC_AGGREGATION. Check that 6 immediate Observations were
+  // generated for that report.
+  std::vector<Observation2> immediate_observations(6);
+  std::vector<uint32_t> expected_immediate_report_ids(
+      6, testing::per_device_numeric_stats::
+             kLoginModuleFrameRateAggregatedReportId);
+  EXPECT_TRUE(
+      FetchObservations(&immediate_observations, expected_immediate_report_ids,
+                        observation_store_.get(), update_recipient_.get()));
+
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
+  // Generate locally aggregated Observations for |day_index|.
+  EXPECT_EQ(kOK, GenerateAggregatedObservations(day_index));
+  // Form the expected locally aggregated Observations.
+  auto expected_report_participation_obs =
+      MakeExpectedReportParticipationObservations(
+          testing::per_device_numeric_stats::kExpectedAggregationParams,
+          day_index);
+  ExpectedPerDeviceNumericObservations expected_per_device_numeric_obs;
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kLoginModuleFrameRateMinMetricReportId,
+      day_index}][1] = {{"component_A", 0u, 3750},
+                        {"component_A", 1u, 2000},
+                        {"component_B", 0u, 4200},
+                        {"component_C", 0u, 4000}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kLoginModuleFrameRateMinMetricReportId,
+      day_index}][7] = {{"component_A", 0u, 3750},
+                        {"component_A", 1u, 2000},
+                        {"component_B", 0u, 4200},
+                        {"component_C", 0u, 4000}};
+  EXPECT_TRUE(CheckPerDeviceNumericObservations(
+      expected_per_device_numeric_obs, expected_report_participation_obs,
+      observation_store_.get(), update_recipient_.get()));
+}
+
+// Tests that Observations with the expected values are generated when events
+// have been logged for a MEMORY_USAGE metric with a PER_DEVICE_NUMERIC_STATS
+// report, on a single day.
+TEST_F(PerDeviceNumericLoggerTest,
+       CheckPerDeviceNumericObsValuesMemoryUsageSingleDay) {
+  const auto day_index = CurrentDayIndex(MetricDefinition::UTC);
+  // Log several events on |day_index|.
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{0u, 0u}, "component_A", 5));
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{0u, 0u}, "component_B", 4));
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{0u, 0u}, "component_A", 3));
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{1u, 0u}, "component_A", 2));
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{0u, 0u}, "component_C", 7));
+  EXPECT_EQ(kOK,
+            logger_->LogMemoryUsage(
+                testing::per_device_numeric_stats::kLedgerMemoryUsageMetricId,
+                std::vector<uint32_t>{0u, 0u}, "component_C", 4));
+  // The LedgerMemoryUsage metric has an immediate report of type
+  // NUMERIC_AGGREGATION. Check that 6 immediate Observations were
+  // generated for that report.
+  std::vector<Observation2> immediate_observations(6);
+  std::vector<uint32_t> expected_immediate_report_ids(
+      6,
+      testing::per_device_numeric_stats::kLedgerMemoryUsageAggregatedReportId);
+  EXPECT_TRUE(
+      FetchObservations(&immediate_observations, expected_immediate_report_ids,
+                        observation_store_.get(), update_recipient_.get()));
+
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
+  // Generate locally aggregated Observations for |day_index|.
+  EXPECT_EQ(kOK, GenerateAggregatedObservations(day_index));
+  // Form the expected locally aggregated Observations.
+  auto expected_report_participation_obs =
+      MakeExpectedReportParticipationObservations(
+          testing::per_device_numeric_stats::kExpectedAggregationParams,
+          day_index);
+  ExpectedPerDeviceNumericObservations expected_per_device_numeric_obs;
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kLedgerMemoryUsageMaxMetricReportId,
+      day_index}][1] = {
+      {"component_A", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 5},
+      {"component_A", PackEventCodes(std::vector<uint32_t>{1u, 0u}), 2},
+      {"component_B", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 4},
+      {"component_C", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 7}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kLedgerMemoryUsageMaxMetricReportId,
+      day_index}][7] = {
+      {"component_A", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 5},
+      {"component_A", PackEventCodes(std::vector<uint32_t>{1u, 0u}), 2},
+      {"component_B", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 4},
+      {"component_C", PackEventCodes(std::vector<uint32_t>{0u, 0u}), 7}};
+
   EXPECT_TRUE(CheckPerDeviceNumericObservations(
       expected_per_device_numeric_obs, expected_report_participation_obs,
       observation_store_.get(), update_recipient_.get()));
