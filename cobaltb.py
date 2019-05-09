@@ -16,6 +16,7 @@
 """The Cobalt build system command-line interface."""
 
 import argparse
+import filecmp
 import fileinput
 import json
 import logging
@@ -132,8 +133,64 @@ def _check_config(args):
     print('%s could not be found. Run \n\n%s setup\n%s build\n\nand try again.'
         % (config_parser_bin, sys.argv[0], sys.argv[0]))
     return
+  if not _check_test_configs(args):
+    return
   subprocess.check_call([config_parser_bin, '-config_dir', args.config_dir,
       '-check_only'])
+
+def _check_test_configs(args):
+  testapp_config_path = os.path.join(args.config_dir, 'fuchsia', 'test_app2',
+                                     'config.yaml')
+  if not _check_config_exists(testapp_config_path):
+    return False
+
+  prober_config_path = os.path.join(args.config_dir, 'fuchsia', 'prober', 'config.yaml')
+  if not _check_config_exists(prober_config_path):
+    print('Run this command and try again: ./cobaltb.py write_prober_config')
+    return False
+
+  _, tmp_path = tempfile.mkstemp()
+  _make_prober_config(testapp_config_path, tmp_path)
+  is_same_file = filecmp.cmp(tmp_path, prober_config_path)
+  os.remove(tmp_path)
+  if not is_same_file:
+    print ('Testapp config and prober config should be identical except for '
+           'names of custom metrics output log types.\n'
+           'Run this command and try again: ./cobaltb.py write_prober_config')
+  return is_same_file
+
+def _write_prober_config(args):
+  testapp_config_path = os.path.join(args.config_dir, 'fuchsia', 'test_app2',
+                                     'config.yaml')
+  if not _check_config_exists(testapp_config_path):
+    return False
+  prober_config_path = os.path.join(args.config_dir, 'fuchsia', 'prober',
+                                    'config.yaml')
+  if os.path.isfile(prober_config_path):
+    print('This action will overwrite the file %s.' % prober_config_path)
+    answer = raw_input("Continue anyway? (y/N) ")
+    if not _parse_bool(answer):
+      return
+  prober_dir = os.path.dirname(prober_config_path)
+  if not os.path.exists(prober_dir):
+    os.makedirs(prober_dir)
+  _make_prober_config(testapp_config_path, prober_config_path)
+
+def _check_config_exists(config_path):
+  if not os.path.isfile(config_path):
+    print("Expected config at path %s" % config_path)
+    return False
+  return True
+
+def _make_prober_config(testapp_config_path, output_path):
+  testapp_custom_log_source = "processed/<team_name>-cobalt-dev:custom-proto-test"
+  prober_custom_log_source = "processed/<team_name>-cobalt-dev:custom-proto-prober-test"
+
+  with open(testapp_config_path, 'r') as f:
+    testapp_config = f.read()
+
+  with open(output_path, 'w') as f:
+    f.write(testapp_config.replace(testapp_custom_log_source, prober_custom_log_source))
 
 def _lint(args):
   status = 0
@@ -1119,6 +1176,21 @@ def main():
     parents=[parent_parser], help="Pulls the current version Cobalt's config "
                                   "from its remote repo.")
   sub_parser.set_defaults(func=_update_config)
+
+  ########################################################
+  # write_prober_config command
+  ########################################################
+  sub_parser = subparsers.add_parser('write_prober_config',
+                                     parents=[parent_parser],
+                                     help="Copies the test_app2 config to the "
+                                     "prober config, replacing the name of the "
+                                     "custom metrics output log source.")
+  sub_parser.add_argument('--config_dir', help="Path to the configuration "
+                          "directory which should contain the prober config. "
+                          "Default: %s"
+                          % CONFIG_SUBMODULE_PATH,
+                          default=CONFIG_SUBMODULE_PATH)
+  sub_parser.set_defaults(func=_write_prober_config)
 
   ########################################################
   # check_config command
