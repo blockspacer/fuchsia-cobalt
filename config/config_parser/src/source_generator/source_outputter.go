@@ -199,9 +199,6 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 				if md.Dimension != "" {
 					varname = "Metric Dimension " + md.Dimension
 				}
-				if md.AlsoTreatAsLegacy {
-					so.writeEnum(metric.MetricName, "EventCode", events)
-				}
 				so.writeEnum(metric.MetricName, varname, events)
 			}
 		}
