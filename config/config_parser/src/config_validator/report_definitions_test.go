@@ -157,3 +157,26 @@ func TestValidateReportDefinitionForPerDeviceNumericStats(t *testing.T) {
 		t.Error("Accepted report definition of type PER_DEVICE_NUMERIC_STATS with window_size field containing an UNSET window size.")
 	}
 }
+
+// Test percentiles range for NUMERIC_AGGREGATION report types.
+func TestValidateReportDefinitionForNumericAggregation(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_NUMERIC_AGGREGATION
+
+	// Test that percentiles are optional.
+	if err := validateReportDefinition(r); err != nil {
+		t.Error("Rejected report definition of type NUMERIC_AGGREGATION with no percentiles set.")
+	}
+
+	// Test that percentiles between 0 and 100 are accepted.
+	r.Percentiles = []uint32{0, 25, 50, 75, 90, 99, 100}
+	if err := validateReportDefinition(r); err != nil {
+		t.Error("Rejected report definition of type NUMERIC_AGGREGATION with valid percentiles.")
+	}
+
+	// Test that out of bounds percentiles are rejected.
+	r.Percentiles = []uint32{0, 25, 50, 75, 100, 101}
+	if err := validateReportDefinition(r); err == nil {
+		t.Error("Accepted report definition of type NUMERIC_AGGREGATION with invalid percentiles.")
+	}
+}

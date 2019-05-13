@@ -131,6 +131,8 @@ func validateReportDefinitionForType(r config.ReportDefinition) error {
 		return validateUniqueActivesReportDef(r)
 	case config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:
 		return validatePerDeviceNumericStatsReportDef(r)
+	case config.ReportDefinition_NUMERIC_AGGREGATION:
+		return validateNumericAggregationReportDef(r)
 	}
 
 	return nil
@@ -171,6 +173,14 @@ func validatePerDeviceNumericStatsReportDef(r config.ReportDefinition) error {
 	return nil
 }
 
+func validateNumericAggregationReportDef(r config.ReportDefinition) error {
+	if err := validatePercentiles(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 /////////////////////////////////////////////////////////////////
 // Validation for specific fields of report definitions
 //
@@ -197,6 +207,19 @@ func validateWindowSize(r config.ReportDefinition) error {
 func validateLocalPrivacyNoiseLevel(r config.ReportDefinition) error {
 	if r.LocalPrivacyNoiseLevel == config.ReportDefinition_NOISE_LEVEL_UNSET {
 		return fmt.Errorf("No local_privacy_noise_level specified for report of type %s.", r.ReportType)
+	}
+
+	return nil
+}
+
+// Check that the percentiles are between 0 and 100.
+func validatePercentiles(r config.ReportDefinition) error {
+	for _, percentage := range r.Percentiles {
+		if percentage < 0 || percentage > 100 {
+			return fmt.Errorf(
+				"Percentiles must be in the range 0-100.  Received value %d for report of type %s.",
+				percentage, r.ReportType)
+		}
 	}
 
 	return nil

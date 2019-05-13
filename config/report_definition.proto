@@ -37,7 +37,7 @@ option go_package = "config";
 // An instance of ReportDefinition is always associated with an instance of
 // MetricDefinition called the owning MetricDefinition.
 message ReportDefinition {
-  // Next id: 14
+  // Next id: 16
 
   // Unique name for this Report within its owning MetricDefinition.
   // The name must obey the syntax of a C variable name and must have length
@@ -103,6 +103,8 @@ message ReportDefinition {
     // ReportDefinition fields particular to this type:
     //   - candidate_list # All known component names
     //   - candidate_file # File with all known component names
+    //   - percentiles # A list of percentiles between 0-100 to include in the
+    //         report
     //
     // Report row type: NumericAggregationReportRow.
     // (See report_row.proto)
@@ -437,6 +439,13 @@ message ReportDefinition {
   // contain the minimum (resp., maximum) numeric value logged during the
   // aggregation window.
   OnDeviceAggregationType aggregation_type = 14;
+
+  // This field is optional for the NUMERIC_AGGREGATION report type.  It is not
+  // used with any other report type.
+  //
+  // Used to specify which additional percentiles to include in the report
+  // output.  Each value should be between 0 and 100.
+  repeated uint32 percentiles = 15;
 
   ///////////////////  Fields used by all metric types ///////////////////
 

@@ -147,6 +147,12 @@ message NumericAggregationReportRow {
   // |event_code| and |component|, on the |date|, over all reporting devices
   // with the |system_profile|.
   int64 sum = 10;
+
+  // A mapping of percentiles of the collected Observation values for events
+  // with the |event_code| and |component|, on the |date|, over all reporting
+  // devices with the |system_profile|.  The key is a percentile between 0 and
+  // 100, and the value is the fleet-wide observed value at that percentile.
+  map<uint32, int64> percentiles = 11;
 }
 
 // A row of output for a report of type INT_RANGE_HISTOGRAM.
