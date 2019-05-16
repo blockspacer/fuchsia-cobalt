@@ -10,7 +10,7 @@
 
 const int64_t kPeriodSize = 1000;
 const int64_t kPeriodCount = 1000;
-const int64_t kThreadNum = 100;
+const int64_t kThreadNum = 20;
 const int64_t kSamplerMaxInt = 20;
 
 namespace cobalt {
@@ -239,7 +239,6 @@ TEST(EventLogger, Normal) {
   const uint32_t kEventMetricId = 1;
   const uint32_t kMaxStatus = 4;
   const uint32_t kEventTimingMetricId = 2;
-  const size_t kThreadNum = 100;
   ASSERT_EQ(kThreadNum % (kMaxStatus + 1), size_t(0))
       << "kThreadNum must be divisible by the number of statuses.";
   size_t samples = 100;
