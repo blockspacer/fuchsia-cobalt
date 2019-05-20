@@ -250,3 +250,24 @@ func (so *sourceOutputter) getOutputFormatter() OutputFormatter {
 		return so.Bytes(), err
 	}
 }
+
+func getOutputFormatter(format, namespace, varName string, forTesting bool) (OutputFormatter, error) {
+	namespaceList := []string{}
+	if namespace != "" {
+		namespaceList = strings.Split(namespace, ".")
+	}
+	switch format {
+	case "bin":
+		return BinaryOutput, nil
+	case "b64":
+		return Base64Output, nil
+	case "cpp":
+		return CppOutputFactory(varName, namespaceList, forTesting), nil
+	case "dart":
+		return DartOutputFactory(varName, forTesting), nil
+	case "rust":
+		return RustOutputFactory(varName, namespaceList, forTesting), nil
+	default:
+		return nil, fmt.Errorf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', and 'rust' are the only valid values for out_format.", format)
+	}
+}

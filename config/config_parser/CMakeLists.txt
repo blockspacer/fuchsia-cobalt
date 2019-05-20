@@ -33,7 +33,8 @@ set(CONFIG_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/project_list
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/git.go
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/config_reader.go
                       ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/id.go
-                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/filter.go)
+                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/filter.go
+                      ${CMAKE_CURRENT_SOURCE_DIR}/src/config_parser/config_parser.go)
 
 set(CONFIG_VALIDATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/validator.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/system_profile_field.go
@@ -49,7 +50,10 @@ set(SOURCE_GENERATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/source
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/simple.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/cpp.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/dart.go
-                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/rust.go)
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/rust.go
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/writer.go
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/dep.go
+                         ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/utils.go)
 
 add_custom_command(OUTPUT ${CONFIG_PARSER_BINARY}
   # Compiles config_parser_main and all its dependencies.
@@ -101,7 +105,10 @@ add_custom_command(OUTPUT ${CONFIG_VALIDATOR_TEST_BIN}
 
 set(SOURCE_GENERATOR_TEST_BIN ${GO_TESTS}/source_generator_test)
 set(SOURCE_GENERATOR_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/source_generator_test.go
-                              ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/ident_test.go)
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/ident_test.go
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/source_outputter_test.go
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/utils_test.go
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/dep_test.go)
 add_custom_command(OUTPUT ${SOURCE_GENERATOR_TEST_BIN}
   COMMAND ${GO_BIN} test -c -o ${SOURCE_GENERATOR_TEST_BIN} ${SOURCE_GENERATOR_TEST_SRC} ${SOURCE_GENERATOR_SRC}
   DEPENDS ${SOURCE_GENERATOR_SRC}
