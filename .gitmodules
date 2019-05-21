@@ -98,3 +98,6 @@
 [submodule "third_party/go/src/github.com/google/go-cmp"]
 	path = third_party/go/src/github.com/google/go-cmp
 	url = https://fuchsia.googlesource.com/third_party/github.com/google/go-cmp
+[submodule "third_party/python/mock"]
+	path = third_party/python/mock
+	url = https://fuchsia.googlesource.com/third_party/python/testing-cabal/mock
