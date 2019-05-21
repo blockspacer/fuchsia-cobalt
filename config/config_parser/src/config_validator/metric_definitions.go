@@ -30,11 +30,17 @@ var validProtoNameRegexp = regexp.MustCompile("^[$a-zA-Z][_.$a-zA-Z0-9]{1,64}[a-
 // Validate a list of MetricDefinitions.
 func validateConfiguredMetricDefinitions(metrics []*config.MetricDefinition) (err error) {
 	metricIds := map[uint32]int{}
+	metricNames := map[string]bool{}
 	for i, metric := range metrics {
 		if _, ok := metricIds[metric.Id]; ok {
 			return fmt.Errorf("There are two metrics with id=%v.", metric.Id)
 		}
 		metricIds[metric.Id] = i
+
+		if _, ok := metricNames[metric.MetricName]; ok {
+			return fmt.Errorf("There are two metrics with name=%v.", metric.MetricName)
+		}
+		metricNames[metric.MetricName] = true
 
 		if err = validateMetricDefinition(*metric); err != nil {
 			return fmt.Errorf("Error validating metric '%s': %v", metric.MetricName, err)

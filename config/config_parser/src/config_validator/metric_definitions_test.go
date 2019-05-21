@@ -2,7 +2,6 @@ package config_validator
 
 import (
 	"config"
-	"config_parser"
 	"testing"
 	"time"
 )
@@ -35,15 +34,23 @@ func makeValidMetadata() config.MetricDefinition_Metadata {
 }
 
 func makeValidMetric() config.MetricDefinition {
-	return makeValidMetricWithName("the_metric_name", 1)
+	return makeValidMetricWithNameAndId("the_metric_name", 1)
+}
+
+func makeValidMetricWithDimension(numDimensions int) config.MetricDefinition {
+	return makeValidMetricWithNameIdAndDimension("the_metric_name", 1, numDimensions)
+}
+
+func makeValidMetricWithNameAndId(name string, id uint32) config.MetricDefinition {
+	return makeValidMetricWithNameIdAndDimension(name, id, 1)
 }
 
 // makeValidMetric returns a valid instance of config.MetricDefinition which
 // can be modified to fail various validation checks for testing purposes.
-func makeValidMetricWithName(name string, numDimensions int) config.MetricDefinition {
+func makeValidMetricWithNameIdAndDimension(name string, id uint32, numDimensions int) config.MetricDefinition {
 	metadata := makeValidMetadata()
 	metricDefinition := config.MetricDefinition{
-		Id:         config_parser.IdFromName(name),
+		Id:         id,
 		MetricName: name,
 		MetricType: config.MetricDefinition_EVENT_COUNT,
 		MetaData:   &metadata,
@@ -67,7 +74,7 @@ func TestValidateMakeValidMetric(t *testing.T) {
 
 // Test that it is valid to make a MetricDefinition with no metric dimensions.
 func TestValidMetricWithNoDimensions(t *testing.T) {
-	m := makeValidMetricWithName("name", 0)
+	m := makeValidMetricWithDimension(0)
 	if err := validateMetricDefinition(m); err != nil {
 		t.Errorf("Rejected valid metric: %v", err)
 	}
@@ -82,10 +89,8 @@ func TestValidateMakeValidMetadata(t *testing.T) {
 
 // Test that repeated ids are rejected.
 func TestValidateUniqueMetricId(t *testing.T) {
-	m1Name := "TpzQweXFfRXpQrDWvplhfXFbJptlKmkIlHBAzjPnADtJWVAawVrbPGg"
-	m2Name := "zDnlfjrXpwuQYpBrNTeCbtsRBydKuKdCvEjlGwdRJlxMjbYOSGPjhif"
-	m1 := makeValidMetricWithName(m1Name, 0)
-	m2 := makeValidMetricWithName(m2Name, 0)
+	m1 := makeValidMetricWithNameAndId("name1", 2)
+	m2 := makeValidMetricWithNameAndId("name2", 2)
 
 	metrics := []*config.MetricDefinition{&m1, &m2}
 
@@ -94,9 +99,20 @@ func TestValidateUniqueMetricId(t *testing.T) {
 	}
 }
 
+// Test that repeated names are rejected.
+func TestValidateUniqueMetricName(t *testing.T) {
+	m1 := makeValidMetricWithNameAndId("name", 2)
+	m2 := makeValidMetricWithNameAndId("name", 3)
+
+	metrics := []*config.MetricDefinition{&m1, &m2}
+	if err := validateConfiguredMetricDefinitions(metrics); err == nil {
+		t.Error("Accepted metric definitions with identical names.")
+	}
+}
+
 // Test that invalid names are rejected.
 func TestValidateMetricInvalidMetricName(t *testing.T) {
-	m := makeValidMetricWithName("_invalid_name", 0)
+	m := makeValidMetricWithNameAndId("_invalid_name", 1)
 
 	if err := validateMetricDefinition(m); err == nil {
 		t.Error("Accepted metric definition with invalid name.")
@@ -105,7 +121,7 @@ func TestValidateMetricInvalidMetricName(t *testing.T) {
 
 // Test that metric id 0 is not accepted.
 func TestValidateZeroMetricId(t *testing.T) {
-	m := makeValidMetricWithName("NRaMinLNcqiYmgEypLLVGnXymNpxJzqabtbbjLycCMEohvVzZtAYpah", 0)
+	m := makeValidMetricWithNameAndId("name", 0)
 
 	if err := validateMetricDefinition(m); err == nil {
 		t.Error("Accepted metric definition with 0 id.")
