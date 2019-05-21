@@ -45,10 +45,6 @@ func validateConfigV0(config *config.ProjectConfigFile) (err error) {
 		return err
 	}
 
-	if err = runCommonValidations(config); err != nil {
-		return err
-	}
-
 	return nil
 }
 

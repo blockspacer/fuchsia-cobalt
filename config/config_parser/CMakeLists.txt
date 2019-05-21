@@ -42,7 +42,6 @@ set(CONFIG_VALIDATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/valida
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/metrics.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/metric_definitions.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/report_definitions.go
-                         ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/common_validator.go
                          ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/reports.go)
 
 set(SOURCE_GENERATOR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/source_generator/source_outputter.go
@@ -64,7 +63,6 @@ add_custom_command(OUTPUT ${CONFIG_PARSER_BINARY}
   DEPENDS ${SOURCE_GENERATOR_SRC}
   DEPENDS ${CONFIG_PB_GO_FILES}
   DEPENDS ${YAMLPB_SRC}
-  DEPENDS ../validation/validator
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
@@ -93,7 +91,6 @@ set(CONFIG_VALIDATOR_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/s
                               ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/metrics_test.go
                               ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/report_definitions_test.go
                               ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/metric_definitions_test.go
-                              ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/common_validator_test.go
                               ${CMAKE_CURRENT_SOURCE_DIR}/src/config_validator/testutil.go)
 add_custom_command(OUTPUT ${CONFIG_VALIDATOR_TEST_BIN}
   COMMAND ${GO_BIN} test -c -o ${CONFIG_VALIDATOR_TEST_BIN} ${CONFIG_VALIDATOR_TEST_SRC} ${CONFIG_VALIDATOR_SRC}
