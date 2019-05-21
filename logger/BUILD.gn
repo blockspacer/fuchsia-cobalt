@@ -130,6 +130,7 @@ source_set("observation_writer") {
     "//third_party/cobalt:cobalt_proto",
     "//third_party/cobalt/encoder",
     "//third_party/cobalt/util:encrypted_message_util",
+    "//zircon/public/lib/trace",
   ]
 }
 
@@ -209,6 +210,7 @@ source_set("logger") {
     ":project_context",
     ":status",
     "//third_party/cobalt/config:id",
+    "//zircon/public/lib/trace",
   ]
 }
 

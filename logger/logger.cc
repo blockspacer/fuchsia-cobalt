@@ -10,6 +10,7 @@
 #include "./event.pb.h"
 #include "./logging.h"
 #include "./observation2.pb.h"
+#include "./tracing.h"
 #include "algorithms/rappor/rappor_config_helper.h"
 #include "config/encodings.pb.h"
 #include "config/id.h"
@@ -513,6 +514,8 @@ void EventLogger::TraceLogSuccess(EventRecord* event_record) {
 Status EventLogger::Log(uint32_t metric_id,
                         MetricDefinition::MetricType expected_metric_type,
                         EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
+
   // TODO(rudominer) Check the ReleaseStage of the Metric against the
   // ReleaseStage of the project.
   auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
@@ -667,6 +670,9 @@ Status EventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
 Status EventLogger::MaybeGenerateImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "EventLogger::MaybeGenerateImmediateObservation");
+
   auto encoder_result =
       MaybeEncodeImmediateObservation(report, may_invalidate, event_record);
   if (encoder_result.status != kOK) {
@@ -684,6 +690,7 @@ Status EventLogger::MaybeGenerateImmediateObservation(
 Encoder::Result EventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core", "EventLogger::MaybeEncodeImmediateObservation");
   Encoder::Result result;
   result.status = kOK;
   result.observation = nullptr;
@@ -729,6 +736,8 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "OccurrenceEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_occurrence_event());
@@ -780,6 +789,8 @@ Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "CountEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_count_event());
@@ -833,6 +844,9 @@ Status CountEventLogger::MaybeUpdateLocalAggregation(
 Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION(
+      "cobalt_core",
+      "IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   switch (report.report_type()) {
@@ -1028,6 +1042,8 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "IntHistogramEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_int_histogram_event());
@@ -1063,6 +1079,8 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
 Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "StringUsedEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_string_used_event());
@@ -1097,6 +1115,8 @@ Status CustomEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate,
     EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core",
+                 "CustomEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
   const Event& event = *(event_record->event);
   CHECK(event.has_custom_event());

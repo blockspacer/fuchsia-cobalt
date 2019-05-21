@@ -24,6 +24,7 @@ source_set("encrypted_message_util") {
     "//third_party/tink/cc:hybrid_encrypt",
     "//third_party/tink/cc:keyset_handle",
     "//third_party/tink/cc/hybrid:hybrid_config",
+    "//zircon/public/lib/trace",
   ]
 }
 

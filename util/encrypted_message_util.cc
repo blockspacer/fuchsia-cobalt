@@ -9,6 +9,7 @@
 
 #include "./encrypted_message.pb.h"
 #include "./logging.h"
+#include "./tracing.h"
 #include "google/protobuf/message_lite.h"
 #include "third_party/tink/cc/hybrid/hybrid_config.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
@@ -118,6 +119,7 @@ HybridTinkEncryptedMessageMaker::HybridTinkEncryptedMessageMaker(
 bool HybridTinkEncryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
     EncryptedMessage* encrypted_message) const {
+  TRACE_DURATION("cobalt_core", "HybridTinkEncryptedMessageMaker::Encrypt");
   if (!encrypted_message) {
     return false;
   }
@@ -147,6 +149,7 @@ HybridEcdhEncryptedMessageMaker::HybridEcdhEncryptedMessageMaker(
 bool HybridEcdhEncryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
     EncryptedMessage* encrypted_message) const {
+  TRACE_DURATION("cobalt_core", "HybridEcdhEncryptedMessageMaker::Encrypt");
   if (!encrypted_message) {
     return false;
   }
@@ -180,6 +183,7 @@ bool HybridEcdhEncryptedMessageMaker::Encrypt(
 bool UnencryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
     EncryptedMessage* encrypted_message) const {
+  TRACE_DURATION("cobalt_core", "UnencryptedMessageMaker::Encrypt");
   if (!encrypted_message) {
     return false;
   }

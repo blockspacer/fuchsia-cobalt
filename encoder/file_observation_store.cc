@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "encoder/file_observation_store.h"
+
 #include <ctime>
 #include <iomanip>
 #include <regex>
 #include <utility>
 
 #include "./logging.h"
-#include "encoder/file_observation_store.h"
+#include "./tracing.h"
 #include "encoder/file_observation_store_internal.pb.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
@@ -76,6 +78,8 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
 ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     std::unique_ptr<EncryptedMessage> message,
     std::unique_ptr<ObservationMetadata> metadata) {
+  TRACE_DURATION("cobalt_core",
+                 "FileObservationStore::AddEncryptedObservation");
   auto fields = protected_fields_.lock();
 
   auto active_file = GetActiveFile(&fields);

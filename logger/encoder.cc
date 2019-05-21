@@ -9,6 +9,7 @@
 
 #include "./logging.h"
 #include "./observation2.pb.h"
+#include "./tracing.h"
 #include "algorithms/forculus/forculus_encrypter.h"
 #include "algorithms/rappor/rappor_config_helper.h"
 #include "algorithms/rappor/rappor_encoder.h"
@@ -80,6 +81,8 @@ Encoder::Encoder(ClientSecret client_secret,
 Encoder::Result Encoder::EncodeBasicRapporObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
     uint32_t value_index, uint32_t num_categories) const {
+  TRACE_DURATION("cobalt_core", "Encoder::EncodeBasicRapporObservation");
+
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* basic_rappor_observation = observation->mutable_basic_rappor();

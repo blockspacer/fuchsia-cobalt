@@ -73,6 +73,7 @@ static_library("encoder") {
     "//third_party/cobalt/util:clock",
     "//third_party/cobalt/util:encrypted_message_util",
     "//third_party/grpc:grpc++",
+    "//zircon/public/lib/trace",
   ]
 }
 
