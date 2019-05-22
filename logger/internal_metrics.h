@@ -23,6 +23,14 @@ class InternalMetrics {
   virtual void LoggerCalled(
       LoggerCallsMadeMetricDimensionLoggerMethod method) = 0;
 
+  // After PauseLogging is called, all calls to log internal metrics will be
+  // ignored.
+  virtual void PauseLogging() = 0;
+
+  // Once ResumeLogging is called, calls to log internal metrics are will no
+  // longer be ignored.
+  virtual void ResumeLogging() = 0;
+
   virtual ~InternalMetrics() {}
 };
 
@@ -33,6 +41,9 @@ class InternalMetrics {
 class NoOpInternalMetrics : public InternalMetrics {
   void LoggerCalled(
       LoggerCallsMadeMetricDimensionLoggerMethod method) override {}
+
+  void PauseLogging() override {}
+  void ResumeLogging() override {}
 
   ~NoOpInternalMetrics() override {}
 };
@@ -46,9 +57,13 @@ class InternalMetricsImpl : public InternalMetrics {
 
   void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method) override;
 
+  void PauseLogging() override { paused_ = true; }
+  void ResumeLogging() override { paused_ = false; }
+
   ~InternalMetricsImpl() override {}
 
  private:
+  bool paused_;
   LoggerInterface* logger_;  // not owned
 };
 

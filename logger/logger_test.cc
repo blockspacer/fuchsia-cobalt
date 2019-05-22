@@ -126,9 +126,10 @@ class LoggerTest : public ::testing::Test {
     event_aggregator_.reset(new EventAggregator(
         encoder_.get(), observation_writer_.get(),
         local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
+    internal_logger_.reset(new testing::FakeLogger());
     logger_.reset(new Logger(GetTestProject(registry_base64), encoder_.get(),
-                             event_aggregator_.get(),
-                             observation_writer_.get()));
+                             event_aggregator_.get(), observation_writer_.get(),
+                             internal_logger_.get()));
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
@@ -174,6 +175,7 @@ class LoggerTest : public ::testing::Test {
   }
 
   std::unique_ptr<Logger> logger_;
+  std::unique_ptr<testing::FakeLogger> internal_logger_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<EventAggregator> event_aggregator_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -697,6 +699,21 @@ TEST_F(LoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEvents) {
   EXPECT_TRUE(FetchAggregatedObservations(
       &observations, expected_aggregation_params_, observation_store_.get(),
       update_recipient_.get()));
+}
+
+TEST_F(LoggerTest, TestPausingLogging) {
+  ASSERT_EQ(internal_logger_->call_count(), 0);
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kErrorOccurredMetricId, 42));
+  ASSERT_EQ(internal_logger_->call_count(), 1);
+  logger_->PauseInternalLogging();
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kErrorOccurredMetricId, 42));
+  ASSERT_EQ(internal_logger_->call_count(), 1);
+  logger_->ResumeInternalLogging();
+  ASSERT_EQ(kOK, logger_->LogEvent(
+                     testing::all_report_types::kErrorOccurredMetricId, 42));
+  ASSERT_EQ(internal_logger_->call_count(), 2);
 }
 
 // Tests that UniqueActivesObservations with the expected values are generated

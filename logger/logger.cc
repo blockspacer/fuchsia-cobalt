@@ -384,6 +384,9 @@ Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   return event_logger->Log(metric_id, MetricDefinition::CUSTOM, &event_record);
 }
 
+void Logger::PauseInternalLogging() { internal_metrics_->PauseLogging(); }
+void Logger::ResumeInternalLogging() { internal_metrics_->ResumeLogging(); }
+
 //////////////////// EventLogger method implementations ////////////////////////
 
 std::string EventLogger::TraceEvent(Event* event) {

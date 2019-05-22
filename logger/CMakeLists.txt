@@ -94,11 +94,13 @@ add_executable(logger_tests
                 event_aggregator_test.cc
                 logger_test.cc
                 project_context_test.cc
-                project_context_factory_test.cc)
+                project_context_factory_test.cc
+                internal_metrics_test.cc)
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator
                       logger
-                      logger_test_utils)
+                      logger_test_utils
+                      internal_metrics)
 add_cobalt_test_dependencies(logger_tests ${DIR_GTESTS})
 add_dependencies(logger_tests build_config_parser)

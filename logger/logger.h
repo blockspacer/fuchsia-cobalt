@@ -117,6 +117,14 @@ class Logger : public LoggerInterface {
   Status LogCustomEvent(uint32_t metric_id,
                         EventValuesPtr event_values) override;
 
+  InternalMetrics* internal_metrics() { return internal_metrics_.get(); }
+
+  // Pauses Cobalt's internal metrics collection.
+  void PauseInternalLogging();
+
+  // Resumes Cobalt's internal metrics collection.
+  void ResumeInternalLogging();
+
  private:
   friend class EventLogger;
   friend class LoggerTest;

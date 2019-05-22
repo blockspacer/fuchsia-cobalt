@@ -14,12 +14,16 @@ namespace cobalt {
 namespace logger {
 
 InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
-    : logger_(logger) {
+    : paused_(false), logger_(logger) {
   CHECK(logger_);
 }
 
 void InternalMetricsImpl::LoggerCalled(
     LoggerCallsMadeMetricDimensionLoggerMethod method) {
+  if (paused_) {
+    return;
+  }
+
   auto status = logger_->LogEvent(kLoggerCallsMadeMetricId,
                                   static_cast<uint32_t>(method));
   if (status != kOK) {
