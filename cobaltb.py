@@ -33,6 +33,7 @@ import tools.golint as golint
 import tools.process_starter as process_starter
 import tools.test_runner as test_runner
 import tools.production_util as production_util
+import tools.gitfmt as gitfmt
 
 from tools.test_runner import E2E_TEST_ANALYZER_PUBLIC_KEY_PEM
 from tools.test_runner import E2E_TEST_SHUFFLER_PUBLIC_KEY_PEM
@@ -191,6 +192,9 @@ def _make_prober_config(testapp_config_path, output_path):
 
   with open(output_path, 'w') as f:
     f.write(testapp_config.replace(testapp_custom_log_source, prober_custom_log_source))
+
+def _fmt(args):
+  gitfmt.fmt(args.committed)
 
 def _lint(args):
   status = 0
@@ -1221,6 +1225,15 @@ def main():
   sub_parser = subparsers.add_parser('lint', parents=[parent_parser],
     help='Run language linters on all source files.')
   sub_parser.set_defaults(func=_lint)
+
+  ########################################################
+  # fmt command
+  ########################################################
+  sub_parser = subparsers.add_parser('fmt', parents=[parent_parser],
+    help='Run language formatter on modified files.')
+  sub_parser.add_argument('-committed', action='store_true', default=False,
+      help='Also run on files modified in the latest commit.')
+  sub_parser.set_defaults(func=_fmt)
 
   ########################################################
   # test command
