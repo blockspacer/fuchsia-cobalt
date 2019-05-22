@@ -84,7 +84,8 @@ class FormattingSession(object):
 
   def __init__(self, root_dir):
     self._formatters = [
-        Formatter([".h", ".cc"], ["clang-format", "-i", "-style=google"]),
+        Formatter([".h", ".cc", ".proto"],
+                  ["clang-format", "-i", "-style=google"]),
         Formatter([".go"], ["gofmt", "-w"]),
         Formatter([".gn"], ["gn", "format", "--in-place"]),
         Formatter([".py"], ["pyformat", "-i"]),
