@@ -205,8 +205,9 @@ google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
     f->active_fstream.open(active_file_name_);
 
     if (!f->active_fstream.is_open()) {
-      LOG(ERROR) << "Failed to open file. (Perhaps the disk is full): "
-                 << active_file_name_ << " (" << std::strerror(errno) << ")";
+      LOG_FIRST_N(ERROR, 10)
+          << "Failed to open file. (Perhaps the disk is full): "
+          << active_file_name_ << " (" << std::strerror(errno) << ")";
       return nullptr;
     }
 
