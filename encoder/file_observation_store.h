@@ -80,6 +80,28 @@ class FileObservationStore : public ObservationStore {
     size_t cached_file_size_ = 0;
   };
 
+  class FilenameGenerator {
+   public:
+    // Default constructor: Uses std::chrono::system_clock to calculate the
+    // unix timestamp.
+    FilenameGenerator();
+
+    // Override the default method of calculating the current unix timestamp.
+    //
+    // |now| A function that returns the current unix timestamp (in milliseconds
+    // since the unix epoch).
+    explicit FilenameGenerator(std::function<int64_t()> now);
+
+    // GenerateFilename returns a unique filename. It is based on the current
+    // timestamp and a random number to avoid collisions.
+    std::string GenerateFilename() const;
+
+   private:
+    std::function<int64_t()> now_;
+    mutable std::random_device random_dev_;
+    mutable std::uniform_int_distribution<uint64_t> random_int_;
+  };
+
   // |fs|. An implementation of FileSystem used to interact with the system's
   // filesystem.
   //
@@ -139,11 +161,6 @@ class FileObservationStore : public ObservationStore {
   statusor::StatusOr<std::string> GetOldestFinalizedFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
-  // GenerateFinalizedName returns an absolute path that can be used for
-  // finalizing a file. It is based on the current timestamp and a random number
-  // to avoid collisions.
-  std::string GenerateFinalizedName() const;
-
   // FullPath returns the absolute path to the filename by prefixing the file
   // name with the root directory.
   std::string FullPath(const std::string &filename) const;
@@ -162,10 +179,9 @@ class FileObservationStore : public ObservationStore {
   const std::unique_ptr<util::FileSystem> fs_;
   const std::string root_directory_;
   const std::string active_file_name_;
-  mutable std::random_device random_dev_;
-  mutable std::uniform_int_distribution<uint32_t> random_int_;
   const std::string name_;
   size_t num_observations_added_;
+  FilenameGenerator filename_generator_;
 };
 
 }  // namespace encoder

@@ -68,6 +68,9 @@ set(EXTERNAL_PROJECT_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typed
 set(GTEST_INSTALL_DIR ${CMAKE_BINARY_DIR}/third_party/googletest/googletest)
 set(GTEST_INCLUDE_DIR ${GTEST_INSTALL_DIR}/include)
 set(GTEST_LIB_DIR ${GTEST_INSTALL_DIR}/lib)
+
+set(GMOCK_INSTALL_DIR ${CMAKE_SOURCE_DIR}/third_party/googletest/googlemock)
+set(GMOCK_INCLUDE_DIR ${GMOCK_INSTALL_DIR}/include)
 ExternalProject_Add(gtest_external_project
                     SOURCE_DIR  ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest
                     PREFIX      ${GTEST_INSTALL_DIR}
@@ -78,6 +81,7 @@ ExternalProject_Add(gtest_external_project
                                 -DCMAKE_CXX_FLAGS=${EXTERNAL_PROJECT_CMAKE_CXX_FLAGS}
                    )
 include_directories(BEFORE SYSTEM ${GTEST_INCLUDE_DIR})
+include_directories(BEFORE ${GMOCK_INCLUDE_DIR})
 link_directories(${GTEST_LIB_DIR})
 
 # Build gflags as an external project.

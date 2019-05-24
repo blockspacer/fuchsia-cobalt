@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "encoder/file_observation_store.h"
+
 #include <random>
 #include <utility>
 
@@ -10,7 +12,7 @@
 #include "encoder/client_secret.h"
 #include "encoder/encoder.h"
 #include "encoder/fake_system_data.h"
-#include "encoder/file_observation_store.h"
+#include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "util/posix_file_system.h"
 // Generated from file_observation_store_test_config.yaml
 #include "encoder/file_observation_store_test_config.h"
@@ -19,6 +21,7 @@ namespace cobalt {
 namespace encoder {
 
 using config::ClientConfig;
+using ::testing::MatchesRegex;
 using util::EncryptedMessageMaker;
 using util::PosixFileSystem;
 
@@ -286,18 +289,21 @@ TEST_F(FileObservationStoreTest, IgnoresUnexpectedFiles) {
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 0u);
   EXPECT_EQ(store_->TakeNextEnvelopeHolder(), nullptr);
 
-  { std::ofstream empty_invalid(test_dir_name_ + "/10000000-100000.data"); }
+  { std::ofstream empty_invalid(test_dir_name_ + "/10000000-100000000.data"); }
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 0u);
   EXPECT_EQ(store_->TakeNextEnvelopeHolder(), nullptr);
 
-  { std::ofstream empty_valid(test_dir_name_ + "/1234567890123-1234567.data"); }
+  {
+    std::ofstream empty_valid(test_dir_name_ +
+                              "/1234567890123-1234567890.data");
+  }
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 1u);
   EXPECT_NE(store_->TakeNextEnvelopeHolder(), nullptr);
 }
 
 TEST_F(FileObservationStoreTest, HandlesCorruptFiles) {
   {
-    std::ofstream file(test_dir_name_ + "/1234567890123-1234567.data");
+    std::ofstream file(test_dir_name_ + "/1234567890123-1234567890.data");
     file << "CORRUPT DATA!!!";
   }
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 1u);
@@ -336,6 +342,25 @@ TEST_F(FileObservationStoreTest, StressTest) {
 
     ASSERT_EQ(store_->Size(), 0u);
   }
+}
+
+TEST(FilenameGenerator, PadsTimestamp) {
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
+                return 1234;
+              }).GenerateFilename(),
+              MatchesRegex(R"(0000000001234-[0-9]{10}.data)"));
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
+                return 1234567;
+              }).GenerateFilename(),
+              MatchesRegex(R"(0000001234567-[0-9]{10}.data)"));
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
+                return 1234567890123;
+              }).GenerateFilename(),
+              MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
+                return 12345678901239;
+              }).GenerateFilename(),
+              MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
 }
 
 }  // namespace encoder

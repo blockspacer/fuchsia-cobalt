@@ -123,6 +123,13 @@ cobalt_config_header("generate_shipping_manager_test_config") {
   output_file = "shipping_manager_test_config.h"
 }
 
+# Generate file_observation_store_test_config.h from
+# file_observation_store_test_config.yaml.
+cobalt_config_header("generate_file_observation_store_test_config") {
+  input_yaml = "file_observation_store_test_config.yaml"
+  output_file = "file_observation_store_test_config.h"
+}
+
 source_set("unittests") {
   testonly = true
 
@@ -132,6 +139,7 @@ source_set("unittests") {
     "encoder_test_config.h",
     "envelope_maker_test.cc",
     "envelope_maker_test_config.h",
+    "file_observation_store_test.cc",
     "send_retryer_test.cc",
     "shipping_manager_test.cc",
     "shipping_manager_test_config.h",
@@ -143,11 +151,13 @@ source_set("unittests") {
     ":encoder",
     ":generate_encoder_test_config",
     ":generate_envelope_maker_test_config",
+    ":generate_file_observation_store_test_config",
     ":generate_shipping_manager_test_config",
     ":legacy_project_context",
     "//garnet/public/lib/syslog/cpp",
     "//third_party/abseil-cpp",
     "//third_party/gflags",
+    "//third_party/googletest:gmock",
     "//third_party/googletest:gtest_main",
   ]
 

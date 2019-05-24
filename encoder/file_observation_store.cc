@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <ctime>
+#include <iomanip>
 #include <regex>
 #include <utility>
 
@@ -24,9 +25,9 @@ const char kActiveFileName[] = "in_progress.data";
 // since the unix epoch. The millisecond timestamp became 13 digits in
 // September 2001, and won't be 14 digits until 2286.
 //
-// The second part of the filename is 7 digits, which is a random number in the
-// range 1000000-9999999.
-const std::regex kFinalizedFileRegex(R"(\d{13}-\d{7}.data)");
+// The second part of the filename is 10 digits, which is a random number in the
+// range 1000000000-9999999999.
+const std::regex kFinalizedFileRegex(R"(\d{13}-\d{10}.data)");
 
 FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
                                            size_t max_bytes_per_envelope,
@@ -39,7 +40,6 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
       fs_(std::move(fs)),
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
-      random_int_(1000000, 9999999),
       name_(std::move(name)),
       num_observations_added_(0) {
   CHECK(fs_);
@@ -65,9 +65,10 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
     // terminated unexpectedly last time. In this case, the file should be
     // finalized in order to be Taken from the store.
     //
-    // For simplicity's sake, we attempt to the active_file_name_ while ignoring
-    // the result. If the operation succeeds, then we rescued the active file.
-    // Otherwise, there probably was no active file in the first place.
+    // For simplicity's sake, we attempt to finalize the active_file_name_ while
+    // ignoring the result. If the operation succeeds, then we rescued the
+    // active file. Otherwise, there probably was no active file in the first
+    // place.
     FinalizeActiveFile(&fields);
   }
 }
@@ -170,7 +171,7 @@ bool FileObservationStore::FinalizeActiveFile(
     return false;
   }
 
-  auto new_name = FullPath(GenerateFinalizedName());
+  auto new_name = FullPath(filename_generator_.GenerateFilename());
   if (!fs_->Rename(active_file_name_, new_name)) {
     return false;
   }
@@ -179,13 +180,24 @@ bool FileObservationStore::FinalizeActiveFile(
   return true;
 }
 
-std::string FileObservationStore::GenerateFinalizedName() const {
-  auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                 std::chrono::system_clock::now().time_since_epoch())
-                 .count();
-  std::stringstream ss;
-  ss << now << "-" << random_int_(random_dev_) << ".data";
-  return ss.str();
+FileObservationStore::FilenameGenerator::FilenameGenerator()
+    : FilenameGenerator([]() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+      }) {}
+
+FileObservationStore::FilenameGenerator::FilenameGenerator(
+    std::function<int64_t()> now)
+    : now_(now), random_int_(1000000000, 9999999999) {}
+
+std::string FileObservationStore::FilenameGenerator::GenerateFilename() const {
+  std::stringstream date;
+  std::stringstream fname;
+  date << std::setfill('0') << std::setw(13) << now_();
+  fname << date.str().substr(0, 13) << "-" << random_int_(random_dev_)
+        << ".data";
+  return fname.str();
 }
 
 std::string FileObservationStore::FullPath(const std::string &filename) const {

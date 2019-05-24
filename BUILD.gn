@@ -40,8 +40,8 @@ executable("cobalt_core_unittests") {
 
   deps = [
     "config:tests",
-    "logger:tests",
     "encoder:unittests",
+    "logger:tests",
     "//third_party/googletest:gtest_main",
   ]
 }
