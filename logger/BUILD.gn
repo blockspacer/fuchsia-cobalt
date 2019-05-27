@@ -273,6 +273,7 @@ source_set("internal_metrics_test") {
 
   public_deps = [
     ":internal_metrics",
+    ":logger_test_utils",
     "//third_party/googletest:gtest"
   ]
 }
