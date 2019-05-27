@@ -112,7 +112,7 @@ class FileObservationStoreTest : public ::testing::Test {
 // Adds some small Observations and checks that the count of received
 // Observations is incremented correctly. Checks that ResetObservationCount()
 // zeros the count.
-TEST_F(FileObservationStoreTest, UpdateObservationCount) {
+TEST_F(FileObservationStoreTest, DISABLED_UpdateObservationCount) {
   EXPECT_EQ(store_->num_observations_added(), 0u);
   EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
   EXPECT_EQ(store_->num_observations_added(), 1u);
@@ -128,7 +128,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
 
 // Adds a too-big Observation. Checks that a |kObservationTooBig| status is
 // returned and that the count of received Observations is not incremented.
-TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
+TEST_F(FileObservationStoreTest, DISABLED_UpdateObservationCountTooBig) {
   ASSERT_EQ(store_->num_observations_added(), 0u);
   EXPECT_EQ(
       ObservationStore::kObservationTooBig,
@@ -136,7 +136,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
-TEST_F(FileObservationStoreTest, AddRetrieveSingleObservation) {
+TEST_F(FileObservationStoreTest, DISABLED_AddRetrieveSingleObservation) {
   EXPECT_EQ(ObservationStore::kOk, AddObservation(50));
   auto envelope = store_->TakeNextEnvelopeHolder();
   // Since we haven't written kMaxBytesPerEnvelope yet, there are no finalized
@@ -144,7 +144,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveSingleObservation) {
   EXPECT_NE(envelope, nullptr);
 }
 
-TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
+TEST_F(FileObservationStoreTest, DISABLED_AddRetrieveFullEnvelope) {
   for (int i = 0; i < 4; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(100));
   }
@@ -156,7 +156,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
   EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), 4);
 }
 
-TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
+TEST_F(FileObservationStoreTest, DISABLED_AddRetrieveMultipleFullEnvelopes) {
   for (int i = 0; i < 5 * 4; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(100)) << "i=" << i;
   }
@@ -170,7 +170,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
   }
 }
 
-TEST_F(FileObservationStoreTest, Add2FullAndReturn1) {
+TEST_F(FileObservationStoreTest, DISABLED_Add2FullAndReturn1) {
   for (int i = 0; i < 2 * 4; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(100));
   }
@@ -190,7 +190,7 @@ TEST_F(FileObservationStoreTest, Add2FullAndReturn1) {
 }
 
 // Tests that kStoreFull is returned when the store becomes full.
-TEST_F(FileObservationStoreTest, StoreFull) {
+TEST_F(FileObservationStoreTest, DISABLED_StoreFull) {
   constexpr int kObservationSize = 100;
 
   // Note that kNumObservationsThatWillFit is discovered by experiment
@@ -253,7 +253,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   }
 }
 
-TEST_F(FileObservationStoreTest, RecoverAfterCrashWithNoObservations) {
+TEST_F(FileObservationStoreTest, DISABLED_RecoverAfterCrashWithNoObservations) {
   EXPECT_TRUE(store_->Empty());
 
   // Simulate the store crashing.
@@ -266,7 +266,7 @@ TEST_F(FileObservationStoreTest, RecoverAfterCrashWithNoObservations) {
   EXPECT_TRUE(store_->Empty());
 }
 
-TEST_F(FileObservationStoreTest, RecoverAfterCrash) {
+TEST_F(FileObservationStoreTest, DISABLED_RecoverAfterCrash) {
   // Add some observations, but not enough to finalize.
   for (int i = 0; i < 3; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(100));
@@ -284,7 +284,7 @@ TEST_F(FileObservationStoreTest, RecoverAfterCrash) {
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 1u);
 }
 
-TEST_F(FileObservationStoreTest, IgnoresUnexpectedFiles) {
+TEST_F(FileObservationStoreTest, DISABLED_IgnoresUnexpectedFiles) {
   { std::ofstream dummy(test_dir_name_ + "/BAD_FILE"); }
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 0u);
   EXPECT_EQ(store_->TakeNextEnvelopeHolder(), nullptr);
@@ -301,7 +301,7 @@ TEST_F(FileObservationStoreTest, IgnoresUnexpectedFiles) {
   EXPECT_NE(store_->TakeNextEnvelopeHolder(), nullptr);
 }
 
-TEST_F(FileObservationStoreTest, HandlesCorruptFiles) {
+TEST_F(FileObservationStoreTest, DISABLED_HandlesCorruptFiles) {
   {
     std::ofstream file(test_dir_name_ + "/1234567890123-1234567890.data");
     file << "CORRUPT DATA!!!";
@@ -314,7 +314,7 @@ TEST_F(FileObservationStoreTest, HandlesCorruptFiles) {
   EXPECT_EQ(read_env.batch_size(), 0);
 }
 
-TEST_F(FileObservationStoreTest, StressTest) {
+TEST_F(FileObservationStoreTest, DISABLED_StressTest) {
   std::random_device rd;
   for (int i = 0; i < 5000; i++) {
     // Between 5-15 observations.
