@@ -20,6 +20,7 @@ proto_library("cobalt_proto") {
     "encrypted_message.proto",
     "envelope.proto",
     "event.proto",
+    "key.proto",
     "observation.proto",
     "observation2.proto",
     "observation_batch.proto",

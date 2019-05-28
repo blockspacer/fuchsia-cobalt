@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "./encrypted_message.pb.h"
+#include "./key.pb.h"
 #include "./logging.h"
 #include "./tracing.h"
 #include "google/protobuf/message_lite.h"
@@ -34,25 +35,18 @@ Status StatusFromTinkStatus(::crypto::tink::util::Status tink_status) {
                 tink_status.error_message());
 }
 
+// Make a HybridTinkEncryptedMessageMaker from a serialized encoded keyset.
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-MakeHybridTinkEncryptedMessageMaker(const std::string& public_keyset_base64,
-                                    const std::string& context_info) {
-  if (public_keyset_base64.empty()) {
-    return Status(INVALID_ARGUMENT, "EncryptedMessageMaker: Empty key.");
-  }
-
+MakeHybridTinkEncryptedMessageMaker(const std::string& public_keyset_bytes,
+                                    const std::string& context_info,
+                                    uint32_t key_index) {
   auto status = ::crypto::tink::HybridConfig::Register();
   if (!status.ok()) {
     return StatusFromTinkStatus(status);
   }
 
-  std::string public_keyset;
-  if (!crypto::Base64Decode(public_keyset_base64, &public_keyset)) {
-    return Status(INVALID_ARGUMENT,
-                  "EncryptedMessageMaker: Invalid base64-encoded keyset.");
-  }
-
-  auto read_result = ::crypto::tink::KeysetHandle::ReadNoSecret(public_keyset);
+  auto read_result =
+      ::crypto::tink::KeysetHandle::ReadNoSecret(public_keyset_bytes);
   if (!read_result.ok()) {
     return StatusFromTinkStatus(read_result.status());
   }
@@ -66,9 +60,53 @@ MakeHybridTinkEncryptedMessageMaker(const std::string& public_keyset_base64,
 
   std::unique_ptr<EncryptedMessageMaker> maker(
       new HybridTinkEncryptedMessageMaker(
-          std::move(primitive_result.ValueOrDie()), context_info));
+          std::move(primitive_result.ValueOrDie()), context_info, key_index));
 
   return maker;
+}
+
+// Make a HybridTinkEncryptedMessageMaker from a base64 encoded keyset.
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+MakeHybridTinkEncryptedMessageMakerFromBase64(
+    const std::string& public_keyset_base64, const std::string& context_info,
+    uint32_t key_index = 0) {
+  if (public_keyset_base64.empty()) {
+    return Status(INVALID_ARGUMENT, "EncryptedMessageMaker: Empty key.");
+  }
+
+  std::string public_keyset_bytes;
+  if (!crypto::Base64Decode(public_keyset_base64, &public_keyset_bytes)) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Invalid base64-encoded keyset.");
+  }
+
+  return MakeHybridTinkEncryptedMessageMaker(public_keyset_bytes, context_info,
+                                             key_index);
+}
+
+// Parse and validate a serialized CobaltEncryptionKey.
+statusor::StatusOr<cobalt::CobaltEncryptionKey> ParseCobaltEncryptionKey(
+    const std::string& cobalt_encryption_key_bytes) {
+  cobalt::CobaltEncryptionKey cobalt_encryption_key;
+  if (!cobalt_encryption_key.ParseFromString(cobalt_encryption_key_bytes)) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Invalid Cobalt encryption key.");
+  }
+
+  if (cobalt_encryption_key.key_index() == 0) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Invalid Cobalt key_index: 0.");
+  }
+
+  if (cobalt_encryption_key.purpose() !=
+          cobalt::CobaltEncryptionKey::SHUFFLER &&
+      cobalt_encryption_key.purpose() !=
+          cobalt::CobaltEncryptionKey::ANALYZER) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Invalid Cobalt key purpose.");
+  }
+
+  return cobalt_encryption_key;
 }
 }  // namespace
 
@@ -79,24 +117,67 @@ EncryptedMessageMaker::MakeUnencrypted() {
   return std::make_unique<UnencryptedMessageMaker>();
 }
 
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeForEnvelopes(
+    const std::string& cobalt_encryption_key_bytes) {
+  auto cobalt_encryption_key_or_result =
+      ParseCobaltEncryptionKey(cobalt_encryption_key_bytes);
+  if (!cobalt_encryption_key_or_result.ok()) {
+    return cobalt_encryption_key_or_result.status();
+  }
+  auto cobalt_encryption_key = cobalt_encryption_key_or_result.ValueOrDie();
+
+  if (cobalt_encryption_key.purpose() !=
+      cobalt::CobaltEncryptionKey::SHUFFLER) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Expected a shuffler key.");
+  }
+
+  return MakeHybridTinkEncryptedMessageMaker(
+      cobalt_encryption_key.serialized_key(), kShufflerContextInfo,
+      cobalt_encryption_key.key_index());
+}
+
+statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeForObservations(
+    const std::string& cobalt_encryption_key_bytes) {
+  auto cobalt_encryption_key_or_result =
+      ParseCobaltEncryptionKey(cobalt_encryption_key_bytes);
+  if (!cobalt_encryption_key_or_result.ok()) {
+    return cobalt_encryption_key_or_result.status();
+  }
+  auto cobalt_encryption_key = cobalt_encryption_key_or_result.ValueOrDie();
+
+  if (cobalt_encryption_key.purpose() !=
+      cobalt::CobaltEncryptionKey::ANALYZER) {
+    return Status(INVALID_ARGUMENT,
+                  "EncryptedMessageMaker: Expected an analyzer key.");
+  }
+
+  return MakeHybridTinkEncryptedMessageMaker(
+      cobalt_encryption_key.serialized_key(), kAnalyzerContextInfo,
+      cobalt_encryption_key.key_index());
+}
+
 // TODO(azani): Delete when we stop using it.
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeHybridTink(const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64, "");
+  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
+                                                       "");
 }
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeHybridTinkForEnvelopes(
     const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64,
-                                             kShufflerContextInfo);
+  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
+                                                       kShufflerContextInfo);
 }
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeHybridTinkForObservations(
     const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMaker(public_keyset_base64,
-                                             kAnalyzerContextInfo);
+  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
+                                                       kAnalyzerContextInfo);
 }
 
 statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
@@ -113,8 +194,10 @@ EncryptedMessageMaker::MakeHybridEcdh(const std::string& public_key_pem) {
 
 HybridTinkEncryptedMessageMaker::HybridTinkEncryptedMessageMaker(
     std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
-    const std::string& context_info)
-    : encrypter_(std::move(encrypter)), context_info_(context_info) {}
+    const std::string& context_info, uint32_t key_index)
+    : encrypter_(std::move(encrypter)),
+      context_info_(context_info),
+      key_index_(key_index) {}
 
 bool HybridTinkEncryptedMessageMaker::Encrypt(
     const google::protobuf::MessageLite& message,
@@ -137,7 +220,11 @@ bool HybridTinkEncryptedMessageMaker::Encrypt(
     return false;
   }
   encrypted_message->set_ciphertext(encrypted_result.ValueOrDie());
-  encrypted_message->set_scheme(EncryptedMessage::HYBRID_TINK);
+  if (key_index_ == 0) {
+    encrypted_message->set_scheme(EncryptedMessage::HYBRID_TINK);
+  } else {
+    encrypted_message->set_key_index(key_index_);
+  }
 
   return true;
 }

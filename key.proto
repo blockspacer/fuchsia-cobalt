@@ -1,0 +1,27 @@
+// Copyright 2019 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+syntax = "proto3";
+
+package cobalt;
+
+option go_package = "cobalt";
+
+// A CobaltEncryptionKey carries a Cobalt encryption key (public key) along with
+// metadata about the key.
+message CobaltEncryptionKey {
+  // Serialized key.
+  bytes serialized_key = 1;
+
+  // Unique index for this key. Used in EncryptedMessage.
+  uint32 key_index = 2;
+
+  enum KeyPurpose {
+    UNSET = 0;
+    SHUFFLER = 1;
+    ANALYZER = 2;
+  }
+
+  // Encrypt messages for shuffler or analyzer?
+  KeyPurpose purpose = 3;
+}

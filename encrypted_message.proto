@@ -46,6 +46,10 @@ message EncryptedMessage {
   // Which scheme was used to encrypt this message?
   EncryptionScheme scheme = 1;
 
+  // Which key was used to encrypt this message?
+  // This key is mutually exclusive with |scheme| being set.
+  uint32 key_index = 4;
+
   // 32-byte fingerprint (SHA256) of the recipient’s public key.
   // This is used to facilitate key rotation.
   bytes public_key_fingerprint = 2;
