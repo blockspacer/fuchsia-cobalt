@@ -268,13 +268,14 @@ source_set("internal_metrics_test") {
   testonly = true
 
   sources = [
-    "internal_metrics_test.cc"
+    "internal_metrics_test.cc",
   ]
 
   public_deps = [
+    ":cobalt_local_aggregation_proto",
     ":internal_metrics",
     ":logger_test_utils",
-    "//third_party/googletest:gtest"
+    "//third_party/googletest:gtest",
   ]
 }
 
@@ -282,7 +283,7 @@ group("tests") {
   testonly = true
 
   deps = [
-    ":logger_test",
     ":internal_metrics_test",
+    ":logger_test",
   ]
 }
