@@ -2,7 +2,6 @@
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """A library to help with building/deploying production cobalt packages."""
 
 import subprocess
@@ -12,16 +11,18 @@ import os
 
 import container_util
 
-COBALT_REPO_CLONE_URL = "https://fuchsia.googlesource.com/cobalt"
+COBALT_REPO_CLONE_URL = 'https://fuchsia.googlesource.com/cobalt'
+
 
 def _cobaltb(*args):
   cmd = ['./cobaltb.py']
   cmd.extend(args)
   subprocess.check_call(cmd)
 
+
 def _select_git_revision():
-  tags = subprocess.check_output(['git', 'tag', '-l',
-    '--sort=-version:refname']).strip().split('\n')[:5]
+  tags = subprocess.check_output(
+      ['git', 'tag', '-l', '--sort=-version:refname']).strip().split('\n')[:5]
   tags.append('HEAD')
 
   while True:
@@ -37,10 +38,12 @@ def _select_git_revision():
       if selection < len(tags):
         return tags[selection]
     except:
-      print("Invalid selection")
+      print('Invalid selection')
+
 
 def _build_and_test_cobalt_locally(git_revision):
   """ Assumes that the current working directory is a Cobalt repo.
+
   Checks out Cobalt at the given |git_revision| and then builds and tests
   Cobalt. Throws an exception if any step fails.
   """
@@ -51,8 +54,11 @@ def _build_and_test_cobalt_locally(git_revision):
   _cobaltb('test')
 
 
-def build_and_push_production_docker_images(cloud_project_name, production_dir,
-    git_revision, work_dir=None, skip_build=False):
+def build_and_push_production_docker_images(cloud_project_name,
+                                            production_dir,
+                                            git_revision,
+                                            work_dir=None,
+                                            skip_build=False):
   """ Builds and pushes production-ready docker images from a clean git repo.
 
   Returns a tag string that may be used to reference the versions of the docker
@@ -85,8 +91,8 @@ def build_and_push_production_docker_images(cloud_project_name, production_dir,
 
     if not skip_build:
       shutil.rmtree(clean_repo_dir, True)
-      subprocess.check_call(['git', 'clone', COBALT_REPO_CLONE_URL,
-                             clean_repo_dir])
+      subprocess.check_call(
+          ['git', 'clone', COBALT_REPO_CLONE_URL, clean_repo_dir])
 
     os.chdir(clean_repo_dir)
 
@@ -101,9 +107,11 @@ def build_and_push_production_docker_images(cloud_project_name, production_dir,
       _build_and_test_cobalt_locally(git_revision)
 
     print "\nInvoking 'cobaltb.py deploy build'..."
-    p = subprocess.Popen(['./cobaltb.py', 'deploy', 'build',
-                           '--production_dir=%s' % production_dir],
-                           stdin=subprocess.PIPE)
+    p = subprocess.Popen([
+        './cobaltb.py', 'deploy', 'build',
+        '--production_dir=%s' % production_dir
+    ],
+                         stdin=subprocess.PIPE)
     p.communicate('yes')
     if p.wait() != 0:
       raise Exception("Invocation of 'cobaltb.py deploy build' failed.")
@@ -124,26 +132,29 @@ def build_and_push_production_docker_images(cloud_project_name, production_dir,
       tags_to_apply.append(subrev)
 
     for tag in tags_to_apply:
-      print "Pushing Shuffler to container registry at %s with tag=%s.\n" % (
+      print 'Pushing Shuffler to container registry at %s with tag=%s.\n' % (
           cloud_project_name, tag)
-      container_util.push_shuffler_to_container_registry('', cloud_project_name,
-          tag)
-      print ("Pushing Analyzer Service to container registry at "
-          "%s with tag=%s.\n" % (cloud_project_name, tag))
-      container_util.push_analyzer_service_to_container_registry('',
-          cloud_project_name, tag)
-      print ("Pushing ReportMaster  to container registry at "
-          "%s with tag=%s.\n" % (cloud_project_name, tag))
-      container_util.push_report_master_to_container_registry('',
-          cloud_project_name, tag)
+      container_util.push_shuffler_to_container_registry(
+          '', cloud_project_name, tag)
+      print(
+          'Pushing Analyzer Service to container registry at '
+          '%s with tag=%s.\n' % (cloud_project_name, tag))
+      container_util.push_analyzer_service_to_container_registry(
+          '', cloud_project_name, tag)
+      print(
+          'Pushing ReportMaster  to container registry at '
+          '%s with tag=%s.\n' % (cloud_project_name, tag))
+      container_util.push_report_master_to_container_registry(
+          '', cloud_project_name, tag)
 
     return full_rev
   finally:
     os.chdir(wd)
     if work_dir is None:
-      raw_input("Press enter to delete temp directory...")
-      print("Cleaning up")
+      raw_input('Press enter to delete temp directory...')
+      print('Cleaning up')
       shutil.rmtree(clean_repo_dir)
+
 
 def main():
   # Note(rudominer) It may be useful to directly run this script in order to
@@ -153,13 +164,14 @@ def main():
   # skip_build=False in order to perform the build and after that run with
   # skip_build=True in order to debug Docker (or debug this script) without
   # needing to redo the build.
-  cloud_project_name='<your project name>'
-  production_dir=''
-  git_revision=None
-  work_dir='<some directory>'
-  skip_build=True
+  cloud_project_name = '<your project name>'
+  production_dir = ''
+  git_revision = None
+  work_dir = '<some directory>'
+  skip_build = True
   build_and_push_production_docker_images(cloud_project_name, production_dir,
-    git_revision, work_dir, skip_build)
+                                          git_revision, work_dir, skip_build)
+
 
 if __name__ == '__main__':
   main()

@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Runs cpp lint on all of Cobalt's C++ files."""
 
 import os
@@ -34,31 +33,38 @@ SKIP_LINT_DIRS = [
     os.path.join(SRC_ROOT_DIR, 'shuffler'),
     os.path.join(SRC_ROOT_DIR, 'sysroot'),
     os.path.join(SRC_ROOT_DIR, 'third_party'),
-    os.path.join(SRC_ROOT_DIR,
-                 'config/config_parser/src/source_generator/source_generator_test_files'),
+    os.path.join(
+        SRC_ROOT_DIR,
+        'config/config_parser/src/source_generator/source_generator_test_files'
+    ),
 ]
+
 
 def main():
   status = 0
   for root, dirs, files in os.walk(SRC_ROOT_DIR):
-    print "Linting c++ files in %s" % root
+    print 'Linting c++ files in %s' % root
     for f in files:
       if f.endswith('.h') or f.endswith('.cc'):
         full_path = os.path.join(root, f)
         cmd = subprocess.Popen([CPP_LINT, '--root', SRC_ROOT_DIR, full_path],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
         out, err = cmd.communicate()
 
         if cmd.returncode:
           status += 1
-          print "Error %s" % err
+          print 'Error %s' % err
 
     # Before recursing into directories remove the ones we want to skip.
-    dirs_to_skip = [dir for dir in dirs if dir.startswith(".") or
-        os.path.join(root, dir) in SKIP_LINT_DIRS]
+    dirs_to_skip = [
+        dir for dir in dirs
+        if dir.startswith('.') or os.path.join(root, dir) in SKIP_LINT_DIRS
+    ]
     for d in dirs_to_skip:
       dirs.remove(d)
   return status
+
 
 if __name__ == '__main__':
   exit(main())
