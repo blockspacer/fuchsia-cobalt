@@ -14,14 +14,16 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )
 
 var (
-	oldCfg = flag.String("old_config", "", "Path of the old generated config.")
-	newCfg = flag.String("new_config", "", "Path of the new generated config.")
+	oldCfg    = flag.String("old_config", "", "Path of the old generated config.")
+	newCfg    = flag.String("new_config", "", "Path of the new generated config.")
+	commitMsg = flag.String("commit_msg", "", "The commit message of the change that is being verified.")
 )
 
 func check(e error) {
@@ -37,6 +39,12 @@ func main() {
 		glog.Exit("Both 'old_config' and 'new_config' are required")
 	}
 
+	ignoreCompatChecks := false
+	matches, _ := regexp.MatchString(`COBALT_BACKWARDS_INCOMPATIBLE_CHANGE_DATA_CORRUPTION_POSSIBLE *= *(1|yes|true|ok)`, *commitMsg)
+	if matches {
+		ignoreCompatChecks = true
+	}
+
 	old := config.CobaltRegistry{}
 	n := config.CobaltRegistry{}
 
@@ -48,10 +56,10 @@ func main() {
 	check(err)
 	proto.Unmarshal(data, &n)
 
-	check(CompareConfigs(&old, &n))
+	check(CompareConfigs(&old, &n, ignoreCompatChecks))
 }
 
-func CompareConfigs(oldCfg, newCfg *config.CobaltRegistry) error {
+func CompareConfigs(oldCfg, newCfg *config.CobaltRegistry, ignoreCompatChecks bool) error {
 	oldCustomers := map[string]*config.CustomerConfig{}
 	newCustomers := map[string]*config.CustomerConfig{}
 
@@ -66,7 +74,7 @@ func CompareConfigs(oldCfg, newCfg *config.CobaltRegistry) error {
 	for name, oldCust := range oldCustomers {
 		newCust, ok := newCustomers[name]
 		if ok {
-			err := CompareCustomers(oldCust, newCust)
+			err := CompareCustomers(oldCust, newCust, ignoreCompatChecks)
 			if err != nil {
 				return fmt.Errorf("for customer named '%s': %v", name, err)
 			}
@@ -76,7 +84,7 @@ func CompareConfigs(oldCfg, newCfg *config.CobaltRegistry) error {
 	return nil
 }
 
-func CompareCustomers(oldCfg, newCfg *config.CustomerConfig) error {
+func CompareCustomers(oldCfg, newCfg *config.CustomerConfig, ignoreCompatChecks bool) error {
 	oldProjects := map[string]*config.ProjectConfig{}
 	newProjects := map[string]*config.ProjectConfig{}
 
@@ -91,7 +99,7 @@ func CompareCustomers(oldCfg, newCfg *config.CustomerConfig) error {
 	for name, oldProj := range oldProjects {
 		newProj, ok := newProjects[name]
 		if ok {
-			err := CompareProjects(oldProj, newProj)
+			err := CompareProjects(oldProj, newProj, ignoreCompatChecks)
 			if err != nil {
 				return fmt.Errorf("for project named '%s': %v", name, err)
 			}
@@ -101,7 +109,7 @@ func CompareCustomers(oldCfg, newCfg *config.CustomerConfig) error {
 	return nil
 }
 
-func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
+func CompareProjects(oldCfg, newCfg *config.ProjectConfig, ignoreCompatChecks bool) error {
 	oldMetrics := map[string]*config.MetricDefinition{}
 	newMetrics := map[string]*config.MetricDefinition{}
 
@@ -116,7 +124,7 @@ func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
 	for name, oldMetric := range oldMetrics {
 		newMetric, ok := newMetrics[name]
 		if ok {
-			err := CompareMetrics(oldMetric, newMetric)
+			err := CompareMetrics(oldMetric, newMetric, ignoreCompatChecks)
 			if err != nil {
 				return fmt.Errorf("for metric named '%s': %v", name, err)
 			}
@@ -133,7 +141,7 @@ func CompareProjects(oldCfg, newCfg *config.ProjectConfig) error {
 	return nil
 }
 
-func CompareMetrics(oldMetric, newMetric *config.MetricDefinition) error {
+func CompareMetrics(oldMetric, newMetric *config.MetricDefinition, ignoreCompatChecks bool) error {
 	// Debug metrics are ignored for the purposes of change validation.
 	if oldMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG || newMetric.MetaData.MaxReleaseStage <= config.ReleaseStage_DEBUG {
 		return nil
@@ -153,7 +161,7 @@ func CompareMetrics(oldMetric, newMetric *config.MetricDefinition) error {
 	for ix, oldDimension := range oldDimensions {
 		newDimension, ok := newDimensions[ix]
 		if ok {
-			err := CompareDimensions(oldDimension, newDimension)
+			err := CompareDimensions(oldDimension, newDimension, ignoreCompatChecks)
 			if err != nil {
 				return fmt.Errorf("for dimension index '%d': %v", ix, err)
 			}
@@ -163,10 +171,10 @@ func CompareMetrics(oldMetric, newMetric *config.MetricDefinition) error {
 	return nil
 }
 
-func CompareDimensions(oldDimension, newDimension *config.MetricDefinition_MetricDimension) error {
+func CompareDimensions(oldDimension, newDimension *config.MetricDefinition_MetricDimension, ignoreCompatChecks bool) error {
 	for code, oldName := range oldDimension.EventCodes {
 		_, ok := newDimension.EventCodes[code]
-		if !ok {
+		if !ok && !ignoreCompatChecks {
 			return fmt.Errorf("removing an event code is not allowed: %d: %s", code, oldName)
 		}
 	}
