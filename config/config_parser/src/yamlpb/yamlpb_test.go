@@ -166,3 +166,52 @@ func TestMarshalString(t *testing.T) {
 		t.Errorf("yamlpb roundtrip failed: %v != %v", m, r)
 	}
 }
+
+// We test unmarshaling a protobuf from a YAML string containing a YAML anchor.
+func TestUnmarshalStringWithAnchor(t *testing.T) {
+	s := `
+nested_r:
+- &anchor_nested_r
+  uint32_v: 5
+- uint32_v: 7
+- *anchor_nested_r
+`
+
+	m := test_pb.TestMessage{}
+	if err := UnmarshalString(s, &m); err != nil {
+		t.Error(err)
+	}
+
+	e := test_pb.TestMessage{
+		NestedR: []*test_pb.NestedTestMessage{
+			&test_pb.NestedTestMessage{Uint32V: 5},
+			&test_pb.NestedTestMessage{Uint32V: 7},
+			&test_pb.NestedTestMessage{Uint32V: 5},
+		},
+	}
+	if !proto.Equal(&m, &e) {
+		t.Errorf("%v != %v", m, e)
+	}
+}
+
+// We test unmarshaling a protobuf from a YAML string containing a YAML alias.
+func TestUnmarshalStringWithAlias(t *testing.T) {
+	s := `
+uint32_r:
+- &num_alias 10
+- 5
+- *num_alias
+`
+
+	m := test_pb.TestMessage{}
+	if err := UnmarshalString(s, &m); err != nil {
+		t.Error(err)
+	}
+
+	e := test_pb.TestMessage{
+		Uint32R: []uint32{10, 5, 10},
+	}
+	if !proto.Equal(&m, &e) {
+		t.Errorf("%v != %v", m, e)
+	}
+}
