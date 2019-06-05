@@ -519,25 +519,43 @@ void EventAggregator::DoScheduledTasks(
       TimeToDayIndex(current_time_t, MetricDefinition::UTC);
   auto current_day_index_local =
       TimeToDayIndex(current_time_t, MetricDefinition::LOCAL);
+  // Skip the tasks (but do schedule a retry) if either day index is too small.
+  uint32_t min_allowed_day_index =
+      kMaxAllowedAggregationWindowSize + backfill_days_ + 1;
+  bool skip_tasks = (current_day_index_utc < min_allowed_day_index ||
+                     current_day_index_local < min_allowed_day_index);
+
   if (current_time >= next_generate_obs_) {
-    auto obs_status = GenerateObservations(current_day_index_utc - 1,
-                                           current_day_index_local - 1);
-    if (obs_status == kOK) {
-      BackUpObservationHistory();
-    } else {
-      LOG(ERROR) << "GenerateObservations failed with status: " << obs_status;
-    }
     next_generate_obs_ += generate_obs_interval_;
+    if (skip_tasks) {
+      LOG_FIRST_N(ERROR, 10)
+          << "EventAggregator is skipping Observation generation because the "
+             "current day index is too small.";
+    } else {
+      auto obs_status = GenerateObservations(current_day_index_utc - 1,
+                                             current_day_index_local - 1);
+      if (obs_status == kOK) {
+        BackUpObservationHistory();
+      } else {
+        LOG(ERROR) << "GenerateObservations failed with status: " << obs_status;
+      }
+    }
   }
   if (current_time >= next_gc_) {
-    auto gc_status =
-        GarbageCollect(current_day_index_utc - 1, current_day_index_local - 1);
-    if (gc_status == kOK) {
-      BackUpLocalAggregateStore();
-    } else {
-      LOG(ERROR) << "GarbageCollect failed with status: " << gc_status;
-    }
     next_gc_ += gc_interval_;
+    if (skip_tasks) {
+      LOG_FIRST_N(ERROR, 10)
+          << "EventAggregator is skipping garbage collection because the "
+             "current day index is too small.";
+    } else {
+      auto gc_status = GarbageCollect(current_day_index_utc - 1,
+                                      current_day_index_local - 1);
+      if (gc_status == kOK) {
+        BackUpLocalAggregateStore();
+      } else {
+        LOG(ERROR) << "GarbageCollect failed with status: " << gc_status;
+      }
+    }
   }
 }
 
@@ -605,12 +623,11 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
   if (day_index_local == 0u) {
     day_index_local = day_index_utc;
   }
-  if (std::min(day_index_utc, day_index_local) <
-      backfill_days_ + kMaxAllowedAggregationWindowSize) {
-    LOG(ERROR) << "GarbageCollect: Day index must be >= backfill_days_ + "
-                  "kMaxAllowedAggregationWindowSize.";
-    return kInvalidArguments;
-  }
+  CHECK_LT(day_index_utc, UINT32_MAX);
+  CHECK_LT(day_index_local, UINT32_MAX);
+  CHECK_GE(day_index_utc, kMaxAllowedAggregationWindowSize + backfill_days_);
+  CHECK_GE(day_index_local, kMaxAllowedAggregationWindowSize + backfill_days_);
+
   auto locked = protected_aggregate_store_.lock();
   for (auto pair : locked->local_aggregate_store.by_report_key()) {
     uint32_t day_index;
@@ -662,12 +679,13 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
   if (final_day_index_local == 0u) {
     final_day_index_local = final_day_index_utc;
   }
-  if (std::min(final_day_index_utc, final_day_index_local) <
-      backfill_days_ + kMaxAllowedAggregationWindowSize) {
-    LOG(ERROR) << "GenerateObservations: Day index of Observation must be >= "
-                  "backfill_days_ + kMaxAllowedAggregationWindowSize.";
-    return kInvalidArguments;
-  }
+  CHECK_LT(final_day_index_utc, UINT32_MAX);
+  CHECK_LT(final_day_index_local, UINT32_MAX);
+  CHECK_GE(final_day_index_utc,
+           kMaxAllowedAggregationWindowSize + backfill_days_);
+  CHECK_GE(final_day_index_local,
+           kMaxAllowedAggregationWindowSize + backfill_days_);
+
   // Lock, copy the LocalAggregateStore, and release the lock. Use the copy to
   // generate observations.
   auto local_aggregate_store = CopyLocalAggregateStore();
@@ -696,11 +714,10 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
     // size and that all window sizes are positive and <=
     // kMaxAllowedAggregationWindowSize, and has sorted the elements of
     // config.window_size() in increasing order.
+    CHECK_GT(config.window_size_size(), 0);
     auto max_window_size = config.window_size(config.window_size_size() - 1);
-    if (final_day_index < max_window_size) {
-      LOG(ERROR) << "final_day_index must be >= max_window_size.";
-      return kInvalidArguments;
-    }
+    CHECK_GT(max_window_size, 0);
+    CHECK_GE(final_day_index, max_window_size);
 
     switch (metric.metric_type()) {
       case MetricDefinition::EVENT_OCCURRED: {
@@ -831,8 +848,9 @@ Status EventAggregator::GenerateUniqueActivesObservations(
     const MetricRef metric_ref, const std::string& report_key,
     const ReportAggregates& report_aggregates, uint32_t num_event_codes,
     uint32_t final_day_index) {
+  CHECK_GT(final_day_index, backfill_days_);
   // The earliest day index for which we might need to generate an
-  // Observation. GenerateObservations() has checked that this value is > 0.
+  // Observation.
   auto backfill_period_start = uint32_t(final_day_index - backfill_days_);
 
   for (uint32_t event_code = 0; event_code < num_event_codes; event_code++) {
@@ -997,8 +1015,8 @@ Status EventAggregator::GenerateSingleReportParticipationObservation(
 Status EventAggregator::GeneratePerDeviceNumericObservations(
     const MetricRef metric_ref, const std::string& report_key,
     const ReportAggregates& report_aggregates, uint32_t final_day_index) {
+  CHECK_GT(final_day_index, backfill_days_);
   // The first day index for which we might have to generate an Observation.
-  // GenerateObservations() has checked that this value is > 0.
   auto backfill_period_start = uint32_t(final_day_index - backfill_days_);
 
   // Generate any necessary PerDeviceNumericObservations for this report.
