@@ -59,6 +59,9 @@ std::string DebugString(const ValuePart& value) {
 // p = prob_0_becomes_1
 // q = prob_1_stays_1
 void FlipBits(double p, double q, crypto::Random* random, std::string* data) {
+  if (p <= 0.0 && q >= 1.0) {
+    return;
+  }
   for (size_t i = 0; i < data->size(); i++) {
     byte p_mask = random->RandomBits(p);
     byte q_mask = random->RandomBits(q);
