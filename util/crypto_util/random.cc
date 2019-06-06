@@ -15,6 +15,7 @@
 #include <openssl/rand.h>
 
 #include <cmath>
+#include <memory>
 
 #include "util/crypto_util/random.h"
 
@@ -39,22 +40,39 @@ uint64_t Random::RandomUint64() {
   return x;
 }
 
-byte Random::RandomBits(float p) {
-  if (p <= 0.0 || p > 1.0) {
-    return 0;
+bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
+  // For every byte, returned by this function we need to allocate 32 bytes.
+  // In order to prevent excessive allocations, this function will only
+  // return up to 256 bytes.
+  if (size > 256) {
+    return false;
   }
-  byte ret_val = 0;
+
+  if (p <= 0.0 || p > 1.0) {
+    for (std::size_t i = 0; i < size; i++) {
+      buffer[i] = 0;
+    }
+    return true;
+  }
 
   // threshold is the integer n in the range [0, 2^32] such that
   // n/2^32 best approximates p.
   uint64_t threshold =
       round(static_cast<double>(p) * (static_cast<double>(UINT32_MAX) + 1));
 
-  for (int i = 0; i < 8; i++) {
-    uint8_t random_bit = (RandomUint32() < threshold);
-    ret_val |= random_bit << i;
+  // For every bit in the output, we need a 32 bit number.
+  auto random_bytes = std::make_unique<uint32_t[]>(8 * size);
+  RandomBytes(reinterpret_cast<byte*>(random_bytes.get()),
+              8 * size * sizeof(uint32_t));
+  for (std::size_t byte_index = 0; byte_index < size; byte_index++) {
+    buffer[byte_index] = 0;
+    for (int i = 0; i < 8; i++) {
+      uint8_t random_bit = (random_bytes[byte_index + i] < threshold);
+      buffer[byte_index] |= random_bit << i;
+    }
   }
-  return ret_val;
+
+  return true;
 }
 
 }  // namespace crypto

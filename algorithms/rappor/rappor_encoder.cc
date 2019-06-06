@@ -16,9 +16,11 @@
 
 #include <cstring>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "./logging.h"
+#include "./tracing.h"
 #include "util/crypto_util/hash.h"
 #include "util/crypto_util/mac.h"
 #include "util/crypto_util/random.h"
@@ -58,15 +60,24 @@ std::string DebugString(const ValuePart& value) {
 //
 // p = prob_0_becomes_1
 // q = prob_1_stays_1
-void FlipBits(double p, double q, crypto::Random* random, std::string* data) {
+Status FlipBits(double p, double q, crypto::Random* random, std::string* data) {
   if (p <= 0.0 && q >= 1.0) {
-    return;
+    return kOK;
   }
+
+  TRACE_DURATION("cobalt_core", "FlipBits", "sz", data->size());
+  auto p_mask = std::make_unique<byte[]>(data->size());
+  auto q_mask = std::make_unique<byte[]>(data->size());
+  if (!random->RandomBits(p, p_mask.get(), data->size()) ||
+      !random->RandomBits(q, q_mask.get(), data->size())) {
+    return kInvalidInput;
+  }
+
   for (size_t i = 0; i < data->size(); i++) {
-    byte p_mask = random->RandomBits(p);
-    byte q_mask = random->RandomBits(q);
-    data->at(i) = (p_mask & ~data->at(i)) | (q_mask & data->at(i));
+    data->at(i) = (p_mask[i] & ~data->at(i)) | (q_mask[i] & data->at(i));
   }
+
+  return kOK;
 }
 
 }  // namespace
@@ -207,8 +218,11 @@ Status RapporEncoder::Encode(const ValuePart& value,
   // TODO(rudominer) Consider supporting prr in future versions of Cobalt.
 
   // Randomly flip some of the bits based on the probabilities p and q.
-  FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-           random_.get(), &data);
+  auto status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
+                         random_.get(), &data);
+  if (status != kOK) {
+    return status;
+  }
 
   observation_out->set_cohort(cohort_num_);
   observation_out->set_data(data);
@@ -225,6 +239,7 @@ BasicRapporEncoder::~BasicRapporEncoder() {}
 
 Status BasicRapporEncoder::Encode(const ValuePart& value,
                                   BasicRapporObservation* observation_out) {
+  TRACE_DURATION("cobalt_core", "BasicRapporEncoder::Encode");
   std::string data;
   auto status = InitializeObservationData(&data);
   if (status != kOK) {
@@ -248,8 +263,11 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
   // TODO(rudominer) Consider supporting prr in future versions of Cobalt.
 
   // Randomly flip some of the bits based on the probabilities p and q.
-  FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-           random_.get(), &data);
+  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
+                    random_.get(), &data);
+  if (status != kOK) {
+    return status;
+  }
 
   observation_out->set_data(data);
   return kOK;
@@ -263,8 +281,11 @@ Status BasicRapporEncoder::EncodeNullObservation(
     return status;
   }
   // Randomly flip some of the bits based on the probabilities p and q.
-  FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-           random_.get(), &data);
+  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
+                    random_.get(), &data);
+  if (status != kOK) {
+    return status;
+  }
   observation_out->set_data(data);
   return kOK;
 }

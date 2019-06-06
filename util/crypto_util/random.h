@@ -16,6 +16,7 @@
 #define COBALT_UTIL_CRYPTO_UTIL_RANDOM_H_
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include "util/crypto_util/types.h"
@@ -32,7 +33,7 @@ class Random {
 
   // Writes |num| bytes of random data from a uniform distribution to buf.
   // The caller must ensure that |buf| has enough space.
-  virtual void RandomBytes(byte *buf, std::size_t num);
+  virtual void RandomBytes(byte* buf, std::size_t num);
 
   // Writes |buf->size()| bytes of random data from a uniform distribution
   // into buf.
@@ -44,11 +45,13 @@ class Random {
   // Returns a uniformly random integer in the range [0, 2^64-1].
   uint64_t RandomUint64();
 
-  // Returns 8 independent random bits. For each bit the probability of being
-  // equal to one is the given p. p must be in the range [0.0, 1.0] or the
-  // result is undefined. p will be rounded to the nearest value of the form
-  // n/(2^32) where n is an integer in the range [0, 2^32].
-  byte RandomBits(float p);
+  // Writes 8 * |size| independent random bits to |buffer|. For each bit the
+  // probability of being equal to one is the given p. p must be in the range
+  // [0.0, 1.0] or the result is undefined. p will be rounded to the nearest
+  // value of the form n/(2^32) where n is an integer in the range [0, 2^32].
+  // |size| must be less than or equal to 256.
+  // Returns false to indicate failure.
+  bool RandomBits(float p, byte* buffer, std::size_t size);
 };
 
 }  // namespace crypto
