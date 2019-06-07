@@ -14,6 +14,8 @@
 # limitations under the License.
 """A library with functions to help work with Docker, Kubernetes and GKE."""
 
+from __future__ import print_function
+
 import fileinput
 import json
 import os
@@ -24,17 +26,17 @@ import subprocess
 import sys
 import tempfile
 
-import process_starter
-from process_starter import ANALYZER_PRIVATE_KEY_PEM_NAME
-from process_starter import ANALYZER_SERVICE_PATH
-from process_starter import DEFAULT_ANALYZER_SERVICE_PORT
-from process_starter import DEFAULT_REPORT_MASTER_PORT
-from process_starter import DEFAULT_SHUFFLER_PORT
-from process_starter import DEMO_CONFIG_DIR
-from process_starter import REPORT_MASTER_PATH
-from process_starter import SHUFFLER_PRIVATE_KEY_PEM_NAME
-from process_starter import SHUFFLER_CONFIG_FILE
-from process_starter import SHUFFLER_PATH
+import tools.process_starter
+from tools.process_starter import ANALYZER_PRIVATE_KEY_PEM_NAME
+from tools.process_starter import ANALYZER_SERVICE_PATH
+from tools.process_starter import DEFAULT_ANALYZER_SERVICE_PORT
+from tools.process_starter import DEFAULT_REPORT_MASTER_PORT
+from tools.process_starter import DEFAULT_SHUFFLER_PORT
+from tools.process_starter import DEMO_CONFIG_DIR
+from tools.process_starter import REPORT_MASTER_PATH
+from tools.process_starter import SHUFFLER_PRIVATE_KEY_PEM_NAME
+from tools.process_starter import SHUFFLER_CONFIG_FILE
+from tools.process_starter import SHUFFLER_PATH
 
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.join(THIS_DIR, os.pardir)
@@ -794,11 +796,11 @@ def display(cloud_project_prefix, cloud_project_name, cluster_zone,
             cluster_name):
   context = _form_context_name(cloud_project_prefix, cloud_project_name,
                                cluster_zone, cluster_name)
-  print 'Kubernetes Services'
-  print '-------------------'
+  print('Kubernetes Services')
+  print('-------------------')
   subprocess.check_call(['kubectl', 'get', 'services', '--context', context])
-  print 'Google Cloud Endpoints Services'
-  print '-------------------------------'
+  print('Google Cloud Endpoints Services')
+  print('-------------------------------')
   subprocess.check_call([
       'gcloud', 'endpoints', 'services', 'list', '--project',
       compound_project_name(cloud_project_prefix, cloud_project_name)
@@ -948,7 +950,7 @@ def kube_ui(cloud_project_name, cluster_zone, cluster_name):
 
 
 def main():
-  print get_public_uris()
+  print(get_public_uris())
 
 
 if __name__ == '__main__':

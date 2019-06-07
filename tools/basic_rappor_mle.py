@@ -19,9 +19,12 @@
 # tested as part of the standard Cobalt tests but it does include some
 # tests that may be run manually.
 
-
 # Computes n-choose-k. This code was copied from:
 # http://stackoverflow.com/questions/3025162/statistics-combinations-in-python
+
+from __future__ import print_function
+
+
 def choose(n, k):
   """
     A fast way to calculate binomial coefficients by Andrew Dalke (contrib).
@@ -46,7 +49,7 @@ def test_choose():
     for k in xrange(0, n + 1):
       sum = sum + choose(n, k)
     if sum != 2**n:
-      print "**** test_choose failed for n=%d with sum=" % sum
+      print("**** test_choose failed for n=%d with sum=" % sum)
       return False
   return True
 
@@ -98,8 +101,8 @@ def do_pmf_test(lam, n, p, q):
   for y in xrange(0, n + 1):
     prob = prob + pmf(lam, n, y, p, q)
   if prob < 0.999999 or prob > 1.000001:
-    print "**** test_pmf failed for lam=%d, n=%d, p=%f, q=%f, prob=%f" % (
-        lam, n, p, q, prob)
+    print("**** test_pmf failed for lam=%d, n=%d, p=%f, q=%f, prob=%f" %
+          (lam, n, p, q, prob))
     return False
   return True
 
@@ -134,23 +137,23 @@ def main():
   n = 100
   p = 0.2
   q = 0.8
-  print "\n"
-  print "Basic RAPPOR Maximum-Likelihood Estimates"
-  print "p=%f q=%f n=%d\n" % (p, q, n)
+  print("\n")
+  print("Basic RAPPOR Maximum-Likelihood Estimates")
+  print("p=%f q=%f n=%d\n" % (p, q, n))
   for y in xrange(0, n + 1):
-    print "--------------------------------------"
-    print "For y=%d..." % y
-    print "unbiased estimate=%f" % ((float(y) - n * p) / (q - p))
-    print "maximum-likelihood estimate=%d" % mle(n, y, p, q)
+    print("--------------------------------------")
+    print("For y=%d..." % y)
+    print("unbiased estimate=%f" % ((float(y) - n * p) / (q - p)))
+    print("maximum-likelihood estimate=%d" % mle(n, y, p, q))
 
-  print "\n"
-  print "--------------------------------------"
-  print "--------------------------------------"
-  print "Running tests of this script"
+  print("\n")
+  print("--------------------------------------")
+  print("--------------------------------------")
+  print("Running tests of this script")
   if test_choose():
-    print "test_choose passed"
+    print("test_choose passed")
   if test_pmf():
-    print "test_pmf passed"
+    print("test_pmf passed")
 
 
 if __name__ == "__main__":

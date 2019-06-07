@@ -14,6 +14,8 @@
 # limitations under the License.
 """Runs all executables (tests) in a directory"""
 
+from __future__ import print_function
+
 import logging
 import os
 import shutil
@@ -86,9 +88,9 @@ def run_all_tests(test_dir,
   tdir = os.path.abspath(os.path.join(SRC_ROOT_DIR, "out", test_dir))
 
   if not os.path.exists(tdir):
-    print "\n*************** ERROR ****************"
-    print "Directory %s does not exist." % tdir
-    print "Run 'cobaltb.py build' first."
+    print("\n*************** ERROR ****************")
+    print("Directory %s does not exist." % tdir)
+    print("Run 'cobaltb.py build' first.")
     return ["Directory %s does not exist." % tdir]
 
   if test_args is None:
@@ -97,8 +99,8 @@ def run_all_tests(test_dir,
   if verbose_count > 0:
     test_args.append("-v=%d" % verbose_count)
 
-  print "Running all tests in %s " % tdir
-  print "Test arguments: '%s'" % test_args
+  print("Running all tests in %s " % tdir)
+  print("Test arguments: '%s'" % test_args)
   failure_list = []
   for test_executable in os.listdir(tdir):
     bt_emulator_process = None
@@ -139,15 +141,15 @@ def run_all_tests(test_dir,
       path = os.path.abspath(os.path.join(tdir, test_executable))
       if os.path.isdir(path):
         continue
-      print "Running %s..." % test_executable
+      print("Running %s..." % test_executable)
       command = [path] + test_args
       return_code = subprocess.call(command)
       if return_code != 0:
         failure_list.append(test_executable)
       if return_code < 0:
-        print
-        print "****** WARNING Process [%s] terminated by signal %d" % (
-            command[0], -return_code)
+        print("")
+        print("****** WARNING Process [%s] terminated by signal %d" %
+              (command[0], -return_code))
     finally:
       process_starter.kill_process(shuffler_process, "Shuffler")
       process_starter.kill_process(analyzer_service_process, "Analyzer Service")

@@ -14,6 +14,8 @@
 # limitations under the License.
 """Runs cpp lint on all of Cobalt's C++ files."""
 
+from __future__ import print_function
+
 import os
 import shutil
 import subprocess
@@ -43,7 +45,7 @@ SKIP_LINT_DIRS = [
 def main():
   status = 0
   for root, dirs, files in os.walk(SRC_ROOT_DIR):
-    print 'Linting c++ files in %s' % root
+    print('Linting c++ files in %s' % root)
     for f in files:
       if f.endswith('.h') or f.endswith('.cc'):
         full_path = os.path.join(root, f)
@@ -54,7 +56,7 @@ def main():
 
         if cmd.returncode:
           status += 1
-          print 'Error %s' % err
+          print('Error %s' % err)
 
     # Before recursing into directories remove the ones we want to skip.
     dirs_to_skip = [

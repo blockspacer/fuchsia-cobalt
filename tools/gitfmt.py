@@ -4,12 +4,24 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import print_function
+
 import os
 import os.path
 import subprocess
+import sys
 
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
+
+
+# In version 3.6 and newer, the subprocess.check_output() function needs to be
+# passed an encoding type to return a string, otherwise it returns a bytes type.
+def _run_command(command):
+  if sys.version_info >= (3, 6):
+    return subprocess.check_output(command, encoding="UTF-8")
+  else:
+    return subprocess.check_output(command)
 
 
 class Formatter(object):
@@ -41,7 +53,7 @@ class Formatter(object):
     cmd = self._cmd[:]
     cmd.append(abspath)
     print(" ".join(cmd))
-    subprocess.check_call(cmd)
+    _run_command(cmd)
     return True
 
   def maybe_print_install_msg(self):
@@ -144,14 +156,14 @@ class FormattingSession(object):
 
 def _git_status():
   "Get the files that are changed."
-  status_str = subprocess.check_output(
+  status_str = _run_command(
       ["git", "status", "--ignored=no", "--ignore-submodules", "--porcelain"])
   return [l.split() for l in status_str.split("\n") if len(l.split()) >= 2]
 
 
 def _git_show():
   "Get the files that changed in the last git commit."
-  show_str = subprocess.check_output(
+  show_str = _run_command(
       ["git", "show", "--name-status", "--oneline", "--ignore-submodules"])
   lines = show_str.split("\n")
   return [l.split() for l in lines[1:] if len(l.split()) >= 2]
@@ -159,7 +171,7 @@ def _git_show():
 
 def _git_root_dir():
   "Get the root of the current git repository."
-  root_dir = subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
+  root_dir = _run_command(["git", "rev-parse", "--show-toplevel"])
   return root_dir.strip()
 
 

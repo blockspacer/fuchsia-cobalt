@@ -14,6 +14,8 @@
 # limitations under the License.
 """Runs gofmt on all of Cobalt's go files."""
 
+from __future__ import print_function
+
 import os
 import shutil
 import subprocess
@@ -32,13 +34,13 @@ GO_DIRS = [
 def main():
   status = 0
   for dir_path in GO_DIRS:
-    print 'Linting go files in %s' % dir_path
+    print('Linting go files in %s' % dir_path)
     p = subprocess.Popen(['gofmt', '-l', dir_path], stdout=subprocess.PIPE)
     out = p.communicate()[0]
 
     if len(out) > 0:
       status += 1
-      print 'Errors found in:\n%s' % out
+      print('Errors found in:\n%s' % out)
 
   return status
 

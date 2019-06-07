@@ -4,12 +4,14 @@
 # found in the LICENSE file.
 """A library to help with building/deploying production cobalt packages."""
 
+from __future__ import print_function
+
 import subprocess
 import tempfile
 import shutil
 import os
 
-import container_util
+import tools.container_util
 
 COBALT_REPO_CLONE_URL = 'https://fuchsia.googlesource.com/cobalt'
 
@@ -26,8 +28,8 @@ def _select_git_revision():
   tags.append('HEAD')
 
   while True:
-    print
-    print
+    print('')
+    print('')
     print('Which version would you like to build for?')
     for i, tag in enumerate(tags):
       print('({}) {}'.format(i, tag))
@@ -106,7 +108,7 @@ def build_and_push_production_docker_images(cloud_project_name,
     if not skip_build:
       _build_and_test_cobalt_locally(git_revision)
 
-    print "\nInvoking 'cobaltb.py deploy build'..."
+    print("\nInvoking 'cobaltb.py deploy build'...")
     p = subprocess.Popen([
         './cobaltb.py', 'deploy', 'build',
         '--production_dir=%s' % production_dir
@@ -115,7 +117,7 @@ def build_and_push_production_docker_images(cloud_project_name,
     p.communicate('yes')
     if p.wait() != 0:
       raise Exception("Invocation of 'cobaltb.py deploy build' failed.")
-    print "Invocation of 'cobaltb.py deploy build' succeeded.\n"
+    print("Invocation of 'cobaltb.py deploy build' succeeded.\n")
 
     full_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
     tags_to_apply = ['latest', full_rev]
@@ -132,18 +134,16 @@ def build_and_push_production_docker_images(cloud_project_name,
       tags_to_apply.append(subrev)
 
     for tag in tags_to_apply:
-      print 'Pushing Shuffler to container registry at %s with tag=%s.\n' % (
-          cloud_project_name, tag)
+      print('Pushing Shuffler to container registry at %s with tag=%s.\n' %
+            (cloud_project_name, tag))
       container_util.push_shuffler_to_container_registry(
           '', cloud_project_name, tag)
-      print(
-          'Pushing Analyzer Service to container registry at '
-          '%s with tag=%s.\n' % (cloud_project_name, tag))
+      print('Pushing Analyzer Service to container registry at '
+            '%s with tag=%s.\n' % (cloud_project_name, tag))
       container_util.push_analyzer_service_to_container_registry(
           '', cloud_project_name, tag)
-      print(
-          'Pushing ReportMaster  to container registry at '
-          '%s with tag=%s.\n' % (cloud_project_name, tag))
+      print('Pushing ReportMaster  to container registry at '
+            '%s with tag=%s.\n' % (cloud_project_name, tag))
       container_util.push_report_master_to_container_registry(
           '', cloud_project_name, tag)
 

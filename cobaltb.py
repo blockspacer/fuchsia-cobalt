@@ -14,6 +14,8 @@
 # limitations under the License.
 """The Cobalt build system command-line interface."""
 
+from __future__ import print_function
+
 import argparse
 import filecmp
 import fileinput
@@ -67,6 +69,12 @@ CONFIG_BINARY_PROTO = os.path.join(OUT_DIR, 'third_party', 'config',
 
 _logger = logging.getLogger()
 _verbose_count = 0
+
+# In Python3, the `raw_input` Built-in function was renamed to `input`.
+try:
+  input = raw_input
+except NameError:
+  pass
 
 
 def _initLogging(verbose_count):
@@ -169,10 +177,9 @@ def _check_test_configs(args):
   is_same_file = filecmp.cmp(tmp_path, prober_config_path)
   os.remove(tmp_path)
   if not is_same_file:
-    print(
-        'Testapp config and prober config should be identical except for '
-        'names of custom metrics output log types.\n'
-        'Run this command and try again: ./cobaltb.py write_prober_config')
+    print('Testapp config and prober config should be identical except for '
+          'names of custom metrics output log types.\n'
+          'Run this command and try again: ./cobaltb.py write_prober_config')
   return is_same_file
 
 
@@ -185,7 +192,7 @@ def _write_prober_config(args):
                                     'config.yaml')
   if os.path.isfile(prober_config_path):
     print('This action will overwrite the file %s.' % prober_config_path)
-    answer = raw_input('Continue anyway? (y/N) ')
+    answer = input('Continue anyway? (y/N) ')
     if not _parse_bool(answer):
       return
   prober_dir = os.path.dirname(prober_config_path)
@@ -293,15 +300,15 @@ def _test(args):
       if not os.path.exists(bt_admin_service_account_credentials_file):
         print('You must first create the file %s.' %
               bt_admin_service_account_credentials_file)
-        print 'See the instructions in README.md.'
+        print('See the instructions in README.md.')
         return
       bigtable_project_name_from_args = _compound_project_name(args)
       if bigtable_project_name_from_args == '':
-        print '--cloud_project_name must be specified'
+        print('--cloud_project_name must be specified')
         failure_list.append('gtests_cloud_bt')
         break
       if args.bigtable_instance_id == '':
-        print '--bigtable_instance_id must be specified'
+        print('--bigtable_instance_id must be specified')
         failure_list.append('gtests_cloud_bt')
         break
       test_args = [
@@ -328,9 +335,8 @@ def _test(args):
       shuffler_uri = 'localhost:%d' % DEFAULT_SHUFFLER_PORT
       if args.cobalt_on_personal_cluster or args.production_dir:
         if args.cobalt_on_personal_cluster and args.production_dir:
-          print(
-              'Do not specify both --production_dir and '
-              '-cobalt_on_personal_cluster.')
+          print('Do not specify both --production_dir and '
+                '-cobalt_on_personal_cluster.')
           failure_list.append('e2e_tests')
           break
         public_uris = container_util.get_public_uris(args.cluster_name,
@@ -344,9 +350,8 @@ def _test(args):
           # connected to a Cloud Bigtable. cobalt_on_personal_cluster means to
           # use Cloud instances of the Cobalt processes. These two options
           # are inconsistent.
-          print(
-              'Do not specify both --use_cloud_bt and '
-              '-cobalt_on_personal_cluster or --production_dir.')
+          print('Do not specify both --use_cloud_bt and '
+                '-cobalt_on_personal_cluster or --production_dir.')
           failure_list.append('e2e_tests')
           break
       if args.cobalt_on_personal_cluster:
@@ -399,7 +404,7 @@ def _test(args):
         test_args = test_args + [
             '-do_shuffler_threshold_test=false',
         ]
-    print '********************************************************'
+    print('********************************************************')
     this_failure_list = []
     for attempt in range(num_times_to_try):
       this_failure_list = test_runner.run_all_tests(
@@ -415,22 +420,22 @@ def _test(args):
           tls_key_file=args.tls_key_file,
           test_args=test_args)
       if this_failure_list and attempt < num_times_to_try - 1:
-        print
-        print '***** Attempt %i of %s failed. Retrying...' % (attempt,
-                                                              this_failure_list)
-        print
+        print('')
+        print('***** Attempt %i of %s failed. Retrying...' %
+              (attempt, this_failure_list))
+        print('')
       else:
         break
     if this_failure_list:
       failure_list.append('%s (%s)' % (test_dir, this_failure_list))
 
-  print
+  print('')
   if failure_list:
-    print '******************* SOME TESTS FAILED *******************'
-    print 'failures = %s' % failure_list
+    print('******************* SOME TESTS FAILED *******************')
+    print('failures = %s' % failure_list)
     return 1
   else:
-    print '******************* ALL TESTS PASSED *******************'
+    print('******************* ALL TESTS PASSED *******************')
     return 0
 
 
@@ -444,10 +449,10 @@ TO_SKIP_ON_PARTIAL_CLEAN = [
 
 def _clean(args):
   if args.full:
-    print 'Deleting the out directory...'
+    print('Deleting the out directory...')
     shutil.rmtree(OUT_DIR, ignore_errors=True)
   else:
-    print 'Doing a partial clean. Pass --full for a full clean.'
+    print('Doing a partial clean. Pass --full for a full clean.')
     if not os.path.exists(OUT_DIR):
       return
     for f in os.listdir(OUT_DIR):
@@ -605,7 +610,7 @@ def _generate_self_signed_certificate(key_file,
 
 def _generate_cert(args):
   if not (args.path_to_key and args.path_to_cert):
-    print '--path-to-key and --path-to-cert are both required.'
+    print('--path-to-key and --path-to-cert are both required.')
     return
   _generate_self_signed_certificate(args.path_to_key, args.path_to_cert,
                                     args.ip_address, args.hostname)
@@ -615,14 +620,14 @@ def _invoke_bigtable_tool(args, command):
   if not os.path.exists(bt_admin_service_account_credentials_file):
     print('You must first create the file %s.' %
           bt_admin_service_account_credentials_file)
-    print 'See the instructions in README.md.'
+    print('See the instructions in README.md.')
     return
   bigtable_project_name_from_args = _compound_project_name(args)
   if bigtable_project_name_from_args == '':
-    print '--cloud_project_name must be specified'
+    print('--cloud_project_name must be specified')
     return
   if args.bigtable_instance_id == '':
-    print '--bigtable_instance_id must be specified'
+    print('--bigtable_instance_id must be specified')
     return
   cmd = [
       BIGTABLE_TOOL_PATH, '-command', command, '-bigtable_project_name',
@@ -631,13 +636,13 @@ def _invoke_bigtable_tool(args, command):
   ]
   if command == 'delete_observations':
     if args.customer_id == 0:
-      print '--customer_id must be specified'
+      print('--customer_id must be specified')
       return
     if args.project_id == 0:
-      print '--project_id must be specified'
+      print('--project_id must be specified')
       return
     if args.metric_id == 0:
-      print '--metric_id must be specified'
+      print('--metric_id must be specified')
       return
     cmd = cmd + [
         '-customer',
@@ -647,13 +652,13 @@ def _invoke_bigtable_tool(args, command):
     ]
   elif command == 'delete_reports':
     if args.customer_id == 0:
-      print '--customer_id must be specified'
+      print('--customer_id must be specified')
       return
     if args.project_id == 0:
-      print '--project_id must be specified'
+      print('--project_id must be specified')
       return
     if args.report_config_id == 0:
-      print '--report_config_id must be specified'
+      print('--report_config_id must be specified')
       return
     cmd = cmd + [
         '-customer',
@@ -696,44 +701,41 @@ def _deploy_build(args):
   if args.production_dir:
     print(
         'Production configs should be built using `./cobaltb.py deploy '
-        'production_build` which will build a clean version of the binaries, '
-        'then build the docker images in one step.')
-    answer = raw_input('Continue anyway? (y/N) ')
+        'production_build` which will build a clean version of the binaries, then '
+        'build the docker images in one step.')
+    answer = input('Continue anyway? (y/N) ')
     if not _parse_bool(answer):
       return
   container_util.build_all_docker_images(
       shuffler_config_file=args.shuffler_config_file,
       cobalt_config_dir=args.cobalt_config_dir)
   if not _is_config_up_to_date():
-    print(
-        'Docker image was built using an older config. You can update the '
-        'config using the `./cobaltb.py update_config` command.')
+    print('Docker image was built using an older config. You can update the '
+          'config using the `./cobaltb.py update_config` command.')
 
 
 def _deploy_production_build(args):
   if not args.production_dir:
-    print(
-        'Notice that you have not passed the flag --production_dir and so '
-        'you will be pushing the built containers to your personal devel '
-        'cluster, not a production cluster.')
-    answer = raw_input('Continue? (y/N) ')
+    print('Notice that you have not passed the flag --production_dir and so '
+          'you will be pushing the built containers to your personal devel '
+          'cluster, not a production cluster.')
+    answer = input('Continue? (y/N) ')
     if not _parse_bool(answer):
       return
   full_ref = production_util.build_and_push_production_docker_images(
       args.cloud_project_name, args.production_dir, args.git_revision)
 
   if full_ref:
-    print
-    print
-    print(
-        'Done pushing the new build. To set this as the default build, copy '
-        'the following json blob into the versions.json.')
-    print
-    print '{'
-    print '  "shuffler": "%s",' % full_ref
-    print '  "report-master": "%s",' % full_ref
-    print '  "analyzer-service": "%s"' % full_ref
-    print '}'
+    print('')
+    print('')
+    print('Done pushing the new build. To set this as the default build, copy '
+          'the following json blob into the versions.json.')
+    print('')
+    print('{')
+    print('  "shuffler": "%s",' % full_ref)
+    print('  "report-master": "%s",' % full_ref)
+    print('  "analyzer-service": "%s"' % full_ref)
+    print('}')
 
 
 def _deploy_push(args):
@@ -747,9 +749,8 @@ def _deploy_push(args):
     container_util.push_report_master_to_container_registry(
         args.cloud_project_prefix, args.cloud_project_name)
   else:
-    print(
-        'Unknown job "%s". I only know how to push "shuffler", '
-        '"analyzer-service" and "report-master".' % args.job)
+    print('Unknown job "%s". I only know how to push "shuffler", '
+          '"analyzer-service" and "report-master".' % args.job)
 
 
 def _parse_bool(bool_string):
@@ -797,7 +798,7 @@ def _deploy_start(args):
         .danger_danger_delete_all_data_at_startup)
   elif args.job == 'analyzer-service':
     if args.bigtable_instance_id == '':
-      print '--bigtable_instance_id must be specified'
+      print('--bigtable_instance_id must be specified')
       return
     container_util.start_analyzer_service(args.cloud_project_prefix,
                                           args.cloud_project_name,
@@ -807,7 +808,7 @@ def _deploy_start(args):
                                           components, version)
   elif args.job == 'report-master':
     if args.bigtable_instance_id == '':
-      print '--bigtable_instance_id must be specified'
+      print('--bigtable_instance_id must be specified')
       return
     container_util.start_report_master(
         args.cloud_project_prefix,
@@ -822,9 +823,8 @@ def _deploy_start(args):
         enable_report_scheduling=_parse_bool(
             args.report_master_enable_scheduling))
   else:
-    print(
-        'Unknown job "%s". I only know how to start "shuffler", '
-        '"analyzer-service" and "report-master".' % args.job)
+    print('Unknown job "%s". I only know how to start "shuffler", '
+          '"analyzer-service" and "report-master".' % args.job)
 
 
 def _deploy_stop(args):
@@ -846,9 +846,8 @@ def _deploy_stop(args):
                                       args.cluster_zone, args.cluster_name,
                                       components, version)
   else:
-    print(
-        'Unknown job "%s". I only know how to stop "shuffler", '
-        '"analyzer-service" and "report-master".' % args.job)
+    print('Unknown job "%s". I only know how to stop "shuffler", '
+          '"analyzer-service" and "report-master".' % args.job)
 
 
 def _deploy_stopstart(args):
@@ -878,9 +877,8 @@ def _deploy_delete_secret_keys(args):
 
 def _deploy_endpoint(args):
   if args.cloud_project_prefix and args.cloud_project_prefix != 'google.com':
-    print(
-        'Endpoints cannot be configured by this script for projects with '
-        'the prefix: ' % args.cloud_project_prefix)
+    print('Endpoints cannot be configured by this script for projects with '
+          'the prefix: ' % args.cloud_project_prefix)
     return
   if args.job == 'report-master':
     container_util.configure_report_master_endpoint(
@@ -891,9 +889,8 @@ def _deploy_endpoint(args):
                                                args.cloud_project_name,
                                                args.shuffler_static_ip)
   else:
-    print(
-        'Unknown job "%s". I only know how to configure endpoints for the '
-        '"report-master" or the "shuffler".' % args.job)
+    print('Unknown job "%s". I only know how to configure endpoints for the '
+          '"report-master" or the "shuffler".' % args.job)
 
 
 def _deploy_addresses(args):
@@ -924,9 +921,8 @@ def _deploy_upload_certificate(args):
                                                    args.cluster_name,
                                                    path_to_cert, path_to_key)
   else:
-    print(
-        'Unknown job "%s". I only know how to deploy certificates for the '
-        '"report-master" or the "shuffler".' % args.job)
+    print('Unknown job "%s". I only know how to deploy certificates for the '
+          '"report-master" or the "shuffler".' % args.job)
 
 
 def _deploy_delete_certificate(args):
@@ -940,9 +936,8 @@ def _deploy_delete_certificate(args):
                                                    args.cluster_zone,
                                                    args.cluster_name)
   else:
-    print(
-        'Unknown job "%s". I only know how to delete certificates for the '
-        '"report-master" or the "shuffler".' % args.job)
+    print('Unknown job "%s". I only know how to delete certificates for the '
+          '"report-master" or the "shuffler".' % args.job)
 
 
 def _deploy_upload_service_account_key(args):
@@ -1169,7 +1164,7 @@ def _is_config_up_to_date():
 
 def main():
   if not sys.platform.startswith('linux'):
-    print 'Only linux is supported!'
+    print('Only linux is supported!')
     return 1
   # We parse the command line flags twice. The first time we are looking
   # only for two particular flags, namely --production_dir and
@@ -2198,6 +2193,16 @@ def main():
 
   os.environ['GOROOT'] = '%s/golang' % SYSROOT_DIR
 
+  # Until Python3.7 adds the 'required' flag for subparsers, an error occurs
+  # when running without specifying a subparser on the command line:
+  # https://bugs.python.org/issue16308
+  # Work around the issue by checking whether the 'func' attribute has been
+  # set.
+  try:
+    a = getattr(args, 'func')
+  except AttributeError:
+    parser.print_usage()
+    sys.exit(0)
   return args.func(args)
 
 

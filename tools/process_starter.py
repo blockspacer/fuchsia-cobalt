@@ -14,6 +14,8 @@
 # limitations under the License.
 """A library with functions to start each of the Cobalt processes locally."""
 
+from __future__ import print_function
+
 import os
 import shutil
 import subprocess
@@ -67,7 +69,7 @@ def kill_process(process, name):
     name {String}: Name of the process for use in a user-facing message.
   """
   if process and process.poll() is None:
-    print "Killing %s..." % name
+    print("Killing %s..." % name)
     process.terminate()
     process.kill()
     process.wait()
@@ -91,18 +93,18 @@ def execute_command(cmd, wait):
     return p
   return_code = p.wait()
   if return_code < 0:
-    print
-    print "****** WARNING Process [%s] terminated by signal %d" % (cmd[0],
-                                                                   -return_code)
+    print("")
+    print("****** WARNING Process [%s] terminated by signal %d" %
+          (cmd[0], -return_code))
   return return_code
 
 
 def start_bigtable_emulator(wait=True):
   # Note(rudominer) We can pass -port=n to cbtemulator to run on a different
   # port.
-  print
-  print "Starting the Cloud Bigtable Emulator..."
-  print
+  print("")
+  print("Starting the Cloud Bigtable Emulator...")
+  print("")
   path = os.path.abspath(
       os.path.join(SYS_ROOT_DIR, "gcloud", "google-cloud-sdk", "platform",
                    "bigtable-emulator", "cbtemulator"))
@@ -135,7 +137,7 @@ def start_shuffler(port=DEFAULT_SHUFFLER_PORT,
       erased before the shuffler starts?
     config_file {string}: The path to the Shuffler's config file.
   """
-  print
+  print("")
   cmd = [
       SHUFFLER_PATH, "-port",
       str(port), "-private_key_pem_file", private_key_pem_file, "-analyzer_uri",
@@ -152,11 +154,11 @@ def start_shuffler(port=DEFAULT_SHUFFLER_PORT,
   else:
     cmd = cmd + ["-db_dir", db_dir]
     if erase_db:
-      print "Erasing Shuffler's LevelDB store at %s." % db_dir
+      print("Erasing Shuffler's LevelDB store at %s." % db_dir)
       shutil.rmtree(db_dir, ignore_errors=True)
 
-  print "Starting the shuffler..."
-  print
+  print("Starting the shuffler...")
+  print("")
   return execute_command(cmd, wait)
 
 
@@ -172,9 +174,9 @@ def start_analyzer_service(
     verbose_count=0,
     vmodule=None,
     wait=True):
-  print
-  print "Starting the analyzer service..."
-  print
+  print("")
+  print("Starting the analyzer service...")
+  print("")
   cmd = [
       ANALYZER_SERVICE_PATH, "-port",
       str(port), "-private_key_pem_file", private_key_pem_file, "-logtostderr"
@@ -187,7 +189,7 @@ def start_analyzer_service(
         bigtable_instance_id,
     ]
   else:
-    print "Will connect to a local Bigtable Emulator instance."
+    print("Will connect to a local Bigtable Emulator instance.")
     cmd.append("-for_testing_only_use_bigtable_emulator")
   if verbose_count > 0:
     cmd.append("-v=%d" % verbose_count)
@@ -211,9 +213,9 @@ def start_report_master(port=DEFAULT_REPORT_MASTER_PORT,
                         verbose_count=0,
                         vmodule=None,
                         wait=True):
-  print
-  print "Starting the analyzer ReportMaster service..."
-  print
+  print("")
+  print("Starting the analyzer ReportMaster service...")
+  print("")
   cmd = [
       REPORT_MASTER_PATH, "-port",
       str(port), "-cobalt_registry_proto_path", cobalt_registry_proto_path,
@@ -231,7 +233,7 @@ def start_report_master(port=DEFAULT_REPORT_MASTER_PORT,
         bigtable_instance_id,
     ]
   else:
-    print "Will connect to a local Bigtable Emulator instance."
+    print("Will connect to a local Bigtable Emulator instance.")
     cmd.append("-for_testing_only_use_bigtable_emulator")
   if verbose_count > 0:
     cmd.append("-v=%d" % verbose_count)

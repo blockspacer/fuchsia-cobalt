@@ -27,6 +27,8 @@ this change in a new CL.
 
 """
 
+from __future__ import print_function
+
 import os
 import platform
 import shutil
@@ -63,15 +65,15 @@ def _upload(file_to_upload, platform_string):
 def main():
   report_client_path = os.path.join(OUT_DIR, 'tools', 'report_client')
   if not os.path.exists(report_client_path):
-    print 'File not found: %s.' % report_client_path
-    print 'You must build first.'
+    print('File not found: %s.' % report_client_path)
+    print('You must build first.')
     return 1
   platform_string = _platform_string()
   tgz_file = 'report_client.%s.tgz' % platform_string
   cwd = os.getcwd()
   temp_tgz_file_path = os.path.join(cwd, tgz_file)
-  print 'Compressing %s to temporary file %s...' % (report_client_path,
-                                                    temp_tgz_file_path)
+  print('Compressing %s to temporary file %s...' %
+        (report_client_path, temp_tgz_file_path))
   _write_compressed_tarfile(temp_tgz_file_path)
   _upload(temp_tgz_file_path, platform_string)
   os.remove(temp_tgz_file_path)
