@@ -155,6 +155,8 @@ metric_definitions:
         0: ThisMetric
         2: HasNo
         4: Name
+      event_code_aliases:
+        HasNo: Alias
   reports:
   - report_name: the_report
     report_type: NUMERIC_PERF_RAW_DUMP

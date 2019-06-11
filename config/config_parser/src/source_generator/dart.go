@@ -19,11 +19,18 @@ func (_ Dart) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) 
 	so.writeLineFmt("  static const int %s = %d;", toPascalCase(name...), value)
 }
 
+func (_ Dart) writeEnumAliasesBegin(so *sourceOutputter, name ...string) {
+}
+
+func (_ Dart) writeEnumAlias(so *sourceOutputter, name, from, to []string) {
+	so.writeLineFmt("  static const int %s = %s;", toPascalCase(to...), toPascalCase(from...))
+}
+
 func (_ Dart) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("}")
 }
 
-func (_ Dart) writeEnumAlias(so *sourceOutputter, enumName, name []string) {
+func (_ Dart) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	enum := toPascalCase(enumName...)
 	variant := toPascalCase(name...)
 	so.writeLineFmt("const int %s_%s = %s::%s;", enum, variant, enum, variant)

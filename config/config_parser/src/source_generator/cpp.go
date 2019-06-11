@@ -28,6 +28,14 @@ func (_ CPP) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) {
 	so.writeLineFmt("  %s = %d,", toPascalCase(name...), value)
 }
 
+// C++ allows duplicate keys in an enum, so nothing needs to be done here.
+func (_ CPP) writeEnumAliasesBegin(so *sourceOutputter, name ...string) {
+}
+
+func (_ CPP) writeEnumAlias(so *sourceOutputter, name, from, to []string) {
+	so.writeLineFmt("  %s = %s,", toPascalCase(to...), toPascalCase(from...))
+}
+
 func (_ CPP) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLine("};")
 	so.writeLineFmt("}  // %s", enumNamespace(name...))
@@ -35,7 +43,7 @@ func (_ CPP) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("typedef %s::Enum %s;", enumNamespace(name...), toPascalCase(name...))
 }
 
-func (_ CPP) writeEnumAlias(so *sourceOutputter, enumName, name []string) {
+func (_ CPP) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	enum := toPascalCase(enumName...)
 	variant := toPascalCase(name...)
 	so.writeLineFmt("const %s %s_%s = %s::%s;", enum, enum, variant, enum, variant)

@@ -148,6 +148,27 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 
 		name := md.Dimension
 
+		seenCodeNames := make(map[string]bool)
+		for _, codeName := range md.EventCodes {
+			if seenCodeNames[codeName] {
+				return fmt.Errorf("duplicate event_code name in metric_dimensions %s", name)
+			}
+			seenCodeNames[codeName] = true
+		}
+
+		for from, to := range md.EventCodeAliases {
+			if !seenCodeNames[from] {
+				if seenCodeNames[to] {
+					return fmt.Errorf("unknown event_code %s for alias %s: %s. Did you mean %s: %s?", from, from, to, to, from)
+				} else {
+					return fmt.Errorf("unknown event_code_alias: %s: %s", from, to)
+				}
+			}
+			if seenCodeNames[to] {
+				return fmt.Errorf("cannot have event_code_alias %s, when that name already exists in event_codes", to)
+			}
+		}
+
 		if len(md.EventCodes) == 0 && md.MaxEventCode == 0 {
 			return fmt.Errorf("For metric dimension %v, you must either define max_event_code or explicitly define at least one event code.", name)
 		}
@@ -221,6 +242,7 @@ func validateEventOccurred(m config.MetricDefinition) error {
 
 	return validateMetricDimensions(m)
 }
+
 func validateIntHistogram(m config.MetricDefinition) error {
 	if m.IntBuckets == nil {
 		return fmt.Errorf("No int_buckets specified for metric of type INT_HISTOGRAM.")

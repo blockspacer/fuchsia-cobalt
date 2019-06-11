@@ -21,8 +21,10 @@ type outputLanguage interface {
 	writeExtraHeader(so *sourceOutputter)
 	writeEnumBegin(so *sourceOutputter, name ...string)
 	writeEnumEntry(so *sourceOutputter, value uint32, name ...string)
+	writeEnumAliasesBegin(so *sourceOutputter, name ...string)
+	writeEnumAlias(so *sourceOutputter, name, from, to []string)
 	writeEnumEnd(so *sourceOutputter, name ...string)
-	writeEnumAlias(so *sourceOutputter, enumName, name []string)
+	writeEnumExport(so *sourceOutputter, enumName, name []string)
 	writeNamespaceBegin(so *sourceOutputter, name ...string)
 	writeNamespaceEnd(so *sourceOutputter)
 	writeConstInt(so *sourceOutputter, value uint32, name ...string)
@@ -109,7 +111,7 @@ func (so *sourceOutputter) writeIdConstants(constType string, entries map[uint32
 // export the enum values. For a metric called "foo_bar" with a event named
 // "baz", it would generate the constant:
 // "FooBarEventCode_Baz = FooBarEventCode::Baz"
-func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[uint32]string) {
+func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[uint32]string, aliases map[string]string) {
 	if len(entries) == 0 {
 		return
 	}
@@ -126,10 +128,22 @@ func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[u
 		name := entries[id]
 		so.language.writeEnumEntry(so, id, name)
 	}
+	if len(aliases) > 0 {
+		so.language.writeEnumAliasesBegin(so, prefix, suffix)
+		for from, to := range aliases {
+			so.language.writeEnumAlias(so, []string{prefix, suffix}, []string{from}, []string{to})
+		}
+	}
 	so.language.writeEnumEnd(so, prefix, suffix)
 	for _, id := range keys {
-		so.language.writeEnumAlias(so, []string{prefix, suffix}, []string{entries[id]})
+		so.language.writeEnumExport(so, []string{prefix, suffix}, []string{entries[id]})
 	}
+	if len(aliases) > 0 {
+		for _, to := range aliases {
+			so.language.writeEnumExport(so, []string{prefix, suffix}, []string{to})
+		}
+	}
+
 	so.writeLine("")
 }
 
@@ -192,14 +206,16 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 		if len(metric.MetricDimensions) > 0 {
 			for i, md := range metric.MetricDimensions {
 				events := make(map[uint32]string)
+				eventNames := make(map[string]uint32)
 				for value, name := range md.EventCodes {
 					events[value] = name
+					eventNames[name] = value
 				}
 				varname := "Metric Dimension " + strconv.Itoa(i)
 				if md.Dimension != "" {
 					varname = "Metric Dimension " + md.Dimension
 				}
-				so.writeEnum(metric.MetricName, varname, events)
+				so.writeEnum(metric.MetricName, varname, events, md.EventCodeAliases)
 			}
 		}
 	}

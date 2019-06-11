@@ -307,6 +307,51 @@ func TestValidateMetricDimensionsDimensionNames(t *testing.T) {
 	}
 }
 
+func TestValidateMetricDimensionsEventCodeAlias(t *testing.T) {
+	m := makeValidMetric()
+	m.MetricDimensions[0].EventCodes = map[uint32]string{
+		0: "CodeName",
+		1: "CodeName",
+	}
+
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with duplicate event code names")
+	}
+
+	m.MetricDimensions[0].EventCodes = map[uint32]string{
+		0: "CodeName",
+	}
+	m.MetricDimensions[0].EventCodeAliases = map[string]string{
+		"Metric": "Alias",
+	}
+
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with an invalid alias")
+	}
+
+	m.MetricDimensions[0].EventCodeAliases = map[string]string{
+		"Alias": "CodeName",
+	}
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric with an alias in the wrong order")
+	}
+
+	m.MetricDimensions[0].EventCodeAliases = map[string]string{
+		"CodeName": "Alias",
+	}
+	if err := validateMetricDimensions(m); err != nil {
+		t.Errorf("Rejected valid metric: %v", err)
+	}
+
+	m.MetricDimensions[0].EventCodes[1] = "CodeName2"
+	m.MetricDimensions[0].EventCodeAliases = map[string]string{
+		"CodeName": "CodeName2",
+	}
+	if err := validateMetricDimensions(m); err == nil {
+		t.Error("Accepted invalid metric that maps to an existing event code")
+	}
+}
+
 func TestValidateEventCodesIndexLargerThanMax(t *testing.T) {
 	m := makeValidMetric()
 	m.MetricDimensions[0].MaxEventCode = 100

@@ -20,13 +20,23 @@ func (_ Rust) writeEnumEntry(so *sourceOutputter, value uint32, name ...string) 
 	so.writeLineFmt("  %s = %d,", toPascalCase(name...), value)
 }
 
+func (_ Rust) writeEnumAliasesBegin(so *sourceOutputter, name ...string) {
+	so.writeLine("}")
+	so.writeLineFmt("impl %s {", toPascalCase(name...))
+}
+
+func (_ Rust) writeEnumAlias(so *sourceOutputter, name, from, to []string) {
+	so.writeLine("  #[allow(non_upper_case_globals)]")
+	so.writeLineFmt("  pub const %s: %s = %s::%s;", toPascalCase(to...), toPascalCase(name...), toPascalCase(name...), toPascalCase(from...))
+}
+
 func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("}")
 }
 
 // We don't alias Enums in rust, since this can easily be accomplished with a
 // use EnumName::*;
-func (_ Rust) writeEnumAlias(so *sourceOutputter, enumName, name []string) {}
+func (_ Rust) writeEnumExport(so *sourceOutputter, enumName, name []string) {}
 
 func (_ Rust) writeNamespaceBegin(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("pub mod %s {", toSnakeCase(name...))

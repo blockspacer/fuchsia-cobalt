@@ -241,9 +241,6 @@ message MetricDefinition {
 
   // A container for enumerated sets of event codes.
   message MetricDimension {
-    reserved 4;
-    reserved "also_treat_as_legacy";
-
     string dimension = 1;
 
     // The enumerated set of event codes for this dimension.
@@ -269,6 +266,35 @@ message MetricDefinition {
     //    above rules are not violated.
     // 5. For metrics of the type EVENT_OCCURRED, there may be only 1 dimension.
     uint32 max_event_code = 3;
+
+    reserved 4;
+    reserved "also_treat_as_legacy";
+
+    // event_code_aliases is used by the code generator to generate additional
+    // enum variants. This is intended as a temporary step to allow a soft
+    // cross-repo rename of an event_code variant, and should be cleaned up as
+    // soon as possible.
+    //
+    // The expected use case is as follows (config abbridged for clarity):
+    //
+    // Step 1: Have a metric
+    //
+    //   event_codes:
+    //     - 0: BadName
+    //
+    // Step 2: Rename an event code, adding an alias
+    //
+    //   event_codes:
+    //     - 0: GoodName
+    //   event_code_aliases:
+    //     GoodName: BadName
+    //
+    // Step 3: After all references to `BadName` are removed
+    //
+    //   event_codes:
+    //     - 0: GoodName
+    //
+    map<string, string> event_code_aliases = 5;
   }
 
   // A list of MetricDimensions.
