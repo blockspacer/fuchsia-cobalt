@@ -13,19 +13,20 @@ namespace cobalt {
 namespace logger {
 
 TEST(InternalMetricsImpl, PauseWorks) {
+  Project project;
   testing::FakeLogger logger;
   InternalMetricsImpl metrics(&logger);
   ASSERT_EQ(logger.call_count(), 0);
   metrics.LoggerCalled(
-      LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage);
-  ASSERT_EQ(logger.call_count(), 1);
+      LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage, project);
+  ASSERT_EQ(logger.call_count(), 2);
   metrics.PauseLogging();
   for (int i = 0; i < 100; i++) {
     metrics.LoggerCalled(
-        LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage);
+        LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage, project);
   }
   metrics.ResumeLogging();
-  ASSERT_EQ(logger.call_count(), 1);
+  ASSERT_EQ(logger.call_count(), 2);
 }
 
 }  // namespace logger

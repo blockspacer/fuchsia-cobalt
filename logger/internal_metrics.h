@@ -18,10 +18,13 @@ namespace logger {
 // metrics.
 class InternalMetrics {
  public:
-  // LoggerCalled (cobalt_internal::metrics::logger_calls_made) is logged for
-  // every call to Logger along with which method was called.
-  virtual void LoggerCalled(
-      LoggerCallsMadeMetricDimensionLoggerMethod method) = 0;
+  // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
+  // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
+  // every call to Logger along with which method was called and the project
+  // that called it.
+  // TODO(ninai) remove default value.
+  virtual void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+                            const Project& project = Project()) = 0;
 
   // After PauseLogging is called, all calls to log internal metrics will be
   // ignored.
@@ -39,8 +42,8 @@ class InternalMetrics {
 // InternalMetrics interface, allowing code to safely make these calls even if
 // no LoggerInterface* was provided.
 class NoOpInternalMetrics : public InternalMetrics {
-  void LoggerCalled(
-      LoggerCallsMadeMetricDimensionLoggerMethod method) override {}
+  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+                    const Project& project) override {}
 
   void PauseLogging() override {}
   void ResumeLogging() override {}
@@ -55,7 +58,8 @@ class InternalMetricsImpl : public InternalMetrics {
  public:
   explicit InternalMetricsImpl(LoggerInterface* logger);
 
-  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method) override;
+  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+                    const Project& project) override;
 
   void PauseLogging() override { paused_ = true; }
   void ResumeLogging() override { paused_ = false; }

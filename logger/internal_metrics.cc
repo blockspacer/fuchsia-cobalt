@@ -19,16 +19,29 @@ InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
 }
 
 void InternalMetricsImpl::LoggerCalled(
-    LoggerCallsMadeMetricDimensionLoggerMethod method) {
+    LoggerCallsMadeMetricDimensionLoggerMethod method, const Project& project) {
   if (paused_) {
     return;
   }
 
   auto status = logger_->LogEvent(kLoggerCallsMadeMetricId,
                                   static_cast<uint32_t>(method));
+
   if (status != kOK) {
     VLOG(1) << "InternalMetricsImpl::LoggerCalled: LogEvent() returned status="
             << status;
+  }
+
+  std::ostringstream component;
+  component << project.customer_name() << '/' << project.project_name();
+  status = logger_->LogEventCount(kPerProjectLoggerCallsMadeMetricId,
+                                  static_cast<uint32_t>(method),
+                                  component.str(), 0, 1);
+
+  if (status != kOK) {
+    VLOG(1)
+        << "InternalMetricsImpl::LoggerCalled: LogEventCount() returned status="
+        << status;
   }
 }
 
