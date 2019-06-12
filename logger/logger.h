@@ -118,6 +118,7 @@ class Logger : public LoggerInterface {
                         EventValuesPtr event_values) override;
 
   InternalMetrics* internal_metrics() { return internal_metrics_.get(); }
+  const ProjectContext* project_context() { return project_context_.get(); }
 
   // Pauses Cobalt's internal metrics collection.
   void PauseInternalLogging();
