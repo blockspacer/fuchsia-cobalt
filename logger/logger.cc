@@ -533,6 +533,11 @@ Status EventLogger::Log(uint32_t metric_id,
                         EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
 
+  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
+  if (status != kOK) {
+    return status;
+  }
+
   if (logger_->system_data_) {
     if (logger_->system_data_->release_stage() >
         event_record->metric->meta_data().max_release_stage()) {
@@ -546,11 +551,6 @@ Status EventLogger::Log(uint32_t metric_id,
           << logger_->system_data_->release_stage();
       return kOK;
     }
-  }
-
-  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
-  if (status != kOK) {
-    return status;
   }
 
   int num_reports = event_record->metric->reports_size();

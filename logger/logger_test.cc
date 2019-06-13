@@ -129,7 +129,7 @@ class LoggerTest : public ::testing::Test {
     internal_logger_.reset(new testing::FakeLogger());
     logger_.reset(new Logger(GetTestProject(registry_base64), encoder_.get(),
                              event_aggregator_.get(), observation_writer_.get(),
-                             internal_logger_.get()));
+                             system_data_.get(), internal_logger_.get()));
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
