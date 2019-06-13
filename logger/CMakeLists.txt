@@ -45,6 +45,10 @@ target_link_libraries(event_aggregator
                       packed_event_codes)
 add_cobalt_dependencies(event_aggregator)
 
+add_library(channel_mapper
+            channel_mapper.cc)
+add_cobalt_dependencies(channel_mapper)
+
 add_library(encoder2
             encoder.cc)
 target_link_libraries(encoder2
@@ -72,7 +76,7 @@ add_cobalt_dependencies(logger)
 add_library(testing_constants
             testing_constants.h)
 target_link_libraries(testing_constants
-	              test_registries)
+                      test_registries)
 set_target_properties(testing_constants PROPERTIES LINKER_LANGUAGE CXX)
 
 add_library(logger_test_utils
@@ -95,7 +99,8 @@ add_executable(logger_tests
                 logger_test.cc
                 project_context_test.cc
                 project_context_factory_test.cc
-                internal_metrics_test.cc)
+                internal_metrics_test.cc
+                channel_mapper_test.cc)
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator

@@ -5,6 +5,7 @@
 #ifndef COBALT_ENCODER_FAKE_SYSTEM_DATA_H_
 #define COBALT_ENCODER_FAKE_SYSTEM_DATA_H_
 
+#include <string>
 #include <vector>
 
 #include "encoder/system_data.h"
@@ -15,24 +16,32 @@ namespace encoder {
 // Mock of the SystemDataInterface. Used for testing.
 class FakeSystemData : public SystemDataInterface {
  public:
-  FakeSystemData() {
+  FakeSystemData() : release_stage_(ReleaseStage::GA) {
     system_profile_.set_os(SystemProfile::FUCHSIA);
     system_profile_.set_arch(SystemProfile::ARM_64);
     system_profile_.set_board_name("Testing Board");
     system_profile_.set_product_name("Testing Product");
+    system_profile_.set_channel("<unset>");
   }
 
   const SystemProfile& system_profile() const override {
     return system_profile_;
-  };
+  }
 
   const std::vector<Experiment>& experiments() const override {
     return experiments_;
-  };
+  }
+
+  const std::string& channel() const override {
+    return system_profile_.channel();
+  }
+
+  const ReleaseStage& release_stage() const override { return release_stage_; }
 
  private:
   SystemProfile system_profile_;
   std::vector<Experiment> experiments_;
+  ReleaseStage release_stage_;
 };
 
 }  // namespace encoder

@@ -214,6 +214,20 @@ source_set("logger") {
   ]
 }
 
+source_set("channel_mapper") {
+  sources = [
+    "channel_mapper.cc",
+    "channel_mapper.h",
+  ]
+
+  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+
+  public_deps = [
+    "//garnet/public/lib/syslog/cpp",
+    "//third_party/cobalt/config:cobalt_registry_proto",
+  ]
+}
+
 source_set("testing_constants") {
   testonly = true
 
@@ -279,10 +293,24 @@ source_set("internal_metrics_test") {
   ]
 }
 
+source_set("channel_mapper_test") {
+  testonly = true
+
+  sources = [
+    "channel_mapper_test.cc",
+  ]
+
+  public_deps = [
+    ":channel_mapper",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 group("tests") {
   testonly = true
 
   deps = [
+    ":channel_mapper_test",
     ":internal_metrics_test",
     ":logger_test",
   ]

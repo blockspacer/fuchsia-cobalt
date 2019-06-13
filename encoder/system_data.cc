@@ -93,16 +93,21 @@ void PopulateBoardName(SystemProfile* profile) {}
 
 SystemData::SystemData(const std::string& product_name,
                        const std::string& board_name_suggestion,
-                       const std::string& version) {
+                       const std::string& version,
+                       std::unique_ptr<logger::ChannelMapper> channel_mapper)
+    : channel_mapper_(std::move(channel_mapper)) {
   system_profile_.set_product_name(product_name);
   system_profile_.set_board_name(board_name_suggestion);
   system_profile_.set_system_version(version);
-  system_profile_.set_channel("<unset>");
+  SetChannel("<unset>");
   PopulateSystemProfile();
 }
 
 void SystemData::SetChannel(const std::string& channel) {
   system_profile_.set_channel(channel);
+  if (channel_mapper_) {
+    current_stage_ = channel_mapper_->ToReleaseStage(channel);
+  }
 }
 
 void SystemData::OverrideSystemProfile(const SystemProfile& profile) {

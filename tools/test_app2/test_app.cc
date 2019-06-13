@@ -499,7 +499,8 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
             .ValueOrDie();
   }
 
-  std::unique_ptr<SystemDataInterface> system_data(new SystemData("test_app"));
+  std::unique_ptr<SystemDataInterface> system_data(
+      new SystemData("test_app", "", ""));
 
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);

@@ -78,7 +78,8 @@ target_link_libraries(encoder
                       rappor_encoder
                       shuffler_grpc_client
                       clearcut_extensions_proto_lib
-                      file_observation_store_internal)
+                      file_observation_store_internal
+                      channel_mapper)
 add_cobalt_dependencies(encoder)
 
 add_executable(encoder_tests

@@ -54,11 +54,11 @@ using encoder::LegacyShippingManager;
 using encoder::MemoryObservationStore;
 using encoder::ObservationStore;
 using encoder::ProjectContext;
-using encoder::send_retryer::SendRetryer;
 using encoder::ShippingManager;
 using encoder::ShufflerClient;
 using encoder::ShufflerClientInterface;
 using encoder::SystemData;
+using encoder::send_retryer::SendRetryer;
 using google::protobuf::Empty;
 using grpc::Channel;
 using grpc::ClientContext;
@@ -414,7 +414,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
         EncryptedMessageMaker::MakeHybridEcdh(key_value).ValueOrDie();
   }
 
-  std::unique_ptr<SystemData> system_data(new SystemData("test_app"));
+  std::unique_ptr<SystemData> system_data(new SystemData("test_app", "", ""));
   if (!FLAGS_override_board_name.empty()) {
     SystemProfile profile;
     profile.set_os(SystemProfile::FUCHSIA);

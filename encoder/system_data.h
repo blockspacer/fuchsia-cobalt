@@ -5,12 +5,14 @@
 #ifndef COBALT_ENCODER_SYSTEM_DATA_H_
 #define COBALT_ENCODER_SYSTEM_DATA_H_
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "./observation_batch.pb.h"
+#include "logger/channel_mapper.h"
 #include "third_party/abseil-cpp/absl/synchronization/mutex.h"
 
 namespace cobalt {
@@ -27,6 +29,12 @@ class SystemDataInterface {
 
   // Returns a vector with all experiments the system has a notion of.
   virtual const std::vector<Experiment>& experiments() const = 0;
+
+  // Returns the current channel.
+  virtual const std::string& channel() const = 0;
+
+  // Returns the current ReleaseStage.
+  virtual const ReleaseStage& release_stage() const = 0;
 };
 
 // The Encoder client creates a singleton instance of SystemData at start-up
@@ -50,8 +58,9 @@ class SystemData : public SystemDataInterface {
   // system-specific. For example on Fuchsia a possible value for |version| is
   // "20190220_01_RC00".
   SystemData(const std::string& product_name,
-             const std::string& board_name_suggestion = "",
-             const std::string& version = "");
+             const std::string& board_name_suggestion,
+             const std::string& version = "",
+             std::unique_ptr<logger::ChannelMapper> channel_mapper = nullptr);
 
   virtual ~SystemData() = default;
 
@@ -77,6 +86,12 @@ class SystemData : public SystemDataInterface {
   // Resets the current channel value.
   void SetChannel(const std::string& channel);
 
+  const std::string& channel() const override {
+    return system_profile_.channel();
+  }
+
+  const ReleaseStage& release_stage() const override { return current_stage_; }
+
   // Overrides the stored SystemProfile. Useful for testing.
   void OverrideSystemProfile(const SystemProfile& profile);
 
@@ -86,6 +101,8 @@ class SystemData : public SystemDataInterface {
   SystemProfile system_profile_;
   mutable absl::Mutex experiments_mutex_;
   std::vector<Experiment> experiments_ GUARDED_BY(experiments_mutex_);
+  std::unique_ptr<logger::ChannelMapper> channel_mapper_;
+  ReleaseStage current_stage_;
 };
 
 }  // namespace encoder
