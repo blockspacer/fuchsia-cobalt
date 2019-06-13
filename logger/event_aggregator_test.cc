@@ -104,6 +104,10 @@ class EventAggregatorTest : public ::testing::Test {
         new MockConsistentProtoStore(kAggregateStoreFilename));
     obs_history_proto_store_.reset(
         new MockConsistentProtoStore(kObsHistoryFilename));
+    ResetEventAggregator();
+  }
+
+  void ResetEventAggregator() {
     event_aggregator_.reset(new EventAggregator(
         encoder_.get(), observation_writer_.get(),
         local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
@@ -1099,6 +1103,50 @@ TEST_F(EventAggregatorTest, GenerateObservationsTwice) {
   ResetObservationStore();
   EXPECT_EQ(kOK, GenerateObservations(current_day_index));
   EXPECT_EQ(0u, observation_store_->messages_received.size());
+}
+
+// When the LocalAggregateStore contains one ReportAggregates proto and that
+// proto is empty, GenerateObservations should return success but generate no
+// observations.
+TEST_F(EventAggregatorTest, GenerateObservationsFromBadStore) {
+  auto bad_store = std::make_unique<LocalAggregateStore>();
+  (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
+  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  // Read the bad store in to the EventAggregator.
+  ResetEventAggregator();
+  EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
+  EXPECT_EQ(0u, observation_store_->messages_received.size());
+}
+
+// When the LocalAggregateStore contains one empty ReportAggregates proto and
+// some valid ReportAggregates, GenerateObservations should produce observations
+// for the valid ReportAggregates.
+TEST_F(EventAggregatorTest, GenerateObservationsFromBadStoreMultiReport) {
+  auto bad_store = std::make_unique<LocalAggregateStore>();
+  (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
+  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  // Read the bad store in to the EventAggregator.
+  ResetEventAggregator();
+  // Provide the all_report_types test registry to the EventAggregator.
+  auto project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
+  std::vector<Observation2> observations(0);
+  EXPECT_TRUE(FetchAggregatedObservations(
+      &observations, testing::all_report_types::kExpectedAggregationParams,
+      observation_store_.get(), update_recipient_.get()));
+}
+
+// When the LocalAggregateStore contains one ReportAggregates proto and that
+// proto is empty, GarbageCollect should return success.
+TEST_F(EventAggregatorTest, GarbageCollectBadStore) {
+  auto bad_store = std::make_unique<LocalAggregateStore>();
+  (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
+  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  // Read the bad store in to the EventAggregator.
+  ResetEventAggregator();
+  EXPECT_EQ(kOK, GarbageCollect(CurrentDayIndex()));
 }
 
 // Tests that the LocalAggregateStore is updated as expected when

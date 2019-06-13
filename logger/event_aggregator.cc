@@ -167,6 +167,7 @@ EventAggregator::EventAggregator(
       VLOG(4) << "No file found for local_aggregate_proto_store. Proceeding "
                  "with empty LocalAggregateStore. File will be created on "
                  "first snapshot of the LocalAggregateStore.";
+      locked->local_aggregate_store.Clear();
       break;
     }
     default: {
@@ -176,7 +177,7 @@ EventAggregator::EventAggregator(
           << "\nError message: " << restore_aggregates_status.error_message()
           << "\nError details: " << restore_aggregates_status.error_details()
           << "\nProceeding with empty LocalAggregateStore.";
-      locked->local_aggregate_store = LocalAggregateStore();
+      locked->local_aggregate_store.Clear();
     }
   }
   auto restore_history_status = obs_history_proto_store_->Read(&obs_history_);
@@ -641,11 +642,22 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
         break;
       }
       default:
-        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
-        return kInvalidConfig;
+        LOG_FIRST_N(ERROR, 10)
+            << "The TimeZonePolicy of this MetricDefinition is invalid.";
+        continue;
+    }
+    if (pair.second.aggregation_config().window_size_size() == 0) {
+      LOG_FIRST_N(ERROR, 10)
+          << "This ReportDefinition does not have a window size.";
+      continue;
     }
     uint32_t max_window_size = pair.second.aggregation_config().window_size(
         pair.second.aggregation_config().window_size_size() - 1);
+    if (max_window_size == 0u || max_window_size > day_index) {
+      LOG_FIRST_N(ERROR, 10) << "The maximum window size " << max_window_size
+                             << " of this ReportDefinition is out of range.";
+      continue;
+    }
     // For each ReportAggregates, descend to and iterate over the sub-map of
     // local aggregates keyed by day index. Keep buckets with day indices
     // greater than |day_index| - |backfill_days_| - |max_window_size|, and
@@ -689,7 +701,7 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
   // Lock, copy the LocalAggregateStore, and release the lock. Use the copy to
   // generate observations.
   auto local_aggregate_store = CopyLocalAggregateStore();
-  for (auto pair : local_aggregate_store.by_report_key()) {
+  for (auto& pair : local_aggregate_store.by_report_key()) {
     const auto& config = pair.second.aggregation_config();
 
     const auto& metric = config.metric();
@@ -705,8 +717,9 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
         break;
       }
       default:
-        LOG(ERROR) << "The TimeZonePolicy of this MetricDefinition is invalid.";
-        return kInvalidConfig;
+        LOG_FIRST_N(ERROR, 10)
+            << "The TimeZonePolicy of this MetricDefinition is invalid.";
+        continue;
     }
 
     const auto& report = config.report();
@@ -714,11 +727,17 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
     // size and that all window sizes are positive and <=
     // kMaxAllowedAggregationWindowSize, and has sorted the elements of
     // config.window_size() in increasing order.
-    CHECK_GT(config.window_size_size(), 0);
-    auto max_window_size = config.window_size(config.window_size_size() - 1);
-    CHECK_GT(max_window_size, 0);
-    CHECK_GE(final_day_index, max_window_size);
-
+    if (config.window_size_size() == 0u) {
+      LOG_FIRST_N(ERROR, 10) << "This ReportDefinition has no window_size.";
+      continue;
+    }
+    uint32_t max_window_size =
+        config.window_size(config.window_size_size() - 1);
+    if (max_window_size == 0u || max_window_size > final_day_index) {
+      LOG_FIRST_N(ERROR, 10) << "The maximum window size " << max_window_size
+                             << " of this ReportDefinition is out of range.";
+      continue;
+    }
     switch (metric.metric_type()) {
       case MetricDefinition::EVENT_OCCURRED: {
         auto num_event_codes =

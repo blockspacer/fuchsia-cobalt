@@ -119,7 +119,7 @@ class TestUpdateRecipient
   int invocation_count = 0;
 };
 
-// A mock ConsistentProtoStore. Its Read() and Write() methods simply increment
+// A mock ConsistentProtoStore. Its Read() and Write() methods increment
 // counts of their invocations.
 class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
  public:
@@ -132,6 +132,7 @@ class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
 
   ~MockConsistentProtoStore() {}
 
+  // To set the stored proto in a test, use |set_stored_proto| instead of Write.
   ::cobalt::util::Status Write(
       const google::protobuf::MessageLite& proto) override {
     write_count_++;
@@ -139,6 +140,10 @@ class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
   }
 
   ::cobalt::util::Status Read(google::protobuf::MessageLite* proto) override {
+    if (stored_proto_) {
+      proto->Clear();
+      proto->CheckTypeAndMergeFrom(*stored_proto_);
+    }
     read_count_++;
     return ::cobalt::util::Status::OK;
   }
@@ -150,6 +155,13 @@ class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
 
   int read_count_;
   int write_count_;
+
+  void set_stored_proto(std::unique_ptr<google::protobuf::MessageLite> proto) {
+    stored_proto_ = std::move(proto);
+  }
+
+ private:
+  std::unique_ptr<google::protobuf::MessageLite> stored_proto_;
 };
 
 // Creates and returns a ProjectContext from a serialized, base64-encoded Cobalt
