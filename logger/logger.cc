@@ -264,10 +264,19 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context,
                const Encoder* encoder, EventAggregator* event_aggregator,
                ObservationWriter* observation_writer,
                LoggerInterface* internal_logger)
+    : Logger(std::move(project_context), encoder, event_aggregator,
+             observation_writer, nullptr, internal_logger) {}
+
+Logger::Logger(std::unique_ptr<ProjectContext> project_context,
+               const Encoder* encoder, EventAggregator* event_aggregator,
+               ObservationWriter* observation_writer,
+               encoder::SystemDataInterface* system_data,
+               LoggerInterface* internal_logger)
     : project_context_(std::move(project_context)),
       encoder_(encoder),
       event_aggregator_(event_aggregator),
       observation_writer_(observation_writer),
+      system_data_(system_data),
       clock_(new SystemClock()) {
   CHECK(project_context_);
   CHECK(encoder_);
@@ -524,8 +533,21 @@ Status EventLogger::Log(uint32_t metric_id,
                         EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
 
-  // TODO(rudominer) Check the ReleaseStage of the Metric against the
-  // ReleaseStage of the project.
+  if (logger_->system_data_) {
+    if (logger_->system_data_->release_stage() >
+        event_record->metric->meta_data().max_release_stage()) {
+      // Quietly ignore this metric.
+      LOG_FIRST_N(INFO, 10)
+          << "Not logging metric `"
+          << project_context()->FullMetricName(*event_record->metric)
+          << "` because its max_release_stage ("
+          << event_record->metric->meta_data().max_release_stage()
+          << ") is lower than the device's current release_stage: "
+          << logger_->system_data_->release_stage();
+      return kOK;
+    }
+  }
+
   auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
   if (status != kOK) {
     return status;

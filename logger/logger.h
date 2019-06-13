@@ -57,9 +57,18 @@ class Logger : public LoggerInterface {
   // to write immediate Observations to an ObservationStore. Must remain valid
   // as long as the Logger is in use.
   //
+  // |system_data| A pointer to a SystemDataInterface.
+  //
   // |internal_logger| An instance of LoggerInterface, used internally by the
   // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
   // internal logging will be performed by this Logger.
+  Logger(std::unique_ptr<ProjectContext> project_context,
+         const Encoder* encoder, EventAggregator* event_aggregator,
+         ObservationWriter* observation_writer,
+         encoder::SystemDataInterface* system_data,
+         LoggerInterface* internal_logger = nullptr);
+
+  // DEPRECATED Constructor
   Logger(std::unique_ptr<ProjectContext> project_context,
          const Encoder* encoder, EventAggregator* event_aggregator,
          ObservationWriter* observation_writer,
@@ -138,6 +147,7 @@ class Logger : public LoggerInterface {
   const Encoder* encoder_;
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
+  const encoder::SystemDataInterface* system_data_;
   std::unique_ptr<util::ClockInterface> clock_;
 
   std::unique_ptr<InternalMetrics> internal_metrics_;
