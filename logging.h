@@ -8,15 +8,15 @@
 #ifdef HAVE_GLOG
 #include <glog/logging.h>
 
-#define INIT_LOGGING(val) \
-{ \
-  google::InitGoogleLogging(val); \
-  google::InstallFailureSignalHandler(); \
-}
+#define INIT_LOGGING(val)                  \
+  {                                        \
+    google::InitGoogleLogging(val);        \
+    google::InstallFailureSignalHandler(); \
+  }
 
 #elif defined(__Fuchsia__)
-#include "src/lib/fxl/logging.h"
 #include "lib/syslog/cpp/logger.h"
+#include "src/lib/fxl/logging.h"
 
 #define INIT_LOGGING(val)
 
