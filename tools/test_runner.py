@@ -31,15 +31,6 @@ from tools.process_starter import LOCALHOST_TLS_KEY_FILE
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 SYS_ROOT_DIR = os.path.join(SRC_ROOT_DIR, "sysroot")
-E2E_DIR = os.path.join(SRC_ROOT_DIR, "end_to_end_tests")
-E2E_TEST_ANALYZER_PRIVATE_KEY_PEM = os.path.join(
-    E2E_DIR, "analyzer_private_key.pem.e2e_test")
-E2E_TEST_ANALYZER_PUBLIC_KEY_PEM = os.path.join(
-    E2E_DIR, "analyzer_public_key.pem.e2e_test")
-E2E_TEST_SHUFFLER_PRIVATE_KEY_PEM = os.path.join(
-    E2E_DIR, "shuffler_private_key.pem.e2e_test")
-E2E_TEST_SHUFFLER_PUBLIC_KEY_PEM = os.path.join(
-    E2E_DIR, "shuffler_public_key.pem.e2e_test")
 
 _logger = logging.getLogger()
 
@@ -116,7 +107,6 @@ def run_all_tests(test_dir,
         analyzer_service_process = process_starter.start_analyzer_service(
             bigtable_instance_id=bigtable_instance_id,
             bigtable_project_name=bigtable_project_name,
-            private_key_pem_file=E2E_TEST_ANALYZER_PRIVATE_KEY_PEM,
             verbose_count=verbose_count,
             vmodule=vmodule,
             wait=False)
@@ -135,7 +125,6 @@ def run_all_tests(test_dir,
             use_tls=use_tls,
             tls_cert_file=tls_cert_file,
             tls_key_file=tls_key_file,
-            private_key_pem_file=E2E_TEST_SHUFFLER_PRIVATE_KEY_PEM,
             verbose_count=verbose_count,
             wait=False)
       path = os.path.abspath(os.path.join(tdir, test_executable))

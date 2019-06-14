@@ -36,9 +36,6 @@ import tools.test_runner as test_runner
 import tools.production_util as production_util
 import tools.gitfmt as gitfmt
 
-from tools.test_runner import E2E_TEST_ANALYZER_PUBLIC_KEY_PEM
-from tools.test_runner import E2E_TEST_SHUFFLER_PUBLIC_KEY_PEM
-
 from tools.process_starter import DEFAULT_ANALYZER_PRIVATE_KEY_PEM
 from tools.process_starter import DEFAULT_ANALYZER_PUBLIC_KEY_PEM
 from tools.process_starter import DEFAULT_SHUFFLER_PRIVATE_KEY_PEM
@@ -235,8 +232,8 @@ def _lint(args):
 
 # Specifiers of subsets of tests to run
 TEST_FILTERS = [
-    'all', 'gtests', 'nogtests', 'gotests', 'nogotests', 'btemulator',
-    'nobtemulator', 'e2e', 'noe2e', 'cloud_bt', 'perf', 'config_parser'
+    'all', 'gtests', 'nogtests', 'gotests', 'nogotests',
+    'cloud_bt', 'perf', 'config_parser'
 ]
 
 
@@ -248,26 +245,14 @@ def _test(args):
   # not included in 'all'. They are only run if asked for explicitly.
   FILTER_MAP = {
       'all': [
-          'gtests', 'go_tests', 'gtests_btemulator', 'e2e_tests',
-          'config_parser_tests'
+          'gtests', 'go_tests', 'config_parser_tests'
       ],
       'gtests': ['gtests'],
       'gotests': ['go_tests'],
-      'btemulator': ['gtests_btemulator'],
-      'e2e': ['e2e_tests'],
       'cloud_bt': ['gtests_cloud_bt'],
       'perf': ['perf_tests'],
       'config_parser': ['config_parser_tests']
   }
-
-  # A list of test directories for which the contained tests assume the
-  # existence of a running instance of the Bigtable Emulator.
-  NEEDS_BT_EMULATOR = ['gtests_btemulator', 'e2e_tests']
-
-  # A list of test directories for which the contained tests assume the
-  # existence of a running instance of the Cobalt processes (Shuffler,
-  # Analyzer Service, Report Master.)
-  NEEDS_COBALT_PROCESSES = ['e2e_tests']
 
   # By default try each test just once.
   num_times_to_try = 1
@@ -288,13 +273,6 @@ def _test(args):
   bigtable_project_name = ''
   bigtable_instance_id = ''
   for test_dir in test_dirs:
-    start_bt_emulator = ((test_dir in NEEDS_BT_EMULATOR) and
-                         not args.use_cloud_bt and
-                         not args.cobalt_on_personal_cluster and
-                         not args.production_dir)
-    start_cobalt_processes = ((test_dir in NEEDS_COBALT_PROCESSES) and
-                              not args.cobalt_on_personal_cluster and
-                              not args.production_dir)
     test_args = None
     if (test_dir == 'gtests_cloud_bt'):
       if not os.path.exists(bt_admin_service_account_credentials_file):
@@ -317,100 +295,11 @@ def _test(args):
       ]
       bigtable_project_name = bigtable_project_name_from_args
       bigtable_instance_id = args.bigtable_instance_id
-    if (test_dir == 'gtests_btemulator' and args.tests != 'btemulator'):
-      # TODO(rudominer) At the moment the EnableReportScheduling test case is
-      # flaky so I am disabling it. If my analysis is correct the flakiness is
-      # due to a bug in the bigtable emulator.
-      # https://github.com/GoogleCloudPlatform/google-cloud-go/issues/826
-      # We disalbe the flaky test in all cases except when explicitly running
-      # only the bt emulator tests as requested via the flag --tests=btemulator.
-      test_args = ['--gtest_filter=-*EnableReportScheduling*']
-    if (test_dir == 'e2e_tests'):
-      # The end-to-end test is naturally flaky. Our strategy is to attempt
-      # it multiple times.
-      num_times_to_try = 3
-      analyzer_pk_pem_file = E2E_TEST_ANALYZER_PUBLIC_KEY_PEM
-      report_master_uri = 'localhost:%d' % DEFAULT_REPORT_MASTER_PORT
-      shuffler_pk_pem_file = E2E_TEST_SHUFFLER_PUBLIC_KEY_PEM
-      shuffler_uri = 'localhost:%d' % DEFAULT_SHUFFLER_PORT
-      if args.cobalt_on_personal_cluster or args.production_dir:
-        if args.cobalt_on_personal_cluster and args.production_dir:
-          print('Do not specify both --production_dir and '
-                '-cobalt_on_personal_cluster.')
-          failure_list.append('e2e_tests')
-          break
-        public_uris = container_util.get_public_uris(args.cluster_name,
-                                                     args.cloud_project_prefix,
-                                                     args.cloud_project_name,
-                                                     args.cluster_zone)
-        report_master_uri = public_uris['report_master']
-        shuffler_uri = public_uris['shuffler']
-        if args.use_cloud_bt:
-          # use_cloud_bt means to use local instances of the Cobalt processes
-          # connected to a Cloud Bigtable. cobalt_on_personal_cluster means to
-          # use Cloud instances of the Cobalt processes. These two options
-          # are inconsistent.
-          print('Do not specify both --use_cloud_bt and '
-                '-cobalt_on_personal_cluster or --production_dir.')
-          failure_list.append('e2e_tests')
-          break
-      if args.cobalt_on_personal_cluster:
-        analyzer_pk_pem_file = DEFAULT_ANALYZER_PUBLIC_KEY_PEM
-        shuffler_pk_pem_file = DEFAULT_SHUFFLER_PUBLIC_KEY_PEM
-      elif args.production_dir:
-        pem_directory = os.path.abspath(args.production_dir)
-        analyzer_pk_pem_file = os.path.join(pem_directory,
-                                            'analyzer_public.pem')
-        shuffler_pk_pem_file = os.path.join(pem_directory,
-                                            'shuffler_public.pem')
-      report_master_uri = (
-          args.report_master_preferred_address or report_master_uri)
-      shuffler_uri = (args.shuffler_preferred_address or shuffler_uri)
-      test_args = [
-          '-analyzer_pk_pem_file=%s' % analyzer_pk_pem_file,
-          '-shuffler_uri=%s' % shuffler_uri,
-          '-shuffler_pk_pem_file=%s' % shuffler_pk_pem_file,
-          '-report_master_uri=%s' % report_master_uri,
-          ('-observation_querier_path=%s' %
-           process_starter.OBSERVATION_QUERIER_PATH),
-          '-test_app_path=%s' % process_starter.TEST_APP_PATH,
-          '-config_bin_proto_path=%s' % CONFIG_BINARY_PROTO,
-          '-sub_process_v=%d' % _verbose_count
-      ]
-      use_tls = _parse_bool(args.use_tls)
-      if use_tls:
-        test_args += [
-            '-use_tls',
-            '-report_master_root_certs=%s' % args.report_master_root_certs,
-            '-shuffler_root_certs=%s' % args.shuffler_root_certs
-        ]
-        if (not (args.cobalt_on_personal_cluster or args.production_dir)):
-          test_args += ['-skip_oauth']
-      if (args.use_cloud_bt or args.cobalt_on_personal_cluster or
-          args.production_dir):
-        bigtable_project_name_from_args = _compound_project_name(args)
-        test_args = test_args + [
-            '-bigtable_tool_path=%s' % BIGTABLE_TOOL_PATH,
-            '-bigtable_project_name=%s' % bigtable_project_name_from_args,
-            '-bigtable_instance_id=%s' % args.bigtable_instance_id,
-        ]
-        bigtable_project_name = bigtable_project_name_from_args
-        bigtable_instance_id = args.bigtable_instance_id
-      if args.production_dir or args.cobalt_on_personal_cluster:
-        # Currently thresholding in the Shuffler is disabled when we run the Shuffler in either
-        # production or devel because in both cases we deploy two Shuffler instances but the
-        # Shuffler thresholding logic was not written to support that. When we run the Shuffler
-        # locally on the test machine then we still use and test thresholding.
-        test_args = test_args + [
-            '-do_shuffler_threshold_test=false',
-        ]
     print('********************************************************')
     this_failure_list = []
     for attempt in range(num_times_to_try):
       this_failure_list = test_runner.run_all_tests(
           test_dir,
-          start_bt_emulator=start_bt_emulator,
-          start_cobalt_processes=start_cobalt_processes,
           bigtable_project_name=bigtable_project_name,
           bigtable_instance_id=bigtable_instance_id,
           verbose_count=_verbose_count,
@@ -462,11 +351,6 @@ def _clean(args):
           os.remove(full_path)
         else:
           shutil.rmtree(full_path, ignore_errors=True)
-
-
-def _start_bigtable_emulator(args):
-  process_starter.start_bigtable_emulator()
-
 
 def _start_shuffler(args):
   process_starter.start_shuffler(
@@ -1422,7 +1306,7 @@ def main():
       '--bigtable_instance_id',
       help='Specify a Cloud Bigtable instance within the specified Cloud'
       ' project against which to run some of the tests.'
-      ' Only used for the cloud_bt tests and e2e tests when either '
+      ' Only used for the cloud_bt tests when either '
       '-use_cloud_bt or -cobalt_on_personal_cluster are specified.'
       ' default=%s' % cluster_settings['bigtable_instance_id'],
       default=cluster_settings['bigtable_instance_id'])
@@ -1774,12 +1658,6 @@ def main():
       'project against which to query. Only used if -use_cloud_bt is set. '
       'default=%s' % cluster_settings['bigtable_instance_id'],
       default=cluster_settings['bigtable_instance_id'])
-
-  sub_parser = start_subparsers.add_parser(
-      'bigtable_emulator',
-      parents=[parent_parser],
-      help='Start the Bigtable Emulator running locally.')
-  sub_parser.set_defaults(func=_start_bigtable_emulator)
 
   ########################################################
   # generate_keys command
