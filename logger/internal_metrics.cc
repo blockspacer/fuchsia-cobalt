@@ -13,6 +13,15 @@
 namespace cobalt {
 namespace logger {
 
+std::unique_ptr<InternalMetrics> InternalMetrics::NewWithLogger(
+    LoggerInterface* logger) {
+  if (logger) {
+    return std::make_unique<InternalMetricsImpl>(logger);
+  } else {
+    return std::make_unique<NoOpInternalMetrics>();
+  }
+}
+
 InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
     : paused_(false), logger_(logger) {
   CHECK(logger_);

@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "config/project.pb.h"
 #include "logger/internal_metrics_config.cb.h"
 #include "logger/logger_interface.h"
 
@@ -18,6 +19,14 @@ namespace logger {
 // metrics.
 class InternalMetrics {
  public:
+  // Returns a pointer to an InternalMetrics object which can be used for
+  // collecting cobalt-internal metrics.
+  //
+  // |logger| the logger used to log internal metrics. If the pointer is null,
+  // NoOpInternalMetrics will be used.
+  static std::unique_ptr<InternalMetrics> NewWithLogger(
+      LoggerInterface* logger);
+
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
   // every call to Logger along with which method was called and the project
@@ -42,6 +51,7 @@ class InternalMetrics {
 // InternalMetrics interface, allowing code to safely make these calls even if
 // no LoggerInterface* was provided.
 class NoOpInternalMetrics : public InternalMetrics {
+ public:
   void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
                     const Project& project) override {}
 

@@ -16,6 +16,7 @@
 
 #include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
+#include "logger/internal_metrics.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 #include "third_party/statusor/statusor.h"
 #include "util/file_system.h"
@@ -114,7 +115,8 @@ class FileObservationStore : public ObservationStore {
                        size_t max_bytes_per_envelope, size_t max_bytes_total,
                        std::unique_ptr<util::FileSystem> fs,
                        std::string root_directory,
-                       std::string name = "FileObservationStore");
+                       std::string name = "FileObservationStore",
+                       logger::LoggerInterface *internal_logger = nullptr);
 
   StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
@@ -182,6 +184,8 @@ class FileObservationStore : public ObservationStore {
   const std::string name_;
   size_t num_observations_added_;
   FilenameGenerator filename_generator_;
+
+  std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
 }  // namespace encoder

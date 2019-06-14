@@ -19,6 +19,7 @@
 #include "logger/encoder.h"
 #include "logger/local_aggregation.pb.h"
 #include "logger/logger_interface.h"
+#include "logger/project_context.h"
 #include "util/consistent_proto_store.h"
 #include "util/posix_file_system.h"
 #include "util/status.h"

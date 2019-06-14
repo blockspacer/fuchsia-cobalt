@@ -12,6 +12,7 @@
 #include "./logging.h"
 #include "./tracing.h"
 #include "encoder/file_observation_store_internal.pb.h"
+#include "logger/logger_interface.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
 namespace cobalt {
@@ -31,19 +32,20 @@ const char kActiveFileName[] = "in_progress.data";
 // range 1000000000-9999999999.
 const std::regex kFinalizedFileRegex(R"(\d{13}-\d{10}.data)");
 
-FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
-                                           size_t max_bytes_per_envelope,
-                                           size_t max_bytes_total,
-                                           std::unique_ptr<FileSystem> fs,
-                                           std::string root_directory,
-                                           std::string name)
+FileObservationStore::FileObservationStore(
+    size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
+    size_t max_bytes_total, std::unique_ptr<FileSystem> fs,
+    std::string root_directory, std::string name,
+    logger::LoggerInterface *internal_logger)
     : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope,
                        max_bytes_total),
       fs_(std::move(fs)),
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
       name_(std::move(name)),
-      num_observations_added_(0) {
+      num_observations_added_(0),
+      internal_metrics_(
+          logger::InternalMetrics::NewWithLogger(internal_logger)) {
   CHECK(fs_);
 
   // Check if root_directory_ already exists.

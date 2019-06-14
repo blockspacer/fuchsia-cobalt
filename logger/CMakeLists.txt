@@ -89,6 +89,7 @@ target_link_libraries(logger_test_utils
                       local_aggregation_proto_lib
                       testing_constants
                       posix_file_system
+                      project_context
                       proto_util)
 add_cobalt_dependencies(logger_test_utils)
 

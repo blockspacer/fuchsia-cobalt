@@ -107,6 +107,7 @@ source_set("encoder") {
 
   public_deps = [
     ":status",
+    ":logger_interface",
     "//src/lib/fxl",
     "//third_party/abseil-cpp",
     "//third_party/cobalt/config:cobalt_registry_proto",
@@ -164,13 +165,15 @@ source_set("event_aggregator") {
 source_set("logger_interface") {
   sources = [
     "logger_interface.h",
+    "types.h",
   ]
 
   public_configs = [ "//third_party/cobalt:cobalt_config" ]
 
   public_deps = [
-    ":encoder",
     ":status",
+    "//third_party/cobalt/config:cobalt_registry_proto",
+    "//third_party/cobalt/config:packed_event_codes",
   ]
 }
 
@@ -186,6 +189,7 @@ source_set("internal_metrics") {
     ":internal_metrics_config_cc",
     ":logger_interface",
     "//src/lib/fxl",
+    "//third_party/abseil-cpp",
   ]
 }
 
@@ -289,7 +293,10 @@ source_set("internal_metrics_test") {
     ":cobalt_local_aggregation_proto",
     ":internal_metrics",
     ":logger_test_utils",
+    "//third_party/abseil-cpp",
     "//third_party/googletest:gtest",
+    "//third_party/grpc:grpc++",
+    "//third_party/tink/cc/util:status",
   ]
 }
 

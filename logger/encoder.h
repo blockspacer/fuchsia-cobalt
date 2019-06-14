@@ -18,6 +18,7 @@
 #include "encoder/system_data.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
+#include "logger/types.h"
 #include "util/crypto_util/random.h"
 
 namespace cobalt {

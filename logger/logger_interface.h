@@ -10,8 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "logger/encoder.h"
+#include "./observation2.pb.h"
 #include "logger/status.h"
+#include "logger/types.h"
 
 namespace cobalt {
 namespace logger {

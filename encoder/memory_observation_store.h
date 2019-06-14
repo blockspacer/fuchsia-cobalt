@@ -10,6 +10,7 @@
 
 #include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
+#include "logger/internal_metrics.h"
 
 namespace cobalt {
 namespace encoder {
@@ -18,7 +19,8 @@ namespace encoder {
 class MemoryObservationStore : public ObservationStore {
  public:
   MemoryObservationStore(size_t max_bytes_per_observation,
-                         size_t max_bytes_per_envelope, size_t max_bytes_total);
+                         size_t max_bytes_per_envelope, size_t max_bytes_total,
+                         logger::LoggerInterface* internal_logger = nullptr);
 
   StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
@@ -48,6 +50,8 @@ class MemoryObservationStore : public ObservationStore {
   std::deque<std::unique_ptr<EnvelopeHolder>> finalized_envelopes_;
   size_t finalized_envelopes_size_;
   size_t num_observations_added_;
+
+  std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
 }  // namespace encoder

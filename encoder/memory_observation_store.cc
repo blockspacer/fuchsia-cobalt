@@ -6,20 +6,27 @@
 
 #include "./logging.h"
 #include "encoder/memory_observation_store.h"
+#include "logger/logger_interface.h"
 
 namespace cobalt {
 namespace encoder {
 
-MemoryObservationStore::MemoryObservationStore(size_t max_bytes_per_observation,
-                                               size_t max_bytes_per_envelope,
-                                               size_t max_bytes_total)
+using logger::InternalMetricsImpl;
+using logger::LoggerInterface;
+using logger::NoOpInternalMetrics;
+
+MemoryObservationStore::MemoryObservationStore(
+    size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
+    size_t max_bytes_total, logger::LoggerInterface* internal_logger)
     : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope,
                        max_bytes_total),
       envelope_send_threshold_size_(size_t(0.6 * max_bytes_per_envelope_)),
       current_envelope_(
           new EnvelopeMaker(max_bytes_per_observation, max_bytes_per_envelope)),
       finalized_envelopes_size_(0),
-      num_observations_added_(0) {}
+      num_observations_added_(0),
+      internal_metrics_(
+          logger::InternalMetrics::NewWithLogger(internal_logger)) {}
 
 ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     std::unique_ptr<EncryptedMessage> message,
