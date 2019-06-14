@@ -8,6 +8,7 @@
 #include "./clearcut_extensions.pb.h"
 #include "./logging.h"
 #include "encoder/shipping_manager.h"
+#include "logger/logger_interface.h"
 
 namespace cobalt {
 namespace encoder {
@@ -330,9 +331,12 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler,
     ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
-    std::unique_ptr<clearcut::ClearcutUploader> clearcut)
+    std::unique_ptr<clearcut::ClearcutUploader> clearcut,
+    logger::LoggerInterface* internal_logger)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
-      clearcut_(std::move(clearcut)) {}
+      clearcut_(std::move(clearcut)),
+      internal_metrics_(
+          logger::InternalMetrics::NewWithLogger(internal_logger)) {}
 
 std::unique_ptr<EnvelopeHolder>
 ClearcutV1ShippingManager::SendEnvelopeToBackend(

@@ -22,6 +22,7 @@
 #include "encoder/send_retryer.h"
 #include "encoder/shuffler_client.h"
 #include "encoder/upload_scheduler.h"
+#include "logger/internal_metrics.h"
 #include "third_party/clearcut/uploader.h"
 
 namespace cobalt {
@@ -289,7 +290,8 @@ class ClearcutV1ShippingManager : public ShippingManager {
       const UploadScheduler& upload_scheduler,
       ObservationStore* observation_store,
       util::EncryptedMessageMaker* encrypt_to_shuffler,
-      std::unique_ptr<::clearcut::ClearcutUploader> clearcut);
+      std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+      logger::LoggerInterface* internal_logger = nullptr);
 
  private:
   std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
@@ -300,6 +302,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;
+  std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
 }  // namespace encoder
