@@ -20,17 +20,17 @@
 
 #define INIT_LOGGING(val)
 
-#define VLOG(verboselevel) FXL_VLOG(verboselevel)
-#define LOG(level) FX_LOGS(level)
-#define LOG_FIRST_N(verboselevel, n) FX_LOGS_FIRST_N(verboselevel, n)
+#define VLOG(verboselevel) FX_VLOGST(verboselevel, "core")
+#define LOG(level) FX_LOGST(level, "core")
+#define LOG_FIRST_N(verboselevel, n) FX_LOGST_FIRST_N(verboselevel, n, "core")
 
-#define CHECK(condition) FXL_CHECK(condition)
-#define CHECK_EQ(val1, val2) FXL_CHECK((val1 == val2))
-#define CHECK_NE(val1, val2) FXL_CHECK((val1 != val2))
-#define CHECK_LE(val1, val2) FXL_CHECK((val1 <= val2))
-#define CHECK_LT(val1, val2) FXL_CHECK((val1 < val2))
-#define CHECK_GE(val1, val2) FXL_CHECK((val1 >= val2))
-#define CHECK_GT(val1, val2) FXL_CHECK((val1 > val2))
+#define CHECK(condition) FX_CHECKT(condition, "core")
+#define CHECK_EQ(val1, val2) FX_CHECKT((val1 == val2), "core")
+#define CHECK_NE(val1, val2) FX_CHECKT((val1 != val2), "core")
+#define CHECK_LE(val1, val2) FX_CHECKT((val1 <= val2), "core")
+#define CHECK_LT(val1, val2) FX_CHECKT((val1 < val2), "core")
+#define CHECK_GE(val1, val2) FX_CHECKT((val1 >= val2), "core")
+#define CHECK_GT(val1, val2) FX_CHECKT((val1 > val2), "core")
 
 #else
 #error "Either HAVE_GLOG or __Fuchsia__ must be defined"
