@@ -24,7 +24,7 @@ class InternalMetrics {
   // that called it.
   // TODO(ninai) remove default value.
   virtual void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
-                            const Project& project = Project()) = 0;
+                            const Project& project) = 0;
 
   // After PauseLogging is called, all calls to log internal metrics will be
   // ignored.
