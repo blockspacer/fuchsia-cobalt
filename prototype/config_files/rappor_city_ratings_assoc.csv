@@ -1,3 +1,0 @@
-metric,var,var_type,params
-CityAverageRating,city_name,string,rappor_city_config
-CityAverageRating,rating,categorical,rappor_rating_config
