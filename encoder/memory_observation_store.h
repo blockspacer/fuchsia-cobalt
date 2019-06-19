@@ -30,9 +30,6 @@ class MemoryObservationStore : public ObservationStore {
 
   size_t Size() const override;
   bool Empty() const override;
-  size_t num_observations_added() override;
-
-  void ResetObservationCounter() override;
 
   void ResetInternalMetrics(
       logger::LoggerInterface* internal_logger = nullptr) override {
@@ -54,7 +51,6 @@ class MemoryObservationStore : public ObservationStore {
   std::unique_ptr<EnvelopeMaker> current_envelope_;
   std::deque<std::unique_ptr<EnvelopeHolder>> finalized_envelopes_;
   size_t finalized_envelopes_size_;
-  size_t num_observations_added_;
 
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };

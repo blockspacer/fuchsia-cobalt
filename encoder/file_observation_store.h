@@ -126,8 +126,6 @@ class FileObservationStore : public ObservationStore {
 
   size_t Size() const override;
   bool Empty() const override;
-  size_t num_observations_added() override;
-  void ResetObservationCounter() override;
 
   void ResetInternalMetrics(
       logger::LoggerInterface *internal_logger = nullptr) override {
@@ -187,7 +185,6 @@ class FileObservationStore : public ObservationStore {
   const std::string root_directory_;
   const std::string active_file_name_;
   const std::string name_;
-  size_t num_observations_added_;
   FilenameGenerator filename_generator_;
 
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;

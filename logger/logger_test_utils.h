@@ -29,8 +29,8 @@ namespace cobalt {
 namespace logger {
 namespace testing {
 
-// A container for information about the set of all locally aggregated
-// reports in a registry. This is used by tests to check the output of the
+// A container for information about the set of all locally aggregated reports
+// in a registry. This is used by tests to check the output of the
 // EventAggregator.
 typedef struct ExpectedAggregationParams {
   // The total number of locally aggregated Observations which should be
@@ -104,9 +104,9 @@ class FakeObservationStore
   std::vector<std::unique_ptr<EncryptedMessage>> messages_received;
   std::vector<std::unique_ptr<ObservationMetadata>> metadata_received;
 
-  size_t num_observations_added() override { return num_observations_added_; }
+  size_t num_observations_added() { return num_observations_added_; }
 
-  void ResetObservationCounter() override { num_observations_added_ = 0; }
+  void ResetObservationCounter() { num_observations_added_ = 0; }
 
  private:
   size_t num_observations_added_ = 0;
@@ -269,4 +269,4 @@ bool CheckPerDeviceNumericObservations(
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  //  COBALT_LOGGER_LOGGER_TEST_UTILS_H_
+#endif  // COBALT_LOGGER_LOGGER_TEST_UTILS_H_

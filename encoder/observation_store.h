@@ -6,6 +6,7 @@
 #define COBALT_ENCODER_OBSERVATION_STORE_H_
 
 #include <deque>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,14 +42,6 @@ class ObservationStoreWriterInterface {
   virtual StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
       std::unique_ptr<ObservationMetadata> metadata) = 0;
-
-  // Returns the number of Observations that have been added to the
-  // ObservationStore.
-  virtual size_t num_observations_added() = 0;
-
-  // Resets the count of Observations that have been added to the
-  // ObservationStore.
-  virtual void ResetObservationCounter() = 0;
 };
 
 // ObservationStore is an abstract interface to an underlying store of encrypted
@@ -161,11 +154,25 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // Returns wether or not the store is entirely empty.
   virtual bool Empty() const = 0;
 
+  // Returns the number of Observations that have been added to the
+  // ObservationStore.
+  uint64_t num_observations_added() const;
+
+  // Returns a vector containing the number of Observations that have been added
+  // to the ObservationStore for each specified report ID.
+  std::vector<uint64_t> num_observations_added_for_reports(
+      std::vector<uint32_t> report_ids) const;
+
+  // Resets the count of Observations that have been added to the
+  // ObservationStore.
+  void ResetObservationCounter();
+
  protected:
   const size_t max_bytes_per_observation_;
   const size_t max_bytes_per_envelope_;
   const size_t max_bytes_total_;
   const size_t almost_full_threshold_;
+  std::map<uint32_t, uint64_t> num_obs_per_report_;
 };
 
 }  // namespace encoder

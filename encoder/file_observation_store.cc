@@ -1,6 +1,6 @@
-// Copyright 2018 The Fuchsia Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2018 The Fuchsia Authors. All rights reserved.  Use of this source
+// code is governed by a BSD-style license that can be found in the LICENSE
+// file.
 
 #include "encoder/file_observation_store.h"
 
@@ -43,7 +43,6 @@ FileObservationStore::FileObservationStore(
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
       name_(std::move(name)),
-      num_observations_added_(0),
       internal_metrics_(
           logger::InternalMetrics::NewWithLogger(internal_logger)) {
   CHECK(fs_);
@@ -90,6 +89,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   }
 
   auto metadata_str = metadata->SerializeAsString();
+  auto report_id = metadata->report_id();
 
   // "+1" below is for the |scheme| field of EncryptedMessage.
   size_t obs_size = message->ciphertext().size() +
@@ -149,7 +149,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     }
   }
 
-  num_observations_added_++;
+  num_obs_per_report_[report_id]++;
   return kOk;
 }
 
@@ -332,14 +332,6 @@ size_t FileObservationStore::Size() const {
 }
 
 bool FileObservationStore::Empty() const { return Size() == 0; }
-
-size_t FileObservationStore::num_observations_added() {
-  return num_observations_added_;
-}
-
-void FileObservationStore::ResetObservationCounter() {
-  num_observations_added_ = 0;
-}
 
 void FileObservationStore::Delete() {
   auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});

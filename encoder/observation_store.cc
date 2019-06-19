@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "encoder/observation_store.h"
+
 #include <utility>
 
 #include "./logging.h"
-#include "encoder/observation_store.h"
 
 namespace cobalt {
 namespace encoder {
@@ -40,6 +41,32 @@ std::string ObservationStore::StatusDebugString(StoreStatus status) {
     case kWriteFailed:
       return "kWriteFailed";
   }
+}
+
+uint64_t ObservationStore::num_observations_added() const {
+  uint64_t num_obs = 0;
+  for (const auto &count : num_obs_per_report_) {
+    num_obs += count.second;
+  }
+  return num_obs;
+}
+
+std::vector<uint64_t> ObservationStore::num_observations_added_for_reports(
+    std::vector<uint32_t> report_ids) const {
+  std::vector<uint64_t> num_obs;
+  for (const auto &id : report_ids) {
+    const auto &count = num_obs_per_report_.find(id);
+    if (count != num_obs_per_report_.end()) {
+      num_obs.push_back(count->second);
+    } else {
+      num_obs.push_back(0);
+    }
+  }
+  return num_obs;
+}
+
+void ObservationStore::ResetObservationCounter() {
+  num_obs_per_report_.clear();
 }
 
 }  // namespace encoder

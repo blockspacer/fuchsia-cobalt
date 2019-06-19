@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "encoder/memory_observation_store.h"
+
 #include <utility>
 
 #include "./logging.h"
-#include "encoder/memory_observation_store.h"
 #include "logger/logger_interface.h"
 
 namespace cobalt {
@@ -24,7 +25,6 @@ MemoryObservationStore::MemoryObservationStore(
       current_envelope_(
           new EnvelopeMaker(max_bytes_per_observation, max_bytes_per_envelope)),
       finalized_envelopes_size_(0),
-      num_observations_added_(0),
       internal_metrics_(
           logger::InternalMetrics::NewWithLogger(internal_logger)) {}
 
@@ -50,10 +50,11 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     current_envelope_ = NewEnvelopeMaker();
   }
 
+  auto report_id = metadata->report_id();
   auto status = current_envelope_->AddEncryptedObservation(std::move(message),
                                                            std::move(metadata));
   if (status == kOk) {
-    num_observations_added_++;
+    num_obs_per_report_[report_id]++;
   }
   return status;
 }
@@ -129,14 +130,6 @@ size_t MemoryObservationStore::Size() const {
 bool MemoryObservationStore::Empty() const {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
   return current_envelope_->Empty() && finalized_envelopes_.empty();
-}
-
-size_t MemoryObservationStore::num_observations_added() {
-  return num_observations_added_;
-}
-
-void MemoryObservationStore::ResetObservationCounter() {
-  num_observations_added_ = 0;
 }
 
 }  // namespace encoder
