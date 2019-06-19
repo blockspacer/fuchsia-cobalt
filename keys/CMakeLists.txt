@@ -14,3 +14,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/analyzer_public_key.tink
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/shuffler_public_key.tink
   ${DIR_GTESTS}/keys/shuffler_public_key.tink COPYONLY)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/analyzer_public.cobalt_key
+  ${DIR_GTESTS}/keys/analyzer_public.cobalt_key COPYONLY)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/shuffler_public.cobalt_key
+  ${DIR_GTESTS}/keys/shuffler_public.cobalt_key COPYONLY)

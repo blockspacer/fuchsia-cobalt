@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "./encrypted_message.pb.h"
-#include "./observation.pb.h"
+#include "./observation2.pb.h"
 #include "glog/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "third_party/tink/include/proto/tink.pb.h"
@@ -15,39 +15,88 @@
 
 namespace {
 
+// Directory in which the keys can be found.
 const char* kKeysDir;
 
-class KeyTests : public ::testing::TestWithParam<std::string> {};
+// Read the key from disk.
+void ReadKey(const std::string& filename, std::string* key_bytes) {
+  std::string path = kKeysDir + filename;
+  auto key_bytes_result = cobalt::util::ReadNonEmptyTextFile(path);
+  ASSERT_TRUE(key_bytes_result.ok());
 
-// Check that the keys can be used to encrypt an observation.
-TEST_P(KeyTests, TestEncryption) {
-  std::string path = kKeysDir + GetParam() + "_public_key.tink";
-  auto keyset_result = cobalt::util::ReadNonEmptyTextFile(path);
-  ASSERT_TRUE(keyset_result.ok());
-  auto keyset = keyset_result.ValueOrDie();
+  *key_bytes = key_bytes_result.ValueOrDie();
+}
+
+// Encrypt some non-empty proto using the supplied EncryptedMessageMaker.
+void EncryptSomething(cobalt::util::EncryptedMessageMaker* maker,
+                      cobalt::EncryptedMessage* encrypted_message) {
+  cobalt::Observation2 observation;
+  observation.set_random_id("random id");
+
+  ASSERT_TRUE(maker->Encrypt(observation, encrypted_message));
+}
+
+TEST(KeysTests, TestAnalyzerTinkKey) {
+  std::string key_bytes;
+  ReadKey("analyzer_public_key.tink", &key_bytes);
 
   auto maker_result =
-      cobalt::util::EncryptedMessageMaker::MakeHybridTink(keyset);
+      cobalt::util::EncryptedMessageMaker::MakeHybridTinkForObservations(
+          key_bytes);
   ASSERT_TRUE(maker_result.ok());
-  auto maker = std::move(maker_result.ValueOrDie());
-
-  cobalt::Observation observation;
-  (*observation.mutable_parts())["some_part"] = cobalt::ObservationPart();
 
   cobalt::EncryptedMessage encrypted_message;
-  ASSERT_TRUE(maker->Encrypt(observation, &encrypted_message));
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
 
   EXPECT_EQ(cobalt::EncryptedMessage::HYBRID_TINK, encrypted_message.scheme());
-  EXPECT_FALSE(encrypted_message.ciphertext().empty());
+  EXPECT_EQ(0u, encrypted_message.key_index());
 }
 
-std::string GetTestParam(::testing::TestParamInfo<std::string> param_info) {
-  return param_info.param + "_key";
+TEST(KeysTests, TestShufflerTinkKey) {
+  std::string key_bytes;
+  ReadKey("shuffler_public_key.tink", &key_bytes);
+
+  auto maker_result =
+      cobalt::util::EncryptedMessageMaker::MakeHybridTinkForEnvelopes(
+          key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::HYBRID_TINK, encrypted_message.scheme());
+  EXPECT_EQ(0u, encrypted_message.key_index());
 }
 
-INSTANTIATE_TEST_CASE_P(KeysTests, KeyTests,
-                        ::testing::Values("analyzer", "shuffler"),
-                        GetTestParam);
+TEST(KeysTests, TestAnalyzerCobaltEncryptionKey) {
+  std::string key_bytes;
+  ReadKey("analyzer_public.cobalt_key", &key_bytes);
+
+  auto maker_result =
+      cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
+  EXPECT_GT(encrypted_message.key_index(), 0u);
+}
+
+TEST(KeysTests, TestShufflerCobaltEncryptionKey) {
+  std::string key_bytes;
+  ReadKey("shuffler_public.cobalt_key", &key_bytes);
+
+  auto maker_result =
+      cobalt::util::EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
+  EXPECT_GT(encrypted_message.key_index(), 0u);
+}
 
 }  // namespace
 
