@@ -12,9 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_subdirectory(bigtable_tool)
-add_subdirectory(key_generator)
 add_subdirectory(go/src)
-add_subdirectory(observation_querier)
-add_subdirectory(test_app)
 add_subdirectory(test_app2)

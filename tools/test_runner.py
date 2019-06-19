@@ -23,11 +23,6 @@ import subprocess
 import sys
 import time
 
-import tools.process_starter as process_starter
-
-from tools.process_starter import LOCALHOST_TLS_CERT_FILE
-from tools.process_starter import LOCALHOST_TLS_KEY_FILE
-
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 SYS_ROOT_DIR = os.path.join(SRC_ROOT_DIR, "sysroot")
@@ -35,17 +30,7 @@ SYS_ROOT_DIR = os.path.join(SRC_ROOT_DIR, "sysroot")
 _logger = logging.getLogger()
 
 
-def run_all_tests(test_dir,
-                  start_bt_emulator=False,
-                  start_cobalt_processes=False,
-                  use_tls=False,
-                  tls_cert_file=LOCALHOST_TLS_CERT_FILE,
-                  tls_key_file=LOCALHOST_TLS_KEY_FILE,
-                  bigtable_project_name="",
-                  bigtable_instance_id="",
-                  verbose_count=0,
-                  vmodule=None,
-                  test_args=None):
+def run_all_tests(test_dir, verbose_count=0, vmodule=None, test_args=None):
   """ Runs the tests in the given directory.
 
   Optionally also starts various processes that may be needed by the tests.
@@ -53,18 +38,6 @@ def run_all_tests(test_dir,
   Args:
     test_dir {string}: Name of the directory under the "out" directory
       containing test executables to be run.
-    start_bt_emulator{ bool}: If True then an instance of the Cloud Bigtable
-      Emulator will be started before each test and killed afterwards.
-    start_cobalt_processes {bool}: If True then an instance of the Cobalt
-      Shuffler, Analyzer Service and Report Master will be started before each
-      test and killed afterwards.
-    use_tls {bool}: This is ignored unless start_cobalt_process=True. In that
-      case this flag will cause the processes (currently only the Shuffler and
-      the ReportMaster, not the Analyzer) to use tls for gRPC communicaton with
-      their client.
-    tls_cert_file, tls_key_file: If use_tls is True and start_cobalt_process is
-      True then these are the tls cert and key files to use when starting the
-      local processes.
     vmodule: If this is a non-empty string it will be passed as the value of the
       -vmodule= flag to some of the processes. This flag is used to enable
       per-module verbose logging. See the gLog documentation. Currently we
@@ -98,53 +71,18 @@ def run_all_tests(test_dir,
     shuffler_process = None
     analyzer_service_process = None
     report_master_process = None
-    try:
-      if start_bt_emulator:
-        bt_emulator_process = process_starter.start_bigtable_emulator(
-            wait=False)
-      if start_cobalt_processes:
-        time.sleep(1)
-        analyzer_service_process = process_starter.start_analyzer_service(
-            bigtable_instance_id=bigtable_instance_id,
-            bigtable_project_name=bigtable_project_name,
-            verbose_count=verbose_count,
-            vmodule=vmodule,
-            wait=False)
-        time.sleep(1)
-        report_master_process = process_starter.start_report_master(
-            use_tls=use_tls,
-            tls_cert_file=tls_cert_file,
-            tls_key_file=tls_key_file,
-            bigtable_instance_id=bigtable_instance_id,
-            bigtable_project_name=bigtable_project_name,
-            verbose_count=verbose_count,
-            vmodule=vmodule,
-            wait=False)
-        time.sleep(1)
-        shuffler_process = process_starter.start_shuffler(
-            use_tls=use_tls,
-            tls_cert_file=tls_cert_file,
-            tls_key_file=tls_key_file,
-            verbose_count=verbose_count,
-            wait=False)
-      path = os.path.abspath(os.path.join(tdir, test_executable))
-      if os.path.isdir(path):
-        continue
-      print("Running %s..." % test_executable)
-      command = [path] + test_args
-      return_code = subprocess.call(command)
-      if return_code != 0:
-        failure_list.append(test_executable)
-      if return_code < 0:
-        print("")
-        print("****** WARNING Process [%s] terminated by signal %d" %
-              (command[0], -return_code))
-    finally:
-      process_starter.kill_process(shuffler_process, "Shuffler")
-      process_starter.kill_process(analyzer_service_process, "Analyzer Service")
-      process_starter.kill_process(report_master_process, "Report Master")
-      process_starter.kill_process(bt_emulator_process,
-                                   "Cloud Bigtable Emulator")
+    path = os.path.abspath(os.path.join(tdir, test_executable))
+    if os.path.isdir(path):
+      continue
+    print("Running %s..." % test_executable)
+    command = [path] + test_args
+    return_code = subprocess.call(command)
+    if return_code != 0:
+      failure_list.append(test_executable)
+    if return_code < 0:
+      print("")
+      print("****** WARNING Process [%s] terminated by signal %d" %
+            (command[0], -return_code))
   if failure_list:
     return failure_list
   else:
