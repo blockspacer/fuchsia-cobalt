@@ -83,6 +83,13 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
                  "FileObservationStore::AddEncryptedObservation");
   auto fields = protected_fields_.lock();
 
+  // "+1" below is for the |scheme| field of EncryptedMessage.
+  size_t obs_size = message->ciphertext().size() +
+                    message->public_key_fingerprint().size() + 1;
+  internal_metrics_->BytesStored(
+      logger::PerProjectBytesStoredMetricDimensionStatus::Attempted, obs_size,
+      metadata->customer_id(), metadata->project_id());
+
   auto active_file = GetActiveFile(&fields);
   if (active_file == nullptr) {
     return kWriteFailed;
@@ -91,9 +98,6 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   auto metadata_str = metadata->SerializeAsString();
   auto report_id = metadata->report_id();
 
-  // "+1" below is for the |scheme| field of EncryptedMessage.
-  size_t obs_size = message->ciphertext().size() +
-                    message->public_key_fingerprint().size() + 1;
   if (obs_size > max_bytes_per_observation_) {
     LOG(WARNING) << "An observation that was too big was passed in to "
                     "FileObservationStore::AddEncryptedObservation(): "
@@ -150,6 +154,9 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   }
 
   num_obs_per_report_[report_id]++;
+  internal_metrics_->BytesStored(
+      logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded, obs_size,
+      metadata->customer_id(), metadata->project_id());
   return kOk;
 }
 

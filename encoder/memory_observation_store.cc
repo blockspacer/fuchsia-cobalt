@@ -33,6 +33,10 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     std::unique_ptr<ObservationMetadata> metadata) {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
 
+  internal_metrics_->BytesStored(
+      logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
+      SizeLocked(), metadata->customer_id(), metadata->project_id());
+
   if (SizeLocked() > max_bytes_total_) {
     VLOG(4) << "MemoryObservationStore::AddEncryptedObservation(): Rejecting "
                "observation because the store is full. ("
@@ -50,11 +54,17 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
     current_envelope_ = NewEnvelopeMaker();
   }
 
+  uint32_t customer_id = metadata->customer_id();
+  uint32_t project_id = metadata->project_id();
   auto report_id = metadata->report_id();
+
   auto status = current_envelope_->AddEncryptedObservation(std::move(message),
                                                            std::move(metadata));
   if (status == kOk) {
     num_obs_per_report_[report_id]++;
+    internal_metrics_->BytesStored(
+        logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded,
+        SizeLocked(), customer_id, project_id);
   }
   return status;
 }
