@@ -57,12 +57,18 @@ template("cobalt_config_header") {
     string_var_name = "cobalt_registry_base64"
   }
   action(target_name) {
-    sources = [ invoker.input_yaml ]
+    sources = [
+      invoker.input_yaml,
+    ]
     output_file = "$target_gen_dir/" + invoker.output_file
-    outputs = [ output_file ]
+    outputs = [
+      output_file,
+    ]
 
-    config_parser_target = "//third_party/cobalt/config/config_parser/src:bin($host_toolchain)"
-    config_parser_bin = get_label_info(config_parser_target, "root_out_dir") + "/config_parser"
+    config_parser_target =
+        "$cobalt_root/config/config_parser/src:bin($host_toolchain)"
+    config_parser_bin =
+        get_label_info(config_parser_target, "root_out_dir") + "/config_parser"
 
     script = config_parser_bin
     args = [
@@ -81,8 +87,8 @@ template("cobalt_config_header") {
     ]
 
     deps = [
+      "$cobalt_root:cobalt_proto",
       config_parser_target,
-      "//third_party/cobalt:cobalt_proto"
     ]
   }
 }

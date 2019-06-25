@@ -15,12 +15,12 @@ source_set("encrypted_message_util") {
   ]
   configs -= [ "//build/config:no_rtti" ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
     ":status",
+    "$cobalt_root:cobalt_proto",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
     "//third_party/tink/cc:hybrid_encrypt",
     "//third_party/tink/cc:keyset_handle",
     "//third_party/tink/cc/hybrid:hybrid_config",
@@ -33,9 +33,9 @@ static_library("datetime_util") {
     "datetime_util.cc",
     "datetime_util.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
-    "//third_party/cobalt/config:cobalt_registry_proto",
+    "$cobalt_root/config:cobalt_registry_proto",
   ]
 }
 
@@ -44,11 +44,11 @@ static_library("file_util") {
     "file_util.cc",
     "file_util.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":status",
+    "$cobalt_root/util/crypto_util",
     "//src/lib/fxl",
-    "//third_party/cobalt/util/crypto_util",
   ]
 }
 
@@ -57,11 +57,11 @@ static_library("pem_util") {
     "pem_util.cc",
     "pem_util.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":file_util",
+    "$cobalt_root/util/crypto_util",
     "//src/lib/fxl",
-    "//third_party/cobalt/util/crypto_util",
   ]
 }
 
@@ -71,7 +71,7 @@ static_library("status") {
     "status.h",
     "status_codes.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 static_library("posix_file_system") {
@@ -80,7 +80,7 @@ static_library("posix_file_system") {
     "posix_file_system.cc",
     "posix_file_system.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 static_library("consistent_proto_store") {
@@ -88,7 +88,7 @@ static_library("consistent_proto_store") {
     "consistent_proto_store.cc",
     "consistent_proto_store.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":status",
     "//third_party/protobuf:protobuf_lite",
@@ -100,10 +100,10 @@ static_library("proto_util") {
     "proto_util.cc",
     "proto_util.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
+    "$cobalt_root/util/crypto_util",
     "//src/lib/fxl",
-    "//third_party/cobalt/util/crypto_util",
     "//third_party/protobuf:protobuf_lite",
   ]
 }

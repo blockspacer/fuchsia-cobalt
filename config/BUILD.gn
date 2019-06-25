@@ -9,7 +9,7 @@ config("proto_config") {
 }
 
 proto_library("cobalt_registry_proto") {
-  proto_in_dir = "//third_party/cobalt"
+  proto_in_dir = "$cobalt_root"
   sources = [
     "annotations.proto",
     "cobalt_registry.proto",
@@ -27,12 +27,12 @@ proto_library("cobalt_registry_proto") {
   cc_generator_options = "lite"
 
   deps = [
-    "//third_party/cobalt:cobalt_proto",
+    "$cobalt_root:cobalt_proto",
   ]
 
   extra_configs = [
     ":proto_config",
-    "//third_party/cobalt:cobalt_config",
+    "$cobalt_root:cobalt_config",
   ]
 }
 
@@ -41,12 +41,12 @@ static_library("client_config") {
     "client_config.cc",
     "client_config.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 
   deps = [
     ":cobalt_registry_proto",
+    "$cobalt_root:cobalt_proto",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
   ]
 }
 
@@ -61,7 +61,7 @@ source_set("client_config_test") {
     "//garnet/public/lib/fxl",
     "//third_party/googletest:gtest",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("project_configs") {
@@ -71,13 +71,13 @@ source_set("project_configs") {
   ]
 
   public_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 
   public_deps = [
+    "$cobalt_root/config:cobalt_registry_proto",
     "//src/lib/fxl",
-    "//third_party/cobalt/config:cobalt_registry_proto",
   ]
 }
 
@@ -90,7 +90,7 @@ source_set("project_configs_test") {
     ":project_configs",
     "//third_party/googletest:gtest",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("id") {
@@ -99,7 +99,7 @@ source_set("id") {
     "id.h",
   ]
 
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("id_test") {
@@ -113,7 +113,7 @@ source_set("id_test") {
     "//third_party/glog",
     "//third_party/googletest:gtest",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("packed_event_codes") {
@@ -122,7 +122,7 @@ source_set("packed_event_codes") {
     "packed_event_codes.h",
   ]
 
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 source_set("packed_event_codes_test") {
   testonly = true
@@ -136,7 +136,7 @@ source_set("packed_event_codes_test") {
     "//third_party/googletest:gtest",
   ]
 
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 group("tests") {
   testonly = true

@@ -11,10 +11,10 @@ static_library("statusor") {
     "statusor_internals.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
-    "//third_party/cobalt/util:status",
+    "$cobalt_root/util:status",
     "//third_party/glog:glog",
     "//third_party/protobuf:protobuf_lite",
   ]

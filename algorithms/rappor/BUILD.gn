@@ -11,14 +11,14 @@ static_library("rappor_encoder") {
     "rappor_encoder.cc",
     "rappor_encoder.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/encoder:client_secret",
+    "$cobalt_root/util/crypto_util",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/encoder:client_secret",
-    "//third_party/cobalt/util/crypto_util",
     "//zircon/public/lib/trace",
   ]
 }

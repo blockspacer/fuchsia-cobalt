@@ -8,9 +8,9 @@ static_library("statusor") {
     "statusor.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
-    "//third_party/cobalt/third_party/statusor:statusor",
+    "$cobalt_root/third_party/statusor:statusor",
   ]
 }

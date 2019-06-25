@@ -15,7 +15,7 @@ metrics_registry("internal_metrics_config") {
 }
 
 proto_library("cobalt_local_aggregation_proto") {
-  proto_in_dir = "//third_party/cobalt"
+  proto_in_dir = "$cobalt_root"
   sources = [
     "local_aggregation.proto",
   ]
@@ -23,12 +23,12 @@ proto_library("cobalt_local_aggregation_proto") {
   generate_python = false
   cc_generator_options = "lite"
   deps = [
-    "//third_party/cobalt/config:cobalt_registry_proto",
+    "$cobalt_root/config:cobalt_registry_proto",
   ]
 
   extra_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 }
 
@@ -44,13 +44,13 @@ source_set("event_record") {
   ]
 
   public_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 
   public_deps = [
-    "//third_party/cobalt:cobalt_proto",
-    "//third_party/cobalt/config:cobalt_registry_proto",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/config:cobalt_registry_proto",
   ]
 }
 
@@ -61,15 +61,15 @@ source_set("project_context") {
   ]
 
   public_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 
   public_deps = [
     ":status",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/config:project_configs",
     "//src/lib/fxl",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/config:project_configs",
   ]
 }
 
@@ -80,20 +80,20 @@ source_set("project_context_factory") {
   ]
 
   public_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 
   deps = [
-    "//third_party/cobalt/config:cobalt_registry_proto",
+    "$cobalt_root/config:cobalt_registry_proto",
 
     # This is for base64 decoding.
-    "//third_party/cobalt/util/crypto_util",
+    "$cobalt_root/util/crypto_util",
   ]
 
   public_deps = [
     ":project_context",
-    "//third_party/cobalt/encoder:legacy_project_context",
+    "$cobalt_root/encoder:legacy_project_context",
   ]
 }
 
@@ -103,17 +103,17 @@ source_set("encoder") {
     "encoder.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
-    ":status",
     ":logger_interface",
+    ":status",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/config:packed_event_codes",
+    "$cobalt_root/encoder",
+    "$cobalt_root/util/crypto_util",
     "//src/lib/fxl",
     "//third_party/abseil-cpp",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/config:packed_event_codes",
-    "//third_party/cobalt/encoder",
-    "//third_party/cobalt/util/crypto_util",
   ]
 }
 
@@ -123,14 +123,14 @@ source_set("observation_writer") {
     "observation_writer.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
     ":status",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/encoder",
+    "$cobalt_root/util:encrypted_message_util",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
-    "//third_party/cobalt/encoder",
-    "//third_party/cobalt/util:encrypted_message_util",
     "//zircon/public/lib/trace",
   ]
 }
@@ -142,8 +142,8 @@ source_set("event_aggregator") {
   ]
 
   public_configs = [
-    "//third_party/cobalt:cobalt_config",
-    "//third_party/cobalt/config:proto_config",
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
   ]
 
   public_deps = [
@@ -152,13 +152,13 @@ source_set("event_aggregator") {
     ":event_record",
     ":observation_writer",
     ":status",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/config:packed_event_codes",
+    "$cobalt_root/util:consistent_proto_store",
+    "$cobalt_root/util:proto_util",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
-    "//third_party/cobalt/algorithms/rappor:rappor_encoder",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/config:packed_event_codes",
-    "//third_party/cobalt/util:consistent_proto_store",
-    "//third_party/cobalt/util:proto_util",
   ]
 }
 
@@ -168,12 +168,12 @@ source_set("logger_interface") {
     "types.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
     ":status",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/config:packed_event_codes",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/config:packed_event_codes",
   ]
 }
 
@@ -183,7 +183,7 @@ source_set("internal_metrics") {
     "internal_metrics.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
     ":internal_metrics_config_cc",
@@ -199,7 +199,7 @@ source_set("logger") {
     "logger.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
     ":encoder",
@@ -213,7 +213,7 @@ source_set("logger") {
     # Fuchsia code switches to ProjectContextFactory.
     ":project_context",
     ":status",
-    "//third_party/cobalt/config:id",
+    "$cobalt_root/config:id",
     "//zircon/public/lib/trace",
   ]
 }
@@ -224,11 +224,11 @@ source_set("channel_mapper") {
     "channel_mapper.h",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
+    "$cobalt_root/config:cobalt_registry_proto",
     "//garnet/public/lib/syslog/cpp",
-    "//third_party/cobalt/config:cobalt_registry_proto",
   ]
 }
 
@@ -247,7 +247,7 @@ source_set("testing_constants") {
     "test_registries:unique_actives_test_registry",
   ]
 
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("logger_test_utils") {
@@ -259,12 +259,12 @@ source_set("logger_test_utils") {
   deps = [
     ":cobalt_local_aggregation_proto",
     ":project_context_factory",
-    "//third_party/cobalt/config:project_configs",
-    "//third_party/cobalt/encoder",
-    "//third_party/cobalt/util:posix_file_system",
+    "$cobalt_root/config:project_configs",
+    "$cobalt_root/encoder",
+    "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
   ]
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("logger_test") {

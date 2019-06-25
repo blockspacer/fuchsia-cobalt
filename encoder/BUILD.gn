@@ -2,20 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/cobalt/cobalt_config_header.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("$cobalt_root/cobalt_config_header.gni")
 
 static_library("legacy_project_context") {
   sources = [
     "project_context.cc",
     "project_context.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 
   deps = [
     ":client_secret",
+    "$cobalt_root/config:client_config",
     "//src/lib/fxl",
-    "//third_party/cobalt/config:client_config",
     "//third_party/protobuf:protobuf_lite",
   ]
 }
@@ -48,12 +48,12 @@ static_library("encoder") {
     "//third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc",
     "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.cc",
   ]
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 
   deps = [
+    "$cobalt_root/algorithms/forculus:forculus_encoder",
+    "$cobalt_root/algorithms/rappor:rappor_encoder",
     "//third_party/abseil-cpp/absl/synchronization:synchronization",
-    "//third_party/cobalt/algorithms/forculus:forculus_encoder",
-    "//third_party/cobalt/algorithms/rappor:rappor_encoder",
   ]
 
   public_deps = [
@@ -64,16 +64,16 @@ static_library("encoder") {
     # cobalt_registry_proto from public_deps after Fuchsia code switches
     # to ProjectContextFactory
     ":legacy_project_context",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/config:client_config",
+    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/logger:channel_mapper",
+    "$cobalt_root/logger:internal_metrics",
+    "$cobalt_root/shuffler:shuffler_service",
+    "$cobalt_root/third_party/clearcut:clearcut",
+    "$cobalt_root/util:clock",
+    "$cobalt_root/util:encrypted_message_util",
     "//src/lib/fxl",
-    "//third_party/cobalt:cobalt_proto",
-    "//third_party/cobalt/config:client_config",
-    "//third_party/cobalt/config:cobalt_registry_proto",
-    "//third_party/cobalt/logger:channel_mapper",
-    "//third_party/cobalt/logger:internal_metrics",
-    "//third_party/cobalt/shuffler:shuffler_service",
-    "//third_party/cobalt/third_party/clearcut:clearcut",
-    "//third_party/cobalt/util:clock",
-    "//third_party/cobalt/util:encrypted_message_util",
     "//third_party/grpc:grpc++",
     "//zircon/public/lib/trace",
   ]
@@ -83,15 +83,15 @@ proto_library("file_observation_store_internal_proto") {
   sources = [
     "file_observation_store_internal.proto",
   ]
-  extra_configs = [ "//third_party/cobalt:cobalt_config" ]
+  extra_configs = [ "$cobalt_root:cobalt_config" ]
   import_dirs = [
     "//third_party/protobuf/src",
-    "//third_party/cobalt",
+    "$cobalt_root",
   ]
   cc_generator_options = "lite"
   generate_python = false
   deps = [
-    "//third_party/cobalt:cobalt_proto",
+    "$cobalt_root:cobalt_proto",
   ]
 }
 
@@ -100,10 +100,10 @@ static_library("client_secret") {
     "client_secret.cc",
     "client_secret.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 
   deps = [
-    "//third_party/cobalt/util/crypto_util",
+    "$cobalt_root/util/crypto_util",
   ]
 }
 
@@ -164,5 +164,5 @@ source_set("unittests") {
     "//third_party/googletest:gtest_main",
   ]
 
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }

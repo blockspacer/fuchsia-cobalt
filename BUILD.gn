@@ -8,7 +8,7 @@ import("//third_party/protobuf/proto_library.gni")
 config("cobalt_config") {
   include_dirs = [
     "//garnet/public/lib/syslog/cpp",
-    "//third_party/cobalt",
+    "$cobalt_root",
     "$root_gen_dir/third_party/cobalt",
     "//zircon/system/ulib/syslog/include",
   ]
@@ -29,8 +29,8 @@ proto_library("cobalt_proto") {
   generate_python = false
   cc_generator_options = "lite"
   deps = [
+    "$cobalt_root/third_party/clearcut:clearcut_proto",
     "//third_party/boringssl",
-    "//third_party/cobalt/third_party/clearcut:clearcut_proto",
   ]
 }
 

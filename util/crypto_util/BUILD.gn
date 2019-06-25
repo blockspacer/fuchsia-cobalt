@@ -17,7 +17,7 @@ static_library("crypto_util") {
     "random.cc",
     "random.h",
   ]
-  configs += [ "//third_party/cobalt:cobalt_config" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 
   deps = [
     "//third_party/boringssl",
