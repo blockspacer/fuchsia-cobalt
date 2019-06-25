@@ -31,6 +31,10 @@ func (r memConfigReader) Customers() (string, error) {
 	return r.customers, nil
 }
 
+func (r memConfigReader) CustomersFilePath() string {
+	return "fake/customers.yaml"
+}
+
 func (r memConfigReader) Project(customerName string, projectName string) (string, error) {
 	key := customerName + "|" + projectName
 	yaml, ok := r.projects[key]

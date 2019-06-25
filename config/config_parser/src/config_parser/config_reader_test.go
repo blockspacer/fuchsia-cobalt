@@ -7,6 +7,7 @@ package config_parser
 import (
 	"config"
 	"fmt"
+	"strings"
 	"testing"
 
 	proto "github.com/golang/protobuf/proto"
@@ -19,6 +20,10 @@ type memConfigReader struct {
 
 func (r memConfigReader) Customers() (string, error) {
 	return r.customers, nil
+}
+
+func (r memConfigReader) CustomersFilePath() string {
+	return "fake/customers.yaml"
 }
 
 func (r memConfigReader) Project(customerName string, projectName string) (string, error) {
@@ -43,6 +48,24 @@ const customersYaml = `
   customer_id: 1
   projects:
     - name: ledger
+      id: 100
+      contact: bob
+    - name: module_usage_tracking
+      id: 101
+      contact: bob
+- customer_name: test_customer
+  customer_id: 100
+  projects:
+    - name: test_project
+      id: 50
+      contact: bob
+`
+
+const invalidCustomersYaml = `
+- customer_name: fuchsia
+  customer_id: 1
+  projects:
+    - naINVALIDme: ledger
       id: 100
       contact: bob
     - name: module_usage_tracking
@@ -170,6 +193,23 @@ func TestReadConfig(t *testing.T) {
 		if 2 != len(c.ProjectConfig.ReportConfigs) {
 			t.Errorf("Unexpected number of report configs for %v: %v", c.ProjectName, len(c.ProjectConfig.ReportConfigs))
 		}
+	}
+}
+
+// Tests that ReadConfig customer parsing failures include the YAML file name.
+func TestReadInvalidConfig(t *testing.T) {
+	r := memConfigReader{
+		customers: invalidCustomersYaml}
+	r.SetProject("fuchsia", "ledger", projectConfigYaml)
+	r.SetProject("fuchsia", "module_usage_tracking", projectConfigYaml)
+	r.SetProject("test_customer", "test_project", projectConfigYaml)
+	l := []ProjectConfig{}
+	if err := ReadConfig(r, &l); err != nil {
+		if !strings.Contains(err.Error(), "fake/customers.yaml") {
+			t.Errorf("Error message did not contain the expected fake/customers.yaml: %v", err)
+		}
+	} else {
+		t.Errorf("Expected to get an error")
 	}
 }
 
