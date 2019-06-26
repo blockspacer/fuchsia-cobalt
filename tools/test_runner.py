@@ -74,6 +74,8 @@ def run_all_tests(test_dir, verbose_count=0, vmodule=None, test_args=None):
     path = os.path.abspath(os.path.join(tdir, test_executable))
     if os.path.isdir(path):
       continue
+    if not os.access(path, os.X_OK):
+      continue
     print("Running %s..." % test_executable)
     command = [path] + test_args
     return_code = subprocess.call(command)

@@ -1,0 +1,22 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("curl_http_client") {
+  sources = [
+    "curl_http_client.cc",
+  ]
+  deps = [
+    ":curl_handle",
+    "//third_party/curl:libcurl",
+  ]
+}
+
+source_set("curl_handle") {
+  sources = [
+    "curl_handle.cc",
+  ]
+  deps = [
+    "//third_party/curl:libcurl",
+  ]
+}

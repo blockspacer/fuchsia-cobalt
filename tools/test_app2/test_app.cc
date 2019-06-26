@@ -262,8 +262,7 @@ std::string FindCobaltRegistryProto(char* argv[]) {
   }
   char* dir = dirname(path);
   // Set the relative path to the registry.
-  snprintf(path2, sizeof(path2),
-           "%s/../../third_party/cobalt_config/cobalt_config.binproto", dir);
+  snprintf(path2, sizeof(path2), "%s/gen/registry.pb", dir);
 
   // Get the absolute path to the registry.
   if (!realpath(path2, path)) {
@@ -301,7 +300,9 @@ std::unique_ptr<ProjectContextFactory> LoadCobaltRegistry(
 
   // Parse the CobaltRegistry.
   auto cobalt_registry = std::make_unique<cobalt::CobaltRegistry>();
-  CHECK(cobalt_registry->ParseFromIstream(&registry_file_stream))
+  google::protobuf::io::IstreamInputStream registry_file_input(
+      &registry_file_stream);
+  CHECK(cobalt_registry->ParseFromZeroCopyStream(&registry_file_input))
       << "Could not parse the cobalt registry pb file: " << registry_pb_path;
   return std::make_unique<ProjectContextFactory>(std::move(cobalt_registry));
 }
@@ -1055,10 +1056,17 @@ void TestApp::LogIntHistogram(uint64_t num_clients, uint32_t event_code,
     auto status = logger->LogIntHistogram(current_metric_->id(), event_code,
                                           component, std::move(histogram_ptr));
     if (status != logger::kOK) {
+#ifndef PROTO_LITE
       LOG(ERROR) << "LogIntHistogram() failed with status " << status
                  << ". metric=" << current_metric_->metric_name()
                  << ". event_code=" << event_code << ". component=" << component
                  << ". histogram=" << histogram_ptr->Get(0).DebugString();
+#else
+      LOG(ERROR) << "LogIntHistogram() failed with status " << status
+                 << ". metric=" << current_metric_->metric_name()
+                 << ". event_code=" << event_code
+                 << ". component=" << component;
+#endif
       break;
     }
   }
@@ -1234,7 +1242,9 @@ void TestApp::Show(const std::vector<std::string>& command) {
     *ostream_ << "Metric '" << current_metric_->metric_name() << "'"
               << std::endl;
     *ostream_ << "-----------------" << std::endl;
+#ifndef PROTO_LITE
     *ostream_ << current_metric_->DebugString();
+#endif
     *ostream_ << std::endl;
   }
 }
@@ -1328,7 +1338,7 @@ bool TestApp::ParseIndex(const std::string& str, uint32_t* index) {
 }
 
 bool TestApp::ParseDay(const std::string& str, uint32_t* day_index) {
-  CHECK(index);
+  CHECK(day_index);
   if (str.size() < 5 || str.substr(0, 4) != "day=") {
     *ostream_ << "Expected prefix 'day='." << std::endl;
     return false;

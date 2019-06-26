@@ -1,0 +1,46 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+executable("test_app2") {
+  testonly = true
+
+  sources = [
+    "test_app_main.cc",
+  ]
+
+  deps = [
+    ":lib",
+    "$cobalt_root:cobalt_proto",
+  ]
+}
+
+source_set("lib") {
+  testonly = true
+
+  sources = [
+    "test_app.cc",
+  ]
+
+  configs += [ "$cobalt_root/config:proto_config" ]
+
+  public_deps = [
+    "$cobalt_root/logger:encoder",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+  deps = [
+    "$cobalt_root:logging",
+    "$cobalt_root:registry",
+    "$cobalt_root/logger",
+    "$cobalt_root/logger:event_aggregator",
+    "$cobalt_root/logger:project_context_factory",
+    "$cobalt_root/util:file_util",
+    "$cobalt_root/util:posix_file_system",
+    "$cobalt_root/util/clearcut:curl_http_client",
+    "//third_party/abseil-cpp",
+    "//third_party/grpc:grpc++",
+    "//third_party/protobuf:protobuf_lite",
+    "//third_party/tink/cc/util:status",
+  ]
+}

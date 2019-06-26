@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/test.gni")
+import("//third_party/cobalt_config/metrics_registry.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 config("cobalt_config") {
@@ -37,6 +38,10 @@ proto_library("cobalt_proto") {
     "$cobalt_root/third_party/clearcut:clearcut_proto",
     "//third_party/boringssl",
   ]
+}
+
+metrics_registry("registry") {
+  global = true
 }
 
 group("logging") {
@@ -102,5 +107,6 @@ testonly = true
 group("default") {
   deps = [
     ":cobalt_core_unittests",
+    "$cobalt_root/tools/test_app2",
   ]
 }

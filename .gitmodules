@@ -101,3 +101,6 @@
 [submodule "third_party/python/mock"]
 	path = third_party/python/mock
 	url = https://fuchsia.googlesource.com/third_party/python/testing-cabal/mock
+[submodule "third_party/boringssl-src"]
+	path = third_party/boringssl-src
+	url = https://fuchsia.googlesource.com/third_party/boringssl

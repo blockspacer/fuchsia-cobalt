@@ -34,11 +34,8 @@ import tools.test_runner as test_runner
 import tools.gitfmt as gitfmt
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-OUT_DIR = os.path.abspath(os.path.join(THIS_DIR, 'out'))
 SYSROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, 'sysroot'))
 CONFIG_SUBMODULE_PATH = os.path.join(THIS_DIR, 'third_party', 'cobalt_config')
-CONFIG_BINARY_PROTO = os.path.join(OUT_DIR, 'third_party', 'cobalt_config',
-                                   'cobalt_config.binproto')
 
 _logger = logging.getLogger()
 _verbose_count = 0
@@ -82,6 +79,9 @@ def ensureDir(dir_path):
   if not os.path.exists(dir_path):
     os.makedirs(dir_path)
 
+def out_dir(args):
+  return os.path.abspath(os.path.join(THIS_DIR, args.out_dir))
+
 
 def _setup(args):
   subprocess.check_call(['git', 'submodule', 'init'])
@@ -99,17 +99,12 @@ def _update_config(args):
 
 
 def _build(args):
-  ensureDir(OUT_DIR)
-  savedir = os.getcwd()
-  os.chdir(OUT_DIR)
-  subprocess.check_call([args.cmake_path, '-G', 'Ninja', '..'])
-  subprocess.check_call([args.ninja_path])
-  os.chdir(savedir)
+  subprocess.check_call([args.gn_path, 'gen', out_dir(args)])
+  subprocess.check_call([args.ninja_path , '-C', out_dir(args)])
 
 
 def _check_config(args):
-  config_parser_bin = os.path.join(OUT_DIR, 'config', 'config_parser',
-                                   'config_parser')
+  config_parser_bin = os.path.join(out_dir(args), 'config_parser')
   if not os.path.isfile(config_parser_bin):
     print(
         '%s could not be found. Run \n\n%s setup\n%s build\n\nand try again.' %
@@ -196,7 +191,7 @@ def _lint(args):
 
 # Specifiers of subsets of tests to run
 TEST_FILTERS = [
-    'all', 'gtests', 'nogtests', 'gotests', 'nogotests', 'perf', 'config_parser'
+    'all', 'cpp', 'nocpp', 'go', 'nogo', 'perf', 'perf', 'other'
 ]
 
 
@@ -207,11 +202,11 @@ def _test(args):
   # it represents. Note that 'cloud_bt' and 'perf' tests are special. They are
   # not included in 'all'. They are only run if asked for explicitly.
   FILTER_MAP = {
-      'all': ['gtests', 'go_tests', 'config_parser_tests'],
-      'gtests': ['gtests'],
-      'gotests': ['go_tests'],
-      'perf': ['perf_tests'],
-      'config_parser': ['config_parser_tests']
+      'all': ['cpp', 'go', 'other'],
+      'cpp': ['cpp'],
+      'go': ['go'],
+      'perf': ['perf'],
+      'other': ['other'],
   }
 
   # By default try each test just once.
@@ -238,7 +233,7 @@ def _test(args):
     this_failure_list = []
     for attempt in range(num_times_to_try):
       this_failure_list = test_runner.run_all_tests(
-          test_dir,
+          "tests/" + test_dir,
           verbose_count=_verbose_count,
           vmodule=_vmodule,
           test_args=test_args)
@@ -264,27 +259,39 @@ def _test(args):
 
 # Files and directories in the out directory to NOT delete when doing
 # a partial clean.
-TO_SKIP_ON_PARTIAL_CLEAN = [
-    'CMakeFiles', 'third_party', '.ninja_deps', '.ninja_log', 'CMakeCache.txt',
-    'build.ninja', 'cmake_install.cmake', 'rules.ninja'
-]
+TO_SKIP_ON_PARTIAL_CLEAN = {
+    'obj': {'third_party': True},
+    'gen': {'third_party': True},
+    '.ninja_deps': True,
+    '.ninja_log': True,
+    'build.ninja': True,
+    'rules.ninja': True,
+    'args.gn': True,
+}
 
+
+def partial_clean(current_dir, exceptions):
+  for f in os.listdir(current_dir):
+    full_path = os.path.join(current_dir, f)
+    if not f in exceptions:
+      if os.path.isfile(full_path):
+        os.remove(full_path)
+      else:
+        shutil.rmtree(full_path, ignore_errors=True)
+    elif isinstance(exceptions[f], dict):
+      partial_clean(full_path, exceptions[f])
+    else:
+      print("Skipping", full_path)
 
 def _clean(args):
   if args.full:
     print('Deleting the out directory...')
-    shutil.rmtree(OUT_DIR, ignore_errors=True)
+    shutil.rmtree(out_dir(args), ignore_errors=True)
   else:
     print('Doing a partial clean. Pass --full for a full clean.')
-    if not os.path.exists(OUT_DIR):
+    if not os.path.exists(out_dir(args)):
       return
-    for f in os.listdir(OUT_DIR):
-      if not f in TO_SKIP_ON_PARTIAL_CLEAN:
-        full_path = os.path.join(OUT_DIR, f)
-        if os.path.isfile(full_path):
-          os.remove(full_path)
-        else:
-          shutil.rmtree(full_path, ignore_errors=True)
+    partial_clean(out_dir(args), TO_SKIP_ON_PARTIAL_CLEAN)
 
 
 def _start_shuffler(args):
@@ -598,6 +605,14 @@ def main():
       'processes locally. Currently only used for the end-to-end test. '
       'Optional.)',
       default='')
+  parser.add_argument(
+      '--out_dir',
+      help='Output directory (relative to cobaltb.py)',
+      default='out')
+  parent_parser.add_argument(
+      '--out_dir',
+      help='Output directory (relative to cobaltb.py)',
+      default='out')
 
   subparsers = parser.add_subparsers()
 
@@ -656,7 +671,7 @@ def main():
   sub_parser = subparsers.add_parser(
       'build', parents=[parent_parser], help='Builds Cobalt.')
   sub_parser.add_argument(
-      '--cmake_path', default='cmake', help='Path to CMake binary')
+      '--gn_path', default='gn', help='Path to GN binary')
   sub_parser.add_argument(
       '--ninja_path', default='ninja', help='Path to Ninja binary')
   sub_parser.set_defaults(func=_build)

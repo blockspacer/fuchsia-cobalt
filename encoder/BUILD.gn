@@ -53,7 +53,6 @@ static_library("encoder") {
   deps = [
     "$cobalt_root/algorithms/forculus:forculus_encrypter",
     "$cobalt_root/algorithms/rappor:rappor_encoder",
-    "//third_party/abseil-cpp/absl/synchronization:synchronization",
   ]
 
   public_deps = [
@@ -75,6 +74,7 @@ static_library("encoder") {
     "$cobalt_root/third_party/clearcut:clearcut",
     "$cobalt_root/util:clock",
     "$cobalt_root/util:encrypted_message_util",
+    "//third_party/abseil-cpp/absl/synchronization:synchronization",
     "//third_party/grpc:grpc++",
   ]
 }

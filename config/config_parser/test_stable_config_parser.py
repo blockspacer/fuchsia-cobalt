@@ -10,10 +10,11 @@ import subprocess
 import sys
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir, os.pardir))
+SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir, os.pardir,
+  os.pardir))
 OUT_DIR = os.path.abspath(os.path.join(SRC_ROOT_DIR, 'out'))
 CONFIG_PARSER_BIN = os.path.join(
-    OUT_DIR, 'config', 'config_parser', 'config_parser')
+    OUT_DIR,  'config_parser')
 CONFIG_DIR = os.path.join(SRC_ROOT_DIR, 'third_party', 'cobalt_config')
 
 def main():
