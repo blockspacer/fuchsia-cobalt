@@ -79,6 +79,20 @@ target_link_libraries(testing_constants
                       test_registries)
 set_target_properties(testing_constants PROPERTIES LINKER_LANGUAGE CXX)
 
+add_library(fake_logger
+            fake_logger.cc)
+target_link_libraries(fake_logger
+                      consistent_proto_store
+                      encoder2
+                      encoder
+                      logger
+                      local_aggregation_proto_lib
+                      testing_constants
+                      posix_file_system
+                      project_context
+                      proto_util)
+add_cobalt_dependencies(fake_logger)
+
 add_library(logger_test_utils
             logger_test_utils.cc)
 target_link_libraries(logger_test_utils
@@ -105,6 +119,7 @@ add_executable(logger_tests
 target_link_libraries(logger_tests
                       encoder2
                       event_aggregator
+                      fake_logger
                       logger
                       logger_test_utils
                       internal_metrics)

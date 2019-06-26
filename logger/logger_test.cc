@@ -21,6 +21,7 @@
 #include "encoder/encoder.h"
 #include "logger/encoder.h"
 #include "logger/event_aggregator.h"
+#include "logger/fake_logger.h"
 #include "logger/logger_test_utils.h"
 #include "logger/project_context.h"
 #include "logger/status.h"

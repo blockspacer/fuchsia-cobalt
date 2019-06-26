@@ -250,6 +250,23 @@ source_set("testing_constants") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("fake_logger") {
+  testonly = true
+  sources = [
+    "fake_logger.cc",
+    "fake_logger.h",
+  ]
+  deps = [
+    ":cobalt_local_aggregation_proto",
+    ":project_context_factory",
+    "//third_party/cobalt/config:project_configs",
+    "//third_party/cobalt/encoder",
+    "//third_party/cobalt/util:posix_file_system",
+    "//third_party/googletest:gtest",
+  ]
+  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+}
+
 source_set("logger_test_utils") {
   testonly = true
   sources = [
@@ -258,6 +275,7 @@ source_set("logger_test_utils") {
   ]
   deps = [
     ":cobalt_local_aggregation_proto",
+    ":fake_logger",
     ":project_context_factory",
     "$cobalt_root/config:project_configs",
     "$cobalt_root/encoder",

@@ -7,26 +7,106 @@
 #include <vector>
 
 #include "./gtest.h"
-#include "logger/logger_test_utils.h"
+#include "logger/fake_logger.h"
 
 namespace cobalt {
 namespace logger {
 
-TEST(InternalMetricsImpl, PauseWorks) {
-  Project project;
+const int64_t kNumBytes = 123;
+const uint32_t kCustomerId = 1;
+const uint32_t kProjectId = 2;
+
+class InternalMetricsImplTest : public ::testing::Test {
+ public:
+  Project GetTestProject() {
+    Project project;
+    project.set_customer_id(kCustomerId);
+    project.set_customer_name("test");
+    project.set_project_id(kProjectId);
+    project.set_project_name("project");
+    return project;
+  }
+};
+
+TEST_F(InternalMetricsImplTest, LoggerCalled) {
   testing::FakeLogger logger;
   InternalMetricsImpl metrics(&logger);
-  ASSERT_EQ(logger.call_count(), 0);
+
   metrics.LoggerCalled(
-      LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage, project);
+      LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+      GetTestProject());
+
   ASSERT_EQ(logger.call_count(), 2);
+  ASSERT_TRUE(logger.last_event_logged().has_count_event());
+  ASSERT_EQ(logger.last_event_logged().count_event().component(),
+            "test/project");
+}
+
+TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
   metrics.PauseLogging();
   for (int i = 0; i < 100; i++) {
     metrics.LoggerCalled(
-        LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage, project);
+        LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+        GetTestProject());
   }
   metrics.ResumeLogging();
-  ASSERT_EQ(logger.call_count(), 2);
+
+  ASSERT_EQ(logger.call_count(), 0);
+}
+
+TEST_F(InternalMetricsImplTest, BytesUploaded) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  ASSERT_EQ(logger.call_count(), 0);
+  metrics.BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
+                        kNumBytes);
+
+  ASSERT_EQ(logger.call_count(), 1);
+  ASSERT_TRUE(logger.last_event_logged().has_count_event());
+  ASSERT_EQ(logger.last_event_logged().count_event().count(), kNumBytes);
+}
+
+TEST_F(InternalMetricsImplTest, BytesUploadedPauseWorks) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  metrics.PauseLogging();
+  for (int i = 0; i < 100; i++) {
+    metrics.BytesUploaded(
+        PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
+  }
+  metrics.ResumeLogging();
+  ASSERT_EQ(logger.call_count(), 0);
+}
+
+TEST_F(InternalMetricsImplTest, BytesStored) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  ASSERT_EQ(logger.call_count(), 0);
+  metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted,
+                      kNumBytes, kCustomerId, kProjectId);
+
+  ASSERT_EQ(logger.call_count(), 1);
+  ASSERT_TRUE(logger.last_event_logged().has_memory_usage_event());
+  ASSERT_EQ(logger.last_event_logged().memory_usage_event().bytes(), kNumBytes);
+}
+
+TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  metrics.PauseLogging();
+  for (int i = 0; i < 100; i++) {
+    metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted,
+                        kNumBytes, kCustomerId, kProjectId);
+  }
+  metrics.ResumeLogging();
+  ASSERT_EQ(logger.call_count(), 0);
 }
 
 }  // namespace logger
