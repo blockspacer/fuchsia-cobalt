@@ -81,7 +81,7 @@
 	path = third_party/google-api-cpp-client
 	url = https://cobalt-analytics.googlesource.com/third_party/google-api-cpp-client
 [submodule "third_party/cobalt_config"]
-	path = third_party/config
+	path = third_party/cobalt_config
 	url = https://cobalt-analytics.googlesource.com/config
 [submodule "third_party/go/src/golang.org/x/oauth2"]
 	path = third_party/go/src/golang.org/x/oauth2

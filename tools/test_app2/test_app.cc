@@ -263,7 +263,7 @@ std::string FindCobaltRegistryProto(char* argv[]) {
   char* dir = dirname(path);
   // Set the relative path to the registry.
   snprintf(path2, sizeof(path2),
-           "%s/../../third_party/config/cobalt_config.binproto", dir);
+           "%s/../../third_party/cobalt_config/cobalt_config.binproto", dir);
 
   // Get the absolute path to the registry.
   if (!realpath(path2, path)) {

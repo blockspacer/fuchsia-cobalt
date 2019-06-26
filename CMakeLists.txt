@@ -631,7 +631,7 @@ macro(generate_cobalt_registry_h)
   set_source_files_properties(${ARGS_OUTPUT_FILE} PROPERTIES GENERATED TRUE)
   add_custom_command(OUTPUT ${ARGS_OUTPUT_FILE}
     COMMAND ${CONFIG_PARSER_BINARY}
-    ARGS -config_dir=${CMAKE_SOURCE_DIR}/third_party/config
+    ARGS -config_dir=${CMAKE_SOURCE_DIR}/third_party/cobalt_config
     ARGS -customer_id=${ARGS_CUSTOMER_ID}
     ARGS -project_name=${ARGS_PROJECT_NAME}
     ARGS -out_format=cpp

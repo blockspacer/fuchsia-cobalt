@@ -99,8 +99,8 @@ target_link_libraries(config_tests
                       packed_event_codes)
 add_cobalt_test_dependencies(config_tests ${DIR_GTESTS})
 
-set(CONFIG_DIR "${CMAKE_SOURCE_DIR}/third_party/config")
-set(CONFIG_PROTO "${CMAKE_BINARY_DIR}/third_party/config/cobalt_config.binproto")
+set(CONFIG_DIR "${CMAKE_SOURCE_DIR}/third_party/cobalt_config")
+set(CONFIG_PROTO "${CMAKE_BINARY_DIR}/third_party/cobalt_config/cobalt_config.binproto")
 file(GLOB_RECURSE REGISTRY_FILES ${CONFIG_DIR}/*.yaml)
 
 add_custom_command(OUTPUT ${CONFIG_PROTO}
