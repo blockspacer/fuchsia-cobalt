@@ -20,11 +20,11 @@ source_set("encrypted_message_util") {
   public_deps = [
     ":status",
     "$cobalt_root:cobalt_proto",
-    "//src/lib/fxl",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
     "//third_party/tink/cc:hybrid_encrypt",
     "//third_party/tink/cc:keyset_handle",
     "//third_party/tink/cc/hybrid:hybrid_config",
-    "//zircon/public/lib/trace",
   ]
 }
 
@@ -47,8 +47,8 @@ static_library("file_util") {
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":status",
+    "$cobalt_root:logging",
     "$cobalt_root/util/crypto_util",
-    "//src/lib/fxl",
   ]
 }
 
@@ -60,8 +60,8 @@ static_library("pem_util") {
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":file_util",
+    "$cobalt_root:logging",
     "$cobalt_root/util/crypto_util",
-    "//src/lib/fxl",
   ]
 }
 
@@ -102,8 +102,8 @@ static_library("proto_util") {
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
+    "$cobalt_root:logging",
     "$cobalt_root/util/crypto_util",
-    "//src/lib/fxl",
     "//third_party/protobuf:protobuf_lite",
   ]
 }

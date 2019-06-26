@@ -15,10 +15,10 @@ static_library("rappor_encoder") {
 
   public_deps = [
     "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/encoder:client_secret",
     "$cobalt_root/util/crypto_util",
-    "//src/lib/fxl",
-    "//zircon/public/lib/trace",
   ]
 }

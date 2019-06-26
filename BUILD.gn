@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/test/test_package.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 config("cobalt_config") {
@@ -34,6 +33,28 @@ proto_library("cobalt_proto") {
   ]
 }
 
+group("logging") {
+  if (is_fuchsia) {
+    public_deps = [
+      "//garnet/public/lib/syslog/cpp",
+    ]
+  }
+
+  if (is_linux) {
+    public_deps = [
+      "//third_party/glog",
+    ]
+  }
+}
+
+group("tracing") {
+  if (is_fuchsia) {
+    public_deps = [
+      "//zircon/public/lib/trace",
+    ]
+  }
+}
+
 executable("cobalt_core_unittests") {
   testonly = true
 
@@ -43,18 +64,23 @@ executable("cobalt_core_unittests") {
     "config:tests",
     "encoder:unittests",
     "logger:tests",
+    "//third_party/boringssl:crypto",
     "//third_party/googletest:gtest_main",
   ]
 }
 
-test_package("cobalt_core_tests") {
-  deps = [
-    ":cobalt_core_unittests",
-  ]
+if (is_fuchsia) {
+  import("//build/test/test_package.gni")
 
-  tests = [
-    {
-      name = "cobalt_core_tests"
-    },
-  ]
+  test_package("cobalt_core_tests") {
+    deps = [
+      ":cobalt_core_unittests",
+    ]
+
+    tests = [
+      {
+        name = "cobalt_core_tests"
+      },
+    ]
+  }
 }

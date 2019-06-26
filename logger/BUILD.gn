@@ -67,9 +67,9 @@ source_set("project_context") {
 
   public_deps = [
     ":status",
+    "$cobalt_root:logging",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:project_configs",
-    "//src/lib/fxl",
   ]
 }
 
@@ -108,11 +108,11 @@ source_set("encoder") {
   public_deps = [
     ":logger_interface",
     ":status",
+    "$cobalt_root:logging",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/encoder",
     "$cobalt_root/util/crypto_util",
-    "//src/lib/fxl",
     "//third_party/abseil-cpp",
   ]
 }
@@ -128,10 +128,10 @@ source_set("observation_writer") {
   public_deps = [
     ":status",
     "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
     "$cobalt_root/encoder",
     "$cobalt_root/util:encrypted_message_util",
-    "//src/lib/fxl",
-    "//zircon/public/lib/trace",
   ]
 }
 
@@ -153,12 +153,12 @@ source_set("event_aggregator") {
     ":observation_writer",
     ":status",
     "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
     "$cobalt_root/algorithms/rappor:rappor_encoder",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/util:consistent_proto_store",
     "$cobalt_root/util:proto_util",
-    "//src/lib/fxl",
   ]
 }
 
@@ -188,7 +188,7 @@ source_set("internal_metrics") {
   public_deps = [
     ":internal_metrics_config_cc",
     ":logger_interface",
-    "//src/lib/fxl",
+    "$cobalt_root:logging",
     "//third_party/abseil-cpp",
   ]
 }
@@ -213,8 +213,8 @@ source_set("logger") {
     # Fuchsia code switches to ProjectContextFactory.
     ":project_context",
     ":status",
+    "$cobalt_root:tracing",
     "$cobalt_root/config:id",
-    "//zircon/public/lib/trace",
   ]
 }
 
@@ -227,8 +227,8 @@ source_set("channel_mapper") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
+    "$cobalt_root:logging",
     "$cobalt_root/config:cobalt_registry_proto",
-    "//garnet/public/lib/syslog/cpp",
   ]
 }
 

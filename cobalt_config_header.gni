@@ -38,6 +38,8 @@
 # std::unique_ptr<ClientConfig> client_config =
 #      ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
 
+import("//build/config/clang/clang.gni")
+
 template("cobalt_config_header") {
   assert(defined(invoker.input_yaml), "input_yaml must be defined")
   assert(defined(invoker.output_file), "output_file must be defined")
@@ -70,8 +72,10 @@ template("cobalt_config_header") {
     config_parser_bin =
         get_label_info(config_parser_target, "root_out_dir") + "/config_parser"
 
-    script = config_parser_bin
+    script = "//build/gn_run_binary.sh"
     args = [
+      clang_prefix,
+      rebase_path(config_parser_bin, root_build_dir),
       "-output_file",
       rebase_path(output_file),
       "-config_file",

@@ -46,7 +46,7 @@ static_library("client_config") {
   deps = [
     ":cobalt_registry_proto",
     "$cobalt_root:cobalt_proto",
-    "//src/lib/fxl",
+    "$cobalt_root:logging",
   ]
 }
 
@@ -58,7 +58,7 @@ source_set("client_config_test") {
   deps = [
     ":client_config",
     ":cobalt_registry_proto",
-    "//garnet/public/lib/fxl",
+    "$cobalt_root:logging",
     "//third_party/googletest:gtest",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
@@ -76,8 +76,8 @@ source_set("project_configs") {
   ]
 
   public_deps = [
+    "$cobalt_root:logging",
     "$cobalt_root/config:cobalt_registry_proto",
-    "//src/lib/fxl",
   ]
 }
 

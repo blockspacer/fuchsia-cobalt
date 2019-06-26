@@ -14,8 +14,8 @@ static_library("legacy_project_context") {
 
   deps = [
     ":client_secret",
+    "$cobalt_root:logging",
     "$cobalt_root/config:client_config",
-    "//src/lib/fxl",
     "//third_party/protobuf:protobuf_lite",
   ]
 }
@@ -65,6 +65,8 @@ static_library("encoder") {
     # to ProjectContextFactory
     ":legacy_project_context",
     "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
     "$cobalt_root/config:client_config",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/logger:channel_mapper",
@@ -73,9 +75,7 @@ static_library("encoder") {
     "$cobalt_root/third_party/clearcut:clearcut",
     "$cobalt_root/util:clock",
     "$cobalt_root/util:encrypted_message_util",
-    "//src/lib/fxl",
     "//third_party/grpc:grpc++",
-    "//zircon/public/lib/trace",
   ]
 }
 
@@ -157,7 +157,7 @@ source_set("unittests") {
     ":generate_file_observation_store_test_config",
     ":generate_shipping_manager_test_config",
     ":legacy_project_context",
-    "//garnet/public/lib/syslog/cpp",
+    "$cobalt_root:logging",
     "//third_party/abseil-cpp",
     "//third_party/gflags",
     "//third_party/googletest:gmock",
