@@ -259,12 +259,12 @@ source_set("fake_logger") {
   deps = [
     ":cobalt_local_aggregation_proto",
     ":project_context_factory",
-    "//third_party/cobalt/config:project_configs",
-    "//third_party/cobalt/encoder",
-    "//third_party/cobalt/util:posix_file_system",
+    "$cobalt_root/config:project_configs",
+    "$cobalt_root/encoder",
+    "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
   ]
-  public_configs = [ "//third_party/cobalt:cobalt_config" ]
+  public_configs = [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("logger_test_utils") {
