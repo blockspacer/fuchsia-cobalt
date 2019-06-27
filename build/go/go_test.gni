@@ -5,7 +5,6 @@
 # A template for an action that creates a Fuchsia Go test binary.
 
 import("//build/go/go_build.gni")
-import("//build/testing/test_spec.gni")
 
 # Parameters: same as go_build, along with
 #
@@ -24,74 +23,25 @@ import("//build/testing/test_spec.gni")
 #     environment (as a function of $current_os).
 #     See //build/testing/test_spec.gni for more details.
 #
-#   timeout:
-#     Optional: override default timeout. Values must be valid Go durations,
-#     such as "300ms", "-1.5h" or "2h45m".
-#     See https://golang.org/cmd/go/#hdr-Testing_flags for details on timeout.
-#     See https://golang.org/pkg/time/#ParseDuration for duration format.
 template("go_test") {
   _main_target_name = target_name
-  _test_spec_target_name = "${target_name}_spec"
 
-  _output_name = target_name
+  output_name = "tests/go/$target_name"
   if (defined(invoker.output_name)) {
-    _output_name = invoker.output_name
+    output_name = "tests/go/${invoker.output_name}"
   }
-  _output_path = "${root_out_dir}/${_output_name}"
-
-  _is_disabled = defined(invoker.disabled) && invoker.disabled
-
-  # We only include test metadata for non-disabled, linux/mac tests; metadata
-  # for fuchsia tests is aggregated in the package template.
-  _include_test_metadata = !_is_disabled && (is_linux || is_mac)
-  if (_include_test_metadata) {
-    test_spec(_test_spec_target_name) {
-      # TODO(BLD-493): testonly should be automatic here
-      testonly = true
-      name = _main_target_name
-      location = _output_path
-      command = [
-        rebase_path(_output_path, root_build_dir),
-      ]
-      timeout = "5m"
-      if (defined(invoker.timeout)) {
-        timeout = invoker.timeout
-      }
-      command += [
-        "--test.timeout",
-        timeout,
-      ]
-      if (defined(invoker.args)) {
-        command += invoker.args
-      }
-      deps = []
-      if (defined(invoker.deps)) {
-        deps += invoker.deps
-      }
-      if (defined(invoker.non_go_deps)) {
-        deps += invoker.non_go_deps
-      }
-      forward_variables_from(invoker, [ "environments" ])
-    }
-  }
+  _output_path = "${root_out_dir}/${output_name}"
 
   go_build(_main_target_name) {
     test = true
+    output_name = output_name
     forward_variables_from(invoker,
                            "*",
                            [
                              "disabled",
                              "environments",
+                             "output_name",
                            ])
-
-    if (_include_test_metadata) {
-      if (!defined(invoker.non_go_deps)) {
-        non_go_deps = []
-      }
-      non_go_deps += [ ":$_test_spec_target_name" ]
-    } else {
-      not_needed([ "_test_spec_target_name" ])
-    }
   }
 
   _outputs = get_target_outputs(":$_main_target_name")

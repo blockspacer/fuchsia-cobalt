@@ -2,11 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-default_clang_prefix =
-    rebase_path("//prebuilt/third_party/clang/${host_platform}/bin", root_build_dir)
+default_clang_prefix = rebase_path("//sysroot/bin", root_build_dir)
 
 declare_args() {
-  # The default clang toolchain provided by the prebuilt. This variable is
+  # The default clang toolchain provided by the sysroot. This variable is
   # additionally consumed by the Go toolchain.
   clang_prefix = default_clang_prefix
 }

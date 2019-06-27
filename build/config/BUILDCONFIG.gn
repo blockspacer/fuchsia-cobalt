@@ -1,0 +1,92 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+if (target_os == "") {
+  target_os = host_os
+}
+
+if (target_cpu == "") {
+  target_cpu = host_cpu
+}
+
+if (current_cpu == "") {
+  current_cpu = target_cpu
+}
+
+if (current_os == "") {
+  current_os = target_os
+}
+
+is_android = false
+is_chromeos = false
+is_fuchsia = false
+is_fuchsia_host = false
+is_ios = false
+is_linux = false
+is_mac = false
+is_win = false
+is_clang = true
+is_component_build = false
+is_official_build = false
+
+# If this BUILDCONFIG is in use, that means we are running the standalone cobalt
+# build, and as such are not in the fuchsia tree.
+is_fuchsia_tree = false
+
+if (current_os == "fuchsia") {
+  is_fuchsia = true
+} else if (current_os == "linux") {
+  is_linux = true
+} else if (current_os == "mac") {
+  is_mac = true
+}
+
+# Some library targets may be built as different type depending on the target
+# platform. This variable specifies the default library type for each target.
+if (is_fuchsia) {
+  default_library_type = "shared_library"
+} else {
+  default_library_type = "static_library"
+}
+
+cobalt_root = "//"
+
+# All binary targets will get this list of configs by default.
+_shared_binary_target_configs = [
+  "//build/config:compiler",
+  "//build/config:no_rtti",
+  "//build/config:symbol_visibility_hidden",
+  "//build/config:default_include_dirs",
+  "//build/config:cobalt_standalone",
+  "//build/config:shared_library_config",
+]
+
+# Apply that default list to the binary target types.
+set_defaults("executable") {
+  configs = _shared_binary_target_configs
+
+  # Executables get this additional configuration.
+  configs += [ "//build/config:executable_ldconfig" ]
+}
+
+set_defaults("test") {
+  configs = _shared_binary_target_configs
+}
+
+set_defaults("static_library") {
+  configs = _shared_binary_target_configs
+}
+
+set_defaults("shared_library") {
+  configs = _shared_binary_target_configs
+}
+
+set_defaults("source_set") {
+  configs = _shared_binary_target_configs
+}
+
+host_toolchain = "//build/toolchain:clang"
+set_default_toolchain("//build/toolchain:clang")
+
+target_sysroot = rebase_path("//sysroot")

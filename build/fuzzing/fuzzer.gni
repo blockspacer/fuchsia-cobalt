@@ -1,0 +1,19 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# third_party/boringssl expects these templates to be present. We do not yet
+# support fuzzing in cobalt's core repo, so we stub the templates out.
+template("fuzz_target") {
+  not_needed([ "target_name" ])
+  not_needed(invoker, "*")
+}
+
+template("fuzz_package") {
+  not_needed([ "target_name" ])
+  not_needed(invoker, "*")
+}
+
+set_defaults("fuzz_target") {
+  configs = []
+}

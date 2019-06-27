@@ -1,0 +1,78 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+config("cobalt_standalone") {
+  defines = [ "HAVE_GLOG" ]
+}
+
+config("no_rtti") {
+  cflags_cc = [ "-fno-rtti" ]
+  cflags_objcc = cflags_cc
+}
+
+config("symbol_visibility_hidden") {
+  # Disable libc++ visibility annotations to make sure that the compiler option
+  # has effect on symbols defined in libc++ headers. Note that we don't want to
+  # disable these annotations altogether to ensure that our toolchain is usable
+  # outside of our build since not every user uses hidden visibility by default.
+  defines = [ "_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS" ]
+  cflags = [ "-fvisibility=hidden" ]
+}
+
+config("shared_library_config") {
+  cflags = []
+  if (current_os == "linux") {
+    cflags += [ "-fPIC" ]
+  }
+}
+
+config("compiler") {
+  asmflags = []
+  cflags = [ "-fcolor-diagnostics" ]
+  cflags_c = []
+  cflags_cc = [ "-fvisibility-inlines-hidden" ]
+  cflags_objc = []
+  cflags_objcc = [ "-fvisibility-inlines-hidden" ]
+  ldflags = []
+  defines = []
+  configs = []
+
+  if (current_os == "fuchsia") {
+    configs += [ "//build/config/fuchsia:compiler" ]
+  } else {
+    cflags_c += [ "-std=c11" ]
+    cflags_cc += [
+      "-std=c++17",
+      "-stdlib=libc++",
+    ]
+    if (current_os == "linux") {
+      configs += [ "//build/config/linux:compiler" ]
+    } else if (current_os == "mac") {
+      configs += [ "//build/config/mac:compiler" ]
+    }
+  }
+
+  # Linker on macOS does not support `color-diagnostics`
+  if (current_os != "mac") {
+    ldflags += [ "-Wl,--color-diagnostics" ]
+  }
+
+  asmflags += cflags
+  asmflags += cflags_c
+}
+
+config("default_include_dirs") {
+  include_dirs = [
+    "//",
+    "//sysroot/include",
+    root_gen_dir,
+  ]
+}
+
+config("executable_ldconfig") {
+  ldflags = [
+    "-Wl,-rpath=\$ORIGIN/",
+    "-Wl,-rpath-link=",
+  ]
+}

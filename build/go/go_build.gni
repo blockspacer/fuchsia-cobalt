@@ -3,10 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/config/clang/clang.gni")
-import("//build/config/fuchsia/zircon_legacy_vars.gni")
 import("//build/config/sysroot.gni")
 import("//build/host.gni")
-import("//build/sdk/sdk_atom.gni")
 
 declare_args() {
   #   gocache_dir
@@ -24,10 +22,6 @@ declare_args() {
 # go_binary or go_test rules.
 #
 # Parameters
-#
-#   sdk_category (optional)
-#     Publication level of the library in SDKs.
-#     See //build/sdk/sdk_atom.gni.
 #
 #   deps (optional)
 #     List of labels representing go_library targets this target depends on.
@@ -84,7 +78,7 @@ template("go_build") {
       "//build/go/gen_library_metadata.py",
     ]
 
-    godepfile = "//prebuilt/tools/godepfile/${host_platform}/godepfile"
+    godepfile = "//sysroot/golang/bin/godepfile"
     inputs = [
       godepfile,
     ]
@@ -102,8 +96,6 @@ template("go_build") {
       current_os,
       "--binname",
       output_name,
-      "--lib-dir",
-      rebase_path(get_label_info(":any($shlib_toolchain)", "root_out_dir")),
       "--go-cache",
       gocache_dir,
       "--cc",
@@ -140,15 +132,6 @@ template("go_build") {
         "--go-root",
         rebase_path("$host_tools_dir/goroot"),
       ]
-      args += [
-        # For garnet/go/src/pmd/ramdisk
-        "--include-dir",
-        rebase_path("//zircon/system/ulib/ramdevice-client/include"),
-        "--lib-dir",
-        rebase_path("gen/zircon/public/lib/ramdevice-client",
-                    "",
-                    root_build_dir),
-      ]
 
       foreach(target, zircon_legacy_targets) {
         if (target.target_name == "zircon") {
@@ -172,7 +155,7 @@ template("go_build") {
     } else {
       args += [
         "--go-root",
-        rebase_path("//prebuilt/third_party/go/${host_platform}"),
+        rebase_path("//sysroot/golang/"),
       ]
     }
 
@@ -191,8 +174,7 @@ template("go_build") {
     # list it as an output.
     args += [
       "--buildidtool",
-      rebase_path("//prebuilt/tools/buildidtool/${host_platform}/buildidtool",
-                  root_build_dir),
+      rebase_path("//sysroot/bin/buildidtool", root_build_dir),
       "--build-id-dir",
       ".build-id",
     ]
@@ -216,41 +198,5 @@ template("go_build") {
       "--package",
       invoker.gopackage,
     ]
-  }
-
-  # Allow host binaries to be published in SDKs.
-  if (defined(invoker.sdk_category) && invoker.sdk_category != "excluded" &&
-      !is_fuchsia && (!defined(invoker.test) || !invoker.test)) {
-    file_base = "tools/$output_name"
-
-    sdk_atom("${target_name}_sdk") {
-      id = "sdk://tools/$output_name"
-
-      category = invoker.sdk_category
-
-      meta = {
-        dest = "$file_base-meta.json"
-        schema = "host_tool"
-        value = {
-          type = "host_tool"
-          name = output_name
-          root = "tools"
-          files = [ file_base ]
-        }
-      }
-
-      files = [
-        {
-          source = output_path
-          dest = file_base
-        },
-      ]
-
-      if (defined(invoker.sdk_deps)) {
-        deps = invoker.sdk_deps
-      }
-
-      non_sdk_deps = [ ":$main_target_name" ]
-    }
   }
 }
