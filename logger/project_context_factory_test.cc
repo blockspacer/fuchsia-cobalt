@@ -11,6 +11,10 @@
 
 #include "./gtest.h"
 #include "./logging.h"
+#include "logger/test_registries/project_context_factory_test_registry/a.cb.h"
+#include "logger/test_registries/project_context_factory_test_registry/b.cb.h"
+#include "logger/test_registries/project_context_factory_test_registry/c.cb.h"
+#include "util/crypto_util/base64.h"
 
 using cobalt::config::ProjectConfigs;
 
@@ -19,84 +23,28 @@ namespace logger {
 
 namespace {
 
-// Registry A has a single Cobalt 0.1 project.
-const char kCobaltRegistryA[] = R"(
-metric_configs {
-  customer_id: 11
-  project_id: 11
-  id: 11
-}
-)";
-
-// Registry B has a single Cobalt 1.0 project.
-const char kCobaltRegistryB[] = R"(
-customers {
-  customer_name: "Customer22"
-  customer_id: 22
-
-  projects: {
-    project_name: "Project22"
-    project_id: 22
-    metrics: {
-      metric_name: "Metric22"
-      customer_id: 22
-      project_id: 22
-      id: 22
-    }
-  }
-}
-)";
-
-// Registry C has one Cobalt 0.1 project and one Cobalt 1.0 project.
-const char kCobaltRegistryC[] = R"(
-metric_configs {
-  customer_id: 11
-  project_id: 11
-  id: 11
-}
-
-customers {
-  customer_name: "Customer22"
-  customer_id: 22
-
-  projects: {
-    project_name: "Project22"
-    project_id: 22
-    metrics: {
-      metric_name: "Metric22"
-      customer_id: 22
-      project_id: 22
-      id: 22
-    }
-  }
-}
-)";
-
 // Returns the bytes of a serialized CobaltRegistry, corresponding to
 // registry A, B or C, according as |which_registry| is equal to 1, 2, or 3.
 std::string GetCobaltRegistryBytes(int which_registry) {
   std::string registry_text;
   switch (which_registry) {
     case 1:
-      registry_text = std::string(kCobaltRegistryA);
+      registry_text = std::string(a::kCobaltRegistryBase64);
       break;
 
     case 2:
-      registry_text = std::string(kCobaltRegistryB);
+      registry_text = std::string(b::kCobaltRegistryBase64);
       break;
 
     case 3:
-      registry_text = std::string(kCobaltRegistryC);
+      registry_text = std::string(c::kCobaltRegistryBase64);
       break;
 
     default:
       LOG(FATAL) << "Unexpected value for which_registry: " << which_registry;
   }
-  CobaltRegistry cobalt_registry;
-  google::protobuf::TextFormat::Parser parser;
-  parser.ParseFromString(registry_text, &cobalt_registry);
   std::string registry_bytes;
-  cobalt_registry.SerializeToString(&registry_bytes);
+  EXPECT_TRUE(crypto::Base64Decode(registry_text, &registry_bytes));
   return registry_bytes;
 }
 

@@ -4,8 +4,8 @@
 
 #include "logger/event_aggregator.h"
 
-#include <google/protobuf/text_format.h>
-#include <google/protobuf/util/message_differencer.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include <map>
 #include <memory>
@@ -22,8 +22,6 @@
 #include "util/clock.h"
 #include "util/datetime_util.h"
 #include "util/proto_util.h"
-
-using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
@@ -61,6 +59,18 @@ namespace {
 const int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
 const int kYear = kDay * 365;
+
+template <typename T>
+std::string SerializeAsStringDeterministic(const T& message) {
+  std::string s;
+  {
+    google::protobuf::io::StringOutputStream output(&s);
+    google::protobuf::io::CodedOutputStream out(&output);
+    out.SetSerializationDeterministic(true);
+    message.SerializePartialToCodedStream(&out);
+  }
+  return s;
+}
 
 // Filenames for constructors of ConsistentProtoStores
 static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
@@ -951,8 +961,9 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
     LocalAggregateStore local_aggregate_store = CopyLocalAggregateStore();
     auto report_aggregates = local_aggregate_store.by_report_key().find(key);
     EXPECT_NE(local_aggregate_store.by_report_key().end(), report_aggregates);
-    EXPECT_TRUE(MessageDifferencer::Equals(
-        config, report_aggregates->second.aggregation_config()));
+    EXPECT_EQ(SerializeAsStringDeterministic(config),
+              SerializeAsStringDeterministic(
+                  report_aggregates->second.aggregation_config()));
   }
 }
 
@@ -1010,13 +1021,15 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
       testing::unique_actives::kFeaturesActiveMetricReportId);
   auto report_aggregates = local_aggregate_store.by_report_key().find(key);
   EXPECT_NE(local_aggregate_store.by_report_key().end(), report_aggregates);
-  EXPECT_TRUE(MessageDifferencer::Equals(
-      unique_actives_config, report_aggregates->second.aggregation_config()));
+  EXPECT_EQ(SerializeAsStringDeterministic(unique_actives_config),
+            SerializeAsStringDeterministic(
+                report_aggregates->second.aggregation_config()));
   auto noise_free_config = MakeAggregationConfig(
       *unique_actives_noise_free_project_context,
       testing::unique_actives_noise_free::kFeaturesActiveMetricReportId);
-  EXPECT_FALSE(MessageDifferencer::Equals(
-      noise_free_config, report_aggregates->second.aggregation_config()));
+  EXPECT_NE(SerializeAsStringDeterministic(noise_free_config),
+            SerializeAsStringDeterministic(
+                report_aggregates->second.aggregation_config()));
 }
 
 // Tests that EventAggregator::Log*Event returns |kInvalidArguments| when

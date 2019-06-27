@@ -68,3 +68,28 @@ metrics_registry("unique_actives_noise_free_test_registry") {
   generate_binarypb = false
   generate_cc = true
 }
+
+metrics_registry("encoder_test_registry") {
+  customer_id = 1
+  project_id = 1
+  skip_validation = true
+  for_testing = true
+  source = "encoder_test_registry.yaml"
+  namespace = "cobalt.logger"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = false
+  generate_cc = true
+}
+
+metrics_registry("project_context_test_registry") {
+  global = true
+  skip_validation = true
+  for_testing = true
+  directory = "project_context_test_registry"
+  namespace = "cobalt.logger"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = false
+  generate_cc = true
+}

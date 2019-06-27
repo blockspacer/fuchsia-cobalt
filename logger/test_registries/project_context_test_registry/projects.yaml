@@ -1,0 +1,18 @@
+- customer_name: CustomerA
+  customer_id: 123
+
+  projects:
+    - name: ProjectA1
+      cobalt_version: 1
+      contact: nobody@example.com
+    - name: ProjectA2
+      cobalt_version: 1
+      contact: nobody@example.com
+
+- customer_name: CustomerB
+  customer_id: 234
+
+  projects:
+    - name: ProjectB1
+      cobalt_version: 1
+      contact: nobody@example.com

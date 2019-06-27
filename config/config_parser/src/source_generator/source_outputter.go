@@ -237,11 +237,11 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 		so.language.writeNamespaceBegin(so, name)
 	}
 
-	if len(c.Customers) > 0 {
+	if len(c.Customers) == 1 && len(c.Customers[0].Projects) == 1 {
 		if err := so.writeV1Constants(c); err != nil {
 			return err
 		}
-	} else {
+	} else if len(c.MetricConfigs) > 0 || len(c.ReportConfigs) > 0 || len(c.EncodingConfigs) > 0 {
 		so.writeLegacyConstants(c)
 	}
 

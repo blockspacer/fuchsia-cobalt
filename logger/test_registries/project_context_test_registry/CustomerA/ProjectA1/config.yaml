@@ -1,0 +1,6 @@
+metric_definitions:
+  - id: 1
+    metric_name: "MetricA1a"
+
+  - id: 2
+    metric_name: "MetricA1b"

@@ -1,0 +1,101 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+metric_definitions:
+
+- id: 1
+  metric_name: ErrorOccurred
+  metric_type: EVENT_OCCURRED
+  metric_dimensions:
+    - max_event_code: 100
+  reports:
+    - local_privacy_noise_level: SMALL
+      report_name: ErrorCountsByType
+      report_type: SIMPLE_OCCURRENCE_COUNT
+
+- id: 2
+  metric_name: ReadCacheHits
+  metric_type: EVENT_COUNT
+  reports:
+    - report_name: ReadCacheHitCounts
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+      system_profile_field:
+        - OS
+
+- id: 6
+  int_buckets:
+    linear:
+      floor: 0
+      num_buckets: 10
+      step_size: 1
+  metric_name: FileSystemWriteTimes
+  metric_type: INT_HISTOGRAM
+  reports:
+    - report_name: FileSystemWriteTimes_Histogram
+      report_type: INT_RANGE_HISTOGRAM
+      system_profile_field:
+        - OS
+        - ARCH
+
+- id: 7
+  metric_name: ModuleDownloads
+  metric_type: STRING_USED
+  reports:
+    - report_name: ModuleDownloads_HeavyHitters
+      report_type: HIGH_FREQUENCY_STRING_COUNTS
+      local_privacy_noise_level: SMALL
+      expected_population_size: 20000
+      expected_string_set_size: 10000
+    - report_name: ModuleDownloads_WithThreshold
+      report_type: STRING_COUNTS_WITH_THRESHOLD
+      threshold: 200
+
+- id: 8
+  metric_name: ModuleInstalls
+  metric_type: CUSTOM
+  reports:
+    - report_name: ModuleInstalls_DetailedData
+      report_type: CUSTOM_RAW_DUMP
+      system_profile_field:
+        - OS
+        - ARCH
+
+- id: 9
+  metric_dimensions:
+    - max_event_code: 1
+  metric_name: DeviceBoots
+  metric_type: EVENT_OCCURRED
+  reports:
+    - local_privacy_noise_level: SMALL
+      report_name: DeviceBoots_UniqueDevices
+      report_type: UNIQUE_N_DAY_ACTIVES
+      system_profile_field:
+        - OS
+        - ARCH
+      window_size:
+        - 1
+
+- id: 10
+  metric_name: ConnectionFailures
+  metric_type: EVENT_COUNT
+  reports:
+    - report_name: ConnectionFailures_PerDeviceCount
+      report_type: PER_DEVICE_NUMERIC_STATS
+      system_profile_field:
+        - OS
+        - ARCH
+      window_size:
+        - 30
+
+- id: 11
+  metric_dimensions:
+    - max_event_code: 10
+    - max_event_code: 10
+  metric_name: MultiEventCodeTest
+  metric_type: EVENT_COUNT
+  reports:
+    - report_name: MultiEventCodeCounts
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+      system_profile_field:
+        - OS

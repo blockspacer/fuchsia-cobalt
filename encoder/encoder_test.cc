@@ -356,7 +356,7 @@ Observation DoEncodeIntBucketDistributionTest(
 }
 
 // Tests EncodeString() with Forculus as the specified encoding.
-TEST(EncoderTest, EncodeStringForculus) {
+TEST(EncoderEncoderTest, EncodeStringForculus) {
   // Metric 1 has a single string part.
   // EncodingConfig 1 is Forculus.
   DoEncodeStringTest("some value", kSingleStringMetricId, kForculusEncodingId,
@@ -364,7 +364,7 @@ TEST(EncoderTest, EncodeStringForculus) {
 }
 
 // Tests EncodeString() with String RAPPOR as the specified encoding.
-TEST(EncoderTest, EncodeStringRappor) {
+TEST(EncoderEncoderTest, EncodeStringRappor) {
   // Metric 1 has a single string part.
   // EncodingConfig 2 is String RAPPOR
   DoEncodeStringTest("some value", kSingleStringMetricId, kRapporEncodingId,
@@ -372,7 +372,7 @@ TEST(EncoderTest, EncodeStringRappor) {
 }
 
 // Tests EncodeString() with Basic RAPPOR as the specified encoding.
-TEST(EncoderTest, EncodeStringBasicRappor) {
+TEST(EncoderEncoderTest, EncodeStringBasicRappor) {
   // Metric 1 has a single string part.
   // EncodingConfig 3 is Basic RAPPOR with string values. Here we need the
   // value to be one of the categories.
@@ -381,7 +381,7 @@ TEST(EncoderTest, EncodeStringBasicRappor) {
                      ObservationPart::kBasicRappor);
 }
 
-TEST(EncoderTest, EncodeStringForculusWithSystemProfile) {
+TEST(EncoderEncoderTest, EncodeStringForculusWithSystemProfile) {
   // Metric 9, 10, and 11 have a single string part, with 1, 2, or 3
   // system_profile_fields.
   // EncodingConfig 1 is Forculus.
@@ -396,7 +396,7 @@ TEST(EncoderTest, EncodeStringForculusWithSystemProfile) {
 }
 
 // Tests EncodeString() with NoOp as the specified encoding.
-TEST(EncoderTest, EncodeStringNoOp) {
+TEST(EncoderEncoderTest, EncodeStringNoOp) {
   // Metric 1 has a single string part.
   // EncodingConfig 7 is NoOp.
   auto obs =
@@ -409,7 +409,7 @@ TEST(EncoderTest, EncodeStringNoOp) {
 }
 
 // Tests EncodeInt() with Basic RAPPOR as the specified encoding.
-TEST(EncoderTest, EncodeIntBasicRappor) {
+TEST(EncoderEncoderTest, EncodeIntBasicRappor) {
   // Metric 2 has a single integer part.
   // EncodingConfig 4 is Basic RAPPOR with int values. Here we need the value
   // to be one of the categories.
@@ -418,7 +418,7 @@ TEST(EncoderTest, EncodeIntBasicRappor) {
 }
 
 // Tests the EncodeIndex() method with both valid and invalid inputs.
-TEST(EncoderTest, EncodeIndex) {
+TEST(EncoderEncoderTest, EncodeIndex) {
   // Metric 6 has a single part of type INDEX.
   // EncodingConfig 8 is Basic RAPPOR with five INDEXed categories.
   bool expect_ok = true;
@@ -504,7 +504,7 @@ TEST(EncoderTest, EncodeIndex) {
 }
 
 // Tests the EncodeDouble() method with both valid and invalid inputs.
-TEST(EncoderTest, EncodeDouble) {
+TEST(EncoderEncoderTest, EncodeDouble) {
   // Metric 7 has a single part of type DOUBLE.
   // EncodingConfig 7 is NoOp.
   bool expect_ok = true;
@@ -554,7 +554,7 @@ TEST(EncoderTest, EncodeDouble) {
 }
 
 // Tests EncodeInt() with NoOp encoding as the specified encoding.
-TEST(EncoderTest, EncodeIntNoOp) {
+TEST(EncoderEncoderTest, EncodeIntNoOp) {
   // Metric 2 has a single integer part.
   // EncodingConfig 7 is NoOp
   auto obs = DoEncodeIntTest(42, kSingleIntMetricId, kNoOpEncodingId, true,
@@ -564,7 +564,7 @@ TEST(EncoderTest, EncodeIntNoOp) {
 }
 
 // Tests EncodeBlob() with Forculus as the specified encoding.
-TEST(EncoderTest, EncodeBlobForculus) {
+TEST(EncoderEncoderTest, EncodeBlobForculus) {
   // Metric 3 has a single blob part.
   // EncodingConfig 1 is Forculus.
   std::string a_blob("This is a blob");
@@ -574,7 +574,7 @@ TEST(EncoderTest, EncodeBlobForculus) {
 }
 
 // Tests EncodeBlob() with NoOp encoding as the specified encoding.
-TEST(EncoderTest, EncodeBlobNoOp) {
+TEST(EncoderEncoderTest, EncodeBlobNoOp) {
   // Metric 3 has a single blob part.
   // EncodingConfig 7 is NoOp.
   std::string a_blob("This is a blob");
@@ -586,7 +586,7 @@ TEST(EncoderTest, EncodeBlobNoOp) {
 }
 
 // Tests EncodeIntBucketDistribution() with NoOp encoding.
-TEST(EncoderTest, EncodeIntBucketDistributionNoOp) {
+TEST(EncoderEncoderTest, EncodeIntBucketDistributionNoOp) {
   // Metric 9 has a single int bucket distribution part.
   // EncodingConfig 7 is NoOp.
   std::map<uint32_t, uint64_t> distribution = {{0, 10}, {2, 6}, {11, 1}};
@@ -633,7 +633,7 @@ TEST(EncoderTest, EncodeIntBucketDistributionNoOp) {
                                     expect_utc, ObservationPart::kUnencoded);
 }
 
-TEST(EncoderTest, MetricId) {
+TEST(EncoderEncoderTest, MetricId) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
   FakeSystemData system_data;
@@ -643,7 +643,7 @@ TEST(EncoderTest, MetricId) {
   EXPECT_EQ(kSingleStringMetricId, encoder.MetricId("SingleString"));
 }
 
-TEST(EncoderTest, DefaultEncodingsForMetric) {
+TEST(EncoderEncoderTest, DefaultEncodingsForMetric) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
   FakeSystemData system_data;
@@ -655,7 +655,7 @@ TEST(EncoderTest, DefaultEncodingsForMetric) {
   EXPECT_EQ(kForculusEncodingId, encodings.begin()->second);
 }
 
-TEST(EncoderTest, GetMetric) {
+TEST(EncoderEncoderTest, GetMetric) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
   FakeSystemData system_data;
@@ -667,7 +667,7 @@ TEST(EncoderTest, GetMetric) {
 }
 
 // Tests the advanced API, when used corretly.
-TEST(EncoderTest, AdvancedApiNoErrors) {
+TEST(EncoderEncoderTest, AdvancedApiNoErrors) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
   FakeSystemData system_data;
@@ -704,7 +704,7 @@ TEST(EncoderTest, AdvancedApiNoErrors) {
 }
 
 // Tests the advanced API, when used incorretly.
-TEST(EncoderTest, AdvancedApiWithErrors) {
+TEST(EncoderEncoderTest, AdvancedApiWithErrors) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
   FakeSystemData system_data;

@@ -15,6 +15,8 @@
 #include "./logging.h"
 #include "./observation2.pb.h"
 #include "config/project_configs.h"
+#include "logger/test_registries/project_context_test_registry.cb.h"
+#include "util/crypto_util/base64.h"
 
 using cobalt::config::ProjectConfigs;
 
@@ -28,60 +30,12 @@ const char kProjectA1[] = "ProjectA1";
 const char kMetricA1a[] = "MetricA1a";
 const uint32_t kMetricA1aId = 1;
 
-const char kCobaltRegistry[] = R"(
-customers {
-  customer_name: "CustomerA"
-  customer_id: 123
-
-  projects: {
-    project_name: "ProjectA1"
-    project_id: 234
-    metrics: {
-      metric_name: "MetricA1a"
-      customer_id: 123
-      project_id: 234
-      id: 1
-    }
-    metrics: {
-      metric_name: "MetricA1b"
-      customer_id: 123
-      project_id: 234
-      id: 2
-    }
+bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
+  std::string cobalt_registry_bytes;
+  if (!crypto::Base64Decode(kCobaltRegistryBase64, &cobalt_registry_bytes)) {
+    return false;
   }
-
-  projects: {
-    project_name: "ProjectA2"
-    project_id: 345;
-    metrics: {
-      metric_name: "MetricA2a"
-      customer_id: 123
-      project_id: 345
-      id: 1
-    }
-  }
-}
-
-customers {
-  customer_name: "CustomerB"
-  customer_id: 234
-  projects: {
-    project_name: "ProjectB1"
-    project_id: 345;
-    metrics: {
-      metric_name: "MetricB1a"
-      customer_id: 123
-      project_id: 234
-      id: 1
-    }
-  }
-}
-
-)";
-
-bool PopulateCobaltRegistry(CobaltRegistry* cobalt_config) {
-  google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(kCobaltRegistry, cobalt_config);
+  return cobalt_registry->ParseFromString(cobalt_registry_bytes);
 }
 
 }  // namespace
@@ -108,9 +62,12 @@ class ProjectContextTest : public ::testing::Test {
   // Check that |project_context| contains the correct data given that it is
   // supposed to be for ProjectA1.
   void CheckProjectContextA1(const ProjectContext& project_context) {
+#ifndef PROTO_LITE
+    // This check only works with proto full.
     auto debug_string = project_context.DebugString();
     EXPECT_TRUE(debug_string.find(kCustomerA) != std::string::npos);
     EXPECT_TRUE(debug_string.find(kProjectA1) != std::string::npos);
+#endif
     auto fully_qualified_name = project_context.FullyQualifiedName();
     EXPECT_TRUE(fully_qualified_name.find(kCustomerA) != std::string::npos);
     EXPECT_TRUE(fully_qualified_name.find(kProjectA1) != std::string::npos);

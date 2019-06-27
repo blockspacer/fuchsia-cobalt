@@ -1,0 +1,13 @@
+- customer_name: Customer11
+  customer_id: 11
+  projects:
+    - name: Project11
+      id: 11
+      contact: nobody@example.com
+
+- customer_name: Customer22
+  customer_id: 22
+  projects:
+    - name: Project22
+      cobalt_version: 1
+      contact: nobody@example.com

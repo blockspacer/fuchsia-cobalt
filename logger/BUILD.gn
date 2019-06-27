@@ -301,6 +301,56 @@ source_set("logger_test") {
   ]
 }
 
+source_set("encoder_test") {
+  testonly = true
+  sources = [
+    "encoder_test.cc",
+  ]
+  public_deps = [
+    ":encoder",
+    "test_registries:encoder_test_registry",
+    "//third_party/googletest:gtest",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+source_set("event_aggregator_test") {
+  testonly = true
+  sources = [
+    "event_aggregator_test.cc",
+  ]
+  public_deps = [
+    ":event_aggregator",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+source_set("project_context_test") {
+  testonly = true
+  sources = [
+    "project_context_test.cc",
+  ]
+  public_deps = [
+    ":project_context",
+    "test_registries:project_context_test_registry",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+source_set("project_context_factory_test") {
+  testonly = true
+  sources = [
+    "project_context_factory_test.cc",
+  ]
+  public_deps = [
+    ":project_context_factory",
+    "test_registries/project_context_factory_test_registry:a",
+    "test_registries/project_context_factory_test_registry:b",
+    "test_registries/project_context_factory_test_registry:c",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 source_set("internal_metrics_test") {
   testonly = true
 
@@ -337,7 +387,11 @@ group("tests") {
 
   deps = [
     ":channel_mapper_test",
+    ":encoder_test",
+    ":event_aggregator_test",
     ":internal_metrics_test",
     ":logger_test",
+    ":project_context_factory_test",
+    ":project_context_test",
   ]
 }
