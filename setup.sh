@@ -42,7 +42,9 @@ while getopts "eh" o; do
     esac
 done
 
-${SCRIPT_DIR}/cipd ensure -ensure-file cobalt.ensure -root sysroot
+echo Ensuring cipd
+${SCRIPT_DIR}/cipd ensure -ensure-file cobalt.ensure -root sysroot ||
+  echo -e "\033[0;31m\n\nTry deleting .cipd_client and running ./setup.sh again.\033[0m\n\n"
 
 # Build and install protoc-gen-go binary
 export GOROOT="${PREFIX}/golang"
