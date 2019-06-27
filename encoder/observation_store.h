@@ -13,6 +13,7 @@
 #include "./envelope.pb.h"
 #include "./observation.pb.h"
 #include "./observation_batch.pb.h"
+#include "logger/logger_interface.h"
 
 namespace cobalt {
 namespace encoder {
@@ -145,6 +146,10 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // be deleted.
   virtual void ReturnEnvelopeHolder(
       std::unique_ptr<EnvelopeHolder> envelope) = 0;
+
+  // Resets the internal metrics to use the provided logger.
+  virtual void ResetInternalMetrics(
+      logger::LoggerInterface* internal_logger = nullptr) = 0;
 
   // Returns true when the size of the data in the ObservationStore exceeds 60%
   // of max_bytes_total.

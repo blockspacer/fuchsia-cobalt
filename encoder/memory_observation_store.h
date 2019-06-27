@@ -34,6 +34,11 @@ class MemoryObservationStore : public ObservationStore {
 
   void ResetObservationCounter() override;
 
+  void ResetInternalMetrics(
+      logger::LoggerInterface* internal_logger = nullptr) override {
+    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
+  }
+
  private:
   std::unique_ptr<EnvelopeMaker> NewEnvelopeMaker();
   size_t SizeLocked() const;
