@@ -109,6 +109,7 @@ source_set("encoder") {
     ":logger_interface",
     ":status",
     "$cobalt_root:logging",
+    "$cobalt_root/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/encoder",

@@ -51,7 +51,7 @@ static_library("encoder") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   deps = [
-    "$cobalt_root/algorithms/forculus:forculus_encoder",
+    "$cobalt_root/algorithms/forculus:forculus_encrypter",
     "$cobalt_root/algorithms/rappor:rappor_encoder",
     "//third_party/abseil-cpp/absl/synchronization:synchronization",
   ]

@@ -14,7 +14,6 @@
 #include "algorithms/rappor/basic_rappor_analyzer.h"
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "./logging.h"
 #include "algorithms/rappor/rappor_encoder.h"
 #include "algorithms/rappor/rappor_test_utils.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
@@ -597,6 +597,6 @@ TEST_F(BasicRapporAnalyzerTest, OneCategoryTest) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  INIT_LOGGING(argv[0]);
   return RUN_ALL_TESTS();
 }

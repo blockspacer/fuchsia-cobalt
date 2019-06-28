@@ -14,7 +14,6 @@
 #include "algorithms/rappor/bloom_bit_counter.h"
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "./logging.h"
 #include "algorithms/rappor/rappor_encoder.h"
 #include "algorithms/rappor/rappor_test_utils.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"

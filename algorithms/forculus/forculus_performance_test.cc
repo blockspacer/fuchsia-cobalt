@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <chrono>
 #include <ctime>
 #include <fstream>
 #include <streambuf>
 
+#include "./logging.h"
 #include "algorithms/forculus/forculus_analyzer.h"
 #include "algorithms/forculus/forculus_encrypter.h"
 #include "encoder/client_secret.h"
@@ -156,7 +156,7 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  INIT_LOGGING(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

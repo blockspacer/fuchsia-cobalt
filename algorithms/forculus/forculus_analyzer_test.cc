@@ -15,8 +15,8 @@
 #include "algorithms/forculus/forculus_analyzer.h"
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
+#include "./logging.h"
 #include "algorithms/forculus/forculus_encrypter.h"
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
@@ -277,7 +277,7 @@ TEST(ForculusAnalyzerTest, WithErrors) {
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  INIT_LOGGING(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
