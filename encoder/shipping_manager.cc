@@ -342,6 +342,7 @@ std::unique_ptr<EnvelopeHolder>
 ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
   auto log_extension = std::make_unique<LogEventExtension>();
+
   if (!encrypt_to_shuffler_->Encrypt(
           envelope_to_send->GetEnvelope(),
           log_extension->mutable_cobalt_encrypted_envelope())) {
@@ -349,8 +350,13 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
     // Drop on floor.
     return nullptr;
   }
+
   VLOG(5) << name() << " worker: Sending Envelope of size "
           << envelope_to_send->Size() << " bytes to clearcut.";
+
+  internal_metrics_->BytesUploaded(
+      logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
+      envelope_to_send->Size());
 
   clearcut::LogRequest request;
   request.set_log_source(clearcut::kFuchsiaCobaltShufflerInputDevel);
@@ -372,6 +378,11 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
+
+    internal_metrics_->BytesUploaded(
+        logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
+        envelope_to_send->Size());
+
     return nullptr;
   }
 
@@ -405,3 +416,4 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
 
 }  // namespace encoder
 }  // namespace cobalt
+
