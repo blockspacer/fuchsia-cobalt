@@ -84,3 +84,10 @@ if (is_fuchsia) {
     ]
   }
 }
+
+testonly = true
+group("default") {
+  deps = [
+    ":cobalt_core_unittests",
+  ]
+}
