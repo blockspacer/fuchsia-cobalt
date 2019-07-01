@@ -61,6 +61,7 @@ group("tests") {
     "algorithms:tests",
     "config:tests",
     "encoder:unittests",
+    "keys:tests",
     "logger:tests",
   ]
 }

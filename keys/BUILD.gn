@@ -1,0 +1,41 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/test.gni")
+
+copy("key_tests_files") {
+  sources = [
+    "analyzer_public.cobalt_key",
+    "shuffler_public.cobalt_key",
+  ]
+  outputs = [
+    "$root_out_dir/tests/cpp/keys/{{source_file_part}}",
+  ]
+}
+
+test("keys_tests") {
+  testonly = true
+  sources = [
+    "keys_tests.cc",
+  ]
+  deps = [
+    ":key_tests_files",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root/third_party/statusor",
+    "$cobalt_root/util:encrypted_message_util",
+    "$cobalt_root/util:file_util",
+    "//third_party/abseil-cpp/absl/strings",
+    "//third_party/googletest:gtest",
+    "//third_party/tink/proto:tink_proto",
+  ]
+  public_configs = [ "//third_party/tink:tink_config" ]
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":keys_tests",
+  ]
+}
