@@ -24,8 +24,8 @@ using encoder::ClientSecret;
 static const uint32_t kDayIndex = 12345;
 
 void TestEncrypterValidation(uint32_t threshold, bool use_valid_token,
-    ForculusEncrypter::Status expected_status,
-    int caller_line_number) {
+                             ForculusEncrypter::Status expected_status,
+                             int caller_line_number) {
   // Make a ClientSecret once and statically store the token.
   static const std::string kClientSecretToken =
       ClientSecret::GenerateNewSecret().GetToken();
@@ -38,21 +38,19 @@ void TestEncrypterValidation(uint32_t threshold, bool use_valid_token,
   config.set_threshold(threshold);
 
   // Construct the Encrypter.
-  ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::FromToken(
-      client_secret_token));
+  ForculusEncrypter encrypter(config, 0, 0, 0, "",
+                              ClientSecret::FromToken(client_secret_token));
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
-  EXPECT_EQ(expected_status,
-    encrypter.Encrypt("hello", kDayIndex, &obs))
-     << "Invoked from line number: " << caller_line_number;
+  EXPECT_EQ(expected_status, encrypter.Encrypt("hello", kDayIndex, &obs))
+      << "Invoked from line number: " << caller_line_number;
 }
 
 // A macro to invoke TestEncrypterValidation and pass it the current line num.
-#define TEST_ENCRYPTER_VALIDATION(threshold, use_valid_token, \
-                                  expected_status) \
-    (TestEncrypterValidation(threshold, use_valid_token, \
-     expected_status, __LINE__))
+#define TEST_ENCRYPTER_VALIDATION(threshold, use_valid_token, expected_status) \
+  (TestEncrypterValidation(threshold, use_valid_token, expected_status,        \
+                           __LINE__))
 
 // Tests ForculusEncrypter config and input validation.
 TEST(ForculusEncrypterTest, Validation) {
@@ -60,30 +58,30 @@ TEST(ForculusEncrypterTest, Validation) {
 
   // threshold = 1: kInvalidConfig
   TEST_ENCRYPTER_VALIDATION(1, use_valid_token,
-      ForculusEncrypter::kInvalidConfig);
+                            ForculusEncrypter::kInvalidConfig);
 
   // threshold = 2: kOK
   TEST_ENCRYPTER_VALIDATION(2, use_valid_token, ForculusEncrypter::kOK);
 
   // threshold = UINT32_MAX: kInvalidConfig
   TEST_ENCRYPTER_VALIDATION(UINT32_MAX, use_valid_token,
-      ForculusEncrypter::kInvalidConfig);
+                            ForculusEncrypter::kInvalidConfig);
 
   // threshold = 1000: kOK
-  TEST_ENCRYPTER_VALIDATION(1000, use_valid_token,
-      ForculusEncrypter::kOK);
+  TEST_ENCRYPTER_VALIDATION(1000, use_valid_token, ForculusEncrypter::kOK);
 
   // invalid token: kInvalidConfig
   use_valid_token = false;
   TEST_ENCRYPTER_VALIDATION(1000, use_valid_token,
-      ForculusEncrypter::kInvalidConfig);
+                            ForculusEncrypter::kInvalidConfig);
 }
 
 // Constructs a ForculusEncrypter and invoke Encrypt().
 ForculusObservation Encrypt(const std::string& plaintext, uint32_t threshold,
-  uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
-  std::string metric_part_name, const std::string& secret_token,
-  uint32_t day_index, EpochType epoch_type) {
+                            uint32_t customer_id, uint32_t project_id,
+                            uint32_t metric_id, std::string metric_part_name,
+                            const std::string& secret_token, uint32_t day_index,
+                            EpochType epoch_type) {
   // Make a config with the given threshold
   ForculusConfig config;
   config.set_threshold(threshold);
@@ -91,15 +89,15 @@ ForculusObservation Encrypt(const std::string& plaintext, uint32_t threshold,
 
   // Construct the Encrypter.
   ForculusEncrypter encrypter(config, customer_id, project_id, metric_id,
-      metric_part_name, ClientSecret::FromToken(secret_token));
+                              metric_part_name,
+                              ClientSecret::FromToken(secret_token));
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
   EXPECT_EQ(ForculusEncrypter::kOK,
-      encrypter.Encrypt(plaintext, day_index, &obs));
+            encrypter.Encrypt(plaintext, day_index, &obs));
   return obs;
 }
-
 
 // We test all that we can about the Encrypter without doing any decryption.
 // See forculus_decrypter_test.cc for tests that involve decryption.
@@ -131,8 +129,8 @@ TEST(ForculusEncrypterTest, SanityTest) {
   // Two different days in the same week are the same epoch if we are using
   // WEEK epochs.
   obs1 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1, WEEK);
-  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1,
-      day_index1 + 1, WEEK);
+  obs2 =
+      Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1 + 1, WEEK);
   EXPECT_EQ(obs1.ciphertext(), obs2.ciphertext());
   EXPECT_EQ(obs1.point_x(), obs2.point_x());
   EXPECT_EQ(obs1.point_y(), obs2.point_y());
@@ -140,8 +138,8 @@ TEST(ForculusEncrypterTest, SanityTest) {
   // But two different days in different weeks are different epochs if we
   // are using WEEK epochs.
   obs1 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1, WEEK);
-  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1,
-      day_index1 + 7, WEEK);
+  obs2 =
+      Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1 + 7, WEEK);
   EXPECT_NE(obs1.ciphertext(), obs2.ciphertext());
   EXPECT_NE(obs1.point_x(), obs2.point_x());
   EXPECT_NE(obs1.point_y(), obs2.point_y());
@@ -149,8 +147,8 @@ TEST(ForculusEncrypterTest, SanityTest) {
   // Similarly two different days in the same month are the same epoch if we
   // are using MONTH epochs.
   obs1 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1, MONTH);
-  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1,
-      day_index1 + 7, MONTH);
+  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1 + 7,
+                 MONTH);
   EXPECT_EQ(obs1.ciphertext(), obs2.ciphertext());
   EXPECT_EQ(obs1.point_x(), obs2.point_x());
   EXPECT_EQ(obs1.point_y(), obs2.point_y());
@@ -158,8 +156,8 @@ TEST(ForculusEncrypterTest, SanityTest) {
   // But two different days in different months are different epochs if we
   // are using MONTH epochs.
   obs1 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1, MONTH);
-  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1,
-      day_index1 + 31, MONTH);
+  obs2 = Encrypt("Message 1", 20, 1, 1, 1, "part1", kToken1, day_index1 + 31,
+                 MONTH);
   EXPECT_NE(obs1.ciphertext(), obs2.ciphertext());
   EXPECT_NE(obs1.point_x(), obs2.point_x());
   EXPECT_NE(obs1.point_y(), obs2.point_y());
@@ -236,7 +234,6 @@ TEST(ForculusEncrypterTest, SanityTest) {
   EXPECT_NE(obs1.point_y(), obs2.point_y());
 }
 
-
 // We sanity test the function EncryptValue().
 // See forculus_decrypter_test.cc for tests that involve decryption.
 TEST(ForculusEncrypterTest, EncryptValue) {
@@ -244,7 +241,7 @@ TEST(ForculusEncrypterTest, EncryptValue) {
   ForculusConfig config;
   config.set_threshold(20);
   ForculusEncrypter encrypter(config, 1, 1, 1, "",
-      ClientSecret::GenerateNewSecret());
+                              ClientSecret::GenerateNewSecret());
 
   // Construct three values.
   ValuePart value1, value2, value3;
@@ -255,11 +252,11 @@ TEST(ForculusEncrypterTest, EncryptValue) {
   // Invoke EncryptValue() three times.
   ForculusObservation obs1, obs2, obs3;
   EXPECT_EQ(ForculusEncrypter::kOK,
-    encrypter.EncryptValue(value1, kDayIndex, &obs1));
+            encrypter.EncryptValue(value1, kDayIndex, &obs1));
   EXPECT_EQ(ForculusEncrypter::kOK,
-    encrypter.EncryptValue(value2, kDayIndex, &obs2));
+            encrypter.EncryptValue(value2, kDayIndex, &obs2));
   EXPECT_EQ(ForculusEncrypter::kOK,
-    encrypter.EncryptValue(value3, kDayIndex, &obs3));
+            encrypter.EncryptValue(value3, kDayIndex, &obs3));
 
   // Check that the three observations have different ciphertexts.
   EXPECT_NE(obs1.ciphertext(), obs2.ciphertext());
@@ -270,4 +267,3 @@ TEST(ForculusEncrypterTest, EncryptValue) {
 }  // namespace forculus
 
 }  // namespace cobalt
-

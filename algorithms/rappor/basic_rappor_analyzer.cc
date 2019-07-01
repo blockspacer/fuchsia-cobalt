@@ -15,6 +15,7 @@
 #include "algorithms/rappor/basic_rappor_analyzer.h"
 
 #include <glog/logging.h>
+
 #include <cmath>
 #include <vector>
 

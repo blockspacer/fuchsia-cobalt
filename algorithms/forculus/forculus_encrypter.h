@@ -15,8 +15,8 @@
 #ifndef COBALT_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
 #define COBALT_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
 
-#include <string>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "./observation.pb.h"
@@ -32,11 +32,7 @@ class ForculusConfigValidator;
 // is intended for use in the Cobalt Encoder.
 class ForculusEncrypter {
  public:
-  enum Status {
-    kOK = 0,
-    kInvalidConfig,
-    kEncryptionFailed
-  };
+  enum Status { kOK = 0, kInvalidConfig, kEncryptionFailed };
 
   // Constructs a ForculusEncrypter with the given |config| for the specified
   // metric part.
@@ -79,18 +75,16 @@ class ForculusEncrypter {
   // Returns kOk on success, kInvalidConfig if the |config| passed to the
   // constructor is not valid, or kEncryptionFailed if the encryption fails
   // for any reason.
-  Status Encrypt(const std::string& plaintext,
-                 uint32_t observation_day_index,
-                 ForculusObservation *observation_out);
+  Status Encrypt(const std::string& plaintext, uint32_t observation_day_index,
+                 ForculusObservation* observation_out);
 
   // Serializes |value| into a plaintext string using standard protocol buffer
   // serialization and then invokes Encrypt() on the serialized bytes.
   //
   // The Cobalt Encoder invokes this method rather than directly invoking
   // Encrypt() in order to uniformly handle values of different data types.
-  Status EncryptValue(const ValuePart& value,
-                      uint32_t observation_day_index,
-                      ForculusObservation *observation_out);
+  Status EncryptValue(const ValuePart& value, uint32_t observation_day_index,
+                      ForculusObservation* observation_out);
 
  private:
   std::unique_ptr<ForculusConfigValidator> config_;

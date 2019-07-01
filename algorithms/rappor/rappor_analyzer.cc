@@ -15,6 +15,7 @@
 #include "algorithms/rappor/rappor_analyzer.h"
 
 #include <glog/logging.h>
+
 #include <algorithm>
 #include <cmath>
 #include <random>

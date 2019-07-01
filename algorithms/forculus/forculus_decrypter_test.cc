@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "algorithms/forculus/forculus_decrypter.h"
-#include "algorithms/forculus/forculus_encrypter.h"
 
 #include <map>
 
+#include "algorithms/forculus/forculus_encrypter.h"
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -38,12 +38,12 @@ ForculusObservation Encrypt(const std::string& plaintext) {
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "",
-      ClientSecret::GenerateNewSecret());
+                              ClientSecret::GenerateNewSecret());
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
   EXPECT_EQ(ForculusEncrypter::kOK,
-      encrypter.Encrypt(plaintext, kDayIndex, &obs));
+            encrypter.Encrypt(plaintext, kDayIndex, &obs));
   return obs;
 }
 
@@ -57,12 +57,12 @@ ForculusObservation EncryptValue(const ValuePart& value) {
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "",
-      ClientSecret::GenerateNewSecret());
+                              ClientSecret::GenerateNewSecret());
 
   // Invoke EncryptValue() and check the status.
   ForculusObservation obs;
   EXPECT_EQ(ForculusEncrypter::kOK,
-      encrypter.EncryptValue(value, kDayIndex, &obs));
+            encrypter.EncryptValue(value, kDayIndex, &obs));
   return obs;
 }
 
@@ -105,19 +105,19 @@ void DoDecryptValueTest(const ValuePart& value) {
   recovered_value.ParseFromString(recovered_text);
   switch (value.data_case()) {
     case ValuePart::kStringValue:
-    EXPECT_EQ(value.string_value(), recovered_value.string_value());
-    break;
+      EXPECT_EQ(value.string_value(), recovered_value.string_value());
+      break;
 
     case ValuePart::kIntValue:
-    EXPECT_EQ(value.int_value(), recovered_value.int_value());
-    break;
+      EXPECT_EQ(value.int_value(), recovered_value.int_value());
+      break;
 
     case ValuePart::kBlobValue:
-    EXPECT_EQ(value.blob_value(), recovered_value.blob_value());
-    break;
+      EXPECT_EQ(value.blob_value(), recovered_value.blob_value());
+      break;
 
     default:
-    EXPECT_TRUE(false) << "unexpected case";
+      EXPECT_TRUE(false) << "unexpected case";
   }
 }
 
@@ -165,7 +165,7 @@ TEST(ForculusDecrypterTest, TestErrors) {
 
   // Trying to add Obervation 2 will yield kInconsistentPoints.
   EXPECT_EQ(ForculusDecrypter::kInconsistentPoints,
-      decrypter.AddObservation(obs2));
+            decrypter.AddObservation(obs2));
 
   // Trying to decrypt now will yield kNontEnoughPoints.
   std::string plaintext;
@@ -176,7 +176,7 @@ TEST(ForculusDecrypterTest, TestErrors) {
   obs2.set_ciphertext("A different ciphertext");
   obs2.set_point_x("23456");
   EXPECT_EQ(ForculusDecrypter::kWrongCiphertext,
-      decrypter.AddObservation(obs2));
+            decrypter.AddObservation(obs2));
 
   // Fix observation 2 and we can successfully add it.
   obs2.set_ciphertext("A ciphertext");
@@ -196,9 +196,8 @@ TEST(ForculusDecrypterTest, TestErrors) {
   // Now there are enough points to try to decrypt but the decryption will
   // fail because the ciphertext is not a real ciphertext.
   EXPECT_EQ(ForculusDecrypter::kDecryptionFailed,
-      decrypter.Decrypt(&plaintext));
+            decrypter.Decrypt(&plaintext));
 }
 
 }  // namespace forculus
 }  // namespace cobalt
-

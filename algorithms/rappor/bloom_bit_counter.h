@@ -69,9 +69,7 @@ class BloomBitCounter {
   // cohort number from 0 to num_cohorts - 1.
   const std::vector<CohortCounts>& EstimateCounts();
 
-  std::shared_ptr<RapporConfigValidator> config() {
-    return config_;
-  }
+  std::shared_ptr<RapporConfigValidator> config() { return config_; }
 
  private:
   friend class BloomBitCounterTest;

@@ -521,9 +521,7 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN5000P05Q09) {
 
   // This is the formula for computing expected_std_err when n=5000, p=0.5,
   // q=0.9.
-  auto std_err = [](double y) {
-    return sqrt(y * -0.4 + 2250.0) * 5.0 / 2.0;
-  };
+  auto std_err = [](double y) { return sqrt(y * -0.4 + 2250.0) * 5.0 / 2.0; };
 
   // Test with various values of y.
   for (int y : {0, 1, 49, 222, 1333, 2444, 3555, 4999, 5000}) {

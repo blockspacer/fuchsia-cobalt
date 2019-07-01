@@ -87,22 +87,16 @@ class ForculusDecrypter {
   // kOK. This value differs from the value returned by size() in that if
   // the same (x, y)-value is added twice it will incrument |num_seen| but
   // not |size|.
-  uint32_t num_seen() {
-    return num_seen_;
-  }
-
-
+  uint32_t num_seen() { return num_seen_; }
 
   // Decrypts the |ciphertext| that was passed to the constructor and writes
   // the plain text to *plain_text_out. Returns kOk on success. If there are
   // not enough points to perform the decryption, returns kNotEnoughPoints.
   // Returns kDecryptionFailed if the decryption failed for any reason.
-  Status Decrypt(std::string *plain_text_out);
+  Status Decrypt(std::string* plain_text_out);
 
   // Returns the ciphertext associated with this Decrypter.
-  const std::string& ciphertext() {
-    return ciphertext_;
-  }
+  const std::string& ciphertext() { return ciphertext_; }
 
  private:
   uint32_t threshold_;

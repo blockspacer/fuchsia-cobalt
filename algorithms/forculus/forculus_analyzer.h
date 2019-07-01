@@ -15,10 +15,10 @@
 #ifndef COBALT_ALGORITHMS_FORCULUS_FORCULUS_ANALYZER_H_
 #define COBALT_ALGORITHMS_FORCULUS_FORCULUS_ANALYZER_H_
 
-#include <unordered_map>
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "./observation.pb.h"
@@ -72,27 +72,22 @@ class ForculusAnalyzer {
   // Returns true to indicate the observation was added without error and
   // so num_observations() was incremented or false to indicate there was
   // an error and so observation_errors() was incremented.
-  bool AddObservation(uint32_t day_index,
-                      const ForculusObservation& obs);
+  bool AddObservation(uint32_t day_index, const ForculusObservation& obs);
 
   // The number of times that AddObservation() was invoked minus the value
   // observation_errors().
-  size_t num_observations() {
-    return num_observations_;
-  }
+  size_t num_observations() { return num_observations_; }
 
   // The number of times that AddObservation() was invoked and the observation
   // was discarded due to an error. If this number is not zero it indicates
   // that the Analyzer received data that was not created by a legitimate
   // Cobalt client. See the error logs for details of the errors.
-  size_t observation_errors() {
-    return observation_errors_;
-  }
+  size_t observation_errors() { return observation_errors_; }
 
   // A ResultInfo contains info about one particular recovered plaintext.
   struct ResultInfo {
-    explicit ResultInfo(size_t total_count) :
-        total_count(total_count), num_epochs(1) {}
+    explicit ResultInfo(size_t total_count)
+        : total_count(total_count), num_epochs(1) {}
 
     // The total number of observations added to this ForculusAnalyzer that
     // decrypted to the plaintext. This is not the number of *distinct encoder
@@ -136,9 +131,9 @@ class ForculusAnalyzer {
   // The type of the keys of |decryption_map_|. Represents a group of
   // observations that all come from the same epoch and have the same
   // ciphertext.
-  struct DecrypterGroupKey{
-    DecrypterGroupKey(uint32_t epoch_index, std::string ciphertext) :
-      epoch_index(epoch_index), ciphertext(std::move(ciphertext)) {}
+  struct DecrypterGroupKey {
+    DecrypterGroupKey(uint32_t epoch_index, std::string ciphertext)
+        : epoch_index(epoch_index), ciphertext(std::move(ciphertext)) {}
 
     bool operator==(const DecrypterGroupKey& other) const {
       return other.epoch_index == epoch_index && other.ciphertext == ciphertext;
@@ -156,9 +151,8 @@ class ForculusAnalyzer {
   struct DecrypterResult {
     // Constructs a new DecrypterResult with the given decrypter and a null
     // result_info.
-    explicit DecrypterResult(std::unique_ptr<ForculusDecrypter>&& decrypter) :
-      decrypter(std::move(decrypter)),
-      result_info(nullptr) {}
+    explicit DecrypterResult(std::unique_ptr<ForculusDecrypter>&& decrypter)
+        : decrypter(std::move(decrypter)), result_info(nullptr) {}
 
     // The ForculusDecrypter corresponding to the key if the ciphertext has
     // not yet been decrypted, or NULL if the ciphertext has already been
@@ -174,7 +168,7 @@ class ForculusAnalyzer {
   // Hash function for DecrypterGroupKey.
   class KeyHasher {
    public:
-    size_t operator()(const DecrypterGroupKey &key) const;
+    size_t operator()(const DecrypterGroupKey& key) const;
   };
 
   // A map from DecrypterGroupKeys to their DecrypterResults.

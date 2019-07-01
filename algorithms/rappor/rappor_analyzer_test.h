@@ -5,8 +5,6 @@
 #ifndef COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
 #define COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
 
-#include "algorithms/rappor/rappor_analyzer.h"
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -18,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "algorithms/rappor/rappor_analyzer.h"
 #include "algorithms/rappor/rappor_encoder.h"
 #include "algorithms/rappor/rappor_test_utils.h"
 #include "encoder/client_secret.h"

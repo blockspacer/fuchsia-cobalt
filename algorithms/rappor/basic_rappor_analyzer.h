@@ -53,7 +53,7 @@ class BasicRapporAnalyzer {
   size_t observation_errors() const { return observation_errors_; }
 
   // The number of categories being analyzed.
-  size_t num_categories() const { return category_counts_.size();}
+  size_t num_categories() const { return category_counts_.size(); }
 
   struct CategoryResult {
     ValuePart category;

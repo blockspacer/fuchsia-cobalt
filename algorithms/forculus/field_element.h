@@ -36,7 +36,7 @@ class FieldElement {
  public:
   // The number of bytes of data used to represent a FieldElement. The size
   // of the Forculus Field is 2^{8 * kDataSize}.
-  static const size_t kDataSize = 256/8;
+  static const size_t kDataSize = 256 / 8;
 
   // Constructs a FieldElement by moving kDataSize bytes out of |bytes|.
   // If the length of |bytes| is greater than kDataSize than the extra bytes
@@ -60,14 +60,10 @@ class FieldElement {
   FieldElement(const FieldElement& other) : bytes_(other.bytes_) {}
 
   // Copy assignment operator
-  void operator=(const FieldElement& other) {
-    bytes_ = other.bytes_;
-  }
+  void operator=(const FieldElement& other) { bytes_ = other.bytes_; }
 
   // Move assignment operator
-  void operator=(FieldElement&& other) {
-    bytes_ = std::move(other.bytes_);
-  }
+  void operator=(FieldElement&& other) { bytes_ = std::move(other.bytes_); }
 
   bool operator==(const FieldElement& other) const {
     return bytes_ == other.bytes_;
@@ -88,8 +84,8 @@ class FieldElement {
   // Convenience function that copies the underlying bytes of this element
   // into *target_string.
   void CopyBytesToString(std::string* target_string) {
-    target_string->assign(reinterpret_cast<const char*>(
-        bytes_.data()), bytes_.size());
+    target_string->assign(reinterpret_cast<const char*>(bytes_.data()),
+                          bytes_.size());
   }
 
   // Returns a pointer to a buffer of bytes of length

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "algorithms/rappor/rappor_test_utils.h"
+
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
@@ -116,7 +117,6 @@ RapporObservation RapporObservationFromString(
   obs.set_data(BinaryStringToData(binary_string));
   return obs;
 }
-
 
 }  // namespace rappor
 }  // namespace cobalt

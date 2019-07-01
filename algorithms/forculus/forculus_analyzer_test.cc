@@ -34,7 +34,7 @@ namespace {
 // parameters. A fresh ClientSecret will be generated each time this function
 // is invoked. Returns a ForculusObservation containing the ciphertext.
 ForculusObservation Encrypt(uint32_t day_index, const EpochType& epoch_type,
-    const std::string& plaintext) {
+                            const std::string& plaintext) {
   // Make a config with the given threshold
   ForculusConfig config;
   config.set_threshold(kThreshold);
@@ -42,26 +42,25 @@ ForculusObservation Encrypt(uint32_t day_index, const EpochType& epoch_type,
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "",
-      ClientSecret::GenerateNewSecret());
+                              ClientSecret::GenerateNewSecret());
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
   EXPECT_EQ(ForculusEncrypter::kOK,
-      encrypter.Encrypt(plaintext, day_index,
-                        &obs));
+            encrypter.Encrypt(plaintext, day_index, &obs));
   return obs;
 }
 
 // Creates and adds observations to |forculus_analyzer| based on the parameters.
 void AddObservations(ForculusAnalyzer* forculus_analyzer, uint32_t day_index,
-    const EpochType& epoch_type, const std::string& plaintext, int num_clients,
-    int num_copies_per_client) {
+                     const EpochType& epoch_type, const std::string& plaintext,
+                     int num_clients, int num_copies_per_client) {
   // Simulate num_clients different clients.
   for (int i = 0; i < num_clients; i++) {
     auto observation = Encrypt(day_index, epoch_type, plaintext);
     // Each client adds the same observation |num_copies_per_client| times.
     for (int i = 0; i < num_copies_per_client; i++) {
-       EXPECT_TRUE(forculus_analyzer->AddObservation(day_index, observation));
+      EXPECT_TRUE(forculus_analyzer->AddObservation(day_index, observation));
     }
   }
 }
@@ -94,18 +93,17 @@ TEST(ForculusAnalyzerTest, NoErrors) {
   AddObservations(&forculus_analyzer, 1, DAY, plaintext2, kThreshold - 1, 6);
 
   // 19 * 7 observations of plaintext3 on day 0. These will not be decrypted.
-  AddObservations(&forculus_analyzer, 0,  DAY, plaintext3, kThreshold - 1, 7);
+  AddObservations(&forculus_analyzer, 0, DAY, plaintext3, kThreshold - 1, 7);
   // 19 * 7 observations of plaintext3 on day 1. These will not be decrypted.
-  AddObservations(&forculus_analyzer, 1,  DAY, plaintext3, kThreshold - 1, 7);
+  AddObservations(&forculus_analyzer, 1, DAY, plaintext3, kThreshold - 1, 7);
 
   // 22 * 8 observations of plaintext4 on day 3.
   AddObservations(&forculus_analyzer, 3, DAY, plaintext4, kThreshold + 2, 8);
 
   EXPECT_EQ(0u, forculus_analyzer.observation_errors());
   static const size_t kExpectedNumObservations =
-      kThreshold * 5 + kThreshold * 5 +
-      (kThreshold + 1) * 6 + (kThreshold - 1) * 6 +
-      (kThreshold - 1) * 7 + (kThreshold - 1) * 7 +
+      kThreshold * 5 + kThreshold * 5 + (kThreshold + 1) * 6 +
+      (kThreshold - 1) * 6 + (kThreshold - 1) * 7 + (kThreshold - 1) * 7 +
       (kThreshold + 2) * 8;
   EXPECT_EQ(kExpectedNumObservations, forculus_analyzer.num_observations());
   auto results = forculus_analyzer.TakeResults();
@@ -277,10 +275,9 @@ TEST(ForculusAnalyzerTest, WithErrors) {
 }  // namespace forculus
 }  // namespace cobalt
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

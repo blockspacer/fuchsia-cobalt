@@ -6,6 +6,7 @@
 #define COBALT_ALGORITHMS_RAPPOR_LASSO_RUNNER_H_
 
 #include <math.h>
+
 #include <vector>
 
 #include "third_party/eigen/Eigen/SparseCore"

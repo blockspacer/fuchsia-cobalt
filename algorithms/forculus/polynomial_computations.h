@@ -28,7 +28,7 @@ namespace forculus {
 // Computes f(x) where f is the polynomial c0 + c1*x + c2*x^2 + ... cn*x^n
 // where n = coefficients.size() and ci = coefficients[i].
 FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
-    FieldElement x);
+                      FieldElement x);
 
 // Computes the constant term c0 of the unique polynomial of degree d that
 // passes through the points (x0, y0), (x1, y1), ... (x_{d}, y_{d})

@@ -18,7 +18,7 @@ namespace cobalt {
 namespace forculus {
 
 FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
-    FieldElement x) {
+                      FieldElement x) {
   size_t num_coefficients = coefficients.size();
   FieldElement y = coefficients[num_coefficients - 1];
   for (int i = num_coefficients - 2; i >= 0; i--) {
@@ -39,7 +39,7 @@ FieldElement InterpolateConstant(
   // Start by computing to the product of the x_i.
   FieldElement product_of_xi(true);  // initialize to one
   for (size_t i = 0; i < num_values; i++) {
-    product_of_xi*= *x_values[i];
+    product_of_xi *= *x_values[i];
   }
 
   // Next compute :
@@ -58,7 +58,7 @@ FieldElement InterpolateConstant(
       }
       prod_delta_ji *= (*x_values[j] - *x_values[i]);
     }
-    sigma+= *y_values[i]/(*x_values[i] * prod_delta_ji);
+    sigma += *y_values[i] / (*x_values[i] * prod_delta_ji);
   }
 
   // Finally our desired value is product_of_xi * sigma.
@@ -67,4 +67,3 @@ FieldElement InterpolateConstant(
 
 }  // namespace forculus
 }  // namespace cobalt
-

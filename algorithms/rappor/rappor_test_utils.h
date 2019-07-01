@@ -66,8 +66,8 @@ RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts,
 // Given a string of "0"s and "1"s of length a multiple of 8, and a cohort,
 // returns a RapporObservation for the given cohort whose data is equal to the
 // bytes whose binary representation is given by the string.
-RapporObservation RapporObservationFromString(
-    uint32_t cohort, const std::string& binary_string);
+RapporObservation RapporObservationFromString(uint32_t cohort,
+                                              const std::string& binary_string);
 
 }  // namespace rappor
 }  // namespace cobalt

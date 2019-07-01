@@ -26,8 +26,8 @@
 namespace cobalt {
 namespace forculus {
 
-using crypto::hmac::HMAC;
 using crypto::SymmetricCipher;
+using crypto::hmac::HMAC;
 using encoder::ClientSecret;
 
 namespace {
@@ -35,48 +35,49 @@ namespace {
 // random oracle to the the input data. Returns the master key, or an empty
 // vector if the operation fails for any reason.
 std::vector<byte> DeriveMasterKey(uint32_t customer_id, uint32_t project_id,
-    uint32_t metric_id, const std::string& metric_part_name,
-    uint32_t epoch_index, uint32_t threshold, const std::string& plaintext) {
+                                  uint32_t metric_id,
+                                  const std::string& metric_part_name,
+                                  uint32_t epoch_index, uint32_t threshold,
+                                  const std::string& plaintext) {
   // First we build up a byte vector consisting of the concatenation of all of
   // the input material. This will be the input to the random oracle.
   // We prepend each string with its length.
   size_t part_name_size = metric_part_name.size();
   size_t plaintext_size = plaintext.size();
-  std::vector<byte> master_key_material(sizeof(customer_id) +
-      sizeof(project_id) + sizeof(metric_id) +
-      sizeof(part_name_size) + part_name_size +
-      sizeof(epoch_index) + sizeof(threshold) +
-      sizeof(plaintext_size) + plaintext.size());
+  std::vector<byte> master_key_material(
+      sizeof(customer_id) + sizeof(project_id) + sizeof(metric_id) +
+      sizeof(part_name_size) + part_name_size + sizeof(epoch_index) +
+      sizeof(threshold) + sizeof(plaintext_size) + plaintext.size());
   // Add customer_id
   std::memcpy(master_key_material.data(), &customer_id, sizeof(customer_id));
   size_t index = sizeof(customer_id);
   // Add project_id
   std::memcpy(master_key_material.data() + index, &project_id,
-      sizeof(project_id));
+              sizeof(project_id));
   index += sizeof(project_id);
   // Add metric_id
   std::memcpy(master_key_material.data() + index, &metric_id,
-      sizeof(metric_id));
+              sizeof(metric_id));
   index += sizeof(metric_id);
   // Add part_name_size
-  std::memcpy(master_key_material.data() + index,
-      &part_name_size, sizeof(part_name_size));
+  std::memcpy(master_key_material.data() + index, &part_name_size,
+              sizeof(part_name_size));
   index += sizeof(part_name_size);
   // Add metric_part_name
-  std::memcpy(master_key_material.data() + index,
-      metric_part_name.data(), metric_part_name.size());
+  std::memcpy(master_key_material.data() + index, metric_part_name.data(),
+              metric_part_name.size());
   index += metric_part_name.size();
   // Add epoch_index
-  std::memcpy(master_key_material.data() + index,
-      &epoch_index, sizeof(epoch_index));
+  std::memcpy(master_key_material.data() + index, &epoch_index,
+              sizeof(epoch_index));
   index += sizeof(epoch_index);
   // Add threshold
-  std::memcpy(master_key_material.data() + index,
-      &threshold, sizeof(threshold));
+  std::memcpy(master_key_material.data() + index, &threshold,
+              sizeof(threshold));
   index += sizeof(threshold);
   // Add plaintext_size
-  std::memcpy(master_key_material.data() + index,
-      &plaintext_size, sizeof(plaintext_size));
+  std::memcpy(master_key_material.data() + index, &plaintext_size,
+              sizeof(plaintext_size));
   index += sizeof(plaintext_size);
   // Add plaintext
   std::memcpy(master_key_material.data() + index, plaintext.data(),
@@ -88,7 +89,7 @@ std::vector<byte> DeriveMasterKey(uint32_t customer_id, uint32_t project_id,
   std::vector<byte> master_key(crypto::hmac::TAG_SIZE);
   const uint8_t kZeroKey = 0;
   if (!HMAC(&kZeroKey, sizeof(kZeroKey), master_key_material.data(),
-      master_key_material.size(), master_key.data())) {
+            master_key_material.size(), master_key.data())) {
     master_key.resize(0);
   }
   return master_key;
@@ -99,8 +100,8 @@ std::vector<byte> DeriveMasterKey(uint32_t customer_id, uint32_t project_id,
 class ForculusConfigValidator {
  public:
   ForculusConfigValidator(const ForculusConfig& config,
-                          const ClientSecret& client_secret) :
-      threshold_(config.threshold()), epoch_type_(config.epoch_type()) {
+                          const ClientSecret& client_secret)
+      : threshold_(config.threshold()), epoch_type_(config.epoch_type()) {
     valid_ = false;
     if (!client_secret.valid()) {
       return;
@@ -111,17 +112,11 @@ class ForculusConfigValidator {
     valid_ = true;
   }
 
-  const uint32_t& threshold() {
-    return threshold_;
-  }
+  const uint32_t& threshold() { return threshold_; }
 
-  const EpochType& epoch_type() {
-    return epoch_type_;
-  }
+  const EpochType& epoch_type() { return epoch_type_; }
 
-  bool valid() {
-    return valid_;
-  }
+  bool valid() { return valid_; }
 
  private:
   bool valid_;
@@ -130,18 +125,22 @@ class ForculusConfigValidator {
 };
 
 ForculusEncrypter::ForculusEncrypter(const ForculusConfig& config,
-    uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
-    std::string metric_part_name, ClientSecret client_secret) :
-    config_(new ForculusConfigValidator(config, client_secret)),
-    customer_id_(customer_id), project_id_(project_id), metric_id_(metric_id),
-    metric_part_name_(std::move(metric_part_name)),
-    client_secret_(std::move(client_secret)) {}
+                                     uint32_t customer_id, uint32_t project_id,
+                                     uint32_t metric_id,
+                                     std::string metric_part_name,
+                                     ClientSecret client_secret)
+    : config_(new ForculusConfigValidator(config, client_secret)),
+      customer_id_(customer_id),
+      project_id_(project_id),
+      metric_id_(metric_id),
+      metric_part_name_(std::move(metric_part_name)),
+      client_secret_(std::move(client_secret)) {}
 
 ForculusEncrypter::~ForculusEncrypter() {}
 
 ForculusEncrypter::Status ForculusEncrypter::EncryptValue(
     const ValuePart& value, uint32_t observation_day_index,
-    ForculusObservation *observation_out) {
+    ForculusObservation* observation_out) {
   std::string serialized_value;
   value.SerializeToString(&serialized_value);
   return Encrypt(serialized_value, observation_day_index, observation_out);
@@ -149,7 +148,7 @@ ForculusEncrypter::Status ForculusEncrypter::EncryptValue(
 
 ForculusEncrypter::Status ForculusEncrypter::Encrypt(
     const std::string& plaintext, uint32_t observation_day_index,
-    ForculusObservation *observation_out) {
+    ForculusObservation* observation_out) {
   if (!config_->valid()) {
     return kInvalidConfig;
   }
@@ -163,8 +162,9 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
   // We now derive the Forculus master key by invoking a random oracle on
   // all of the following data: customer_id, project_id, metric_id,
   // metric_part_name, epoch_index, threshold and plaintext.
-  std::vector<byte> master_key = DeriveMasterKey(customer_id_, project_id_,
-      metric_id_, metric_part_name_, epoch_index, threshold, plaintext);
+  std::vector<byte> master_key =
+      DeriveMasterKey(customer_id_, project_id_, metric_id_, metric_part_name_,
+                      epoch_index, threshold, plaintext);
   if (master_key.empty()) {
     return kEncryptionFailed;
   }
@@ -177,8 +177,8 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
   for (uint32_t i = 0; i < threshold; i++) {
     std::vector<byte> coefficient_bytes(crypto::hmac::TAG_SIZE);
     if (!HMAC(master_key.data(), master_key.size(),
-        reinterpret_cast<const byte*>(&i), sizeof(i),
-        coefficient_bytes.data())) {
+              reinterpret_cast<const byte*>(&i), sizeof(i),
+              coefficient_bytes.data())) {
       return kEncryptionFailed;
     }
     coefficients.emplace_back(std::move(coefficient_bytes));
@@ -192,8 +192,8 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
   static const byte kZeroNonce[SymmetricCipher::NONCE_SIZE] = {0};
   std::vector<byte> ciphertext;
   if (!cipher.Encrypt(kZeroNonce,
-      reinterpret_cast<const byte*>(plaintext.data()),
-      plaintext.size(), &ciphertext)) {
+                      reinterpret_cast<const byte*>(plaintext.data()),
+                      plaintext.size(), &ciphertext)) {
     return kEncryptionFailed;
   }
 
@@ -202,9 +202,8 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
   // We use the master_key as the HMAC key and the client_secret as the
   // HMAC argument.
   std::vector<byte> element_bytes(crypto::hmac::TAG_SIZE);
-  if (!HMAC(master_key.data(), master_key.size(),
-      client_secret_.data(), ClientSecret::kNumSecretBytes,
-      element_bytes.data())) {
+  if (!HMAC(master_key.data(), master_key.size(), client_secret_.data(),
+            ClientSecret::kNumSecretBytes, element_bytes.data())) {
     return kEncryptionFailed;
   }
   FieldElement point_x(std::move(element_bytes));
@@ -223,4 +222,3 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
 }  // namespace forculus
 
 }  // namespace cobalt
-

@@ -20,13 +20,14 @@ namespace cobalt {
 namespace forculus {
 
 /****************************** Notice *************************************
-*
-* The tests currently in this file are based on the temporary, insecure
-* implementation of FieldElement that interprets the first 32 bits of
-* data as an integer in little-endian and discards the rest of the bytes.
-* These will be replaced by different tests when the field changes to GF(2^128).
-*
-*****************************************************************************/
+ *
+ * The tests currently in this file are based on the temporary, insecure
+ * implementation of FieldElement that interprets the first 32 bits of
+ * data as an integer in little-endian and discards the rest of the bytes.
+ * These will be replaced by different tests when the field changes to
+ *GF(2^128).
+ *
+ *****************************************************************************/
 
 namespace {
 // Make the FieldElement with the given vector of bytes. This wrapper around the
@@ -35,9 +36,7 @@ namespace {
 FieldElement FromBytes(std::vector<byte>&& bytes) {
   return FieldElement(std::move(bytes));
 }
-FieldElement FromString(const std::string& data) {
-  return FieldElement(data);
-}
+FieldElement FromString(const std::string& data) { return FieldElement(data); }
 
 FieldElement FromInt(uint32_t x) {
   std::vector<byte> bytes(sizeof(x));
@@ -114,10 +113,9 @@ TEST(FieldElementTest, TestCopyBytesToString) {
   el.CopyBytesToString(&s);
   EXPECT_EQ(FieldElement::kDataSize, s.size());
   std::string expected_string = std::string("\0\x1\x2\x3", 4) +
-      std::string(FieldElement::kDataSize - 4, 0);
+                                std::string(FieldElement::kDataSize - 4, 0);
   EXPECT_EQ(expected_string, s);
 }
-
 
 TEST(FieldElementTest, TestArithmetic) {
   // Test that 2 + 3 = 5.
@@ -127,7 +125,7 @@ TEST(FieldElementTest, TestArithmetic) {
   FieldElement x = FromInt(2);
   FieldElement y = FromInt(3);
   FieldElement z = FromInt(5);
-  x+= y;
+  x += y;
   EXPECT_EQ(z, x);
 
   // Test that -1 + 1 = 0.
@@ -137,7 +135,7 @@ TEST(FieldElementTest, TestArithmetic) {
 
   // Test that -1 + 1 = 0 with +=.
   x = kMinusOne;
-  x+= FieldElement(true);
+  x += FieldElement(true);
   EXPECT_EQ(FieldElement(false), x);
 
   // Test that 5 - 2 = 3
@@ -146,7 +144,7 @@ TEST(FieldElementTest, TestArithmetic) {
   // Test that 5 - 2 = 3 using -=.
   x = FromInt(5);
   y = FromInt(2);
-  x-= y;
+  x -= y;
   EXPECT_EQ(FromInt(3), x);
 
   // Test that 0 - 1 = -1
@@ -170,7 +168,7 @@ TEST(FieldElementTest, TestArithmetic) {
 
   // Test that 3 * 5 = 15 using *=
   x = FromInt(3);
-  x*= FromInt(5);
+  x *= FromInt(5);
   EXPECT_EQ(FromInt(15), x);
 
   // Test that -1 * 2 = -2.
@@ -179,54 +177,53 @@ TEST(FieldElementTest, TestArithmetic) {
 
   // Test that -1 * 2 = -2 using *=
   x = kMinusOne;
-  x*= FromInt(2);
+  x *= FromInt(2);
   EXPECT_EQ(kMinus2, x);
 
   // Check that 1/1 = 1.
   x = FieldElement(true);
-  EXPECT_EQ(x, x/x);
+  EXPECT_EQ(x, x / x);
 
   // Check that 5/5 = 1
   x = FromInt(5);
-  EXPECT_EQ(FieldElement(true), x/x);
+  EXPECT_EQ(FieldElement(true), x / x);
 
   // Check that 10/5 = 2
   y = FromInt(10);
-  EXPECT_EQ(FromInt(2), y/x);
+  EXPECT_EQ(FromInt(2), y / x);
 
   // Check that 10/5 = 2 using /=
   y = FromInt(10);
-  y/=x;
+  y /= x;
   EXPECT_EQ(FromInt(2), y);
 
   // Check that 0/5 = 0
   y = FieldElement(false);
-  EXPECT_EQ(y, y/x);
+  EXPECT_EQ(y, y / x);
 
   // Check that 1/2 * 2 = 1.
-  x = FieldElement(true)/FromInt(2);
+  x = FieldElement(true) / FromInt(2);
   x *= FromInt(2);
   EXPECT_EQ(FieldElement(true), x);
 
   // Check that 2/3 * 3 = 2.
-  x = FromInt(2)/FromInt(3);
+  x = FromInt(2) / FromInt(3);
   x *= FromInt(3);
   EXPECT_EQ(FromInt(2), x);
 
   // Check that 2/3 * 2/3 = 4/9
-  x = FromInt(2)/FromInt(3);
-  x*= x;
-  EXPECT_EQ(FromInt(4)/FromInt(9), x);
+  x = FromInt(2) / FromInt(3);
+  x *= x;
+  EXPECT_EQ(FromInt(4) / FromInt(9), x);
 
   // Check that 1999*1000/(1000 - 999) + 2001*999/(999 - 1000) = 1.
   FieldElement x0 = FromInt(999);
   FieldElement y0 = FromInt(1999);
   FieldElement x1 = FromInt(1000);
   FieldElement y1 = FromInt(2001);
-  EXPECT_EQ(FieldElement(true), y0*x1/(x1-x0) + y1*x0/(x0 -x1));
+  EXPECT_EQ(FieldElement(true), y0 * x1 / (x1 - x0) + y1 * x0 / (x0 - x1));
 }
 
 }  // namespace forculus
 
 }  // namespace cobalt
-

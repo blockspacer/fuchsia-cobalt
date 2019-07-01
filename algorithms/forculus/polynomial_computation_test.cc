@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "algorithms/forculus/polynomial_computations.h"
-
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
@@ -38,7 +37,7 @@ TEST(PolynomialComputationsTest, TestEvaluateSmallPolynomial) {
 
   // Construct the 2nd degree polynomial 5 + 7x + 9x^2
   std::vector<FieldElement> coefficients;
-  for (byte i = 5; i <=9 ; i+=2) {
+  for (byte i = 5; i <= 9; i += 2) {
     coefficients.emplace_back(FromInt(i));
   }
 
@@ -86,7 +85,7 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
 
   // Construct the 2nd degree polynomial 5 + 7x + 9x^2
   std::vector<FieldElement> coefficients;
-  for (byte i = 5; i <=9 ; i+=2) {
+  for (byte i = 5; i <= 9; i += 2) {
     coefficients.emplace_back(FromInt(i));
   }
 
@@ -113,7 +112,7 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
 
   // Interpolate to recover the constant term.
   FieldElement constant_term =
-    InterpolateConstant(x_value_pointers, y_value_pointers);
+      InterpolateConstant(x_value_pointers, y_value_pointers);
 
   EXPECT_EQ(coefficients[0], constant_term);
 }
@@ -127,13 +126,13 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
 //
 // Invokes the function InterpolateConstat() and checks that we get back c0.
 void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
-    uint32_t x0, uint32_t x_step) {
+                         uint32_t x0, uint32_t x_step) {
   // Construct the coefficients of the polynomial.
   std::vector<FieldElement> coefficients;
   uint32_t c = c0;
   for (size_t i = 0; i < num_points; i++) {
     coefficients.emplace_back(FromInt(c));
-    c+= c_step;
+    c += c_step;
   }
 
   // Construct x values x0=10, x1=11, x2=12, ... x{n-1}=10+{n-1}.
@@ -141,7 +140,7 @@ void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
   uint32_t x = x0;
   for (size_t i = 0; i < num_points; i++) {
     x_values.emplace_back(FromInt(x));
-    x+= x_step;
+    x += x_step;
   }
 
   // Evaluate the polynomial at each of the x values.
@@ -160,11 +159,12 @@ void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
 
   // Interpolate to recover the constant term.
   FieldElement constant_term =
-    InterpolateConstant(x_value_pointers, y_value_pointers);
+      InterpolateConstant(x_value_pointers, y_value_pointers);
 
   // Check that we got the right constant term.
-  EXPECT_EQ(coefficients[0], constant_term) << num_points << ", " << c0 <<
-      ", " << c_step << ", " << x0 << ", " << x_step;
+  EXPECT_EQ(coefficients[0], constant_term)
+      << num_points << ", " << c0 << ", " << c_step << ", " << x0 << ", "
+      << x_step;
 }
 
 TEST(PolynomialComputationsTest, TestInterpolate) {
@@ -185,4 +185,3 @@ TEST(PolynomialComputationsTest, TestInterpolate) {
 
 }  // namespace forculus
 }  // namespace cobalt
-

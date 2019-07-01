@@ -21,33 +21,28 @@ namespace rappor {
 // Tests the function DataToBinaryString().
 TEST(TestUtilsTest, DataToBinaryString) {
   // One byte
-  EXPECT_EQ(DataToBinaryString(std::string("\0", 1)),   "00000000");
-  EXPECT_EQ(DataToBinaryString(std::string("\x1", 1)),  "00000001");
-  EXPECT_EQ(DataToBinaryString(std::string("\x2", 1)),  "00000010");
-  EXPECT_EQ(DataToBinaryString(std::string("\x3", 1)),  "00000011");
+  EXPECT_EQ(DataToBinaryString(std::string("\0", 1)), "00000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\x1", 1)), "00000001");
+  EXPECT_EQ(DataToBinaryString(std::string("\x2", 1)), "00000010");
+  EXPECT_EQ(DataToBinaryString(std::string("\x3", 1)), "00000011");
   EXPECT_EQ(DataToBinaryString(std::string("\xFE", 1)), "11111110");
 
   // Two bytes
-  EXPECT_EQ(DataToBinaryString(std::string("\0\0", 2)),
-      "0000000000000000");
-  EXPECT_EQ(DataToBinaryString(std::string("\0\1", 2)),
-      "0000000000000001");
-  EXPECT_EQ(DataToBinaryString(std::string("\1\0", 2)),
-      "0000000100000000");
-  EXPECT_EQ(DataToBinaryString(std::string("\0\1", 2)),
-      "0000000000000001");
-  EXPECT_EQ(DataToBinaryString(std::string("\1\xFE", 2)),
-      "0000000111111110");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\0", 2)), "0000000000000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\1", 2)), "0000000000000001");
+  EXPECT_EQ(DataToBinaryString(std::string("\1\0", 2)), "0000000100000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\1", 2)), "0000000000000001");
+  EXPECT_EQ(DataToBinaryString(std::string("\1\xFE", 2)), "0000000111111110");
 
   // Three bytes
   EXPECT_EQ(DataToBinaryString(std::string("\0\0\0", 3)),
-      "000000000000000000000000");
+            "000000000000000000000000");
   EXPECT_EQ(DataToBinaryString(std::string("\0\0\1", 3)),
-      "000000000000000000000001");
+            "000000000000000000000001");
   EXPECT_EQ(DataToBinaryString(std::string("\0\1\0", 3)),
-      "000000000000000100000000");
+            "000000000000000100000000");
   EXPECT_EQ(DataToBinaryString(std::string("\1\1\0", 3)),
-      "000000010000000100000000");
+            "000000010000000100000000");
 }
 
 // Test the function BinaryStringToData

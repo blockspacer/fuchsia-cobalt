@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "algorithms/forculus/forculus_analyzer.h"
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -22,6 +20,7 @@
 #include <fstream>
 #include <streambuf>
 
+#include "algorithms/forculus/forculus_analyzer.h"
 #include "algorithms/forculus/forculus_encrypter.h"
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
