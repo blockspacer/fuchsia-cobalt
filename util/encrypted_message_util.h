@@ -48,34 +48,6 @@ class EncryptedMessageMaker {
   // text. This scheme must never be used in production Cobalt.
   static std::unique_ptr<EncryptedMessageMaker> MakeUnencrypted();
 
-  // Make a HybridEcdhEncryptedMessageMaker.
-  // Messages will be encrypted using version 1 of Cobalt's Elliptic-Curve
-  // Diffie-Hellman-based hybrid public-key/private-key encryption scheme using
-  // the |public_key_pem| that was passed in..
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeHybridEcdh(const std::string& public_key_pem);
-
-  // Make a HybridTinkEncryptedMessageMaker.
-  // Messages will be encrypted using Tink's hybrid encryption scheme based on
-  // the keyset passed in. |public_keyset_base64| is a tink::Keyset protobuf
-  // message serialized and base64 encoded.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeHybridTink(const std::string& public_keyset_base64);
-
-  // Make a HybridTinkEncryptedMessageMaker to encrypt Observations.
-  // Messages will be encrypted using Tink's hybrid encryption scheme based on
-  // the keyset passed in. |public_keyset_base64| is a tink::Keyset protobuf
-  // message serialized and base64 encoded.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeHybridTinkForObservations(const std::string& public_keyset_base64);
-
-  // Make a HybridTinkEncryptedMessageMaker to encrypt Envelopes.
-  // Messages will be encrypted using Tink's hybrid encryption scheme based on
-  // the keyset passed in. |public_keyset_base64| is a tink::Keyset protobuf
-  // message serialized and base64 encoded.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeHybridTinkForEnvelopes(const std::string& public_keyset_base64);
-
   // Make an EncryptedMessageMaker to encrypt Envelopes.
   // Messages will be encrypted using the scheme corresponding to the key
   // that is passed in. |cobalt_encryption_key_bytes| is a serialized
@@ -112,24 +84,6 @@ class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
   std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter_;
   std::string context_info_;
   uint32_t key_index_;
-};
-
-// HybridEcdhEncryptedMessageMaker is an implementation of
-// EncryptedMessageMaker. See EncryptedMessage::HYBRID_ECDH_V1 for details.
-class HybridEcdhEncryptedMessageMaker : public EncryptedMessageMaker {
- public:
-  explicit HybridEcdhEncryptedMessageMaker(
-      std::unique_ptr<crypto::HybridCipher> cipher);
-
-  bool Encrypt(const google::protobuf::MessageLite& message,
-               EncryptedMessage* encrypted_message) const;
-
-  EncryptedMessage::EncryptionScheme scheme() const {
-    return EncryptedMessage::HYBRID_ECDH_V1;
-  }
-
- private:
-  std::unique_ptr<crypto::HybridCipher> cipher_;
 };
 
 // UnencryptedMessageMaker is an implementation of EncryptedMessageMaker that

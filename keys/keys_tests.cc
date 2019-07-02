@@ -36,38 +36,6 @@ void EncryptSomething(cobalt::util::EncryptedMessageMaker* maker,
   ASSERT_TRUE(maker->Encrypt(observation, encrypted_message));
 }
 
-TEST(KeysTests, TestAnalyzerTinkKey) {
-  std::string key_bytes;
-  ReadKey("analyzer_public_key.tink", &key_bytes);
-
-  auto maker_result =
-      cobalt::util::EncryptedMessageMaker::MakeHybridTinkForObservations(
-          key_bytes);
-  ASSERT_TRUE(maker_result.ok());
-
-  cobalt::EncryptedMessage encrypted_message;
-  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
-
-  EXPECT_EQ(cobalt::EncryptedMessage::HYBRID_TINK, encrypted_message.scheme());
-  EXPECT_EQ(0u, encrypted_message.key_index());
-}
-
-TEST(KeysTests, TestShufflerTinkKey) {
-  std::string key_bytes;
-  ReadKey("shuffler_public_key.tink", &key_bytes);
-
-  auto maker_result =
-      cobalt::util::EncryptedMessageMaker::MakeHybridTinkForEnvelopes(
-          key_bytes);
-  ASSERT_TRUE(maker_result.ok());
-
-  cobalt::EncryptedMessage encrypted_message;
-  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
-
-  EXPECT_EQ(cobalt::EncryptedMessage::HYBRID_TINK, encrypted_message.scheme());
-  EXPECT_EQ(0u, encrypted_message.key_index());
-}
-
 TEST(KeysTests, TestAnalyzerCobaltEncryptionKey) {
   std::string key_bytes;
   ReadKey("analyzer_public.cobalt_key", &key_bytes);

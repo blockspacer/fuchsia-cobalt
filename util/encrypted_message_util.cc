@@ -15,7 +15,6 @@
 #include "third_party/tink/cc/hybrid/hybrid_config.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
 #include "third_party/tink/cc/keyset_handle.h"
-#include "util/crypto_util/base64.h"
 #include "util/crypto_util/cipher.h"
 #include "util/status.h"
 #include "util/status_codes.h"
@@ -63,25 +62,6 @@ MakeHybridTinkEncryptedMessageMaker(const std::string& public_keyset_bytes,
           std::move(primitive_result.ValueOrDie()), context_info, key_index));
 
   return maker;
-}
-
-// Make a HybridTinkEncryptedMessageMaker from a base64 encoded keyset.
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-MakeHybridTinkEncryptedMessageMakerFromBase64(
-    const std::string& public_keyset_base64, const std::string& context_info,
-    uint32_t key_index = 0) {
-  if (public_keyset_base64.empty()) {
-    return Status(INVALID_ARGUMENT, "EncryptedMessageMaker: Empty key.");
-  }
-
-  std::string public_keyset_bytes;
-  if (!crypto::Base64Decode(public_keyset_base64, &public_keyset_bytes)) {
-    return Status(INVALID_ARGUMENT,
-                  "EncryptedMessageMaker: Invalid base64-encoded keyset.");
-  }
-
-  return MakeHybridTinkEncryptedMessageMaker(public_keyset_bytes, context_info,
-                                             key_index);
 }
 
 // Parse and validate a serialized CobaltEncryptionKey.
@@ -159,39 +139,6 @@ EncryptedMessageMaker::MakeForObservations(
       cobalt_encryption_key.key_index());
 }
 
-// TODO(azani): Delete when we stop using it.
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeHybridTink(const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
-                                                       "");
-}
-
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeHybridTinkForEnvelopes(
-    const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
-                                                       kShufflerContextInfo);
-}
-
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeHybridTinkForObservations(
-    const std::string& public_keyset_base64) {
-  return MakeHybridTinkEncryptedMessageMakerFromBase64(public_keyset_base64,
-                                                       kAnalyzerContextInfo);
-}
-
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-EncryptedMessageMaker::MakeHybridEcdh(const std::string& public_key_pem) {
-  auto cipher = std::make_unique<HybridCipher>();
-  if (!cipher->set_public_key_pem(public_key_pem)) {
-    // TODO(azani): Return an error here.
-    cipher.reset();
-  }
-  std::unique_ptr<EncryptedMessageMaker> maker(
-      new HybridEcdhEncryptedMessageMaker(std::move(cipher)));
-  return maker;
-}
-
 HybridTinkEncryptedMessageMaker::HybridTinkEncryptedMessageMaker(
     std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
     const std::string& context_info, uint32_t key_index)
@@ -226,44 +173,6 @@ bool HybridTinkEncryptedMessageMaker::Encrypt(
     encrypted_message->set_key_index(key_index_);
   }
 
-  return true;
-}
-
-HybridEcdhEncryptedMessageMaker::HybridEcdhEncryptedMessageMaker(
-    std::unique_ptr<HybridCipher> cipher)
-    : cipher_(std::move(cipher)) {}
-
-bool HybridEcdhEncryptedMessageMaker::Encrypt(
-    const google::protobuf::MessageLite& message,
-    EncryptedMessage* encrypted_message) const {
-  TRACE_DURATION("cobalt_core", "HybridEcdhEncryptedMessageMaker::Encrypt");
-  if (!encrypted_message) {
-    return false;
-  }
-
-  std::string serialized_message;
-  message.SerializeToString(&serialized_message);
-
-  VLOG(5) << "EncryptedMessage: encryption_scheme=HYBRID_ECDH_V1.";
-
-  if (!cipher_) {
-    return false;
-  }
-
-  std::vector<byte> ciphertext;
-  if (!cipher_->Encrypt((const byte*)serialized_message.data(),
-                        serialized_message.size(), &ciphertext)) {
-    return false;
-  }
-  encrypted_message->set_allocated_ciphertext(
-      new std::string((const char*)ciphertext.data(), ciphertext.size()));
-  encrypted_message->set_scheme(EncryptedMessage::HYBRID_ECDH_V1);
-  byte fingerprint[HybridCipher::PUBLIC_KEY_FINGERPRINT_SIZE];
-  if (!cipher_->public_key_fingerprint(fingerprint)) {
-    return false;
-  }
-  encrypted_message->set_allocated_public_key_fingerprint(
-      new std::string((const char*)fingerprint, sizeof(fingerprint)));
   return true;
 }
 

@@ -478,8 +478,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
         cobalt::util::ReadNonEmptyTextFile(FLAGS_analyzer_tink_keyset_file)
             .ValueOrDie();
     observation_encrypter =
-        EncryptedMessageMaker::MakeHybridTinkForObservations(key_value)
-            .ValueOrDie();
+        EncryptedMessageMaker::MakeForObservations(key_value).ValueOrDie();
   }
 
   std::unique_ptr<EncryptedMessageMaker> envelope_encrypter;
@@ -495,8 +494,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
         cobalt::util::ReadNonEmptyTextFile(FLAGS_shuffler_tink_keyset_file)
             .ValueOrDie();
     envelope_encrypter =
-        EncryptedMessageMaker::MakeHybridTinkForObservations(key_value)
-            .ValueOrDie();
+        EncryptedMessageMaker::MakeForObservations(key_value).ValueOrDie();
   }
 
   std::unique_ptr<SystemDataInterface> system_data(
