@@ -277,17 +277,15 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context,
       event_aggregator_(event_aggregator),
       observation_writer_(observation_writer),
       system_data_(system_data),
-      clock_(new SystemClock()) {
+      clock_(new SystemClock()),
+      // No Cobalt Registry is provided to the InternalMetrics since each call
+      // logs a Project object which contains the customer and project name.
+      internal_metrics_(InternalMetrics::NewWithLogger(internal_logger)) {
   CHECK(project_context_);
   CHECK(encoder_);
   CHECK(event_aggregator_);
   CHECK(observation_writer_);
-  if (internal_logger) {
-    internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
-  } else {
-    // We were not provided with a metrics logger. We must create one.
-    internal_metrics_.reset(new NoOpInternalMetrics());
-  }
+
   if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
     LOG(ERROR) << "Failed to provide aggregation configurations to the "
                   "EventAggregator.";

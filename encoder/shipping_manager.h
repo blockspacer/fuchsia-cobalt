@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "./logging.h"
+#include "config/cobalt_registry.pb.h"
 #include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
 #include "encoder/observation_store_update_recipient.h"
@@ -294,9 +295,10 @@ class ClearcutV1ShippingManager : public ShippingManager {
       logger::LoggerInterface* internal_logger = nullptr);
 
   // Resets the internal metrics to use the provided logger.
-  void ResetInternalMetrics(
-      logger::LoggerInterface* internal_logger = nullptr) {
-    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr,
+                            const CobaltRegistry* cobalt_registry = nullptr) {
+    internal_metrics_ = logger::InternalMetrics::NewWithLoggerAndCobaltRegistry(
+        internal_logger, cobalt_registry);
   }
 
  private:
