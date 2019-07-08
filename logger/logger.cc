@@ -102,10 +102,25 @@ class EventLogger {
       const ReportDefinition& report, bool may_invalidate,
       EventRecord* event_record);
 
-  std::string TraceEvent(Event* event);
+  // Traces an |event_record| into a string if the metric is tagged with
+  // also_log_locally. If not, it will return the empty string.
+  std::string TraceEvent(EventRecord* event_record);
+
+  // Logs a trace of an |event_record| that failed to be logged to Cobalt.
+  //
+  // |status| The status code reported to the user.
+  // |event_record| The event_record associated with the event.
+  // |trace| The string output from TraceEvent().
+  // |report| Information about the report for which the logging failed.
   void TraceLogFailure(const Status& status, EventRecord* event_record,
+                       const std::string& trace,
                        const ReportDefinition& report);
-  void TraceLogSuccess(EventRecord* event_record);
+
+  // Logs a trace of an |event_record| that successfully logged to Cobalt.
+  //
+  // |event_record| The event_record associated with the event.
+  // |trace| The string output from TraceEvent().
+  void TraceLogSuccess(EventRecord* event_record, const std::string& trace);
 
   Logger* logger_;
 };
@@ -405,7 +420,13 @@ void Logger::ResumeInternalLogging() { internal_metrics_->ResumeLogging(); }
 
 //////////////////// EventLogger method implementations ////////////////////////
 
-std::string EventLogger::TraceEvent(Event* event) {
+std::string EventLogger::TraceEvent(EventRecord* event_record) {
+  if (!event_record->metric->meta_data().also_log_locally()) {
+    return "";
+  }
+
+  auto event = event_record->event.get();
+
   std::stringstream ss;
   ss << "Day index: " << event->day_index() << std::endl;
   if (event->has_occurrence_event()) {
@@ -501,6 +522,7 @@ std::string EventLogger::TraceEvent(Event* event) {
 
 void EventLogger::TraceLogFailure(const Status& status,
                                   EventRecord* event_record,
+                                  const std::string& trace,
                                   const ReportDefinition& report) {
   if (!event_record->metric->meta_data().also_log_locally()) {
     return;
@@ -510,11 +532,12 @@ void EventLogger::TraceLogFailure(const Status& status,
       << TRACE_PREFIX << "("
       << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
       << "): Error (" << status << ")" << std::endl
-      << TraceEvent(event_record->event.get())
-      << "While trying to send report: " << report.report_name() << std::endl;
+      << trace << "While trying to send report: " << report.report_name()
+      << std::endl;
 }
 
-void EventLogger::TraceLogSuccess(EventRecord* event_record) {
+void EventLogger::TraceLogSuccess(EventRecord* event_record,
+                                  const std::string& trace) {
   if (!event_record->metric->meta_data().also_log_locally()) {
     return;
   }
@@ -523,7 +546,7 @@ void EventLogger::TraceLogSuccess(EventRecord* event_record) {
       << TRACE_PREFIX << "("
       << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
       << "):" << std::endl
-      << TraceEvent(event_record->event.get());
+      << trace;
 }
 
 Status EventLogger::Log(uint32_t metric_id,
@@ -559,10 +582,15 @@ Status EventLogger::Log(uint32_t metric_id,
             << project_context()->FullMetricName(*event_record->metric);
   }
 
+  // Store the trace before attempting to log the event. This way, if parts of
+  // the event are moved out of the object, the resulting trace will still have
+  // useful information.
+  auto trace = TraceEvent(event_record);
+
   for (const auto& report : event_record->metric->reports()) {
     status = MaybeUpdateLocalAggregation(report, event_record);
     if (status != kOK) {
-      TraceLogFailure(status, event_record, report);
+      TraceLogFailure(status, event_record, trace, report);
       return status;
     }
 
@@ -578,12 +606,12 @@ Status EventLogger::Log(uint32_t metric_id,
     status =
         MaybeGenerateImmediateObservation(report, may_invalidate, event_record);
     if (status != kOK) {
-      TraceLogFailure(status, event_record, report);
+      TraceLogFailure(status, event_record, trace, report);
       return status;
     }
   }
 
-  TraceLogSuccess(event_record);
+  TraceLogSuccess(event_record, trace);
   return kOK;
 }
 
