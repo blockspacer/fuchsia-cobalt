@@ -73,7 +73,7 @@ test("forculus_tests") {
 test("forculus_performance_test") {
   testonly = true
 
-  if (cobalt_root == "//") {
+  if (!is_fuchsia_tree) {
     output_dir = "$root_out_dir/tests/perf"
   }
 

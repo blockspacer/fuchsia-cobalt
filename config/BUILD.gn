@@ -149,7 +149,8 @@ group("tests") {
     ":project_configs_test",
   ]
 
-  if (cobalt_root == "//") {
+  # TODO(CB-351): Figure out why these break the asan build
+  if (!is_fuchsia_tree) {
     deps += [
       "config_change_validator:tests",
       "config_parser:tests",

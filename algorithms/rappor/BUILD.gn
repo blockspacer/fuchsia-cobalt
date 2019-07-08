@@ -46,7 +46,7 @@ source_set("rappor_encoder") {
   configs += [ ":rappor_config" ]
 }
 
-if (!is_fuchsia) {
+if (!is_fuchsia_tree) {
   source_set("lasso_runner") {
     sources = [
       "lasso_runner.cc",
@@ -73,7 +73,7 @@ source_set("rappor_config_helper") {
   configs += [ ":rappor_config" ]
 }
 
-if (!is_fuchsia) {
+if (!is_fuchsia_tree) {
   source_set("rappor_analyzer") {
     sources = [
       "basic_rappor_analyzer.cc",
@@ -106,7 +106,7 @@ test("rappor_tests") {
     "rappor_test_utils_test.cc",
   ]
 
-  if (!is_fuchsia) {
+  if (!is_fuchsia_tree) {
     sources += [
       "basic_rappor_analyzer_test.cc",
       "bloom_bit_counter_test.cc",
@@ -123,7 +123,7 @@ test("rappor_tests") {
     "//third_party/googletest:gtest",
     "//third_party/grpc:grpc++",
   ]
-  if (!is_fuchsia) {
+  if (!is_fuchsia_tree) {
     deps += [ ":rappor_analyzer" ]
   } else {
     deps += [ "//third_party/googletest:gtest_main" ]
@@ -132,7 +132,7 @@ test("rappor_tests") {
 }
 
 test("rappor_manual_tests") {
-  if (cobalt_root == "//") {
+  if (!is_fuchsia_tree) {
     output_dir = "$root_out_dir/tests/manual"
   }
 
@@ -140,7 +140,7 @@ test("rappor_manual_tests") {
     "rappor_test_utils.cc",
     "rappor_test_utils_test.cc",
   ]
-  if (!is_fuchsia) {
+  if (!is_fuchsia_tree) {
     sources += [
       "rappor_analyzer_manual_tests.cc",
       "rappor_analyzer_test.cc",
@@ -155,13 +155,13 @@ test("rappor_manual_tests") {
     "//third_party/googletest:gtest_main",
     "//third_party/grpc:grpc++",
   ]
-  if (!is_fuchsia) {
+  if (!is_fuchsia_tree) {
     deps += [ ":rappor_analyzer" ]
   }
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
-if (!is_fuchsia) {
+if (!is_fuchsia_tree) {
   source_set("lasso_runner_tests") {
     testonly = true
     sources = [
@@ -184,7 +184,7 @@ group("tests") {
     ":rappor_tests",
   ]
 
-  if (!is_fuchsia) {
+  if (!is_fuchsia_tree) {
     deps += [ ":lasso_runner_tests" ]
   }
 }
