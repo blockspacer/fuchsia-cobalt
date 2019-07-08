@@ -147,7 +147,12 @@ group("tests") {
     ":id_test",
     ":packed_event_codes_test",
     ":project_configs_test",
-    "config_change_validator:tests",
-    "config_parser:tests",
   ]
+
+  if (cobalt_root == "//") {
+    deps += [
+      "config_change_validator:tests",
+      "config_parser:tests",
+    ]
+  }
 }
