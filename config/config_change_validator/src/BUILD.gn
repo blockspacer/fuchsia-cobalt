@@ -4,10 +4,11 @@
 
 import("//build/go/go_binary.gni")
 import("//build/go/go_library.gni")
+import("//build/go/go_test.gni")
 
 go_library("config") {
   name = "config"
-  source_dir = "$root_gen_dir/go-proto-gen/src/third_party/cobalt/config"
+  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/config"
   non_go_deps = [ "$cobalt_root/config:cobalt_registry_proto" ]
 }
 
@@ -16,6 +17,16 @@ foreach(pkg, _source_packages) {
   go_library(pkg) {
     name = pkg
     source_dir = pkg
+  }
+
+  go_test("${pkg}_test") {
+    gopackage = pkg
+    deps = [
+      ":$pkg",
+      ":config",
+      "//garnet/public/go/third_party:github.com/golang/glog",
+      "//garnet/public/go/third_party:github.com/golang/protobuf",
+    ]
   }
 }
 
@@ -40,5 +51,14 @@ go_binary("bin") {
   ]
   foreach(pkg, _source_packages) {
     deps += [ ":$pkg" ]
+  }
+}
+
+group("tests") {
+  testonly = true
+
+  deps = []
+  foreach(pkg, _source_packages) {
+    deps += [ ":${pkg}_test" ]
   }
 }

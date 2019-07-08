@@ -28,7 +28,7 @@ func validateConfiguredReports(config *config.ProjectConfigFile) (err error) {
 
 		reportKey := report.Id
 		if reportIds[reportKey] {
-			return fmt.Errorf("Report id %s is repeated in report config entry number %v. Report ids must be unique.", reportKey, i+1)
+			return fmt.Errorf("Report id %v is repeated in report config entry number %v. Report ids must be unique.", reportKey, i+1)
 		}
 		reportIds[reportKey] = true
 

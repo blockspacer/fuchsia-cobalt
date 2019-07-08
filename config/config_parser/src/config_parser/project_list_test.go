@@ -343,7 +343,7 @@ cobalt_version: 0
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err != nil {
-		t.Error("Rejected a project with Cobalt version 0: %v", err)
+		t.Errorf("Rejected a project with Cobalt version 0: %v", err)
 	}
 
 	y = `
@@ -353,7 +353,7 @@ cobalt_version: 1
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err != nil {
-		t.Error("Rejected a project with Cobalt version 1: %v", err)
+		t.Errorf("Rejected a project with Cobalt version 1: %v", err)
 	}
 
 	// Checks that an error is returned if the Cobalt version is an unexpected value.

@@ -55,15 +55,22 @@ group("tracing") {
   }
 }
 
+group("tests") {
+  testonly = true
+  deps = [
+    "config:tests",
+    "encoder:unittests",
+    "logger:tests",
+  ]
+}
+
 executable("cobalt_core_unittests") {
   testonly = true
 
   output_name = "cobalt_core_tests"
 
   deps = [
-    "config:tests",
-    "encoder:unittests",
-    "logger:tests",
+    ":tests",
     "//third_party/boringssl:crypto",
     "//third_party/googletest:gtest_main",
   ]

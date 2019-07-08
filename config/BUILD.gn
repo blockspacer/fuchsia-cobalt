@@ -23,7 +23,7 @@ proto_library("cobalt_registry_proto") {
   ]
   import_dirs = [ "//third_party/protobuf/src" ]
   generate_python = false
-  generate_go = current_toolchain == host_toolchain
+  generate_go = true
   cc_generator_options = "lite"
 
   deps = [
@@ -138,6 +138,7 @@ source_set("packed_event_codes_test") {
 
   configs += [ "$cobalt_root:cobalt_config" ]
 }
+
 group("tests") {
   testonly = true
 
@@ -146,5 +147,7 @@ group("tests") {
     ":id_test",
     ":packed_event_codes_test",
     ":project_configs_test",
+    "config_change_validator:tests",
+    "config_parser:tests",
   ]
 }

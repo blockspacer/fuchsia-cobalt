@@ -20,7 +20,7 @@ func validateConfiguredEncodings(config *config.ProjectConfigFile) (err error) {
 
 		encodingKey := encoding.Id
 		if encodingIds[encodingKey] {
-			return fmt.Errorf("Encoding id %s is repeated in encoding config entry number %v. Encoding ids must be unique.", encodingKey, i+1)
+			return fmt.Errorf("Encoding id %v is repeated in encoding config entry number %v. Encoding ids must be unique.", encodingKey, i+1)
 		}
 		encodingIds[encodingKey] = true
 	}

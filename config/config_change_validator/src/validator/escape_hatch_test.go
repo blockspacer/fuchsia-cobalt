@@ -28,7 +28,7 @@ func TestShouldSkipCompatibilityChecks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := ShouldSkipCompatibilityChecks(tt.msg)
 			if r != tt.skip {
-				t.Errorf("Got %q, want %q", r, tt.skip)
+				t.Errorf("Got %v, want %v", r, tt.skip)
 			}
 		})
 	}

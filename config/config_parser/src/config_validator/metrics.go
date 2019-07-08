@@ -34,7 +34,7 @@ func validateConfiguredMetrics(config *config.ProjectConfigFile) (err error) {
 		metricKey := metric.Id
 
 		if metricIds[metricKey] {
-			return fmt.Errorf("Metric id %s is repeated in metric config entry number %v. Metric ids must be unique.", metricKey, i+1)
+			return fmt.Errorf("Metric id %v is repeated in metric config entry number %v. Metric ids must be unique.", metricKey, i+1)
 		}
 		metricIds[metricKey] = true
 

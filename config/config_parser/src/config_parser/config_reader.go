@@ -79,7 +79,7 @@ func ReadProjectConfigFromDirByName(rootDir string, customerId uint32, projectNa
 		}
 	}
 
-	return c, fmt.Errorf("Could not find config for customer %d, project %d", customerId, projectName)
+	return c, fmt.Errorf("Could not find config for customer %d, project %q", customerId, projectName)
 }
 
 // ReadConfigFromYaml reads the configuration for a single project from a single yaml file.

@@ -4,11 +4,33 @@
 
 import("//build/go/go_binary.gni")
 import("//build/go/go_library.gni")
+import("//build/go/go_test.gni")
+import("//third_party/protobuf/proto_library.gni")
 
 go_library("config") {
   name = "config"
   source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/config"
   non_go_deps = [ "$cobalt_root/config:cobalt_registry_proto" ]
+}
+
+proto_library("yamlpb_test_proto") {
+  generate_cc = false
+  generate_go = true
+  generate_python = false
+  sources = [
+    "yamlpb/yamlpb_test.proto",
+  ]
+
+  extra_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/config:proto_config",
+  ]
+}
+
+go_library("yamlpb_test_lib") {
+  name = "config/config_parser/src/yamlpb"
+  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/config/config_parser/src/yamlpb"
+  non_go_deps = [ ":yamlpb_test_proto" ]
 }
 
 _source_packages = [
@@ -46,5 +68,36 @@ go_binary("bin") {
   ]
   foreach(pkg, _source_packages) {
     deps += [ ":$pkg" ]
+  }
+}
+
+foreach(pkg, _source_packages) {
+  go_test("${pkg}_test") {
+    gopackage = pkg
+
+    deps = [
+      ":$pkg",
+      ":config_parser",
+      ":yamlpb",
+      "//garnet/public/go/third_party:github.com/go-yaml/yaml",
+      "//garnet/public/go/third_party:github.com/golang/glog",
+      "//garnet/public/go/third_party:github.com/golang/protobuf",
+      "//garnet/public/go/third_party:github.com/google/go-cmp",
+    ]
+
+    if (pkg == "yamlpb") {
+      deps += [ ":yamlpb_test_lib" ]
+    } else {
+      deps += [ ":config" ]
+    }
+  }
+}
+
+group("tests") {
+  testonly = true
+
+  deps = []
+  foreach(pkg, _source_packages) {
+    deps += [ ":${pkg}_test" ]
   }
 }
