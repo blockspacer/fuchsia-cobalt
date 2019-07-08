@@ -73,7 +73,9 @@ test("forculus_tests") {
 test("forculus_performance_test") {
   testonly = true
 
-  output_dir = "$root_out_dir/tests/perf"
+  if (cobalt_root == "//") {
+    output_dir = "$root_out_dir/tests/perf"
+  }
 
   sources = [
     "forculus_performance_test.cc",

@@ -132,7 +132,9 @@ test("rappor_tests") {
 }
 
 test("rappor_manual_tests") {
-  output_dir = "$root_out_dir/tests/manual"
+  if (cobalt_root == "//") {
+    output_dir = "$root_out_dir/tests/manual"
+  }
 
   sources = [
     "rappor_test_utils.cc",
