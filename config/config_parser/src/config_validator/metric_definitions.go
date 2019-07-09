@@ -250,6 +250,12 @@ func validateIntHistogram(m config.MetricDefinition) error {
 
 	// TODO(azani): Validate bucket definition.
 
+	for _, r := range m.Reports {
+		if m.IntBuckets != nil && r.IntBuckets != nil {
+			return fmt.Errorf("for report %q: both report and metric contain int_buckets stanzas, the stanza in %q will be ignored", r.ReportName, r.ReportName)
+		}
+	}
+
 	return validateMetricDimensions(m)
 }
 
