@@ -147,13 +147,7 @@ group("tests") {
     ":id_test",
     ":packed_event_codes_test",
     ":project_configs_test",
+    "config_change_validator:tests",
+    "config_parser:tests",
   ]
-
-  # TODO(CB-351): Figure out why these break the asan build
-  if (!is_fuchsia_tree) {
-    deps += [
-      "config_change_validator:tests",
-      "config_parser:tests",
-    ]
-  }
 }
