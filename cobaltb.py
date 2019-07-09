@@ -36,8 +36,8 @@ import tools.gitfmt as gitfmt
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 OUT_DIR = os.path.abspath(os.path.join(THIS_DIR, 'out'))
 SYSROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, 'sysroot'))
-CONFIG_SUBMODULE_PATH = os.path.join(THIS_DIR, 'third_party', 'config')
-CONFIG_BINARY_PROTO = os.path.join(OUT_DIR, 'third_party', 'config',
+CONFIG_SUBMODULE_PATH = os.path.join(THIS_DIR, 'third_party', 'cobalt_config')
+CONFIG_BINARY_PROTO = os.path.join(OUT_DIR, 'third_party', 'cobalt_config',
                                    'cobalt_config.binproto')
 
 _logger = logging.getLogger()
