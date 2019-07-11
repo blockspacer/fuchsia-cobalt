@@ -99,7 +99,12 @@ def _update_config(args):
 
 
 def _build(args):
-  subprocess.check_call([args.gn_path, 'gen', out_dir(args)])
+  gn = [args.gn_path, 'gen', out_dir(args)]
+  if args.release:
+    gn += [ "--args=is_debug=false" ]
+  else:
+    gn += [ "--args=is_debug=true" ]
+  subprocess.check_call(gn)
   subprocess.check_call([args.ninja_path , '-C', out_dir(args)])
 
 
@@ -674,6 +679,8 @@ def main():
       '--gn_path', default='gn', help='Path to GN binary')
   sub_parser.add_argument(
       '--ninja_path', default='ninja', help='Path to Ninja binary')
+  sub_parser.add_argument(
+      '--release', action='store_true', help='Should build release build')
   sub_parser.set_defaults(func=_build)
 
   ########################################################

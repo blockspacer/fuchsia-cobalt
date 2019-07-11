@@ -83,6 +83,8 @@ TEST(ForculusDecrypterTest, TestSuccessfulDecryption) {
   std::string recovered_text;
   EXPECT_EQ(ForculusDecrypter::kOK, decrypter->Decrypt(&recovered_text));
   EXPECT_EQ(plaintext, recovered_text);
+
+  delete decrypter;
 }
 
 // This function is similar to TestSuccesfulDecryption above except that it
@@ -119,6 +121,8 @@ void DoDecryptValueTest(const ValuePart& value) {
     default:
       EXPECT_TRUE(false) << "unexpected case";
   }
+
+  delete decrypter;
 }
 
 // This test is similar to TestSuccessfulDecryption but it uses the function

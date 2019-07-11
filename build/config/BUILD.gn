@@ -62,6 +62,26 @@ config("compiler") {
   asmflags += cflags_c
 }
 
+config("debug") {
+  cflags = [ "-O0" ]
+  ldflags = cflags
+}
+
+config("release") {
+  defines = [ "NDEBUG=1" ]
+  cflags = [
+    "-O3",
+    "-fdata-sections",
+    "-ffunction-sections",
+  ]
+  ldflags = cflags
+  if (current_os == "mac") {
+    ldflags += [ "-Wl,-dead_strip" ]
+  } else {
+    ldflags += [ "-Wl,--gc-sections" ]
+  }
+}
+
 config("default_include_dirs") {
   include_dirs = [
     "//",

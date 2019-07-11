@@ -2,6 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+declare_args() {
+  # Debug build.
+  is_debug = true
+}
+
 if (target_os == "") {
   target_os = host_os
 }
@@ -61,6 +66,16 @@ _shared_binary_target_configs = [
   "//build/config:cobalt_standalone",
   "//build/config:shared_library_config",
 ]
+
+if (is_debug) {
+  _shared_binary_target_configs += [
+    "//build/config:debug",
+    "//build/config/sanitizers:asan",
+    "//build/config/sanitizers:sancov",
+  ]
+} else {
+  _shared_binary_target_configs += [ "//build/config:release" ]
+}
 
 # Apply that default list to the binary target types.
 set_defaults("executable") {

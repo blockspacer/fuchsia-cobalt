@@ -1,0 +1,28 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+config("frame_pointers") {
+  cflags = [ "-fno-omit-frame-pointer" ]
+  ldflags = cflags
+}
+
+config("asan") {
+  common_flags = [ "-fsanitize=address" ]
+
+  asmflags = common_flags
+  cflags = common_flags
+  ldflags = common_flags
+
+  # ASan wants frame pointers because it captures stack traces
+  # on allocations and such, not just on errors.
+  configs = [ ":frame_pointers" ]
+}
+
+config("sancov") {
+  common_flags = [ "-fsanitize-coverage=trace-pc-guard" ]
+
+  asmflags = common_flags
+  cflags = common_flags
+  ldflags = common_flags
+}

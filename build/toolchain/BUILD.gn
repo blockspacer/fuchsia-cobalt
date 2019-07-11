@@ -22,5 +22,5 @@ pool("link") {
 clang_toolchain("clang") {
   toolchain_cpu = "x64"
   toolchain_os = "linux"
-  use_strip = true
+  use_strip = !is_debug
 }
