@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/mail"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -65,11 +66,11 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 	}
 
 	if m.MetaData == nil {
-		return fmt.Errorf("meta_data is not set.")
+		return fmt.Errorf("meta_data is not set, additionally, in meta_data: %v", validateMetadata(config.MetricDefinition_Metadata{}))
 	}
 
 	if err := validateMetadata(*m.MetaData); err != nil {
-		return fmt.Errorf("Error in meta_data: %v", err)
+		return fmt.Errorf("in meta_data: %v", err)
 	}
 
 	if m.IntBuckets != nil && m.MetricType != config.MetricDefinition_INT_HISTOGRAM {
@@ -94,33 +95,39 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 
 // Validate a single instance of Metadata.
 func validateMetadata(m config.MetricDefinition_Metadata) (err error) {
+	errors := []string{}
+
 	if len(m.ExpirationDate) == 0 {
-		return fmt.Errorf("No expiration_date set.")
-	}
-
-	var exp time.Time
-	exp, err = time.ParseInLocation(dateFormat, m.ExpirationDate, time.UTC)
-	if err != nil {
-		return fmt.Errorf("Invalid expiration_date '%v'. expiration_date must use the yyyy/mm/dd format.", m.ExpirationDate)
-	}
-
-	// Date one year and one day from today.
-	maxExp := time.Now().AddDate(1, 0, 0)
-	if exp.After(maxExp) {
-		return fmt.Errorf("The expiration_date must be set no more than 1 year in the future.")
+		errors = append(errors, "expiration_date field is required")
+	} else {
+		var exp time.Time
+		exp, err = time.ParseInLocation(dateFormat, m.ExpirationDate, time.UTC)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("expiration_date (%v) field is invalid, it must use the yyyy/mm/dd format", m.ExpirationDate))
+		} else {
+			// Date one year and one day from today.
+			maxExp := time.Now().AddDate(1, 0, 0)
+			if exp.After(maxExp) {
+				errors = append(errors, fmt.Sprintf("expiration_date must be no later than %v", maxExp.Format(dateFormat)))
+			}
+		}
 	}
 
 	for _, o := range m.Owner {
 		if _, err = mail.ParseAddress(o); err != nil {
-			return fmt.Errorf("'%v' is not a valid email address in owner field", o)
+			errors = append(errors, fmt.Sprintf("'%v' is not a valid email address in owner field", o))
 		}
 	}
 
 	if m.MaxReleaseStage == config.ReleaseStage_RELEASE_STAGE_NOT_SET {
-		return fmt.Errorf("No max_release_stage set.")
+		errors = append(errors, "max_release_stage is required")
 	}
 
-	return nil
+	if len(errors) > 0 {
+		return fmt.Errorf("%v", strings.Join(errors, ", "))
+	} else {
+		return nil
+	}
 }
 
 // Validate the event_codes and max_event_code fields.
