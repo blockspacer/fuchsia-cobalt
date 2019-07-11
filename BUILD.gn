@@ -108,5 +108,6 @@ group("default") {
   deps = [
     ":cobalt_core_unittests",
     "$cobalt_root/tools/test_app2",
+    "$cobalt_root/config/config_change_validator/src:bin",
   ]
 }
