@@ -176,9 +176,25 @@ func (r *configDirReader) Customers() (string, error) {
 	return string(customerList), nil
 }
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func (r *configDirReader) projectFilePath(customerName string, projectName string) string {
-	// A project's config is at <rootDir>/<customerName>/<projectName>/config.yaml
-	return filepath.Join(r.configDir, customerName, projectName, "config.yaml")
+	// Legacy project configs are at <rootDir>/<customerName>/<projectName>/config.yaml
+	// TODO(zmbush): Remove once all registry files are named metrics.yaml
+	legacyPath := filepath.Join(r.configDir, customerName, projectName, "config.yaml")
+
+	if fileExists(legacyPath) {
+		return legacyPath
+	}
+
+	// A project's metrics is at <rootDir>/<customerName>/<projectName>/metrics.yaml
+	return filepath.Join(r.configDir, customerName, projectName, "metrics.yaml")
 }
 
 func (r *configDirReader) Project(customerName string, projectName string) (string, error) {
