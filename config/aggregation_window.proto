@@ -1,0 +1,36 @@
+// Copyright 2019 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+syntax = "proto3";
+
+package cobalt;
+
+option go_package = "config";
+
+// A time window over which to aggregate Events on-device.
+message OnDeviceAggregationWindow {
+  oneof units {
+    AggregationHours hours = 1;
+    AggregationDays days = 2;
+  }
+}
+
+enum AggregationHours {
+  HOURS_UNSET = 0;
+
+  // Window size of 1 hour.
+  HOURS_1 = 1;
+}
+
+enum AggregationDays {
+  DAYS_UNSET = 0;
+
+  // Window size of 1 day.
+  DAYS_1 = 1;
+
+  // Window size of 7 days.
+  DAYS_7 = 7;
+
+  // Window size of 30 days.
+  DAYS_30 = 30;
+}

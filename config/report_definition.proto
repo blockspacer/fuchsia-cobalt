@@ -9,6 +9,7 @@ import "config/metrics.proto";
 import "config/report_configs.proto";
 import "config/window_size.proto";
 import "config/annotations.proto";
+import "config/aggregation_window.proto";
 
 option go_package = "config";
 
@@ -37,7 +38,7 @@ option go_package = "config";
 // An instance of ReportDefinition is always associated with an instance of
 // MetricDefinition called the owning MetricDefinition.
 message ReportDefinition {
-  // Next id: 16
+  // Next id: 17
 
   // Unique name for this Report within its owning MetricDefinition.
   // The name must obey the syntax of a C variable name and must have length
@@ -405,7 +406,19 @@ message ReportDefinition {
   // Used to specify the length in days of the rolling window for that
   // report type. Cobalt will send a separate Observation for each
   // WindowSize specified.
+  //
+  // TODO(pesk): make this a reserved name and ID once support for
+  // |aggregation_window| is done and existing reports are updated.
   repeated WindowSize window_size = 11;
+
+  // A time window in units of days or hours over which to aggregate events
+  // on-device. Cobalt will send a separate Observation for each
+  // OnDeviceAggregationWindow specified.
+  //
+  // TODO(pesk): update comment when transition is complete.
+  // This field is not yet supported. It will replace the |window_size|
+  // field and expand its functionality to include hourly windows.
+  repeated OnDeviceAggregationWindow aggregation_window = 16;
 
   // This field is used only with CUSTOM_RAW_DUMP Report type. Used to
   // specify the path to the location the metrics should be written to.
@@ -448,6 +461,7 @@ message ReportDefinition {
   repeated uint32 percentiles = 15;
 
   ///////////////////  Fields used by all metric types ///////////////////
+  // Next id: 103
 
   // The list of SystemProfileFields to include in each row of the report.
   // Optional. If not specified a reasonable default will be used.
