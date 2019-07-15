@@ -20,7 +20,7 @@ class MemoryObservationStore : public ObservationStore {
  public:
   MemoryObservationStore(size_t max_bytes_per_observation,
                          size_t max_bytes_per_envelope, size_t max_bytes_total,
-                         logger::LoggerInterface *internal_logger = nullptr);
+                         logger::LoggerInterface* internal_logger = nullptr);
 
   StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
@@ -31,12 +31,9 @@ class MemoryObservationStore : public ObservationStore {
   size_t Size() const override;
   bool Empty() const override;
 
-  // Resets the internal metrics to use the provided logger.
   void ResetInternalMetrics(
-      logger::LoggerInterface *internal_logger = nullptr,
-      const CobaltRegistry *cobalt_registry = nullptr) override {
-    internal_metrics_ = logger::InternalMetrics::NewWithLoggerAndCobaltRegistry(
-        internal_logger, cobalt_registry);
+      logger::LoggerInterface* internal_logger = nullptr) override {
+    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
 
  private:

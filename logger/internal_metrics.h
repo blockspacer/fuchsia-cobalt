@@ -5,12 +5,9 @@
 #ifndef COBALT_LOGGER_INTERNAL_METRICS_H_
 #define COBALT_LOGGER_INTERNAL_METRICS_H_
 
-#include <map>
 #include <memory>
 #include <string>
-#include <tuple>
 
-#include "config/cobalt_registry.pb.h"
 #include "config/project.pb.h"
 #include "logger/internal_metrics_config.cb.h"
 #include "logger/logger_interface.h"
@@ -29,16 +26,6 @@ class InternalMetrics {
   // NoOpInternalMetrics will be used.
   static std::unique_ptr<InternalMetrics> NewWithLogger(
       LoggerInterface* logger);
-
-  // Returns a pointer to an InternalMetrics object which can be used for
-  // collecting cobalt-internal metrics.
-  //
-  // |logger| the logger used to log internal metrics. If the pointer is null,
-  // NoOpInternalMetrics will be used.
-  // |cobalt_registry_bytes| serialized contents of CobaltRegistry. It will be
-  // used to map customer_id and project_id to customer_name and project_name.
-  static std::unique_ptr<InternalMetrics> NewWithLoggerAndCobaltRegistry(
-      LoggerInterface* logger, const CobaltRegistry* cobalt_registry);
 
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
@@ -98,8 +85,7 @@ class NoOpInternalMetrics : public InternalMetrics {
 // Logger constructor.
 class InternalMetricsImpl : public InternalMetrics {
  public:
-  InternalMetricsImpl(LoggerInterface* logger,
-                      const CobaltRegistry* cobalt_registry);
+  explicit InternalMetricsImpl(LoggerInterface* logger);
 
   void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
                     const Project& project) override;
@@ -117,20 +103,7 @@ class InternalMetricsImpl : public InternalMetrics {
   ~InternalMetricsImpl() override {}
 
  private:
-  // Returns "<customer_name>/<project_name>" if the mapping exists in the
-  // Cobalt Registry. Otherwise returns "<customer_id>/<project_id>".
-  std::string GetComponentName(uint32_t customer_id, uint32_t project_id);
-
   bool paused_;
-
-  // Map of <customer_id, project_id> to a string of the format
-  // "<customer_name>/<project_name>".
-  //
-  // TODO(ninai): Add the option of updating these mappings in the
-  // ObservationStore and ShippingManager by the Loggers. Currently, these will
-  // become stale if the CobaltApp is not updated.
-  std::map<std::tuple<uint32_t, uint32_t>, std::string> component_name_by_ids;
-
   LoggerInterface* logger_;  // not owned
 };
 

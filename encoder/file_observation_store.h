@@ -127,12 +127,9 @@ class FileObservationStore : public ObservationStore {
   size_t Size() const override;
   bool Empty() const override;
 
-  // Resets the internal metrics to use the provided logger.
   void ResetInternalMetrics(
-      logger::LoggerInterface *internal_logger = nullptr,
-      const CobaltRegistry *cobalt_registry = nullptr) override {
-    internal_metrics_ = logger::InternalMetrics::NewWithLoggerAndCobaltRegistry(
-        internal_logger, cobalt_registry);
+      logger::LoggerInterface *internal_logger = nullptr) override {
+    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
 
   // Delete removes all of the files associated with this FileObservationStore.

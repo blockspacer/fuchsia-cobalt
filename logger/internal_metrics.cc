@@ -15,38 +15,16 @@ namespace logger {
 
 std::unique_ptr<InternalMetrics> InternalMetrics::NewWithLogger(
     LoggerInterface* logger) {
-  return NewWithLoggerAndCobaltRegistry(logger, nullptr);
-}
-
-std::unique_ptr<InternalMetrics>
-InternalMetrics::NewWithLoggerAndCobaltRegistry(
-    LoggerInterface* logger, const CobaltRegistry* cobalt_registry) {
   if (logger) {
-    return std::make_unique<InternalMetricsImpl>(logger, cobalt_registry);
+    return std::make_unique<InternalMetricsImpl>(logger);
   } else {
     return std::make_unique<NoOpInternalMetrics>();
   }
 }
 
-InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger,
-                                         const CobaltRegistry* cobalt_registry)
+InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
     : paused_(false), logger_(logger) {
   CHECK(logger_);
-
-  if (cobalt_registry == nullptr) {
-    LOG(ERROR) << "The provided cobalt_registry was nullptr.";
-    return;
-  }
-
-  for (const auto& customer : cobalt_registry->customers()) {
-    for (const auto& project : customer.projects()) {
-      std::ostringstream component_name;
-      component_name << customer.customer_name() << '/'
-                     << project.project_name();
-      component_name_by_ids[std::make_tuple(
-          customer.customer_id(), project.project_id())] = component_name.str();
-    }
-  }
 }
 
 void InternalMetricsImpl::LoggerCalled(
@@ -97,32 +75,18 @@ void InternalMetricsImpl::BytesStored(
     return;
   }
 
-  auto status = logger_->LogMemoryUsage(
-      kPerProjectBytesStoredMetricId, upload_status,
-      GetComponentName(customer_id, project_id), byte_count);
+  std::ostringstream component;
+  component << customer_id << '/' << project_id;
+
+  auto status =
+      logger_->LogMemoryUsage(kPerProjectBytesStoredMetricId, upload_status,
+                              component.str(), byte_count);
 
   if (status != kOK) {
     VLOG(1)
         << "InternalMetricsImpl::BytesStored: LogEventCount() returned status="
         << status;
   }
-}
-
-std::string InternalMetricsImpl::GetComponentName(uint32_t customer_id,
-                                                  uint32_t project_id) {
-  auto component_name_iter =
-      component_name_by_ids.find(std::make_tuple(customer_id, project_id));
-
-  if (component_name_iter == component_name_by_ids.end()) {
-    LOG(ERROR) << "Could not find Customer and Project names for customer_id="
-               << customer_id << " and project_id=" << project_id;
-
-    std::ostringstream component;
-    component << customer_id << '/' << project_id;
-    return component.str();
-  }
-
-  return component_name_iter->second;
 }
 
 }  // namespace logger
