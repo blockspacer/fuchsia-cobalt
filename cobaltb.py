@@ -99,12 +99,53 @@ def _update_config(args):
 
 
 def _build(args):
-  gn = [args.gn_path, 'gen', out_dir(args)]
+  gn_args = []
+  use_goma = False
+  use_ccache = False
+  goma_dir = os.path.expanduser("~/goma")
+  if args.goma_dir:
+    goma_dir = args.goma_dir
+  if args.ccache:
+    use_ccache = True
+  if args.no_ccache:
+    use_ccache = False
+  if args.goma:
+    use_goma = True
+  if args.no_goma:
+    use_goma = False
+
+  if not use_goma and not use_ccache:
+    if os.path.exists(goma_dir):
+      use_goma = True
+
   if args.release:
-    gn += [ "--args=is_debug=false" ]
-  else:
-    gn += [ "--args=is_debug=true" ]
-  subprocess.check_call(gn)
+    gn_args.append('is_debug=false')
+  if use_goma:
+    gn_args.append('use_goma=true')
+    if goma_dir != '':
+      gn_args.append('goma_dir=\"%s\"' % goma_dir)
+  elif use_ccache:
+    gn_args.append('use_ccache=true')
+
+  if args.args != '':
+    gn_args.append(args.args)
+
+  if vars(args)['with']:
+    packages = "extra_package_labels=["
+    for target in vars(args)['with']:
+      packages += "\"%s\"," % target
+    packages += "]"
+
+    gn_args.append(packages)
+
+  # If goma isn't running, start it.
+  if use_goma:
+    if not subprocess.check_output(['%s/gomacc' % goma_dir, 'port']).strip().isdigit():
+      subprocess.check_call(['%s/goma_ctl.py' % goma_dir, 'ensure_start'])
+
+  subprocess.check_call([args.gn_path, 'gen', out_dir(args),
+    '--args=%s' % ' '.join(gn_args),
+  ])
   subprocess.check_call([args.ninja_path , '-C', out_dir(args)])
 
 
@@ -680,7 +721,22 @@ def main():
   sub_parser.add_argument(
       '--ninja_path', default='ninja', help='Path to Ninja binary')
   sub_parser.add_argument(
+      '--args', default='', help='Additional arguments to pass to gn')
+  sub_parser.add_argument(
+      '--ccache', action='store_true', help='The build should use ccache')
+  sub_parser.add_argument(
+      '--no-ccache', action='store_true', help='The build should not use ccache')
+  sub_parser.add_argument(
+      '--goma', action='store_true', help='The build should use goma')
+  sub_parser.add_argument(
+      '--no-goma', action='store_true', help='The build should not use goma')
+  sub_parser.add_argument(
+      '--goma_dir', default='',
+      help='The dir where goma is installed (defaults to ~/goma')
+  sub_parser.add_argument(
       '--release', action='store_true', help='Should build release build')
+  sub_parser.add_argument(
+      '--with', action='append', help='Additional packages to build')
   sub_parser.set_defaults(func=_build)
 
   ########################################################

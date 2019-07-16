@@ -6,6 +6,10 @@ import("//build/test.gni")
 import("//third_party/cobalt_config/metrics_registry.gni")
 import("//third_party/protobuf/proto_library.gni")
 
+declare_args() {
+  extra_package_labels = []
+}
+
 config("cobalt_config") {
   include_dirs = [
     "$cobalt_root",
@@ -110,4 +114,6 @@ group("default") {
     "$cobalt_root/tools/test_app2",
     "$cobalt_root/config/config_change_validator/src:bin",
   ]
+
+  deps += extra_package_labels
 }
