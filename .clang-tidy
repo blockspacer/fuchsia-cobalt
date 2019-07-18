@@ -22,7 +22,7 @@ Checks: >
 WarningsAsErrors: '*'
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
-HeaderFilterRegex: '.*\.\./(algorithms/forculus|keys|manifest|meta)'
+HeaderFilterRegex: '.*\.\./(algorithms|keys|manifest|meta)'
 CheckOptions:
   - key:             bugprone-assert-side-effect.AssertMacros
     value:           'FXL_DCHECK'

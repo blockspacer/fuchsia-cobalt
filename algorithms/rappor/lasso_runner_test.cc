@@ -4,11 +4,14 @@
 
 #include "algorithms/rappor/lasso_runner_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
+
+using cobalt_lossmin::InstanceSet;
+using cobalt_lossmin::LabelSet;
+using cobalt_lossmin::Weights;
 
 void LassoRunnerTest::SetLassoRunner(const InstanceSet* matrix) {
-  lasso_runner_.reset(new LassoRunner(matrix));
+  lasso_runner_ = std::make_unique<LassoRunner>(matrix);
 }
 
 void LassoRunnerTest::CheckFirstRapporStepCorrectness(
@@ -92,12 +95,15 @@ InstanceSet LassoRunnerTest::RandomMatrix(const int m, const int n,
   std::vector<Eigen::Triplet<double>> triplets(num_nonzero_entries);
   std::uniform_int_distribution<int> m_distribution(0, m - 1);
   std::uniform_int_distribution<int> n_distribution(0, n - 1);
-  std::uniform_real_distribution<double> real_distribution(1.0, 2.0);
+  static const double min_entry = 1.0;
+  static const double max_entry = 1.0;
+  std::uniform_real_distribution<double> real_distribution(min_entry,
+                                                           max_entry);
   for (int k = 0; k < num_nonzero_entries; k++) {
     uint32_t i = m_distribution(random_dev_);
     uint32_t j = n_distribution(random_dev_);
     double entry = real_distribution(random_dev_);
-    triplets.push_back(Eigen::Triplet<double>(i, j, entry));
+    triplets.emplace_back(Eigen::Triplet<double>(i, j, entry));
   }
   InstanceSet matrix(m, n);
   matrix.setFromTriplets(triplets.begin(), triplets.end());
@@ -105,5 +111,4 @@ InstanceSet LassoRunnerTest::RandomMatrix(const int m, const int n,
   return matrix;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

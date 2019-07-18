@@ -9,8 +9,7 @@
 #include "config/report_definition.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 TEST(RapporConfigHelperTest, ProbBitFlip) {
   ReportDefinition report_definition;
@@ -44,10 +43,12 @@ TEST(RapporConfigHelperTest, BasicRapporNumCategories) {
   EXPECT_EQ(1u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   metric_definition.mutable_metric_dimensions(0)->set_max_event_code(10);
   EXPECT_EQ(11u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   metric_definition.add_metric_dimensions()->set_max_event_code(10);
   EXPECT_EQ(0u,
             RapporConfigHelper::BasicRapporNumCategories(metric_definition));
@@ -57,29 +58,37 @@ TEST(RapporConfigHelperTest, StringRapporNumCohorts) {
   ReportDefinition report_definition;
   EXPECT_EQ(50u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(99);
   EXPECT_EQ(5u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(100);
   EXPECT_EQ(10u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(999);
   EXPECT_EQ(10u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(1000);
   EXPECT_EQ(50u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(9999);
   EXPECT_EQ(50u, RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(10000);
   EXPECT_EQ(100u,
             RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(10001);
   EXPECT_EQ(100u,
             RapporConfigHelper::StringRapporNumCohorts(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_population_size(100000);
   EXPECT_EQ(100u,
             RapporConfigHelper::StringRapporNumCohorts(report_definition));
@@ -90,37 +99,45 @@ TEST(RapporConfigHelperTest, StringRapporNumBloomBits) {
   EXPECT_EQ(32u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(99);
   EXPECT_EQ(8u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(100);
   EXPECT_EQ(16u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(999);
   EXPECT_EQ(16u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(1000);
   EXPECT_EQ(64u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(9999);
   EXPECT_EQ(64u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(10000);
   EXPECT_EQ(128u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(10001);
   EXPECT_EQ(128u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 
+  // NOLINTNEXTLINE readability-magic-numbers
   report_definition.set_expected_string_set_size(100000);
   EXPECT_EQ(128u,
             RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 }
-}  // namespace rappor
-}  // namespace cobalt
+
+}  // namespace cobalt::rappor

@@ -51,7 +51,7 @@ class RapporAnalyzerTest : public ::testing::Test {
     return analyzer_->candidate_matrix_;
   }
 
-  void AddObservation(uint32_t cohort, std::string binary_string);
+  void AddObservation(uint32_t cohort, const std::string& binary_string);
 
   void ExtractEstimatedBitCountRatios(Eigen::VectorXd* est_bit_count_ratios);
 
@@ -63,13 +63,12 @@ class RapporAnalyzerTest : public ::testing::Test {
 
   // Generate a random number from power law distribution on the interval
   // [|left|,|right|] with given |exponent|.
-  int GenerateNumberFromPowerLaw(const double left, const double right,
-                                 const double exponent);
+  int GenerateNumberFromPowerLaw(double left, double right, double exponent);
 
   // Generate a "map" of shuffled Ids, that is, a vector of size
   // |num_candidates| containing exactly the numbers 0,1,...,num_canidates - 1,
   // in a random order.
-  std::vector<int> GenerateRandomMapOfIds(const int num_candidates);
+  std::vector<int> GenerateRandomMapOfIds(int num_candidates);
 
   std::vector<int> CountsEstimatesFromResults(
       const std::vector<CandidateResult>& results);
@@ -123,8 +122,8 @@ class RapporAnalyzerTest : public ::testing::Test {
   void RunSimpleLinearRegressionReference(
       const std::string& case_label, uint32_t num_candidates,
       uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-      std::vector<int> candidate_indices,
-      std::vector<int> true_candidate_counts);
+      const std::vector<int>& candidate_indices,
+      const std::vector<int>& true_candidate_counts);
 
   // Invokes the Analyze() method using the given parameters. Checks that
   // the algorithms converges and that the result vector has the correct length.
@@ -132,9 +131,9 @@ class RapporAnalyzerTest : public ::testing::Test {
                                   uint32_t num_candidates,
                                   uint32_t num_bloom_bits, uint32_t num_cohorts,
                                   uint32_t num_hashes,
-                                  std::vector<int> candidate_indices,
-                                  std::vector<int> true_candidate_counts,
-                                  const bool print_estimates);
+                                  const std::vector<int>& candidate_indices,
+                                  const std::vector<int>& true_candidate_counts,
+                                  bool print_estimates);
 
   // Same as ShortExperimentWithAnalyze() but also measures the time taken by
   // Analyze(), calls CheckExactSolution() to assess the loss of information,
@@ -143,32 +142,32 @@ class RapporAnalyzerTest : public ::testing::Test {
                                  uint32_t num_candidates,
                                  uint32_t num_bloom_bits, uint32_t num_cohorts,
                                  uint32_t num_hashes,
-                                 std::vector<int> candidate_indices,
-                                 std::vector<int> true_candidate_counts,
-                                 const bool print_estimates);
+                                 const std::vector<int>& candidate_indices,
+                                 const std::vector<int>& true_candidate_counts,
+                                 bool print_estimates);
 
   // Similar to ShortExperimentWithAnalyze except it also
   // computes the estimates for both Analyze and simple regression using QR,
   // which is computed on exactly the same system.
-  void CompareAnalyzeToSimpleRegression(const std::string& case_label,
-                                        uint32_t num_candidates,
-                                        uint32_t num_bloom_bits,
-                                        uint32_t num_cohorts,
-                                        uint32_t num_hashes,
-                                        std::vector<int> candidate_indices,
-                                        std::vector<int> true_candidate_counts);
+  void CompareAnalyzeToSimpleRegression(
+      const std::string& case_label, uint32_t num_candidates,
+      uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
+      const std::vector<int>& candidate_indices,
+      const std::vector<int>& true_candidate_counts);
 
-  RapporConfig config_;
-  std::unique_ptr<RapporAnalyzer> analyzer_;
-
+ private:
   RapporCandidateList candidate_list_;
 
+ protected:
+  RapporConfig config_;                       // NOLINT
+  std::unique_ptr<RapporAnalyzer> analyzer_;  // NOLINT
+
   // By default this test uses p=0, q=1. Individual tests may override this.
-  double prob_0_becomes_1_ = 0.0;
-  double prob_1_stays_1_ = 1.0;
+  float prob_0_becomes_1_ = 0.0;  // NOLINT
+  float prob_1_stays_1_ = 1.0;    // NOLINT
 
   // Random device
-  std::random_device random_dev_;
+  std::random_device random_dev_;  // NOLINT
 };
 
 }  // namespace rappor

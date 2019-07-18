@@ -21,8 +21,7 @@
 #include "./observation.pb.h"
 #include "util/crypto_util/hash.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using crypto::hash::DIGEST_SIZE;
 
@@ -49,6 +48,7 @@ bool CommonValidate(float prob_0_becomes_1, float prob_1_stays_1,
   return true;
 }
 
+constexpr int64_t max_num_categories = 1024;
 // Extracts the categories from |config| and populates |*categories|.  We
 // support string and integer categories and we use ValueParts to represent
 // these two uniformly. Returns true if |config| is valid or  false otherwise.
@@ -56,25 +56,24 @@ bool ExtractCategories(const BasicRapporConfig& config,
                        std::vector<ValuePart>* categories) {
   switch (config.categories_case()) {
     case BasicRapporConfig::kStringCategories: {
-      size_t num_categories = config.string_categories().category_size();
-      if (num_categories <= 1 || num_categories >= 1024) {
+      int64_t num_categories = config.string_categories().category_size();
+      if (num_categories <= 1 || num_categories >= max_num_categories) {
         return false;
       }
-      for (auto category : config.string_categories().category()) {
+      for (const auto& category : config.string_categories().category()) {
         if (category.empty()) {
           return false;
-        } else {
-          ValuePart value_part;
-          value_part.set_string_value(category);
-          categories->push_back(value_part);
         }
+        ValuePart value_part;
+        value_part.set_string_value(category);
+        categories->push_back(value_part);
       }
     } break;
     case BasicRapporConfig::kIntRangeCategories: {
       int64_t first = config.int_range_categories().first();
       int64_t last = config.int_range_categories().last();
       int64_t num_categories = last - first + 1;
-      if (last <= first || num_categories >= 1024) {
+      if (last <= first || num_categories >= max_num_categories) {
         return false;
       }
       for (int64_t category = first; category <= last; category++) {
@@ -84,12 +83,12 @@ bool ExtractCategories(const BasicRapporConfig& config,
       }
     } break;
     case BasicRapporConfig::kIndexedCategories: {
-      uint32_t num_categories = config.indexed_categories().num_categories();
-      if (num_categories >= 1024) {
+      int64_t num_categories = config.indexed_categories().num_categories();
+      if (num_categories >= max_num_categories) {
         LOG(ERROR) << "BasicRappor: The maximum number of categories is 1024";
         return false;
       }
-      for (uint32_t i = 0; i < num_categories; i++) {
+      for (auto i = 0; i < num_categories; i++) {
         ValuePart value_part;
         value_part.set_index_value(i);
         categories->push_back(value_part);
@@ -112,10 +111,11 @@ uint32_t RapporConfigValidator::MinPower2Above(uint16_t x) {
   v |= v >> 1;
   v |= v >> 2;
   v |= v >> 4;
-  v |= v >> 8;
+  v |= v >> 8;  // NOLINT readability-magic-numbers
   return v + 1;
 }
 
+constexpr uint32_t max_num_hashes = 8;
 // Constructor for String RAPPOR
 RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
     : prob_0_becomes_1_(config.prob_0_becomes_1()),
@@ -129,7 +129,7 @@ RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
   if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr())) {
     return;
   }
-  if (num_bits_ <= 1 || num_bits_ > 1024) {
+  if (num_bits_ <= 1 || num_bits_ > max_num_categories) {
     LOG(ERROR) << "For k = num_bits we require 1 < k <= 1024.";
     return;
   }
@@ -137,7 +137,8 @@ RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
     LOG(ERROR) << "k = num_bits must be a power of 2.";
     return;
   }
-  if (num_hashes_ < 1 || num_hashes_ > 8 || num_hashes_ >= num_bits_) {
+  if (num_hashes_ < 1 || num_hashes_ > max_num_hashes ||
+      num_hashes_ >= num_bits_) {
     LOG(ERROR) << "For k = num_bits and h = num_hashes we require  1 <= h <= 8 "
                   "and h < k.";
     return;
@@ -149,7 +150,7 @@ RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
     LOG(ERROR) << "DIGEST_SIZE too small for number of hashes: " << DIGEST_SIZE;
     return;
   }
-  if (num_cohorts_ < 1 || num_cohorts_ > 1024) {
+  if (num_cohorts_ < 1 || num_cohorts_ > max_num_categories) {
     LOG(ERROR) << "For m = num_cohorts we require 1 <= m <= 1024.";
     return;
   }
@@ -190,8 +191,6 @@ RapporConfigValidator::RapporConfigValidator(const BasicRapporConfig& config)
   valid_ = true;
 }
 
-RapporConfigValidator::~RapporConfigValidator() {}
-
 // Returns the bit-index of |category| or -1 if |category| is not one of the
 // basic RAPPOR categories (or if this object was not initialized with a
 // BasicRapporConfig.)
@@ -205,5 +204,4 @@ int RapporConfigValidator::bit_index(const ValuePart& category) {
   return iterator->second;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

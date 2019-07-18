@@ -34,7 +34,7 @@ class RapporConfigValidator {
   // Constructor for Basic RAPPOR
   explicit RapporConfigValidator(const BasicRapporConfig& config);
 
-  ~RapporConfigValidator();
+  ~RapporConfigValidator() = default;
 
   float prob_0_becomes_1() { return prob_0_becomes_1_; }
 

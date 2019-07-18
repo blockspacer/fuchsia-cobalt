@@ -21,15 +21,15 @@
 
 #include "util/log_based_metrics.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Stackdriver metric constants
 namespace {
-const char kBasicRapporAnalyzerConstructorFailure[] =
+constexpr char kBasicRapporAnalyzerConstructorFailure[] =
     "basic-rappor-analyzer-constructor-failure";
-const char kAddObservationFailure[] =
+constexpr char kAddObservationFailure[] =
     "basic-rappor-analyzer-add-observation-failure";
+constexpr uint32_t kBitsPerByte = 8;
 }  // namespace
 
 BasicRapporAnalyzer::BasicRapporAnalyzer(const BasicRapporConfig& config)
@@ -40,7 +40,7 @@ BasicRapporAnalyzer::BasicRapporAnalyzer(const BasicRapporConfig& config)
     return;
   }
   category_counts_.resize(config_->num_bits(), 0);
-  num_encoding_bytes_ = (config_->num_bits() + 7) / 8;
+  num_encoding_bytes_ = (config_->num_bits() + kBitsPerByte - 1) / kBitsPerByte;
 }
 
 bool BasicRapporAnalyzer::AddObservation(const BasicRapporObservation& obs) {
@@ -69,9 +69,9 @@ bool BasicRapporAnalyzer::AddObservation(const BasicRapporObservation& obs) {
   // vector operations or the find-first-bit-set instruction or simply checking
   // for zero bytes.
   size_t category = 0;
-  for (int byte_index = obs.data().size() - 1; byte_index >= 0; byte_index--) {
+  for (auto byte_index = obs.data().size() - 1; byte_index >= 0; byte_index--) {
     uint8_t bit_mask = 1;
-    for (int bit_index = 0; bit_index < 8; bit_index++) {
+    for (int bit_index = 0; bit_index < kBitsPerByte; bit_index++) {
       if (category >= category_counts_.size()) {
         return true;
       }
@@ -120,5 +120,4 @@ BasicRapporAnalyzer::Analyze() {
   return results;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

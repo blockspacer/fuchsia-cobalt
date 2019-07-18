@@ -57,7 +57,7 @@ struct MinimizerData {
 // perform the optimizations.
 class LassoRunner {
  public:
-  explicit LassoRunner(const cobalt_lossmin::InstanceSet*);
+  explicit LassoRunner(const cobalt_lossmin::InstanceSet* matrix);
 
   // Runs the first step of RAPPOR. That is, runs the lasso path, i.e.
   // computes the solutions to a sequence of lasso subproblems:
@@ -106,8 +106,7 @@ class LassoRunner {
   // interested in heavy hitters, we may not need to run the entire path and
   // want to be more conservative as to how quickly the new nonzero coefficients
   // are identified.
-  void RunFirstRapporStep(const int max_nonzero_coeffs,
-                          const double max_solution_1_norm,
+  void RunFirstRapporStep(int max_nonzero_coeffs, double max_solution_1_norm,
                           const cobalt_lossmin::LabelSet& as_label_set,
                           cobalt_lossmin::Weights* est_candidate_weights,
                           std::vector<int>* second_step_cols);
@@ -129,7 +128,7 @@ class LassoRunner {
   // algorithm with |est_candidate_weights| as the initial guess.
   // The variables exact_est_candidate_weights and est_candidate_errors
   void GetExactValuesAndStdErrs(
-      const double l1, const cobalt_lossmin::Weights& est_candidate_weights,
+      double l1, const cobalt_lossmin::Weights& est_candidate_weights,
       const std::vector<double>& est_standard_errs,
       const cobalt_lossmin::InstanceSet& instances,
       const cobalt_lossmin::LabelSet& as_label_set,
@@ -137,7 +136,9 @@ class LassoRunner {
       cobalt_lossmin::Weights* est_candidate_errors);
 
   // Returns reference to minimizer_data_.
-  const MinimizerData& minimizer_data() const { return minimizer_data_; }
+  [[nodiscard]] const MinimizerData& minimizer_data() const {
+    return minimizer_data_;
+  }
 
  private:
   friend class LassoRunnerTest;

@@ -25,8 +25,7 @@
 #include "util/crypto_util/mac.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using crypto::byte;
 using crypto::hmac::HMAC;
@@ -60,7 +59,7 @@ std::string DebugString(const ValuePart& value) {
 //
 // p = prob_0_becomes_1
 // q = prob_1_stays_1
-Status FlipBits(double p, double q, crypto::Random* random, std::string* data) {
+Status FlipBits(float p, float q, crypto::Random* random, std::string* data) {
   if (p <= 0.0 && q >= 1.0) {
     return kOK;
   }
@@ -80,6 +79,8 @@ Status FlipBits(double p, double q, crypto::Random* random, std::string* data) {
   return kOK;
 }
 
+constexpr uint32_t kBitsPerByte = 8;
+
 }  // namespace
 
 RapporEncoder::RapporEncoder(const RapporConfig& config,
@@ -89,10 +90,8 @@ RapporEncoder::RapporEncoder(const RapporConfig& config,
       client_secret_(std::move(client_secret)),
       cohort_num_(DeriveCohortFromSecret()) {}
 
-RapporEncoder::~RapporEncoder() {}
-
 bool RapporEncoder::HashValueAndCohort(
-    const std::string serialized_value, uint32_t cohort_num,
+    const std::string& serialized_value, uint32_t cohort_num,
     uint32_t num_hashes, byte hashed_value[crypto::hash::DIGEST_SIZE]) {
   // We append the cohort to the value before hashing.
   std::vector<byte> hash_input(serialized_value.size() + sizeof(cohort_num_));
@@ -109,19 +108,19 @@ bool RapporEncoder::HashValueAndCohort(
 }
 
 uint32_t RapporEncoder::ExtractBitIndex(
-    byte hashed_value[crypto::hash::DIGEST_SIZE], size_t hash_index,
+    byte const hashed_value[crypto::hash::DIGEST_SIZE], size_t hash_index,
     uint32_t num_bits) {
   // Each bloom filter consumes two bytes of |hashed_value|. Note that
   // num_bits is required to be a power of 2 (this is checked in the
   // constructor of RapporConfigValidator) so that the mod operation below
   // preserves the uniform distribution of |hashed_value|.
-  return (*reinterpret_cast<uint16_t*>(&hashed_value[hash_index * 2])) %
+  return (*reinterpret_cast<const uint16_t*>(&hashed_value[hash_index * 2])) %
          num_bits;
 }
 
 std::string RapporEncoder::MakeBloomBits(const ValuePart& value) {
   uint32_t num_bits = config_->num_bits();
-  uint32_t num_bytes = (num_bits + 7) / 8;
+  uint32_t num_bytes = (num_bits + kBitsPerByte - 1) / kBitsPerByte;
   uint32_t num_hashes = config_->num_hashes();
 
   std::string serialized_value;
@@ -141,8 +140,8 @@ std::string RapporEncoder::MakeBloomBits(const ValuePart& value) {
     uint32_t bit_index = ExtractBitIndex(hashed_value, hash_index, num_bits);
 
     // Indexed from the right, i.e. the least-significant bit.
-    uint32_t byte_index = bit_index / 8;
-    uint32_t bit_in_byte_index = bit_index % 8;
+    uint32_t byte_index = bit_index / kBitsPerByte;
+    uint32_t bit_in_byte_index = bit_index % kBitsPerByte;
     // Set the appropriate bit.
     data[num_bytes - (byte_index + 1)] |= 1 << bit_in_byte_index;
   }
@@ -235,8 +234,6 @@ BasicRapporEncoder::BasicRapporEncoder(const BasicRapporConfig& config,
       random_(new crypto::Random()),
       client_secret_(std::move(client_secret)) {}
 
-BasicRapporEncoder::~BasicRapporEncoder() {}
-
 Status BasicRapporEncoder::Encode(const ValuePart& value,
                                   BasicRapporObservation* observation_out) {
   TRACE_DURATION("cobalt_core", "BasicRapporEncoder::Encode");
@@ -254,8 +251,8 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
     return kInvalidInput;
   }
   // Indexed from the right, i.e. the least-significant bit.
-  uint32_t byte_index = bit_index / 8;
-  uint32_t bit_in_byte_index = bit_index % 8;
+  uint32_t byte_index = bit_index / kBitsPerByte;
+  uint32_t bit_in_byte_index = bit_index % kBitsPerByte;
 
   // Set the appropriate bit.
   data[data.size() - (byte_index + 1)] = 1 << bit_in_byte_index;
@@ -301,10 +298,9 @@ Status BasicRapporEncoder::InitializeObservationData(std::string* data) {
     return kInvalidConfig;
   }
   uint32_t num_bits = config_->num_bits();
-  uint32_t num_bytes = (num_bits + 7) / 8;
+  uint32_t num_bytes = (num_bits + kBitsPerByte - 1) / kBitsPerByte;
   *data = std::string(num_bytes, static_cast<char>(0));
   return kOK;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

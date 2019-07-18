@@ -14,8 +14,7 @@ using cobalt_lossmin::LabelSet;
 using cobalt_lossmin::ParallelBoostingWithMomentum;
 using cobalt_lossmin::Weights;
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 namespace {
 // ***************************************************************************
@@ -34,12 +33,12 @@ namespace {
 // than what you would deem negligible); however, do not get close to double
 // precision accuracy (1e-16). A reasonable value could be between 1e-4 and
 // 1e-8.
-static const double kZeroThreshold = 1e-6;
+constexpr double kZeroThreshold = 1e-6;
 // kL2toL1Ratio is the ratio between l1 and l2 penalty.
 // Although pure lasso (or linear regression) does not include any l2 penalty,
 // a tiny bit can improve stability. A value of kL2toL1Ratio less or equal to
 // 1e-2 should not affect the interpretation of the solution.
-static const double kL2toL1Ratio = 1e-3;
+constexpr double kL2toL1Ratio = 1e-3;
 // kLossEpochs denotes how often the current objective value is recorded in
 // the solver (it will be recorded every kLossEpochs epochs).
 // kConvergenceMeasures denotes how often the minimizer checks convergence:
@@ -55,19 +54,19 @@ static const double kL2toL1Ratio = 1e-3;
 // kLossEpochs and kConvergenceEpochs must be positive (and
 // probably both not larger than 10). Also, kLossEpochs <=
 // kConvergenceEpochs makes more sense.
-static const double kLossEpochs = 5;
-static const double kConvergenceMeasures = 5;
+constexpr int kLossEpochs = 5;
+constexpr int kConvergenceMeasures = 5;
 // kAlpha is a constant from parallel boosting with momentum paper,
 // must be 0 < kAlpha < 1; cobalt_lossmin library default initial choice is 0.5,
 // but we need to be able to reset this value in minimizer if needed.
-static const double kAlpha = 0.5;
+constexpr double kAlpha = 0.5;
 // kMinConvergenceThreshold is an absolute lower bound for the convergence
 // thresholds in the algorithm; It should be something within a couple of
 // orders of magnitude of the double precision (reasonable values may be
 // between 1e-12 and 1e-14). This is introduced because convergence thresholds
 // are computed relatively to the initial gradient norm and so they might be
 // too low if the initial guess is very good.
-static const double kMinConvergenceThreshold = 1e-12;
+constexpr double kMinConvergenceThreshold = 1e-12;
 //
 // ***************************************************************************
 // Constants of the lasso_runner that will be used in RunFirstLassoStep.
@@ -119,9 +118,9 @@ static const double kMinConvergenceThreshold = 1e-12;
 // subproblem." in Analyze, it might mean that the convergence thresholds are
 // too strict for the specified kMaxEpochs limit, given the difficulty of the
 // problem.
-static const double kRelativeConvergenceThreshold = 1e-5;
-static const double kRelativeInLassoPathConvergenceThreshold = 1e-4;
-static const double kSimpleConvergenceThreshold = 1e-5;
+constexpr double kRelativeConvergenceThreshold = 1e-5;
+constexpr double kRelativeInLassoPathConvergenceThreshold = 1e-4;
+constexpr double kSimpleConvergenceThreshold = 1e-5;
 // kMaxEpochs denotes the limit on the total number of epochs (iterations)
 // run; the actual number can be up to two times larger
 // because every individual lasso subproblem (run of
@@ -130,16 +129,16 @@ static const double kSimpleConvergenceThreshold = 1e-5;
 // Note: If you are bumping into "The lasso path did not reach the
 // last subproblem." error in Analyze, it is possible that this number is too
 // strict (low) for the convergence thresholds above.
-static const int kMaxEpochs = 20000;
+constexpr int kMaxEpochs = 20000;
 // kNumLassoSteps is the number of subproblems solved in the lasso path;
 // it is not true that more steps will take more time: there should be a "sweet
 // spot", and definitely this number should not be too small (probably something
 // between 50 and 500).
-static const int kNumLassoSteps = 100;
+constexpr int kNumLassoSteps = 100;
 // kL1maxToL1minRatio is the ratio between the first and the last l1 penalty
 // value in the lasso path; should probably be something between 1e-6 and
 // 1e-3 (the R library glmnet uses 1e-3 by default).
-static const double kL1maxToL1minRatio = 1e-3;
+constexpr double kL1maxToL1minRatio = 1e-3;
 // kUseLinearPath specifies whether the lasso path should be linear (true) or
 // logarithmic. Linear path means that the l1 penalties form an arithmetic
 // sequence from largest to smallest; logarithmic path means that the penalties
@@ -150,7 +149,7 @@ static const double kL1maxToL1minRatio = 1e-3;
 // in the initial phase but more slowly towards the end of the lasso path. This
 // is numerically more stable and may be faster but may introduce a lot of
 // nonzero coefficients in the initial phase.
-static const bool kUseLinearPath = true;
+constexpr bool kUseLinearPath = true;
 //
 // ***************************************************************************
 // Constants related to GetExactValuesAndStdErrors
@@ -165,8 +164,8 @@ static const bool kUseLinearPath = true;
 // Relative convergence thresholds have the same interpretation as the ones
 // used in RunFirstRapporStep. Consult their description if you plan to modify
 // the values.
-static const double kRelativeConvergenceThreshold2Step = 1e-6;
-static const double kSimpleConvergenceThreshold2Step = 1e-6;
+constexpr double kRelativeConvergenceThreshold2Step = 1e-6;
+constexpr double kSimpleConvergenceThreshold2Step = 1e-6;
 // kNumRuns is the number of runs to estimate standard deviations of
 // coefficients. The problem will be solved kNumRuns times, each time
 // with a slightly different right hand side.
@@ -174,11 +173,11 @@ static const double kSimpleConvergenceThreshold2Step = 1e-6;
 // large value should give a better approximation of standard errors but
 // kNumRuns == n means that the whole problem will be solved n times so it
 // affects the runtime.
-static const int kNumRuns = 20;
+constexpr int kNumRuns = 20;
 // kMaxEpochsSingleRun is the maximum number of epochs in a single
 // run of the algorithm. So total number of epochs run will be bounded by
 // kNumRuns * kMaxEpochsSingleRun.
-static const int kMaxEpochsSingleRun = 5000;
+constexpr int kMaxEpochsSingleRun = 5000;
 // Note(bazyli): If convergence thresholds are too small relative to
 // kMaxEpochsSingleRun then some of the runs of the algorithm may not
 // converge. If less than 5 converge then the standard errors are set to 0. If
@@ -306,8 +305,7 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
   VLOG(4) << "Ran " << total_epochs_run << " epochs in total.";
 
   // Record minimizer info.
-  minimizer_data_.reached_last_lasso_subproblem =
-      (i == num_lasso_steps_) ? true : false;
+  minimizer_data_.reached_last_lasso_subproblem = (i == num_lasso_steps_);
   minimizer_data_.num_epochs_run = total_epochs_run;
   minimizer_data_.converged = minimizer.converged();
   minimizer_data_.reached_solution = minimizer.reached_solution();
@@ -341,6 +339,7 @@ void LassoRunner::GetExactValuesAndStdErrs(
   const double l2 = l2_to_l1_ratio_ * l1;
   const int num_candidates = est_candidate_weights.size();
   const int num_labels = as_label_set.size();
+  const int min_num_converged_for_standard_errors = 5;
   int num_converged =
       0;  // We record the number of runs in which the minimizer
           // actually converged (although if everything is fine,
@@ -411,7 +410,7 @@ void LassoRunner::GetExactValuesAndStdErrs(
 
   // Compute the sample means and standard deviations (standard errors).
   Weights sample_stds = Weights::Zero(num_candidates);
-  if (num_converged >= 5) {
+  if (num_converged >= min_num_converged_for_standard_errors) {
     for (auto& est_weight : est_weights_runs) {
       sample_stds += (est_weight - mean_est_weights).array().pow(2).matrix();
     }
@@ -422,5 +421,4 @@ void LassoRunner::GetExactValuesAndStdErrs(
   *exact_est_candidate_weights = mean_est_weights;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

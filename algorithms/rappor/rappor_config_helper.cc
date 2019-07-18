@@ -8,16 +8,15 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Sentinel value returned by ProbBitFlip() when the ReportDefinition
 // does not contain the necessary settings to determine a value
 // for the probability of flipping a bit.
-const float RapporConfigHelper::kInvalidProbability = -1;
+constexpr float RapporConfigHelper::kInvalidProbability = -1;
 
 // We do not support RAPPOR's PRR in Cobalt.
-const float RapporConfigHelper::kProbRR = 0.0;
+constexpr float RapporConfigHelper::kProbRR = 0.0;
 
 ////////////////////////////    p, q and f    //////////////////////////////////
 
@@ -134,50 +133,55 @@ size_t RapporConfigHelper::BasicRapporNumCategories(
     const MetricDefinition& metric_definition) {
   if (metric_definition.metric_dimensions_size() == 1) {
     return metric_definition.metric_dimensions(0).max_event_code() + 1;
-  } else {
-    LOG(ERROR) << "Invalid Cobalt registry: Metric "
-               << metric_definition.metric_name() << " has "
-               << metric_definition.metric_dimensions_size()
-               << " metric_dimensions. (expected exactly 1)";
-    return 0;
   }
+
+  LOG(ERROR) << "Invalid Cobalt registry: Metric "
+             << metric_definition.metric_name() << " has "
+             << metric_definition.metric_dimensions_size()
+             << " metric_dimensions. (expected exactly 1)";
+  return 0;
 }
 
 size_t RapporConfigHelper::StringRapporNumCohorts(
     const ReportDefinition& report_definition) {
   if (report_definition.expected_population_size() == 0) {
     return kDefaultNumCohorts;
-  } else if (report_definition.expected_population_size() <
-             kTinyPopulationSize) {
-    return kTinyNumCohorts;
-  } else if (report_definition.expected_population_size() <
-             kSmallPopulationSize) {
-    return kSmallNumCohorts;
-  } else if (report_definition.expected_population_size() <
-             kMediumPopulationSize) {
-    return kMediumNumCohorts;
-  } else {
-    return kLargeNumCohorts;
   }
+
+  if (report_definition.expected_population_size() < kTinyPopulationSize) {
+    return kTinyNumCohorts;
+  }
+
+  if (report_definition.expected_population_size() < kSmallPopulationSize) {
+    return kSmallNumCohorts;
+  }
+
+  if (report_definition.expected_population_size() < kMediumPopulationSize) {
+    return kMediumNumCohorts;
+  }
+
+  return kLargeNumCohorts;
 }
 
 size_t RapporConfigHelper::StringRapporNumBloomBits(
     const ReportDefinition& report_definition) {
   if (report_definition.expected_string_set_size() == 0) {
     return kDefaultNumBits;
-  } else if (report_definition.expected_string_set_size() <
-             kTinyNumCandidates) {
-    return kTinyNumBits;
-  } else if (report_definition.expected_string_set_size() <
-             kSmallNumCandidates) {
-    return kSmallNumBits;
-  } else if (report_definition.expected_string_set_size() <
-             kMediumNumCandidates) {
-    return kMediumNumBits;
-  } else {
-    return kLargeNumBits;
   }
+
+  if (report_definition.expected_string_set_size() < kTinyNumCandidates) {
+    return kTinyNumBits;
+  }
+
+  if (report_definition.expected_string_set_size() < kSmallNumCandidates) {
+    return kSmallNumBits;
+  }
+
+  if (report_definition.expected_string_set_size() < kMediumNumCandidates) {
+    return kMediumNumBits;
+  }
+
+  return kLargeNumBits;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

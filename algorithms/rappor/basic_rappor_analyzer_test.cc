@@ -27,8 +27,7 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/random_test_utils.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using encoder::ClientSecret;
 
@@ -45,7 +44,7 @@ BasicRapporObservation BasicRapporObservationFromString(
 }
 
 // Makes a BasicRapporConfig with the given data.
-BasicRapporConfig Config(int num_categories, double p, double q) {
+BasicRapporConfig Config(int num_categories, float p, float q) {
   BasicRapporConfig config;
   config.set_prob_0_becomes_1(p);
   config.set_prob_1_stays_1(q);
@@ -63,8 +62,8 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   // to use |num_categories| categories and the current values of
   // prob_0_becomes_1_, prob_1_stays_1_.
   void SetAnalyzer(int num_categories) {
-    analyzer_.reset(new BasicRapporAnalyzer(
-        Config(num_categories, prob_0_becomes_1_, prob_1_stays_1_)));
+    analyzer_ = std::make_unique<BasicRapporAnalyzer>(
+        Config(num_categories, prob_0_becomes_1_, prob_1_stays_1_));
     add_good_observation_call_count_ = 0;
     add_bad_observation_call_count_ = 0;
   }
@@ -73,9 +72,9 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   // to use |num_categories| categories and the current values of
   // prob_0_becomes_1_, prob_1_stays_1_, a deterministic RNG.
   void SetEncoder(int num_categories) {
-    encoder_.reset(new BasicRapporEncoder(
+    encoder_ = std::make_unique<BasicRapporEncoder>(
         Config(num_categories, prob_0_becomes_1_, prob_1_stays_1_),
-        ClientSecret::GenerateNewSecret()));
+        ClientSecret::GenerateNewSecret());
     encoder_->SetRandomForTesting(
         std::unique_ptr<crypto::Random>(new crypto::DeterministicRandom()));
   }
@@ -94,7 +93,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
 
   // Adds an observation to analyzer_ described by |binary_string|. Expects
   // the operation to result in an error.
-  void AddObservationExpectFalse(std::string binary_string) {
+  void AddObservationExpectFalse(const std::string& binary_string) {
     EXPECT_FALSE(analyzer_->AddObservation(
         BasicRapporObservationFromString(binary_string)));
     CheckState(add_good_observation_call_count_,
@@ -103,7 +102,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
 
   // Adds an observation to analyzer_ described by |binary_string|. Expects
   // the operation to succeed.
-  void AddObservation(std::string binary_string) {
+  void AddObservation(const std::string& binary_string) {
     EXPECT_TRUE(analyzer_->AddObservation(
         BasicRapporObservationFromString(binary_string)));
     CheckState(++add_good_observation_call_count_,
@@ -111,7 +110,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   }
 
   // Invokes AddObservation() many times.
-  void AddObservations(std::string binary_string, int num_times) {
+  void AddObservations(const std::string& binary_string, int num_times) {
     for (int count = 0; count < num_times; count++) {
       SCOPED_TRACE(std::string("count=") + std::to_string(count));
       AddObservation(binary_string);
@@ -131,7 +130,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   }
 
   // Checks that analyzer_ has the expected raw counts.
-  void ExpectRawCounts(std::vector<size_t> expected_counts) {
+  void ExpectRawCounts(const std::vector<size_t>& expected_counts) {
     EXPECT_EQ(expected_counts, analyzer_->raw_category_counts());
   }
 
@@ -163,10 +162,12 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
       SCOPED_TRACE(std::to_string(bit_index) + ", " + std::to_string(n) + ", " +
                    std::to_string(y));
       // Construct an analyzer for 24 bit Basic RAPPOR.
-      SetAnalyzer(24);
+      SetAnalyzer(24);  // NOLINT
       // Add y observations with a 1 in position |bit_index|.
+      // NOLINTNEXTLINE
       AddObservations(BuildBitPatternString(24, bit_index, '1', '0'), y);
       // Add n-y observations with a 0 in position |bit_index|.
+      // NOLINTNEXTLINE
       AddObservations(BuildBitPatternString(24, bit_index, '0', '0'), n - y);
       // Analyze and check position |bit_index|
       AnalyzeAndCheckOnePosition(bit_index, expected_estimate,
@@ -196,7 +197,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
                              double* accumulated_std_err_estimate,
                              double* accumulated_actual_square_error) {
     // Construct a fresh analyzer with 2 categories.
-    SetAnalyzer(2);
+    SetAnalyzer(2);  // NOLINT
 
     // Add y encoded observations with a true 1 for category 0.
     EncodeAndAdd(0, y);
@@ -221,7 +222,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   // q = 1 minus the probability that a 1 is flipped to a 0.
   // n = number of observations
   // y = number of true 1's
-  void OneCategoryTest(double p, double q, int n, int y) {
+  void OneCategoryTest(float p, float q, int n, int y) {
     // Set p and q.
     prob_0_becomes_1_ = p;
     prob_1_stays_1_ = q;
@@ -273,9 +274,10 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
     EXPECT_TRUE(x_stat < 1.11) << x_stat;
   }
 
+ public:
   // By default this test uses p=0, q=1. Individual tests may override this.
-  double prob_0_becomes_1_ = 0.0;
-  double prob_1_stays_1_ = 1.0;
+  float prob_0_becomes_1_ = 0.0;
+  float prob_1_stays_1_ = 1.0;
   std::unique_ptr<BasicRapporEncoder> encoder_;
   std::unique_ptr<BasicRapporAnalyzer> analyzer_;
   int add_bad_observation_call_count_ = 0;
@@ -285,7 +287,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
 // Tests the raw counts when there are three categories.
 TEST_F(BasicRapporAnalyzerTest, RawCountsThreeCategories) {
   // Construct an analyzer for BasicRappor with three categories.
-  SetAnalyzer(3);
+  SetAnalyzer(3);  // NOLINT
 
   AddObservation("00000000");
   ExpectRawCounts({0, 0, 0});
@@ -297,124 +299,125 @@ TEST_F(BasicRapporAnalyzerTest, RawCountsThreeCategories) {
   ExpectRawCounts({1, 0, 0});
 
   AddObservation("00000001");
-  ExpectRawCounts({2, 0, 0});
+  ExpectRawCounts({2, 0, 0});  // NOLINT
 
   AddObservation("00000010");
-  ExpectRawCounts({2, 1, 0});
+  ExpectRawCounts({2, 1, 0});  // NOLINT
 
   AddObservation("00000010");
-  ExpectRawCounts({2, 2, 0});
+  ExpectRawCounts({2, 2, 0});  // NOLINT
 
   AddObservation("00000011");
-  ExpectRawCounts({3, 3, 0});
+  ExpectRawCounts({3, 3, 0});  // NOLINT
 
   AddObservation("00000100");
-  ExpectRawCounts({3, 3, 1});
+  ExpectRawCounts({3, 3, 1});  // NOLINT
 
   AddObservation("00000101");
-  ExpectRawCounts({4, 3, 2});
+  ExpectRawCounts({4, 3, 2});  // NOLINT
 
   AddObservation("00000011");
-  ExpectRawCounts({5, 4, 2});
+  ExpectRawCounts({5, 4, 2});  // NOLINT
 
   AddObservation("00000111");
-  ExpectRawCounts({6, 5, 3});
+  ExpectRawCounts({6, 5, 3});  // NOLINT
 
   AddObservation("00000111");
-  ExpectRawCounts({7, 6, 4});
+  ExpectRawCounts({7, 6, 4});  // NOLINT
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000; i++) {  // NOLINT
     AddObservation("00000101");
   }
-  ExpectRawCounts({1007, 6, 1004});
+  ExpectRawCounts({1007, 6, 1004});  // NOLINT
 
   // The extra high-order-bits should be ignored
   AddObservation("11111000");
-  ExpectRawCounts({1007, 6, 1004});
+  ExpectRawCounts({1007, 6, 1004});  // NOLINT
 }
 
 // Tests the raw counts when there are ten categories.
 TEST_F(BasicRapporAnalyzerTest, RawCountsTenCategories) {
   // Construct an analyzer for BasicRappor with 10 categories.
-  SetAnalyzer(10);
+  SetAnalyzer(10);  // NOLINT
 
   AddObservation("0000000000000000");
-  ExpectRawCounts({0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({0, 0, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000000");
-  ExpectRawCounts({0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({0, 0, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000001");
-  ExpectRawCounts({1, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({1, 0, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000001");
-  ExpectRawCounts({2, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({2, 0, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000010");
-  ExpectRawCounts({2, 1, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({2, 1, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000010");
-  ExpectRawCounts({2, 2, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({2, 2, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000011");
-  ExpectRawCounts({3, 3, 0, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({3, 3, 0, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000100");
-  ExpectRawCounts({3, 3, 1, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({3, 3, 1, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000101");
-  ExpectRawCounts({4, 3, 2, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({4, 3, 2, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000011");
-  ExpectRawCounts({5, 4, 2, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({5, 4, 2, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000111");
-  ExpectRawCounts({6, 5, 3, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({6, 5, 3, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000000000000111");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 0, 0});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 0, 0});  // NOLINT
 
   AddObservation("0000001000000000");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 0, 1});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 0, 1});  // NOLINT
 
   AddObservation("0000000100000000");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 1, 1});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 0, 1, 1});  // NOLINT
 
   AddObservation("0000000010000000");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 1, 1, 1});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 1, 1, 1});  // NOLINT
 
   AddObservation("0000001010000000");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 2, 1, 2});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 2, 1, 2});  // NOLINT
 
   AddObservation("0000001110000000");
-  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 3, 2, 3});
+  ExpectRawCounts({7, 6, 4, 0, 0, 0, 0, 3, 2, 3});  // NOLINT
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000; i++) {  // NOLINT
     AddObservation("0000000100000101");
   }
-  ExpectRawCounts({1007, 6, 1004, 0, 0, 0, 0, 3, 1002, 3});
+  ExpectRawCounts({1007, 6, 1004, 0, 0, 0, 0, 3, 1002, 3});  // NOLINT
 
   // The extra high-order-bits should be ignored
   AddObservation("1111110000000000");
-  ExpectRawCounts({1007, 6, 1004, 0, 0, 0, 0, 3, 1002, 3});
+  ExpectRawCounts({1007, 6, 1004, 0, 0, 0, 0, 3, 1002, 3});  // NOLINT
 }
 
 // Tests the raw counts when there are 1,000 categories.
 TEST_F(BasicRapporAnalyzerTest, RawCountsThousandCategories) {
   // Construct an analyzer for BasicRappor with 1000 categories.
-  SetAnalyzer(1000);
+  SetAnalyzer(1000);  // NOLINT
   // Iterate 100 times
-  for (int iteration = 0; iteration < 100; iteration++) {
+  for (int iteration = 0; iteration < 100; iteration++) {  // NOLINT
     // For i = 0, 10, 20, 30, .....
-    for (int bit_index = 0; bit_index < 1000; bit_index += 10) {
+    for (int bit_index = 0; bit_index < 1000; bit_index += 10) {  // NOLINT
       // Add an observation with category i alone set.
-      AddObservation(BuildBitPatternString(1000, bit_index, '1', '0'));
+      AddObservation(
+          BuildBitPatternString(1000, bit_index, '1', '0'));  // NOLINT
     }
   }
 
   // Check the counts.
-  for (int category = 0; category < 1000; category++) {
-    size_t expected_count = (category % 10 == 0 ? 100 : 0);
+  for (int category = 0; category < 1000; category++) {      // NOLINT
+    size_t expected_count = (category % 10 == 0 ? 100 : 0);  // NOLINT
     ExpectRawCount(category, expected_count);
   }
 }
@@ -423,11 +426,11 @@ TEST_F(BasicRapporAnalyzerTest, RawCountsThousandCategories) {
 // provided to the constructor.
 TEST_F(BasicRapporAnalyzerTest, InvalidConfig) {
   // Set prob_0_becomes_1 to an invalid value.
-  prob_0_becomes_1_ = 1.1;
+  prob_0_becomes_1_ = 1.1;  // NOLINT
 
   // Construct an analyzer for BasicRappor with 8 categories using the
   // invalid config.
-  SetAnalyzer(8);
+  SetAnalyzer(8);  // NOLINT
 
   AddObservationExpectFalse("00000000");
   AddObservationExpectFalse("00000000");
@@ -440,7 +443,7 @@ TEST_F(BasicRapporAnalyzerTest, InvalidConfig) {
 TEST_F(BasicRapporAnalyzerTest, InvalidObservations) {
   // Construct an analyzer for BasicRappor with 8 categories using the
   // invalid config.
-  SetAnalyzer(8);
+  SetAnalyzer(8);  // NOLINT
 
   // Attempt to add observations with 2 bytes instead of one.
   AddObservationExpectFalse("0000000000000000");
@@ -457,8 +460,8 @@ TEST_F(BasicRapporAnalyzerTest, InvalidObservations) {
 
 // Invokes OneBitTest on various y using n=100, p=0, q=1
 TEST_F(BasicRapporAnalyzerTest, OneBitTestN100P0Q1) {
-  int n = 100;
-  double expected_std_err = 0;
+  const int n = 100;
+  const double expected_std_err = 0;
 
   // Test with various values of y. expected_estimate = y.
   for (int y : {0, 1, 34, 49, 50, 51, 71, 99, 100}) {
@@ -469,16 +472,17 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN100P0Q1) {
 
 // Invokes OneBitTest on various y using n=100, p=0.2, q=0.8
 TEST_F(BasicRapporAnalyzerTest, OneBitTestN100P02Q08) {
-  prob_0_becomes_1_ = 0.2;
-  prob_1_stays_1_ = 0.8;
-  int n = 100;
+  prob_0_becomes_1_ = 0.2;  // NOLINT
+  prob_1_stays_1_ = 0.8;    // NOLINT
+  const int n = 100;
 
   // This is the formula for computing expected_estimate when n=100, p=0.2,
   // q=0.8.
+  // NOLINTNEXTLINE
   auto estimator = [](double y) { return (y - 20.0) * 5.0 / 3.0; };
   // This is the expected standard error for n=100, p=0.2, q=0.8, independent
   // of y.
-  double expected_std_err = 20.0 / 3.0;
+  double expected_std_err = 20.0 / 3.0;  // NOLINT
 
   // Test with various values of y.
   for (int y : {0, 1, 34, 49, 50, 51, 71, 99, 100}) {
@@ -489,16 +493,18 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN100P02Q08) {
 
 // Invokes OneBitTest on various y using n=1000, p=0.15, q=0.85
 TEST_F(BasicRapporAnalyzerTest, OneBitTestN1000P015Q085) {
-  prob_0_becomes_1_ = 0.15;
-  prob_1_stays_1_ = 0.85;
-  int n = 1000;
+  prob_0_becomes_1_ = 0.15;  // NOLINT
+  prob_1_stays_1_ = 0.85;    // NOLINT
+  const int n = 1000;
 
   // This is the formula for computing expected_estimate when n=1000, p=0.15,
   // q=0.85.
+  // NOLINTNEXTLINE
   auto estimator = [](double y) { return (y - 150.0) * 10.0 / 7.0; };
   // This is the expected standard error for n=1000, p=0.15, q=0.85,
   // independent
   // of y.
+  // NOLINTNEXTLINE
   double expected_std_err = sqrt(127.5) * 10.0 / 7.0;
 
   // Test with various values of y.
@@ -511,16 +517,18 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN1000P015Q085) {
 // Invokes OneBitTest on various y using n=5000, p=0.5, q=0.9. Notice that
 // p + q > 1
 TEST_F(BasicRapporAnalyzerTest, OneBitTestN5000P05Q09) {
-  prob_0_becomes_1_ = 0.5;
-  prob_1_stays_1_ = 0.9;
-  int n = 5000;
+  prob_0_becomes_1_ = 0.5;  // NOLINT
+  prob_1_stays_1_ = 0.9;    // NOLINT
+  const int n = 5000;
 
   // This is the formula for computing expected_estimate when n=5000, p=0.5,
   // q=0.9.
+  // NOLINTNEXTLINE
   auto estimator = [](double y) { return (y - 2500.0) * 5.0 / 2.0; };
 
   // This is the formula for computing expected_std_err when n=5000, p=0.5,
   // q=0.9.
+  // NOLINTNEXTLINE
   auto std_err = [](double y) { return sqrt(y * -0.4 + 2250.0) * 5.0 / 2.0; };
 
   // Test with various values of y.
@@ -533,16 +541,18 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN5000P05Q09) {
 // Invokes OneBitTest on various y using n=5000, p=0.05, q=0.5. Notice that
 // p + q < 1
 TEST_F(BasicRapporAnalyzerTest, OneBitTestN5000P005Q05) {
-  prob_0_becomes_1_ = 0.05;
-  prob_1_stays_1_ = 0.5;
-  int n = 5000;
+  prob_0_becomes_1_ = 0.05;  // NOLINT
+  prob_1_stays_1_ = 0.5;     // NOLINT
+  const int n = 5000;
 
   // This is the formula for computing expected_estimate when n=5000, p=0.05,
   // q=0.5.
+  // NOLINTNEXTLINE
   auto estimator = [](double y) { return (y - 250.0) / 0.45; };
 
   // This is the formula for computing expected_std_err when n=5000, p=0.05,
   // q=0.5.
+  // NOLINTNEXTLINE
   auto std_err = [](double y) { return sqrt(y * 0.45 + 125.0) / 0.45; };
 
   // Test with various values of y.
@@ -555,44 +565,43 @@ TEST_F(BasicRapporAnalyzerTest, OneBitTestN5000P005Q05) {
 TEST_F(BasicRapporAnalyzerTest, OneCategoryTest) {
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.1, 0.9, 1000, 800);
+    OneCategoryTest(0.1, 0.9, 1000, 800);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.1, 0.9, 1000, 500);
+    OneCategoryTest(0.1, 0.9, 1000, 500);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.1, 0.9, 1000, 100);
+    OneCategoryTest(0.1, 0.9, 1000, 100);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.2, 0.8, 1000, 900);
+    OneCategoryTest(0.2, 0.8, 1000, 900);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.25, 0.75, 1000, 600);
+    OneCategoryTest(0.25, 0.75, 1000, 600);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.3, 0.7, 1000, 200);
+    OneCategoryTest(0.3, 0.7, 1000, 200);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.3, 0.85, 1000, 700);
+    OneCategoryTest(0.3, 0.85, 1000, 700);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.1, 0.85, 1000, 400);
+    OneCategoryTest(0.1, 0.85, 1000, 400);  // NOLINT
   }
   {
     SCOPED_TRACE("");
-    OneCategoryTest(0.05, 0.7, 1000, 300);
+    OneCategoryTest(0.05, 0.7, 1000, 300);  // NOLINT
   }
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

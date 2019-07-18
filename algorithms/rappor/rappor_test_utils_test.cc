@@ -15,8 +15,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Tests the function DataToBinaryString().
 TEST(TestUtilsTest, DataToBinaryString) {
@@ -71,5 +70,4 @@ TEST(TestUtilsTest, BinaryStringToData) {
             BinaryStringToData("000000010000000100000000"));
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

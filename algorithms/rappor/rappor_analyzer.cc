@@ -31,12 +31,11 @@ using cobalt_lossmin::InstanceSet;
 using cobalt_lossmin::LabelSet;
 using cobalt_lossmin::Weights;
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Stackdriver metric contants
 namespace {
-const char kAnalyzeFailure[] = "rappor-analyzer-analyze-failure";
+constexpr char kAnalyzeFailure[] = "rappor-analyzer-analyze-failure";
 }  // namespace
 
 using crypto::byte;
@@ -454,7 +453,7 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
       // corresponding to the index of each set bit in the Bloom filter.
       for (size_t bloom_index = 0; bloom_index < num_bits; bloom_index++) {
         if (bloom_filter[bloom_index]) {
-          int row = row_block_base + bloom_index;
+          int row = row_block_base + static_cast<int>(bloom_index);
           sparse_matrix_triplets.emplace_back(row, column, 1.0);
         }
       }
@@ -474,8 +473,7 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
   return grpc::Status::OK;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 /*
 

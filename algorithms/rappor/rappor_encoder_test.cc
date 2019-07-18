@@ -21,8 +21,7 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/random_test_utils.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using encoder::ClientSecret;
 
@@ -49,40 +48,40 @@ TEST(RapporConfigValidatorTest, TestMinPower2Above) {
 
 TEST(RapporConfigValidatorTest, TestConstructor) {
   RapporConfig config;
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
-  config.set_num_bloom_bits(64);
-  config.set_num_hashes(5);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
+  config.set_num_bloom_bits(64);     // NOLINT
+  config.set_num_hashes(5);          // NOLINT
 
-  config.set_num_cohorts(100);
+  config.set_num_cohorts(100);  // NOLINT
   auto validator = RapporConfigValidator(config);
   EXPECT_EQ(128u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(200);
+  config.set_num_cohorts(200);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(256u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(300);
+  config.set_num_cohorts(300);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(400);
+  config.set_num_cohorts(400);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(500);
+  config.set_num_cohorts(500);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(600);
+  config.set_num_cohorts(600);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(1023);
+  config.set_num_cohorts(1023);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(1024);
+  config.set_num_cohorts(1024);  // NOLINT
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 }
@@ -115,12 +114,12 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Add two probabilities, still Invalid
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_bloom_bits, still Invalid
-  config.set_num_bloom_bits(8);
+  config.set_num_bloom_bits(8);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_hashes, still Invalid
@@ -128,7 +127,7 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // set num_cohorts: Valid
-  config.set_num_cohorts(20);
+  config.set_num_cohorts(20);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Explicitly set PRR to 0: Valid.
@@ -136,7 +135,7 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Explicitly set PRR to non-zero: Invalid.
-  config.set_prob_rr(0.1);
+  config.set_prob_rr(0.1);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Explicitly set PRR back to zero: Valid.
@@ -144,31 +143,31 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set one of the probabilities to negative: Invalid
-  config.set_prob_0_becomes_1(-0.3);
+  config.set_prob_0_becomes_1(-0.3);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set one of the probabilities to greater than 1: Invalid
-  config.set_prob_0_becomes_1(1.3);
+  config.set_prob_0_becomes_1(1.3);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Fix the probability: Valid
-  config.set_prob_0_becomes_1(0.3);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set the other probability to negative: Invalid
-  config.set_prob_1_stays_1(-0.7);
+  config.set_prob_1_stays_1(-0.7);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set the other probability to greater than 1: Invalid
-  config.set_prob_1_stays_1(1.7);
+  config.set_prob_1_stays_1(1.7);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Fix the probability: Valid
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_1_stays_1(0.7);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_bloom_bits to negative: Invalid
-  config.set_num_bloom_bits(-8);
+  config.set_num_bloom_bits(-8);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_bloom_bits to 0: Invalid
@@ -176,11 +175,11 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_bloom_bits back to positive: Valid
-  config.set_num_bloom_bits(8);
+  config.set_num_bloom_bits(8);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_hashes to negative: Invalid
-  config.set_num_hashes(-2);
+  config.set_num_hashes(-2);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_hashes to 0: Invalid
@@ -188,15 +187,15 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_hashes to 8: Invalid
-  config.set_num_hashes(8);
+  config.set_num_hashes(8);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_hashes back to positive: Valid
-  config.set_num_hashes(2);
+  config.set_num_hashes(2);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_cohorts to negative: Invalid
-  config.set_num_cohorts(-20);
+  config.set_num_cohorts(-20);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_cohorts to 0: Invalid
@@ -204,27 +203,27 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_cohorts to 1025: Invalid
-  config.set_num_cohorts(1025);
+  config.set_num_cohorts(1025);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_cohorts to 1024: Valid
-  config.set_num_cohorts(1024);
+  config.set_num_cohorts(1024);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_cohorts back to positive: Valid
-  config.set_num_cohorts(20);
+  config.set_num_cohorts(20);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_bloom_bits to equal num_hashes: Invalid
-  config.set_num_bloom_bits(2);
+  config.set_num_bloom_bits(2);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_bloom_bits to greater than num_hashes and a power of 2: Valid
-  config.set_num_bloom_bits(4);
+  config.set_num_bloom_bits(4);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kOK);
 
   // Set num_bloom_bits to greater than num_hashes but not a power of 2: Invalid
-  config.set_num_bloom_bits(3);
+  config.set_num_bloom_bits(3);  // NOLINT
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Test with an invalid ClientSecret
@@ -267,8 +266,8 @@ TEST(RapporEncoderTest, BasicRapporConfigValidation) {
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Add two probabilities but no categories: Invalid
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Add one category: Invalid.
@@ -285,7 +284,7 @@ TEST(RapporEncoderTest, BasicRapporConfigValidation) {
   TEST_BASIC_RAPPOR_CONFIG(config, kOK);
 
   // Explicitly set PRR to non-zero: Invalid.
-  config.set_prob_rr(0.1);
+  config.set_prob_rr(0.1);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Explicitly set PRR back to zero: Valid.
@@ -293,27 +292,27 @@ TEST(RapporEncoderTest, BasicRapporConfigValidation) {
   TEST_BASIC_RAPPOR_CONFIG(config, kOK);
 
   // Set one of the probabilities to negative: Invalid
-  config.set_prob_0_becomes_1(-0.3);
+  config.set_prob_0_becomes_1(-0.3);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set one of the probabilities to greater than 1: Invalid
-  config.set_prob_0_becomes_1(1.3);
+  config.set_prob_0_becomes_1(1.3);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Fix the probability: Valid
-  config.set_prob_0_becomes_1(0.3);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kOK);
 
   // Set the other probability to negative: Invalid
-  config.set_prob_1_stays_1(-0.7);
+  config.set_prob_1_stays_1(-0.7);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set the other the probability to greater than 1: Invalid
-  config.set_prob_1_stays_1(1.7);
+  config.set_prob_1_stays_1(1.7);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Fix the probability: Valid
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_1_stays_1(0.7);  // NOLINT
   TEST_BASIC_RAPPOR_CONFIG(config, kOK);
 
   // Add an empty category: Invalid
@@ -334,8 +333,8 @@ TEST(RapporEncoderTest, BasicRapporConfigValidation) {
 TEST(RapporEncoderTest, BasicRapporWithIntsConfigValidation) {
   // Create a config with three integer categories.
   BasicRapporConfig config;
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
   config.mutable_int_range_categories()->set_first(-1);
   config.mutable_int_range_categories()->set_last(1);
 
@@ -405,7 +404,7 @@ void DoBasicRapporNoRandomnessTest(int num_categories, bool q_is_one) {
 
   // The expected number of bits in the encoding is the least multiple of 8
   // greater than or equal to num_categories.
-  int expected_num_bits = 8 * (((num_categories - 1) / 8) + 1);
+  uint16_t expected_num_bits = 8 * (((num_categories - 1) / 8) + 1);  // NOLINT
 
   // For each category, obtain the observation and check that the bit pattern
   // is as expected.
@@ -440,6 +439,7 @@ void DoBasicRapporNoRandomnessTest(int num_categories, bool q_is_one) {
 // involved in the encoded string.
 TEST(BasicRapporEncoderTest, NoRandomness) {
   // We test with between 2 and 50 categories.
+  // NOLINTNEXTLINE
   for (int num_categories = 2; num_categories <= 50; num_categories++) {
     // See comments at DoBasicRapporNoRandomnessTest.
     DoBasicRapporNoRandomnessTest(num_categories, true);
@@ -644,24 +644,36 @@ TEST_F(BasicRapporDeterministicTest, ChiSquaredTest) {
   // Notice that these values were chosen by experimentation to be as small as
   // possible so that the test passes. They do not necessarily correspond to
   // natural confidence intervals for the chi-squared test.
+  // NOLINTNEXTLINE
   for (int num_categories = 2; num_categories < 40; num_categories += 7) {
     for (int selected_category = 0; selected_category < num_categories;
          selected_category += (num_categories / 3 + 1)) {
       // The first parameter is prob_0_becomes_1, and the second parameter is
       // prob_1_stays_1.
+      // NOLINTNEXTLINE
       DoChiSquaredTest(0.01, 0.99, num_categories, selected_category, 8.2);
+      // NOLINTNEXTLINE
       DoChiSquaredTest(0.1, 0.9, num_categories, selected_category, 9.4);
+      // NOLINTNEXTLINE
       DoChiSquaredTest(0.2, 0.8, num_categories, selected_category, 11.1);
+      // NOLINTNEXTLINE
       DoChiSquaredTest(0.25, 0.75, num_categories, selected_category, 11.8);
+      // NOLINTNEXTLINE
       DoChiSquaredTest(0.3, 0.7, num_categories, selected_category, 11.8);
     }
     // The first parameter is prob_0_becomes_1, and the second parameter is
     // prob_1_stays_1.
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.0, 1.0, num_categories, 0.0);
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.01, 0.99, num_categories, 8.2);
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.1, 0.9, num_categories, 9.4);
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.2, 0.8, num_categories, 11.1);
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.25, 0.75, num_categories, 11.8);
+    // NOLINTNEXTLINE
     DoChiSquaredTestForNullObs(0.3, 0.7, num_categories, 11.8);
   }
 }
@@ -671,8 +683,8 @@ TEST_F(BasicRapporDeterministicTest, ChiSquaredTest) {
 TEST(BasicRapporEncoderTest, BadCategory) {
   // Configure Basic RAPPOR with two categories, "dog" and "cat".
   BasicRapporConfig config;
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
   config.mutable_string_categories()->add_category("dog");
   config.mutable_string_categories()->add_category("cat");
 
@@ -698,7 +710,7 @@ TEST(BasicRapporEncoderTest, EncodeIndex) {
   BasicRapporConfig config;
   config.set_prob_0_becomes_1(0.0);
   config.set_prob_1_stays_1(1.0);
-  config.mutable_indexed_categories()->set_num_categories(5);
+  config.mutable_indexed_categories()->set_num_categories(5);  // NOLINT
 
   // Construct a BasicRapporEncoder.
   static const std::string kClientSecretToken =
@@ -723,7 +735,7 @@ TEST(BasicRapporEncoderTest, EncodeIndex) {
   obs.Clear();
 
   // Validate that category index 5 yields kInvalidInput.
-  value.set_index_value(5);
+  value.set_index_value(5);  // NOLINT
   EXPECT_EQ(kInvalidInput, encoder.Encode(value, &obs));
 }
 
@@ -737,8 +749,9 @@ class StringRapporEncoderTest : public ::testing::Test {
     return encoder_->DeriveCohortFromSecret();
   }
 
-  void SetNewEncoder(const RapporConfig& config, encoder::ClientSecret secret) {
-    encoder_.reset(new RapporEncoder(config, secret));
+  void SetNewEncoder(const RapporConfig& config,
+                     const encoder::ClientSecret& secret) {
+    encoder_ = std::make_unique<RapporEncoder>(config, secret);
   }
 
   std::string MakeBloomBits(const ValuePart& value) {
@@ -768,7 +781,7 @@ class StringRapporEncoderTest : public ::testing::Test {
     config.set_num_bloom_bits(num_bits);
     config.set_num_hashes(num_hashes);
     // This value will not be used but it needs to be something valid.
-    config.set_num_cohorts(100);
+    config.set_num_cohorts(100);  // NOLINT
     // We use a fixed client secret so this test is deterministic.
     static const char kClientSecret[] = "4b4BxKq253TTCWIXFhLDTg==";
     SetNewEncoder(config, ClientSecret::FromToken(kClientSecret));
@@ -866,6 +879,7 @@ class StringRapporEncoderTest : public ::testing::Test {
     }
   }
 
+ public:
   std::unique_ptr<RapporEncoder> encoder_;
 };
 
@@ -876,24 +890,24 @@ class StringRapporEncoderTest : public ::testing::Test {
 TEST_F(StringRapporEncoderTest, AttemptDeriveCohortFromSecret) {
   RapporConfig config;
   // These config values are not relevant but need to be something valid.
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
-  config.set_num_bloom_bits(64);
-  config.set_num_hashes(5);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
+  config.set_num_bloom_bits(64);     // NOLINT
+  config.set_num_hashes(5);          // NOLINT
 
   // We set num_cohorts to 10 so num_cohorts_2_power will be 16.
-  config.set_num_cohorts(10);
+  config.set_num_cohorts(10);  // NOLINT
 
   // We use a fixed client secret so this test is deterministic.
-  static const char kClientSecret[] = "4b4BxKq253TTCWIXFhLDTg==";
+  static std::string kClientSecret = "4b4BxKq253TTCWIXFhLDTg==";
   SetNewEncoder(config, ClientSecret::FromToken(kClientSecret));
 
   // Initialize counts to all zeroes.
-  int counts[16] = {0};
+  int counts[16] = {0};  // NOLINT readability-magic-numbers
 
   // Invoke AttemptDeriveCohortFromSecret() 1000 times with successive
   // attempt indices. Accumulate the results.
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000; i++) {  // NOLINT
     counts[AttemptDeriveCohortFromSecret(i)]++;
   }
 
@@ -903,10 +917,11 @@ TEST_F(StringRapporEncoderTest, AttemptDeriveCohortFromSecret) {
   // Each of the results for buckets 10, 11 12, 13, 14 and 15 would have been
   // discarded and another attempt would have been made. That happened with
   // probability (75 + 71 + 56 + 58 + 44 + 53) / 1000 = 0.357.
-  int expected_counts[] = {58, 71, 69, 62, 70, 64, 76, 57,
-                           48, 68, 75, 71, 56, 58, 44, 53};
+  const int expected_counts[] = {58, 71, 69, 62, 70, 64, 76, 57,
+                                 48, 68, 75, 71, 56, 58, 44, 53};
 
-  for (int i = 0; i < 16; i++) {
+  for (size_t i = 0; i < sizeof(expected_counts) / sizeof(expected_counts[0]);
+       i++) {
     EXPECT_EQ(expected_counts[i], counts[i]) << "i=" << i;
   }
 }
@@ -918,21 +933,21 @@ TEST_F(StringRapporEncoderTest, AttemptDeriveCohortFromSecret) {
 TEST_F(StringRapporEncoderTest, DeriveCohortFromSecret) {
   RapporConfig config;
   // These config values are not relevant but need to be valid.
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
-  config.set_num_bloom_bits(64);
-  config.set_num_hashes(5);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
+  config.set_num_bloom_bits(64);     // NOLINT
+  config.set_num_hashes(5);          // NOLINT
 
   // We set num_cohorts to 10.
-  config.set_num_cohorts(10);
+  config.set_num_cohorts(10);  // NOLINT
 
   // Initialize counts to all zeroes.
-  int counts[10] = {0};
+  int counts[10] = {0};  // NOLINT
 
   crypto::DeterministicRandom deterministic_random;
 
   // Invoke DeriveCohortFromSecret() 1000 times. Accumulate the results.
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 1000; i++) {  // NOLINT
     SetNewEncoder(config,
                   ClientSecret::GenerateNewSecret(&deterministic_random));
     // The constructor should have already invoked DeriveCohortFromSecret
@@ -943,9 +958,9 @@ TEST_F(StringRapporEncoderTest, DeriveCohortFromSecret) {
 
   // These are the counts we found we get. 1000/10 = 100 is the expected value
   // for each count.
-  int expected_counts[] = {85, 98, 104, 93, 113, 93, 89, 99, 103, 123};
+  const int expected_counts[] = {85, 98, 104, 93, 113, 93, 89, 99, 103, 123};
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {  // NOLINT
     EXPECT_EQ(expected_counts[i], counts[i]) << "i=" << i;
   }
 }
@@ -960,9 +975,9 @@ TEST_F(StringRapporEncoderTest, DeriveCohortFromSecret) {
 TEST_F(StringRapporEncoderTest, MakeBloomBits) {
   RapporConfig config;
   // These config values are not relevant but need to be valid.
-  config.set_prob_0_becomes_1(0.3);
-  config.set_prob_1_stays_1(0.7);
-  config.set_num_cohorts(10);
+  config.set_prob_0_becomes_1(0.3);  // NOLINT
+  config.set_prob_1_stays_1(0.7);    // NOLINT
+  config.set_num_cohorts(10);        // NOLINT
 
   // Set the number of bloom bits to 16
   static const int kNumBloomBits = 16;
@@ -983,11 +998,11 @@ TEST_F(StringRapporEncoderTest, MakeBloomBits) {
   // We invoke MakeBloomBits() 1000 times and accumulate the results.
 
   // Generate 100 random strings of length 100.
-  for (int i = 0; i < 100; i++) {
-    crypto::byte random_bits[100];
+  for (int i = 0; i < 100; i++) {   // NOLINT readability-magic-numbers
+    crypto::byte random_bits[100];  // NOLINT readability-magic-numbers
     prng.RandomBytes(random_bits, sizeof(random_bits));
     // Use 10 progressively longer initial segments of |random_bits|.
-    for (int size = 10; size <= 100; size += 10) {
+    for (int size = 10; size <= 100; size += 10) {  // NOLINT
       ValuePart value;
       auto blob_value = std::string(reinterpret_cast<char*>(random_bits), size);
       value.set_blob_value(blob_value);
@@ -1007,10 +1022,10 @@ TEST_F(StringRapporEncoderTest, MakeBloomBits) {
 
   // These are the counts we found we get. 2000/16 = 125 is the
   // expected value for each count.
-  int expected_counts[] = {114, 139, 100, 113, 117, 118, 119, 122,
-                           137, 129, 114, 134, 116, 109, 137, 123};
+  const int expected_counts[] = {114, 139, 100, 113, 117, 118, 119, 122,
+                                 137, 129, 114, 134, 116, 109, 137, 123};
 
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) {  // NOLINT
     EXPECT_EQ(expected_counts[i], counts[i]) << "i=" << i;
   }
 }
@@ -1019,10 +1034,10 @@ TEST_F(StringRapporEncoderTest, MakeBloomBits) {
 // we invoke DoChiSquaredTest().
 TEST_F(StringRapporEncoderTest, ChiSquaredTest) {
   // Use num_bits = 4, 16, 64, 256, 1024
-  for (int num_bits_exp = 2; num_bits_exp <= 10; num_bits_exp += 2) {
+  for (int num_bits_exp = 2; num_bits_exp <= 10; num_bits_exp += 2) {  // NOLINT
     int num_bits = 1 << num_bits_exp;
     // Use num_hashes = 2, 5 and 8.
-    int max_num_hashes = std::min(8, num_bits - 1);
+    int max_num_hashes = std::min(8, num_bits - 1);  // NOLINT
     for (int num_hashes = 2; num_hashes <= max_num_hashes; num_hashes += 3) {
       // The first two parameters are p and q.
       //
@@ -1030,14 +1045,13 @@ TEST_F(StringRapporEncoderTest, ChiSquaredTest) {
       // values were chosen by experimentation to be as small as possible so
       // that the test passes. They do not necessarily correspond to natural
       // confidence intervals for the chi-squared test.
-      DoChiSquaredTest(0.01, 0.99, num_bits, num_hashes, 4.95);
-      DoChiSquaredTest(0.1, 0.9, num_bits, num_hashes, 5.38);
-      DoChiSquaredTest(0.2, 0.8, num_bits, num_hashes, 2.26);
-      DoChiSquaredTest(0.25, 0.75, num_bits, num_hashes, 2.83);
-      DoChiSquaredTest(0.3, 0.7, num_bits, num_hashes, 2.31);
+      DoChiSquaredTest(0.01, 0.99, num_bits, num_hashes, 4.95);  // NOLINT
+      DoChiSquaredTest(0.1, 0.9, num_bits, num_hashes, 5.38);    // NOLINT
+      DoChiSquaredTest(0.2, 0.8, num_bits, num_hashes, 2.26);    // NOLINT
+      DoChiSquaredTest(0.25, 0.75, num_bits, num_hashes, 2.83);  // NOLINT
+      DoChiSquaredTest(0.3, 0.7, num_bits, num_hashes, 2.31);    // NOLINT
     }
   }
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

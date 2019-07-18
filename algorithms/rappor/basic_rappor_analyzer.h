@@ -44,16 +44,20 @@ class BasicRapporAnalyzer {
 
   // The number of times that AddObservation() was invoked minus the value
   // of observation_errors().
-  size_t num_observations() const { return num_observations_; }
+  [[nodiscard]] size_t num_observations() const { return num_observations_; }
 
   // The number of times that AddObservation() was invoked and the observation
   // was discarded due to an error. If this number is not zero it indicates
   // that the Analyzer received data that was not created by a legitimate
   // Cobalt client. See the error logs for details of the errors.
-  size_t observation_errors() const { return observation_errors_; }
+  [[nodiscard]] size_t observation_errors() const {
+    return observation_errors_;
+  }
 
   // The number of categories being analyzed.
-  size_t num_categories() const { return category_counts_.size(); }
+  [[nodiscard]] size_t num_categories() const {
+    return category_counts_.size();
+  }
 
   struct CategoryResult {
     ValuePart category;

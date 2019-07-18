@@ -61,7 +61,7 @@ void PopulateRapporCandidateList(uint32_t num_candidates,
 
 // Makes a RapporConfig with the given data.
 RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts,
-                    uint32_t num_hashes, double p, double q);
+                    uint32_t num_hashes, float p, float q);
 
 // Given a string of "0"s and "1"s of length a multiple of 8, and a cohort,
 // returns a RapporObservation for the given cohort whose data is equal to the

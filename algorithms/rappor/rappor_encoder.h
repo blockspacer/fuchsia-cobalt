@@ -26,8 +26,7 @@
 #include "util/crypto_util/hash.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 enum Status {
   kOK = 0,
@@ -42,13 +41,13 @@ class RapporEncoder {
   // The |client_secret| is used to determine the cohort and the PRR.
   RapporEncoder(const RapporConfig& config,
                 encoder::ClientSecret client_secret);
-  virtual ~RapporEncoder();
+  virtual ~RapporEncoder() = default;
 
   // Encodes |value| using RAPPOR encoding. Returns kOK on success, or
   // kInvalidConfig if the |config| passed to the constructor is not valid.
   Status Encode(const ValuePart& value, RapporObservation* observation_out);
 
-  uint32_t cohort() const { return cohort_num_; }
+  [[nodiscard]] uint32_t cohort() const { return cohort_num_; }
 
  private:
   friend class StringRapporEncoderTest;
@@ -70,7 +69,7 @@ class RapporEncoder {
   // Returns true for success or false if the hash operation fails for any
   // reason.
   static bool HashValueAndCohort(
-      const std::string serialized_value, uint32_t cohort_num,
+      const std::string& serialized_value, uint32_t cohort_num,
       uint32_t num_hashes,
       crypto::byte hashed_value[crypto::hash::DIGEST_SIZE]);
 
@@ -82,8 +81,8 @@ class RapporEncoder {
   // IMPORTANT: We index bits "from the right." This means that bit number zero
   // is the least significant bit of the last byte of the Bloom filter.
   static uint32_t ExtractBitIndex(
-      crypto::byte hashed_value[crypto::hash::DIGEST_SIZE], size_t hash_index,
-      uint32_t num_bits);
+      crypto::byte const hashed_value[crypto::hash::DIGEST_SIZE],
+      size_t hash_index, uint32_t num_bits);
 
   // Generates the array of bloom bits derived from |value|. Returns the
   // empty string on error.
@@ -122,7 +121,7 @@ class BasicRapporEncoder {
  public:
   BasicRapporEncoder(const BasicRapporConfig& config,
                      encoder::ClientSecret client_secret);
-  ~BasicRapporEncoder();
+  ~BasicRapporEncoder() = default;
 
   // Encodes |value| using Basic RAPPOR encoding. |value| must be one
   // of the categories listed in the |categories| field of the |config|
@@ -157,7 +156,6 @@ class BasicRapporEncoder {
   encoder::ClientSecret client_secret_;
 };
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 #endif  // COBALT_ALGORITHMS_RAPPOR_RAPPOR_ENCODER_H_

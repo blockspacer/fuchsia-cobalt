@@ -4,8 +4,7 @@
 
 #include "algorithms/rappor/rappor_analyzer_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using encoder::ClientSecret;
 
@@ -27,10 +26,15 @@ TEST_F(RapporAnalyzerTest, BuildCandidateMapSmallTest) {
   int expected_bit_indices[kNumCandidates][kNumCohorts*kNumHashes] = {
   // cihj means cohort = i and hash-index = j.
   // c0h0 c0h1 c1h0 c1h1 c2h0 c2h2
+      // NOLINTNEXTLINE
       {3,   5,   2,   6,   3,   6},  // candidate 0
+      // NOLINTNEXTLINE
       {1,   5,   4,   7,   2,   0},  // candidate 1
+      // NOLINTNEXTLINE
       {3,   0,   2,   0,   1,   4},  // candidate 2
+      // NOLINTNEXTLINE
       {5,   1,   2,   4,   2,   4},  // candidate 3
+      // NOLINTNEXTLINE
       {1,   4,   3,   1,   2,   6},  // candidate 4
   };
   // clang-format on
@@ -250,35 +254,36 @@ TEST_F(RapporAnalyzerTest, SimpleAnalyzeTest) {
   static const uint32_t kNumBloomBits = 8;
   static const bool print_estimates = false;
 
-  std::vector<int> candidate_indices(100, 5);
-  std::vector<int> true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};
+  std::vector<int> candidate_indices(100, 5);  // NOLINT
+  std::vector<int> true_candidate_counts = {0,   0, 0, 0, 0,
+                                            100, 0, 0, 0, 0};  // NOLINT
   ShortExperimentWithAnalyze(
       "p=0, q=1, only candidate 5", kNumCandidates, kNumBloomBits, kNumCohorts,
       kNumHashes, candidate_indices, true_candidate_counts, print_estimates);
 
-  candidate_indices = std::vector<int>(20, 1);
-  candidate_indices.insert(candidate_indices.end(), 20, 4);
-  candidate_indices.insert(candidate_indices.end(), 60, 9);
-  true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};
+  candidate_indices = std::vector<int>(20, 1);                // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
+  true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
   ShortExperimentWithAnalyze("p=0, q=1, several candidates", kNumCandidates,
                              kNumBloomBits, kNumCohorts, kNumHashes,
                              candidate_indices, true_candidate_counts,
                              print_estimates);
 
-  prob_0_becomes_1_ = 0.1;
-  prob_1_stays_1_ = 0.9;
+  prob_0_becomes_1_ = 0.1;  // NOLINT
+  prob_1_stays_1_ = 0.9;    // NOLINT
 
-  candidate_indices = std::vector<int>(100, 5);
-  true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};
+  candidate_indices = std::vector<int>(100, 5);              // NOLINT
+  true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};  // NOLINT
   ShortExperimentWithAnalyze("p=0.1, q=0.9, only candidate 5", kNumCandidates,
                              kNumBloomBits, kNumCohorts, kNumHashes,
                              candidate_indices, true_candidate_counts,
                              print_estimates);
 
-  candidate_indices = std::vector<int>(20, 1);
-  candidate_indices.insert(candidate_indices.end(), 20, 4);
-  candidate_indices.insert(candidate_indices.end(), 60, 9);
-  true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};
+  candidate_indices = std::vector<int>(20, 1);                // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
+  true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
   ShortExperimentWithAnalyze("p=0.1, q=0.9, several candidates", kNumCandidates,
                              kNumBloomBits, kNumCohorts, kNumHashes,
                              candidate_indices, true_candidate_counts,
@@ -299,7 +304,7 @@ TEST_F(RapporAnalyzerTest, SingleCandidateTest) {
 
   SetAnalyzer(kNumCandidates, kNumBloomBits, kNumCohorts, kNumHashes);
 
-  std::vector<int> candidate_indices(100, 0);
+  std::vector<int> candidate_indices(100, 0);  // NOLINT
   AddObservationsForCandidates(candidate_indices);
 
   std::vector<CandidateResult> results;
@@ -334,12 +339,12 @@ TEST_F(RapporAnalyzerTest, ExactSolutionTest) {
 
   SetAnalyzer(kNumCandidates, kNumBloomBits, kNumCohorts, kNumHashes);
 
-  std::vector<int> candidate_indices(10, 0);
-  candidate_indices.insert(candidate_indices.end(), 10, 1);
-  candidate_indices.insert(candidate_indices.end(), 10, 2);
-  candidate_indices.insert(candidate_indices.end(), 10, 3);
-  candidate_indices.insert(candidate_indices.end(), 10, 4);
-  candidate_indices.insert(candidate_indices.end(), 100, 9);
+  std::vector<int> candidate_indices(10, 0);                  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 1);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 2);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 3);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 4);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 9);  // NOLINT
   AddObservationsForCandidates(candidate_indices);
 
   std::vector<CandidateResult> results;
@@ -373,17 +378,17 @@ TEST_F(RapporAnalyzerTest, HighAccuracySolutionTest) {
   static const uint32_t kNumBloomBits = 64;
 
   // Small noise introduced.
-  prob_0_becomes_1_ = 0.1;
-  prob_1_stays_1_ = 0.9;
+  prob_0_becomes_1_ = 0.1;  // NOLINT
+  prob_1_stays_1_ = 0.9;    // NOLINT
 
   SetAnalyzer(kNumCandidates, kNumBloomBits, kNumCohorts, kNumHashes);
 
-  std::vector<int> candidate_indices(10, 0);
-  candidate_indices.insert(candidate_indices.end(), 10, 1);
-  candidate_indices.insert(candidate_indices.end(), 10, 2);
-  candidate_indices.insert(candidate_indices.end(), 10, 3);
-  candidate_indices.insert(candidate_indices.end(), 10, 4);
-  candidate_indices.insert(candidate_indices.end(), 100, 9);
+  std::vector<int> candidate_indices(10, 0);                  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 1);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 2);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 3);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 10, 4);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 9);  // NOLINT
   AddObservationsForCandidates(candidate_indices);
 
   std::vector<CandidateResult> results;
@@ -404,19 +409,19 @@ TEST_F(RapporAnalyzerTest, KHeavyHittersTest) {
   static const uint32_t kNumBloomBits = 16;
 
   // Small noise introduced
-  prob_0_becomes_1_ = 0.1;
-  prob_1_stays_1_ = 0.9;
+  prob_0_becomes_1_ = 0.1;  // NOLINT
+  prob_1_stays_1_ = 0.9;    // NOLINT
 
   SetAnalyzer(kNumCandidates, kNumBloomBits, kNumCohorts, kNumHashes);
 
   std::vector<int> candidate_indices;
-  candidate_indices.insert(candidate_indices.end(), 100, 1);
-  candidate_indices.insert(candidate_indices.end(), 100, 2);
-  candidate_indices.insert(candidate_indices.end(), 100, 4);
-  candidate_indices.insert(candidate_indices.end(), 100, 8);
-  candidate_indices.insert(candidate_indices.end(), 100, 16);
-  candidate_indices.insert(candidate_indices.end(), 100, 32);
-  candidate_indices.insert(candidate_indices.end(), 100, 64);
+  candidate_indices.insert(candidate_indices.end(), 100, 1);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 2);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 4);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 8);   // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 16);  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 32);  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 100, 64);  // NOLINT
   AddObservationsForCandidates(candidate_indices);
 
   std::vector<CandidateResult> results;
@@ -447,16 +452,16 @@ TEST_F(RapporAnalyzerTest, StandardErrorTest) {
   static const uint32_t kNumBloomBits = 32;
 
   // Large noise introduced.
-  prob_0_becomes_1_ = 0.4;
-  prob_1_stays_1_ = 0.6;
+  prob_0_becomes_1_ = 0.4;  // NOLINT
+  prob_1_stays_1_ = 0.6;    // NOLINT
 
   SetAnalyzer(kNumCandidates, kNumBloomBits, kNumCohorts, kNumHashes);
 
-  std::vector<int> candidate_indices(1000, 0);
-  candidate_indices.insert(candidate_indices.end(), 1000, 10);
-  candidate_indices.insert(candidate_indices.end(), 1000, 20);
-  candidate_indices.insert(candidate_indices.end(), 1000, 30);
-  candidate_indices.insert(candidate_indices.end(), 1000, 40);
+  std::vector<int> candidate_indices(1000, 0);                  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 1000, 10);  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 1000, 20);  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 1000, 30);  // NOLINT
+  candidate_indices.insert(candidate_indices.end(), 1000, 40);  // NOLINT
   AddObservationsForCandidates(candidate_indices);
 
   std::vector<CandidateResult> results;
@@ -469,5 +474,4 @@ TEST_F(RapporAnalyzerTest, StandardErrorTest) {
   EXPECT_GT(results[40].std_error, 0);
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

@@ -22,15 +22,15 @@
 
 #include "util/log_based_metrics.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Stackdriver metric constants
 namespace {
-const char kBloomBitCounterConstructorFailure[] =
+constexpr char kBloomBitCounterConstructorFailure[] =
     "bloom-bit-counter-constructor-failure";
-const char kAddObservationFailure[] =
+constexpr char kAddObservationFailure[] =
     "bloom-bin-counter-add-observation-failure";
+constexpr int kBitsPerByte = 8;
 }  // namespace
 
 BloomBitCounter::BloomBitCounter(const RapporConfig& config)
@@ -45,7 +45,7 @@ BloomBitCounter::BloomBitCounter(const RapporConfig& config)
   for (size_t cohort = 0; cohort < config_->num_cohorts(); cohort++) {
     estimated_bloom_counts_.emplace_back(cohort, num_bits);
   }
-  num_bloom_bytes_ = (num_bits + 7) / 8;
+  num_bloom_bytes_ = (num_bits + kBitsPerByte - 1) / kBitsPerByte;
 }
 
 bool BloomBitCounter::AddObservation(const RapporObservation& obs) {
@@ -84,9 +84,10 @@ bool BloomBitCounter::AddObservation(const RapporObservation& obs) {
   // for zero bytes.
   std::vector<size_t>& bit_sums = estimated_bloom_counts_[cohort].bit_sums;
   size_t bit_index = 0;
-  for (int byte_index = num_bloom_bytes_ - 1; byte_index >= 0; byte_index--) {
+  for (size_t byte_index = num_bloom_bytes_ - 1; byte_index >= 0;
+       byte_index--) {
     uint8_t bit_mask = 1;
-    for (int bit_in_byte_index = 0; bit_in_byte_index < 8;
+    for (int bit_in_byte_index = 0; bit_in_byte_index < kBitsPerByte;
          bit_in_byte_index++) {
       if (bit_index >= bit_sums.size()) {
         return true;
@@ -139,5 +140,4 @@ const std::vector<CohortCounts>& BloomBitCounter::EstimateCounts() {
   return estimated_bloom_counts_;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

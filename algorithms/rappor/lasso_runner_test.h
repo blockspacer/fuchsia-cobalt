@@ -15,17 +15,15 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/lossmin/eigen-types.h"
 
-using cobalt_lossmin::InstanceSet;
-using cobalt_lossmin::LabelSet;
-using cobalt_lossmin::Weights;
-
 namespace cobalt {
 namespace rappor {
+
+static const float kVerySmallPenalty = 1e-6;
 
 class LassoRunnerTest : public ::testing::Test {
  protected:
   // Set the matrix pointed to by lasso_runner_.
-  void SetLassoRunner(const InstanceSet* matrix);
+  void SetLassoRunner(const cobalt_lossmin::InstanceSet* matrix);
 
   // Checks correctness of the solution to a single lasso problem stored in
   // |results|. lasso_runner_ must store the minimizer data.
@@ -47,20 +45,21 @@ class LassoRunnerTest : public ::testing::Test {
   // where l1 = lasso_runner_->minimizer_data_.l1.
   // The function checks whether the norm of the violations of the
   // KKT condition is within a certain bound.
-  void CheckFirstRapporStepCorrectness(const LabelSet& right_hand_side,
-                                       const Weights& results);
+  void CheckFirstRapporStepCorrectness(
+      const cobalt_lossmin::LabelSet& right_hand_side,
+      const cobalt_lossmin::Weights& results);
 
   // Ensures that the last penalty in the lasso path is very small.
   // Logarithmic path is more appropriate in this case.
   void MakeLastLassoStepExact() {
     lasso_runner_->use_linear_path_ = false;
-    lasso_runner_->l1_max_to_l1_min_ratio_ = 1e-6;
+    lasso_runner_->l1_max_to_l1_min_ratio_ = kVerySmallPenalty;
   }
 
   // Checks that the |nonzero_cols| contains exactly column ids corresponding to
   // nonzero entries.
   void CheckNonzeroCandidates(const std::vector<int>& nonzero_cols,
-                              const Weights& results);
+                              const cobalt_lossmin::Weights& results);
 
   // Checks that the constants critical for the lasso path have reasonable
   // values.
@@ -69,13 +68,13 @@ class LassoRunnerTest : public ::testing::Test {
   // Creates a random sparse |m| x |n| matrix with positive entries.
   // The number of nonzero entries will approximately equal
   // |num_nonzero_entries|.
-  InstanceSet RandomMatrix(const int m, const int n,
-                           const int num_nonzero_entries);
+  cobalt_lossmin::InstanceSet RandomMatrix(int m, int n,
+                                           int num_nonzero_entries);
 
-  std::unique_ptr<LassoRunner> lasso_runner_;
+  std::unique_ptr<LassoRunner> lasso_runner_;  // NOLINT
 
   // Random device
-  std::random_device random_dev_;
+  std::random_device random_dev_;  // NOLINT
 };
 
 }  // namespace rappor

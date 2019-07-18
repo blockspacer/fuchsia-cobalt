@@ -4,8 +4,11 @@
 
 #include "algorithms/rappor/lasso_runner_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
+
+using cobalt_lossmin::InstanceSet;
+using cobalt_lossmin::LabelSet;
+using cobalt_lossmin::Weights;
 
 // Tests of the correctness of the first RAPPOR step.
 // Note: some of the tests are heuristic.
@@ -33,7 +36,7 @@ TEST_F(LassoRunnerTest, ZeroSolution) {
   std::vector<int> second_step_cols;
 
   // Reset the runner and run first lasso step.
-  lasso_runner_.reset(new LassoRunner(&matrix));
+  lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
   lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
                                     right_hand_side, &results,
                                     &second_step_cols);
@@ -61,7 +64,7 @@ TEST_F(LassoRunnerTest, ExactSolution) {
 
   // Create the random matrix and a random solution.
   for (int k = 0; k < n; k++) {
-    triplets.push_back(Eigen::Triplet<double>(k, k, 1.0));
+    triplets.emplace_back(Eigen::Triplet<double>(k, k, 1.0));
   }
   int nonzero_entries_count = 0;
   while (nonzero_entries_count < num_nonzero_entries) {
@@ -69,7 +72,7 @@ TEST_F(LassoRunnerTest, ExactSolution) {
     uint32_t j = n_distribution(random_dev_);
     if (j > i) {
       double entry = real_distribution(random_dev_);
-      triplets.push_back(Eigen::Triplet<double>(i, j, entry));
+      triplets.emplace_back(Eigen::Triplet<double>(i, j, entry));
       nonzero_entries_count++;
     }
   }
@@ -90,7 +93,7 @@ TEST_F(LassoRunnerTest, ExactSolution) {
   std::vector<int> second_step_cols;
 
   // Reset the lasso runner and perform the first step of RAPPOR.
-  lasso_runner_.reset(new LassoRunner(&matrix));
+  lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
   MakeLastLassoStepExact();
   lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
                                     right_hand_side, &results,
@@ -114,6 +117,7 @@ TEST_F(LassoRunnerTest, MaxNonzeros) {
   static const int n = 50;
   static const int num_nonzero_entries =
       500;  // the actual number of nonzero entries might be slightly different
+  static const int max_norm_factor = 100;
 
   std::uniform_real_distribution<double> real_distribution(-1.0, 1.0);
   std::uniform_int_distribution<int> n_distribution(1, n);
@@ -132,12 +136,12 @@ TEST_F(LassoRunnerTest, MaxNonzeros) {
     LabelSet right_hand_side = random_right_hand_side;
 
     int max_nonzero_coeffs = n_distribution(random_dev_);
-    double max_solution_1_norm = 100 * random_solution.lpNorm<1>();
+    double max_solution_1_norm = max_norm_factor * random_solution.lpNorm<1>();
 
     // Reset the lasso runner and run the first RAPPOR step.
     Weights results = Weights::Zero(n);
     std::vector<int> second_step_cols;
-    lasso_runner_.reset(new LassoRunner(&matrix));
+    lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
     lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
                                       right_hand_side, &results,
                                       &second_step_cols);
@@ -188,7 +192,7 @@ TEST_F(LassoRunnerTest, MaxNorm) {
 
     Weights results = Weights::Zero(n);
     std::vector<int> second_step_cols;
-    lasso_runner_.reset(new LassoRunner(&matrix));
+    lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
     lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
                                       right_hand_side, &results,
                                       &second_step_cols);
@@ -218,6 +222,7 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
   static const int n = 50;
   static const int num_nonzero_entries =
       100;  // the actual number of non-zeros might be slightly different
+  static const double l1_penalty = 1e-8;
   std::vector<Eigen::Triplet<double>> triplets(n + num_nonzero_entries);
 
   std::uniform_int_distribution<int> n_distribution(0, n - 1);
@@ -227,7 +232,7 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
   // Create the random matrix and a random solution.
   Weights random_solution(n);
   for (int k = 0; k < n; k++) {
-    triplets.push_back(Eigen::Triplet<double>(k, k, 1.0));
+    triplets.emplace_back(Eigen::Triplet<double>(k, k, 1.0));
     random_solution(k) = real_distribution(random_dev_);
   }
   int nonzero_entries_count = 0;
@@ -236,7 +241,7 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
     uint32_t j = n_distribution(random_dev_);
     if (j < i) {
       double entry = real_distribution(random_dev_);
-      triplets.push_back(Eigen::Triplet<double>(i, j, entry));
+      triplets.emplace_back(Eigen::Triplet<double>(i, j, entry));
       nonzero_entries_count++;
     }
   }
@@ -247,15 +252,15 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
 
   // Set standard errors to zero and prepare the minimizer input.
   std::vector<double> standard_errs(m, 0.0);
-  Weights initial_guess = Weights::Constant(n, 0.75);
+  Weights initial_guess = Weights::Constant(n, 0.75);  // NOLINT
   Weights results = Weights::Zero(n);
   Weights estimated_errs = Weights::Zero(n);
 
   // Reset the lasso runner and run the second RAPPOR step.
-  lasso_runner_.reset(new LassoRunner(&matrix));
-  lasso_runner_->GetExactValuesAndStdErrs(1e-8, initial_guess, standard_errs,
-                                          matrix, right_hand_side, &results,
-                                          &estimated_errs);
+  lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
+  lasso_runner_->GetExactValuesAndStdErrs(
+      l1_penalty, initial_guess, standard_errs, matrix, right_hand_side,
+      &results, &estimated_errs);
 
   // Check the correctness of the solution and that the estimated errors are
   // zero.
@@ -270,14 +275,15 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
 // algorithm.
 TEST_F(LassoRunnerTest, SecondStepErrors) {
   static const int n = 50;
+  static const double l1_penalty = 1e-8;
   std::vector<Eigen::Triplet<double>> triplets;
-  std::uniform_real_distribution<double> real_distribution(0.5, 1.0);
+  std::uniform_real_distribution<double> real_distribution(0.5, 1.0);  // NOLINT
 
   // Create the identity matrix and a random solution.
   Weights random_solution(n);
   for (int k = 0; k < n; k++) {
     random_solution(k) = real_distribution(random_dev_);
-    triplets.push_back(Eigen::Triplet<double>(k, k, 1.0));
+    triplets.push_back(Eigen::Triplet<double>(k, k, 1.0));  // NOLINT
   }
 
   InstanceSet matrix(n, n);
@@ -288,18 +294,18 @@ TEST_F(LassoRunnerTest, SecondStepErrors) {
   std::vector<double> standard_errs(n);
   Weights errors_to_compare(n);
   for (int k = 0; k < n; k++) {
-    standard_errs[k] = 0.1 * random_solution(k);
+    standard_errs[k] = 0.1 * random_solution(k);  // NOLINT
     errors_to_compare(k) = standard_errs[k];
   }
 
   // Run the second RAPPOR step.
-  Weights initial_guess = Weights::Constant(n, 0.75);
+  Weights initial_guess = Weights::Constant(n, 0.75);  // NOLINT
   Weights results = Weights::Zero(n);
   Weights estimated_errs = Weights::Zero(n);
-  lasso_runner_.reset(new LassoRunner(&matrix));
-  lasso_runner_->GetExactValuesAndStdErrs(1e-8, initial_guess, standard_errs,
-                                          matrix, right_hand_side, &results,
-                                          &estimated_errs);
+  lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
+  lasso_runner_->GetExactValuesAndStdErrs(
+      l1_penalty, initial_guess, standard_errs, matrix, right_hand_side,
+      &results, &estimated_errs);
 
   // The solution should be close but we should not count on exactness.
   EXPECT_LE((results - random_solution).norm() / random_solution.norm(), 1e-1);
@@ -309,5 +315,4 @@ TEST_F(LassoRunnerTest, SecondStepErrors) {
       0.5);
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

@@ -13,8 +13,7 @@
 // limitations under the License.
 #include "algorithms/rappor/rappor_analyzer_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using encoder::ClientSecret;
 
@@ -25,7 +24,7 @@ void RapporAnalyzerTest::SetAnalyzer(uint32_t num_candidates,
   PopulateRapporCandidateList(num_candidates, &candidate_list_);
   config_ = Config(num_bloom_bits, num_cohorts, num_hashes, prob_0_becomes_1_,
                    prob_1_stays_1_);
-  analyzer_.reset(new RapporAnalyzer(config_, &candidate_list_));
+  analyzer_ = std::make_unique<RapporAnalyzer>(config_, &candidate_list_);
 }
 
 void RapporAnalyzerTest::BuildCandidateMap() {
@@ -101,7 +100,7 @@ std::string RapporAnalyzerTest::BuildBitString(uint16_t candidate_index,
 }
 
 void RapporAnalyzerTest::AddObservation(uint32_t cohort,
-                                        std::string binary_string) {
+                                        const std::string& binary_string) {
   EXPECT_TRUE(analyzer_->AddObservation(
       RapporObservationFromString(cohort, binary_string)));
 }
@@ -153,7 +152,7 @@ int RapporAnalyzerTest::GenerateNumberFromPowerLaw(const double left,
       left_to_exponent_plus_1;
   random_power_law_number =
       std::pow(random_power_law_number, 1.0f / (exponent + 1));
-  return random_power_law_number;
+  return static_cast<int>(random_power_law_number);
 }
 
 std::vector<int> RapporAnalyzerTest::GenerateRandomMapOfIds(
@@ -257,12 +256,10 @@ void RapporAnalyzerTest::AssessUtility(
   // Compute the false positive rates for a grid of values
   LOG(ERROR) << "Identified " << how_many_nonzeros << " nonzero estimates.";
   LOG(ERROR) << "The measure of false positives for identified top n hitters:";
-  std::vector<int> top_hitters_analyzed = {10,  20,  50,   100,  200,
-                                           300, 500, 1000, 2000, 5000};
+  const std::vector<int> top_hitters_analyzed = {10,  20,  50,   100,  200,
+                                                 300, 500, 1000, 2000, 5000};
   int num_hitters = 0;
-  for (auto it = top_hitters_analyzed.begin(); it != top_hitters_analyzed.end();
-       ++it) {
-    num_hitters = *it;
+  for (auto num_hitters : top_hitters_analyzed) {
     if (num_hitters > num_candidates) {
       break;
     }
@@ -284,7 +281,7 @@ grpc::Status RapporAnalyzerTest::ComputeLeastSquaresFitQR(
     const Eigen::VectorXd& est_bit_count_ratios,
     std::vector<CandidateResult>* results) {
   // cast from smaller to larger type for comparisons
-  const size_t num_candidates =
+  const auto num_candidates =
       static_cast<const size_t>(analyzer_->candidate_matrix_.cols());
   EXPECT_EQ(results->size(), num_candidates);
   // define the QR solver and perform the QR decomposition followed by
@@ -326,8 +323,8 @@ grpc::Status RapporAnalyzerTest::ComputeLeastSquaresFitQR(
 void RapporAnalyzerTest::RunSimpleLinearRegressionReference(
     const std::string& case_label, uint32_t num_candidates,
     uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-    std::vector<int> candidate_indices,
-    std::vector<int> true_candidate_counts) {
+    const std::vector<int>& candidate_indices,
+    const std::vector<int>& true_candidate_counts) {
   SetAnalyzer(num_candidates, num_bloom_bits, num_cohorts, num_hashes);
   AddObservationsForCandidates(candidate_indices);
 
@@ -355,8 +352,8 @@ void RapporAnalyzerTest::RunSimpleLinearRegressionReference(
 void RapporAnalyzerTest::ShortExperimentWithAnalyze(
     const std::string& case_label, uint32_t num_candidates,
     uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-    std::vector<int> candidate_indices, std::vector<int> true_candidate_counts,
-    const bool print_estimates) {
+    const std::vector<int>& candidate_indices,
+    const std::vector<int>& true_candidate_counts, const bool print_estimates) {
   SetAnalyzer(num_candidates, num_bloom_bits, num_cohorts, num_hashes);
   AddObservationsForCandidates(candidate_indices);
 
@@ -381,8 +378,8 @@ void RapporAnalyzerTest::ShortExperimentWithAnalyze(
 void RapporAnalyzerTest::LongExperimentWithAnalyze(
     const std::string& case_label, uint32_t num_candidates,
     uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-    std::vector<int> candidate_indices, std::vector<int> true_candidate_counts,
-    const bool print_estimates) {
+    const std::vector<int>& candidate_indices,
+    const std::vector<int>& true_candidate_counts, const bool print_estimates) {
   SetAnalyzer(num_candidates, num_bloom_bits, num_cohorts, num_hashes);
   AddObservationsForCandidates(candidate_indices);
 
@@ -417,8 +414,8 @@ void RapporAnalyzerTest::LongExperimentWithAnalyze(
 void RapporAnalyzerTest::CompareAnalyzeToSimpleRegression(
     const std::string& case_label, uint32_t num_candidates,
     uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-    std::vector<int> candidate_indices,
-    std::vector<int> true_candidate_counts) {
+    const std::vector<int>& candidate_indices,
+    const std::vector<int>& true_candidate_counts) {
   SetAnalyzer(num_candidates, num_bloom_bits, num_cohorts, num_hashes);
   AddObservationsForCandidates(candidate_indices);
 
@@ -467,5 +464,4 @@ double prob_1_stays_1_ = 1.0;
 // Random device
 std::random_device random_dev_;
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

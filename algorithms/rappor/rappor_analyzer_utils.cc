@@ -8,8 +8,7 @@
 
 using cobalt_lossmin::InstanceSet;
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
                                    const std::vector<int>& second_step_cols,
@@ -18,7 +17,7 @@ void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
   // We will construct the matrix from triplets which is simple and efficient.
   const uint32_t second_step_num_candidates = second_step_cols.size();
   const int nonzero_matrix_entries =
-      num_cohorts * num_hashes * second_step_num_candidates;
+      num_cohorts * num_hashes * static_cast<int>(second_step_num_candidates);
   std::vector<Eigen::Triplet<double>> second_step_matrix_triplets;
   second_step_matrix_triplets.reserve(nonzero_matrix_entries);
 
@@ -32,7 +31,7 @@ void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
     for (Eigen::SparseMatrix<double, Eigen::ColMajor>::InnerIterator it(
              candidate_matrix_col_major, second_step_cols[col_i]);
          it; ++it) {
-      second_step_matrix_triplets.push_back(
+      second_step_matrix_triplets.emplace_back(
           Eigen::Triplet<double>(it.row(), col_i, it.value()));
     }
   }
@@ -42,5 +41,4 @@ void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
                                       second_step_matrix_triplets.end());
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
