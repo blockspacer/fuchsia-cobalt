@@ -1,4 +1,4 @@
-// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Copyright 2018 The Fuchsia Authors.All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,16 +10,16 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
 
-const size_t kNumReportsPerMetric = 3;
-const size_t kNumMetricsPerProject = 5;
-const size_t kNumCustomers = 2;
+constexpr size_t kNumReportsPerMetric = 3;
+constexpr size_t kNumMetricsPerProject = 5;
+constexpr size_t kNumCustomers = 2;
+constexpr uint32_t kNonExistent = 20;
 
-std::string NameForId(std::string prefix, uint32_t id) {
+std::string NameForId(const std::string& prefix, uint32_t id) {
   std::ostringstream stream;
   stream << prefix << "Name" << id;
   return stream.str();
@@ -67,7 +67,7 @@ void SetupCustomer(uint32_t customer_id, size_t num_projects,
 
 std::unique_ptr<CobaltRegistry> NewTestRegistry(
     size_t num_customers,
-    std::function<size_t(uint32_t)> num_projects_for_customer_fn) {
+    const std::function<size_t(uint32_t)>& num_projects_for_customer_fn) {
   auto cobalt_registry = std::make_unique<CobaltRegistry>();
   for (size_t i = 1u; i <= num_customers; i++) {
     SetupCustomer(i, num_projects_for_customer_fn(i),
@@ -84,8 +84,8 @@ std::unique_ptr<CobaltRegistry> NewTestRegistry() {
 // specified number of customers and projects-per-customer.
 std::unique_ptr<ProjectConfigs> NewProjectConfigs(
     size_t num_customers, size_t num_projects_per_customer) {
-  return std::make_unique<ProjectConfigs>(
-      NewTestRegistry(num_customers, [num_projects_per_customer](uint32_t) {
+  return std::make_unique<ProjectConfigs>(NewTestRegistry(
+      num_customers, [num_projects_per_customer](uint32_t /*unused*/) {
         return num_projects_per_customer;
       }));
 }
@@ -222,7 +222,7 @@ TEST_F(ProjectConfigsTest, GetCustomerConfigById) {
   EXPECT_EQ(customer->customer_id(), 2u);
 
   // Customer does not exist.
-  customer = project_configs.GetCustomerConfig(20);
+  customer = project_configs.GetCustomerConfig(kNonExistent);
   EXPECT_EQ(customer, nullptr);
 }
 
@@ -240,11 +240,11 @@ TEST_F(ProjectConfigsTest, GetProjectConfigById) {
   EXPECT_EQ(project->project_id(), 2u);
 
   // Customer does not exist.
-  project = project_configs.GetProjectConfig(20, 2);
+  project = project_configs.GetProjectConfig(kNonExistent, 2);
   EXPECT_EQ(project, nullptr);
 
   // Customer exists, project does not exist.
-  project = project_configs.GetProjectConfig(1, 20);
+  project = project_configs.GetProjectConfig(1, kNonExistent);
   EXPECT_EQ(project, nullptr);
 }
 
@@ -262,15 +262,15 @@ TEST_F(ProjectConfigsTest, GetMetricDefinitionById) {
   EXPECT_EQ(metric->id(), 2u);
 
   // Customer does not exist.
-  metric = project_configs.GetMetricDefinition(20, 1, 2);
+  metric = project_configs.GetMetricDefinition(kNonExistent, 1, 2);
   EXPECT_EQ(metric, nullptr);
 
   // Customer exists, project does not exist.
-  metric = project_configs.GetMetricDefinition(1, 20, 2);
+  metric = project_configs.GetMetricDefinition(1, kNonExistent, 2);
   EXPECT_EQ(metric, nullptr);
 
   // Customer exists, project exists, metric does not exist.
-  metric = project_configs.GetMetricDefinition(1, 1, 20);
+  metric = project_configs.GetMetricDefinition(1, 1, kNonExistent);
   EXPECT_EQ(metric, nullptr);
 }
 
@@ -288,19 +288,19 @@ TEST_F(ProjectConfigsTest, GetReportDefinitionById) {
   EXPECT_EQ(report->id(), 2u);
 
   // Customer does not exist.
-  report = project_configs.GetReportDefinition(20, 1, 2, 2);
+  report = project_configs.GetReportDefinition(kNonExistent, 1, 2, 2);
   EXPECT_EQ(report, nullptr);
 
   // Customer exists, project does not exist.
-  report = project_configs.GetReportDefinition(1, 20, 2, 2);
+  report = project_configs.GetReportDefinition(1, kNonExistent, 2, 2);
   EXPECT_EQ(report, nullptr);
 
   // Customer exists, project exists, metric does not exist.
-  report = project_configs.GetReportDefinition(1, 1, 20, 2);
+  report = project_configs.GetReportDefinition(1, 1, kNonExistent, 2);
   EXPECT_EQ(report, nullptr);
 
   // Customer exists, project exists, metric exist, report does not exist.
-  report = project_configs.GetReportDefinition(1, 1, 1, 20);
+  report = project_configs.GetReportDefinition(1, 1, 1, kNonExistent);
   EXPECT_EQ(report, nullptr);
 }
 
@@ -335,15 +335,15 @@ TEST_F(ProjectConfigsTest, CreateFromCobaltRegistryBase64) {
 // Tests the logic that determines whether or not a ProjectConfigs is empty
 // or contains a single project.
 TEST_F(ProjectConfigsTest, IsSingleProject) {
-  // An ProjectConfigs constructed from an empty CobaltRegistry is empty but is
-  // not a single project.
+  // An ProjectConfigs constructed from an empty CobaltRegistry is empty but
+  // is not a single project.
   auto project_configs = NewProjectConfigs(0, 0);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_TRUE(project_configs->is_empty());
   EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 
-  // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with no
-  // projects is not empty and is not a single project.
+  // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with
+  // no projects is not empty and is not a single project.
   project_configs = NewProjectConfigs(1, 0);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_FALSE(project_configs->is_empty());
@@ -378,13 +378,12 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_FALSE(project_configs->is_empty());
   EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 
-  // A ProjectConfigs constructed from a CobaltRegistry with 2 customers with 1
-  // project each is not empty and is not a single project.
+  // A ProjectConfigs constructed from a CobaltRegistry with 2 customers with
+  // 1 project each is not empty and is not a single project.
   project_configs = NewProjectConfigs(2, 1);
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_FALSE(project_configs->is_empty());
   EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

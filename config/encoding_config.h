@@ -23,7 +23,7 @@ namespace config {
 
 // A container for all of the EncodingConfigs registered in Cobalt. This
 // is used by both an Encoder client and the Analyzer.
-typedef Registry<RegisteredEncodings> EncodingRegistry;
+using EncodingRegistry = Registry<RegisteredEncodings>;
 
 // For ease of understanding we specify the interface below as if
 // EncodingRegistry were not a template specialization but a stand-alone class.

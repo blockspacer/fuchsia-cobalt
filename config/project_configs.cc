@@ -7,8 +7,7 @@
 #include "./logging.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBase64(
     const std::string& cobalt_registry_base64) {
@@ -42,7 +41,7 @@ ProjectConfigs::ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_registry)
   if (cobalt_registry_->customers_size() == 1) {
     auto customer = cobalt_registry_->customers(0);
     if (customer.projects_size() == 1) {
-      auto project = customer.projects(0);
+      const auto& project = customer.projects(0);
       is_single_project_ = true;
       single_customer_id_ = customer.customer_id();
       single_customer_name_ = customer.customer_name();
@@ -147,5 +146,4 @@ const ReportDefinition* ProjectConfigs::GetReportDefinition(
   return iter->second;
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

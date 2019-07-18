@@ -46,8 +46,17 @@ namespace cobalt {
 namespace config {
 
 // This is the mask for pulling event codes out of packed event codes.
-const uint64_t kEventCodeMask = 0b1111111111;
-const uint64_t kV1EventCodeMask = 0b111111111111111;
+constexpr uint64_t kEventCodeMask = 0b1111111111;
+constexpr uint64_t kV1EventCodeMask = 0b111111111111111;
+
+constexpr uint64_t kVersionHeaderOffset = 60;
+
+constexpr uint64_t kV0NumEventCodes = 5;
+constexpr uint64_t kV0MaxEventCodeSize = 1024;
+constexpr uint64_t kV0EventCodeSize = 10;
+
+constexpr uint64_t kV1NumEventCodes = 4;
+constexpr uint64_t kV1EventCodeSize = 15;
 
 // UnpackEventCodes pulls a vector of elements out of the supplied
 // |packed_event_codes|.
@@ -69,14 +78,15 @@ std::vector<uint32_t> UnpackEventCodes(uint64_t packed_event_codes);
 //               past the 4th one will be ignored)
 template <class Iterator>
 uint64_t PackEventCodes_v1(const Iterator& event_codes) {
-  int i = 0;
-  uint64_t packed_event_codes = 1ull << 60;
+  uint64_t i = 0;
+  uint64_t packed_event_codes = 1ull << kVersionHeaderOffset;
   for (auto code : event_codes) {
     // If the supplied iterator has more than 4 elements, we ignore them.
-    if (i >= 4) {
+    if (i >= kV1NumEventCodes) {
       break;
     }
-    packed_event_codes |= (((uint64_t)code & kV1EventCodeMask) << (15 * i));
+    packed_event_codes |= ((static_cast<uint64_t>(code) & kV1EventCodeMask)
+                           << (kV1EventCodeSize * i));
     i += 1;
   }
   return packed_event_codes;
@@ -92,18 +102,19 @@ uint64_t PackEventCodes_v1(const Iterator& event_codes) {
 //               past the 5th one will be ignored).
 template <class Iterator>
 uint64_t PackEventCodes(const Iterator& event_codes) {
-  int i = 0;
+  uint64_t i = 0;
   uint64_t packed_event_codes = 0;
   for (auto code : event_codes) {
     // If the supplied iterator has more than 5 elements, we ignore them.
-    if (i >= 5) {
+    if (i >= kV0NumEventCodes) {
       break;
     }
-    if (code >= 1024) {
+    if (code >= kV0MaxEventCodeSize) {
       // We need to fall back to a v1 encoder
       return PackEventCodes_v1(event_codes);
     }
-    packed_event_codes |= (((uint64_t)code & kEventCodeMask) << (10 * i));
+    packed_event_codes |= ((static_cast<uint64_t>(code) & kEventCodeMask)
+                           << (kV0EventCodeSize * i));
     i += 1;
   }
   return packed_event_codes;

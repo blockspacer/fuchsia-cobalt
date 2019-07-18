@@ -6,20 +6,18 @@
 
 #include <string>
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
-const uint32_t kFnvPrime = 0x1000193;
-const uint32_t kFnvOffsetBasis = 0x811c9dc5;
+constexpr uint32_t kFnvPrime = 0x1000193;
+constexpr uint32_t kFnvOffsetBasis = 0x811c9dc5;
 
 uint32_t IdFromName(const std::string &name) {
   uint32_t hash = kFnvOffsetBasis;
-  for (size_t i = 0; i < name.size(); i++) {
+  for (char ch : name) {
     hash *= kFnvPrime;
-    hash ^= name[i];
+    hash ^= ch;
   }
   return hash;
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

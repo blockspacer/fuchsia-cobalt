@@ -66,36 +66,35 @@ class ProjectConfigs {
 
   // Returns the CustomerConfig for the customer with the given name, or
   // nullptr if there is no such customer.
-  const CustomerConfig* GetCustomerConfig(
+  [[nodiscard]] const CustomerConfig* GetCustomerConfig(
       const std::string& customer_name) const;
 
   // Returns the CustomerConfig for the customer with the given ID, or
   // nullptr if there is no such customer.
-  const CustomerConfig* GetCustomerConfig(uint32_t customer_id) const;
+  [[nodiscard]] const CustomerConfig* GetCustomerConfig(
+      uint32_t customer_id) const;
 
   // Returns the ProjectConfig for the project with the given
   // (customer_name, project_name), or nullptr if there is no such project.
-  const ProjectConfig* GetProjectConfig(const std::string& customer_name,
-                                        const std::string& project_name) const;
+  [[nodiscard]] const ProjectConfig* GetProjectConfig(
+      const std::string& customer_name, const std::string& project_name) const;
 
   // Returns the ProjectConfig for the project with the given
   // (customer_id, project_id), or nullptr if there is no such project.
-  const ProjectConfig* GetProjectConfig(uint32_t customer_id,
-                                        uint32_t project_id) const;
+  [[nodiscard]] const ProjectConfig* GetProjectConfig(
+      uint32_t customer_id, uint32_t project_id) const;
 
   // Returns the MetricDefinition for the metric with the given
   // (customer_id, project_id, metric_id), or nullptr if no such metric exists.
-  const MetricDefinition* GetMetricDefinition(uint32_t customer_id,
-                                              uint32_t project_id,
-                                              uint32_t metric_id) const;
+  [[nodiscard]] const MetricDefinition* GetMetricDefinition(
+      uint32_t customer_id, uint32_t project_id, uint32_t metric_id) const;
 
   // Returns the ReportDefinition for the metric with the given
   // (customer_id, project_id, metric_id, report_id), or nullptr if no such
   // report exists.
-  const ReportDefinition* GetReportDefinition(uint32_t customer_id,
-                                              uint32_t project_id,
-                                              uint32_t metric_id,
-                                              uint32_t report_id) const;
+  [[nodiscard]] const ReportDefinition* GetReportDefinition(
+      uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+      uint32_t report_id) const;
 
   // Returns whether or not this instance of ProjectConfigs contains data for
   // exactly one project.

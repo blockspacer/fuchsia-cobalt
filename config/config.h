@@ -57,13 +57,13 @@ class Registry {
   // This is some template meta-programming magic that has the effect of
   // defining |T| to be the type of the objects contained in a registry
   // of type |RT|.
-  typedef typename std::remove_pointer<decltype(
-      (reinterpret_cast<RT*>(0))->mutable_element(0))>::type T;
+  using T = typename std::remove_pointer<decltype(
+      (reinterpret_cast<RT*>(0))->mutable_element(0))>::type;
 
  private:
   // The container for the registry.  The keys in this map are strings that
   // encode ID triples of the form (customer_id, project_id, id).
-  typedef std::unordered_map<std::string, std::unique_ptr<T>> Map;
+  using Map = std::unordered_map<std::string, std::unique_ptr<T>>;
 
  public:
   // Iterator for going through registry items.  We just use the Map iterator
@@ -87,10 +87,10 @@ class Registry {
    private:
     typename Map::iterator iter_;
   };
-  typedef RegistryIterator iterator;
+  using iterator = RegistryIterator;
 
   // Populates a new instance of Registry<RT> by swapping the contents out of
-  // of |contents|. Returns a pair consisting of a pointer to the
+  // of |registered_configs|. Returns a pair consisting of a pointer to the
   // result and a Status.
   //
   // If the operation is successful then the status is kOK. Otherwise the
@@ -99,7 +99,8 @@ class Registry {
   // If |error_collector| is not null then it will be notified of any parsing
   // errors or warnings.
   static std::pair<std::unique_ptr<Registry<RT>>, Status> TakeFrom(
-      RT* contents, google::protobuf::io::ErrorCollector* error_collector);
+      RT* registered_configs,
+      google::protobuf::io::ErrorCollector* error_collector);
 
   // Returns the number of |T| in this registry.
   size_t size();
@@ -107,7 +108,8 @@ class Registry {
   // Returns the |T| with the given ID triple, or nullptr if there is
   // no such |T|. The caller does not take ownership of the returned
   // pointer.
-  const T* const Get(uint32_t customer_id, uint32_t project_id, uint32_t id) {
+  [[nodiscard]] const T* Get(uint32_t customer_id, uint32_t project_id,
+                             uint32_t id) const {
     auto iterator = map_.find(MakeKey(customer_id, project_id, id));
     if (iterator == map_.end()) {
       return nullptr;
@@ -115,8 +117,8 @@ class Registry {
     return iterator->second.get();
   }
 
-  const T* const Get(uint32_t customer_id, uint32_t project_id,
-                     const std::string& name) {
+  [[nodiscard]] const T* Get(uint32_t customer_id, uint32_t project_id,
+                             const std::string& name) const {
     auto iterator = name_map_.find(MakeKey(customer_id, project_id, name));
     if (iterator == name_map_.end()) {
       return nullptr;
@@ -155,12 +157,13 @@ class Registry {
 /// IMPLEMENTATION BELOW
 //////////////////////////////////////////////////////////////////
 
+// TODO(zmbush): Find a less clunky way of writing the MakeKey functions.
 template <class RT>
 std::string Registry<RT>::MakeKey(uint32_t customer_id, uint32_t project_id,
                                   uint32_t id) {
   // Three 32-bit positive ints (at most 10 digits each) plus 3 colons plus a
   // trailing null is <= 34 bytes.
-  char out[34];
+  char out[34];  // NOLINT readability-magic-numbers
   int size =
       snprintf(out, sizeof(out), "%u:%u:%u", customer_id, project_id, id);
   if (size <= 0) {
@@ -174,9 +177,8 @@ std::string Registry<RT>::MakeKey(uint32_t customer_id, uint32_t project_id,
                                   const std::string& name) {
   // Two 32-bit positive ints (at most 10 digits each) plus 2 colons plus a
   // trailing null is <= 23 bytes.
-  char out[23];
-  int size =
-      snprintf(out, sizeof(out), "%u:%u:", customer_id, project_id);
+  char out[23];  // NOLINT readability-magic-numbers
+  int size = snprintf(out, sizeof(out), "%u:%u:", customer_id, project_id);
   if (size <= 0) {
     return "";
   }
@@ -198,7 +200,7 @@ std::string Registry<RT>::MakeKeyWithName(const T& config_proto) {
 template <class RT>
 std::pair<std::unique_ptr<Registry<RT>>, Status> Registry<RT>::TakeFrom(
     RT* registered_configs,
-    google::protobuf::io::ErrorCollector* error_collector) {
+    google::protobuf::io::ErrorCollector* /*error_collector*/) {
   // Make an empty registry to return;
   std::unique_ptr<Registry<RT>> registry(new Registry<RT>());
 

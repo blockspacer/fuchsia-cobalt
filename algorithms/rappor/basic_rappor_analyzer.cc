@@ -71,7 +71,7 @@ bool BasicRapporAnalyzer::AddObservation(const BasicRapporObservation& obs) {
   size_t category = 0;
   for (auto byte_index = obs.data().size() - 1; byte_index >= 0; byte_index--) {
     uint8_t bit_mask = 1;
-    for (int bit_index = 0; bit_index < kBitsPerByte; bit_index++) {
+    for (uint32_t bit_index = 0; bit_index < kBitsPerByte; bit_index++) {
       if (category >= category_counts_.size()) {
         return true;
       }

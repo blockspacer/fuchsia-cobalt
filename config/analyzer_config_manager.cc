@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -38,8 +39,8 @@ DEFINE_string(config_parser_bin_path, "/usr/local/bin/config_parser",
 
 // Stackdriver metric constants
 namespace {
-const char kUpdateFailure[] = "analyzer-config-manager-update-failure";
-const char kReadConfigFromCobaltRegistryFileFailure[] =
+constexpr char kUpdateFailure[] = "analyzer-config-manager-update-failure";
+constexpr char kReadConfigFromCobaltRegistryFileFailure[] =
     "analyzer-config-manager-read-config-from-cobalt-config-file-failure";
 }  // namespace
 

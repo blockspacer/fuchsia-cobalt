@@ -287,7 +287,7 @@ TEST(ReportRegistryFromFile, CheckProductionReports) {
 
 //////////////  Tests of the FromString() functions. //////////////
 
-const char* kEncodingConfigText = R"(
+constexpr char* kEncodingConfigText = R"(
 # EncodingConfig 1 is Forculus.
 element {
   customer_id: 1
@@ -326,7 +326,7 @@ TEST(EncodingRegistryFromString, ValidString) {
   EXPECT_EQ(2, count);
 }
 
-const char* kMetricConfigText = R"(
+constexpr char* kMetricConfigText = R"(
 # Metric 1 has one string part.
 element {
   customer_id: 1

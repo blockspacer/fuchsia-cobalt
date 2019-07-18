@@ -23,9 +23,8 @@ namespace config {
 
 // A container for all of the Metrics registered in Cobalt. This
 // is used only on the Analyzer.
-typedef Registry<RegisteredMetrics> MetricRegistry;
-
-typedef google::protobuf::RepeatedField<int> SystemProfileFields;
+using MetricRegistry = Registry<RegisteredMetrics>;
+using SystemProfileFields = google::protobuf::RepeatedField<int>;
 
 // For ease of understanding we specify the interfaces below as if
 // MetricRegistry were not a template specializations but a stand-alone class.

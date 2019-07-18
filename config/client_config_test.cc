@@ -17,10 +17,13 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
+constexpr uint32_t kNonexistentId = 41;
+constexpr uint32_t kAnId = 42;
+constexpr uint32_t kAnotherId = 43;
+
 void AddMetric(int customer_id, int project_id, int id,
                CobaltRegistry* cobalt_registry) {
   Metric* metric = cobalt_registry->add_metric_configs();
@@ -46,7 +49,7 @@ void AddEncodingConfig(int id, CobaltRegistry* cobalt_registry) {
 }
 
 std::unique_ptr<ClientConfig> CreateFromCopyOfRegistry(
-    const CobaltRegistry registry) {
+    const CobaltRegistry& registry) {
   std::string cobalt_registry_bytes;
   EXPECT_TRUE(registry.SerializeToString(&cobalt_registry_bytes));
   return ClientConfig::CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
@@ -57,41 +60,47 @@ std::unique_ptr<ClientConfig> CreateFromCopyOfRegistry(
 TEST(ClientConfigTest, CreateFromCobaltRegistryBytes) {
   std::string cobalt_registry_bytes;
   CobaltRegistry cobalt_registry;
-  AddMetric(42, &cobalt_registry);
-  AddMetric(43, &cobalt_registry);
-  AddEncodingConfig(42, &cobalt_registry);
-  AddEncodingConfig(43, &cobalt_registry);
+  AddMetric(kAnId, &cobalt_registry);
+  AddMetric(kAnotherId, &cobalt_registry);
+  AddEncodingConfig(kAnId, &cobalt_registry);
+  AddEncodingConfig(kAnotherId, &cobalt_registry);
   ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
   auto client_config =
       ClientConfig::CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
   ASSERT_NE(nullptr, client_config);
-  EXPECT_EQ(nullptr, client_config->EncodingConfig(41, 41, 41));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(42, 42, 42));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(43, 43, 43));
-  EXPECT_EQ(nullptr, client_config->Metric(41, 41, 41));
-  EXPECT_NE(nullptr, client_config->Metric(42, 42, 42));
-  EXPECT_NE(nullptr, client_config->Metric(43, 43, 43));
+  EXPECT_EQ(nullptr, client_config->EncodingConfig(
+                         kNonexistentId, kNonexistentId, kNonexistentId));
+  EXPECT_NE(nullptr, client_config->EncodingConfig(kAnId, kAnId, kAnId));
+  EXPECT_NE(nullptr,
+            client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
+  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId,
+                                           kNonexistentId));
+  EXPECT_NE(nullptr, client_config->Metric(kAnId, kAnId, kAnId));
+  EXPECT_NE(nullptr, client_config->Metric(kAnotherId, kAnotherId, kAnotherId));
 }
 
 TEST(ClientConfigTest, CreateFromCobaltRegistryBase64) {
   std::string cobalt_registry_bytes;
   CobaltRegistry cobalt_registry;
-  AddMetric(42, &cobalt_registry);
-  AddMetric(43, &cobalt_registry);
-  AddEncodingConfig(42, &cobalt_registry);
-  AddEncodingConfig(43, &cobalt_registry);
+  AddMetric(kAnId, &cobalt_registry);
+  AddMetric(kAnotherId, &cobalt_registry);
+  AddEncodingConfig(kAnId, &cobalt_registry);
+  AddEncodingConfig(kAnotherId, &cobalt_registry);
   ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
   std::string cobalt_registry_base64;
   crypto::Base64Encode(cobalt_registry_bytes, &cobalt_registry_base64);
   auto client_config =
       ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   ASSERT_NE(nullptr, client_config);
-  EXPECT_EQ(nullptr, client_config->EncodingConfig(41, 41, 41));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(42, 42, 42));
-  EXPECT_NE(nullptr, client_config->EncodingConfig(43, 43, 43));
-  EXPECT_EQ(nullptr, client_config->Metric(41, 41, 41));
-  EXPECT_NE(nullptr, client_config->Metric(42, 42, 42));
-  EXPECT_NE(nullptr, client_config->Metric(43, 43, 43));
+  EXPECT_EQ(nullptr, client_config->EncodingConfig(
+                         kNonexistentId, kNonexistentId, kNonexistentId));
+  EXPECT_NE(nullptr, client_config->EncodingConfig(kAnId, kAnId, kAnId));
+  EXPECT_NE(nullptr,
+            client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
+  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId,
+                                           kNonexistentId));
+  EXPECT_NE(nullptr, client_config->Metric(kAnId, kAnId, kAnId));
+  EXPECT_NE(nullptr, client_config->Metric(kAnotherId, kAnotherId, kAnotherId));
 }
 
 // Tests the method CreateFromCobaltRegistry along with the accessors
@@ -101,6 +110,7 @@ TEST(ClientConfigTest, CreateFromCobaltRegistryBase64) {
 TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   CobaltRegistry cobalt_registry;
   auto client_config = CreateFromCopyOfRegistry(cobalt_registry);
+
   EXPECT_TRUE(client_config->is_empty());
   EXPECT_FALSE(client_config->is_single_project());
 
@@ -108,25 +118,24 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   // a metric does not cause a crash.
   EXPECT_EQ(nullptr, client_config->Metric(1, 1, 1));
 
-  AddMetric(42, &cobalt_registry);
+  AddMetric(kAnId, &cobalt_registry);
   client_config = CreateFromCopyOfRegistry(cobalt_registry);
   EXPECT_FALSE(client_config->is_empty());
   EXPECT_TRUE(client_config->is_single_project());
-  EXPECT_EQ(42u, client_config->single_customer_id());
-  EXPECT_EQ(42u, client_config->single_project_id());
+  EXPECT_EQ(kAnId, client_config->single_customer_id());
+  EXPECT_EQ(kAnId, client_config->single_project_id());
 
-  AddEncodingConfig(42u, &cobalt_registry);
+  AddEncodingConfig(kAnId, &cobalt_registry);
   client_config = CreateFromCopyOfRegistry(cobalt_registry);
   EXPECT_FALSE(client_config->is_empty());
   EXPECT_TRUE(client_config->is_single_project());
-  EXPECT_EQ(42u, client_config->single_customer_id());
-  EXPECT_EQ(42u, client_config->single_project_id());
+  EXPECT_EQ(kAnId, client_config->single_customer_id());
+  EXPECT_EQ(kAnId, client_config->single_project_id());
 
-  AddMetric(43u, &cobalt_registry);
+  AddMetric(kAnotherId, &cobalt_registry);
   client_config = CreateFromCopyOfRegistry(cobalt_registry);
   EXPECT_FALSE(client_config->is_empty());
   EXPECT_FALSE(client_config->is_single_project());
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

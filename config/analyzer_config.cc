@@ -50,8 +50,8 @@ DEFINE_string(cobalt_report_configs_file_name, "registered_reports.txt",
 
 // Stackdriver metric constants
 namespace {
-const char kAnalyzerConfigError[] = "analyzer-config-error";
-const char kCreateFromCobaltRegistryProtoFailure[] =
+constexpr char kAnalyzerConfigError[] = "analyzer-config-error";
+constexpr char kCreateFromCobaltRegistryProtoFailure[] =
     "analyzer-config-create-from-cobalt-config-proto-failure";
 }  // namespace
 
