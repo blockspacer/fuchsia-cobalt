@@ -19,48 +19,47 @@
 #include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
 #include "encoder/observation_store_update_recipient.h"
-#include "encoder/send_retryer.h"
-#include "encoder/shuffler_client.h"
 #include "encoder/upload_scheduler.h"
+#include "grpc++/grpc++.h"
 #include "logger/internal_metrics.h"
 #include "third_party/clearcut/uploader.h"
 
 namespace cobalt {
 namespace encoder {
 
-using send_retryer::SendRetryerInterface;
-
-// ShippingManager is a central coordinator for collecting encoded Observations
-// and sending them to the Shuffler. Observations are accumulated in the
-// ObservationStore and periodically sent in batches to the Shuffler by a
-// background worker thread on a regular schedule. ShippingManager also performs
+// ShippingManager is the client-side component of Cobalt responsible for
+// periodically sending Envelopes, encrypted to the Shuffler, from the device
+// to the server. In Cobalt, Observations are accumulated in the Observation
+// Store. The ShippingManager maintains a background thread that periodically
+// reads Envelopes from the Observation Store, encrypts the Envelopes, and
+// sends them to Cobalt's backend server. ShippingManager also performs
 // expedited off-schedule sends when too much unsent Observation data has
-// accumulated.  A client may also explicitly request an expedited send.
+// accumulated. A client may also explicitly request an expedited send.
 //
-// ShippingManager is used to upload data to a Shuffler. The unit of data sent
-// in a single request is the *Envelope*. ShippingManager will get Envelopes
-// from the ObservationStore, and attempt to send them.
+// ShippingManager is an abstract class. Most of the logic is contained in
+// ShippingManager itself but a subclass must be defined for each type of
+// backend server to which we need to ship. This allows us to switch to
+// a different type of backend server without changing this class.
 //
-// Usage: Construct a ShippingManager, invoke Start() once. Whenever an
-// observation is added to the ObservationStore, call NotifyObservationsAdded()
-// which allows ShippingManager to check if it needs to send early. Optionally
-// invoke RequestSendSoon() to expedite a send operation.
+// Usage: Construct an instance of a concrete subclass of ShippingManager,
+// invoke Start() once. Whenever an observation is added to the
+// ObservationStore, call NotifyObservationsAdded() which allows ShippingManager
+// to check if it needs to send early. Optionally invoke RequestSendSoon() to
+// expedite a send operation.
 //
-// Usually a single ShippingManager will be constructed for each shuffler
-// backend the client device wants to send to. All applications running on that
-// device use the same set of ShippingManagers.
+// Usually a single ShippingManager will be constructed for a device.
 class ShippingManager : public ObservationStoreUpdateRecipient {
  public:
   // Constructor
   //
-  // upload_scheduler: These control the ShippingManager's behavior with
+  // upload_scheduler: This controls the ShippingManager's behavior with
   // respect to scheduling sends.
   //
-  // observation_store: The ObservationStore used for storing and retrieving
-  // observations.
+  // observation_store: The ObservationStore from which Envelopes will be
+  // retrieved.
   //
-  // encrypt_to_shuffler: An util::EncryptedMessageMaker used to encrypt
-  // messages to the shuffler and the analyzer.
+  // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
+  // Envelopes to the shuffler.
   ShippingManager(const UploadScheduler& upload_scheduler,
                   ObservationStore* observation_store,
                   util::EncryptedMessageMaker* encrypt_to_shuffler);
@@ -69,10 +68,11 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // before exiting.
   virtual ~ShippingManager();
 
-  // Starts the worker thread. Destruct this object to stop the worker thread.
+  // Starts the worker thread. Destruct this instance to stop the worker thread.
   // This method must be invoked exactly once.
   void Start();
 
+  // Invoke this each time an Observation is added to the ObservationStore.
   void NotifyObservationsAdded() override;
 
   // Register a request with the ShippingManager for an expedited send. The
@@ -119,10 +119,9 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // Has the ShippingManager been shut down?
   bool shut_down();
 
-  // Causes the ShippingManager to shut down. Any active sends by the
-  // SendRetryer will be canceled. All condition variables will be notified
-  // in order to wake up any waiting threads. The worker thread will exit as
-  // soon as it can.
+  // Causes the ShippingManager to shut down. Any active sends will be canceled.
+  // All condition variables will be notified in order to wake up any waiting
+  // threads. The worker thread will exit as soon as it can.
   void ShutDown();
 
   // The main method run by the worker thread. Executes a loop that
@@ -132,12 +131,19 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // Helper method used by Run(). Does not assume mutex_ lock is held.
   void SendAllEnvelopes();
 
-  // Helper method used by Run(). Does not assume mutex_ lock is held.
+  // Invoked by SendAllEnvelopes() to actually perform the send..
   virtual std::unique_ptr<ObservationStore::EnvelopeHolder>
   SendEnvelopeToBackend(
       std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) = 0;
 
-  virtual std::string name() const = 0;
+  // Returns a name for this ShippingManager. Useful for log messages in cases
+  // where the system is working with more than one.
+  //
+  // Technical note: We don't want this method to be pure virtual because
+  // it may be invoked via a (virtual) destructor and this can lead to a
+  // C++ runtime error indicated by a crash printing the message
+  // "Pure virtual function called!"
+  virtual std::string name() const { return "ShippingManager"; }
 
   UploadScheduler upload_scheduler_;
 
@@ -147,9 +153,6 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
 
  protected:
   util::EncryptedMessageMaker* encrypt_to_shuffler_;
-
-  send_retryer::CancelHandle cancel_handle_;  // Not protected by a mutex. Only
-                                              // accessed by the worker thread.
 
  private:
   // The background worker thread that runs the method "Run()."
@@ -233,57 +236,8 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   void InvokeSendCallbacksLockHeld(MutexProtectedFields* fields, bool success);
 };
 
-// LegacyShippingManager uses a SendRetryer to send Observations to the Shuffler
-// so in case a send fails it will be retried multiple times with exponential
-// back-off.
-//
-// LegacyShippingManager uses gRPC to send to the Shuffler. The unit of data
-// sent in a single gRPC request is the *Envelope*. ShippingManager will access
-// individual Envelopes by reading from the ObservationStore.
-class LegacyShippingManager : public ShippingManager {
- public:
-  // Parameters passed to the LegacyShippingManager constructor that will be
-  // passed to the method SendRetryer::SendToShuffler(). See the documentation
-  // of that method.
-  class SendRetryerParams {
-   public:
-    SendRetryerParams(std::chrono::seconds initial_rpc_deadline,
-                      std::chrono::seconds deadline_per_send_attempt)
-        : initial_rpc_deadline_(initial_rpc_deadline),
-          deadline_per_send_attempt_(deadline_per_send_attempt) {}
-
-   private:
-    friend class ShippingManager;
-    friend class LegacyShippingManager;
-    friend class ClearcutV1ShippingManager;
-    std::chrono::seconds initial_rpc_deadline_;
-    std::chrono::seconds deadline_per_send_attempt_;
-  };
-
-  // send_retryer_params: Used when the ShippingManager needs to invoke
-  // SendRetryer::SendToShuffler().
-  //
-  // send_retryer: The instance of |SendRetryerInterface| encapsulated by
-  // this ShippingManager. ShippingManager does not take ownership of
-  // send_retryer which must outlive ShippingManager.
-  LegacyShippingManager(const UploadScheduler& upload_scheduler,
-                        ObservationStore* observation_store,
-                        util::EncryptedMessageMaker* encrypt_to_shuffler,
-                        const SendRetryerParams send_retryer_params,
-                        SendRetryerInterface* send_retryer);
-
- private:
-  const SendRetryerParams send_retryer_params_;
-
-  SendRetryerInterface* send_retryer_;  // not owned
-
-  std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send)
-      override;
-
-  std::string name() const override { return "LegacyShippingManager"; }
-};
-
+// A concrete subclass of ShippingManager for sending data to Clearcut, which
+// is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
   ClearcutV1ShippingManager(
@@ -291,7 +245,12 @@ class ClearcutV1ShippingManager : public ShippingManager {
       ObservationStore* observation_store,
       util::EncryptedMessageMaker* encrypt_to_shuffler,
       std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
-      logger::LoggerInterface* internal_logger = nullptr);
+      logger::LoggerInterface* internal_logger = nullptr,
+      size_t max_attempts_per_upload = clearcut::kMaxRetries);
+
+  // The destructor will stop the worker thread and wait for it to stop
+  // before exiting.
+  virtual ~ClearcutV1ShippingManager() = default;
 
   // Resets the internal metrics to use the provided logger.
   void ResetInternalMetrics(
@@ -305,6 +264,8 @@ class ClearcutV1ShippingManager : public ShippingManager {
       override;
 
   std::string name() const override { return "ClearcutV1ShippingManager"; }
+
+  const size_t max_attempts_per_upload_;
 
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;

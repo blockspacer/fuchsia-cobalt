@@ -14,15 +14,10 @@
 #include "./clearcut_extensions.pb.h"
 #include "./gtest.h"
 #include "./logging.h"
-#include "config/client_config.h"
-#include "encoder/client_secret.h"
 #include "encoder/encoder.h"
 #include "encoder/fake_system_data.h"
 #include "encoder/memory_observation_store.h"
 #include "encoder/observation_store.h"
-#include "encoder/project_context.h"
-// Generated from shipping_manager_test_config.yaml
-#include "encoder/shipping_manager_test_config.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
@@ -31,97 +26,27 @@ namespace encoder {
 
 using cobalt::clearcut_extensions::LogEventExtension;
 using config::ClientConfig;
-using send_retryer::CancelHandle;
-using send_retryer::SendRetryer;
 using statusor::StatusOr;
 using util::EncryptedMessageMaker;
 
 namespace {
 
-// These values must match the values specified in the invocation of
-// generate_test_config_h() in CMakeLists.txt. and in the invocation of
-// cobalt_config_header("generate_shipping_manager_test_config") in BUILD.gn.
-const uint32_t kCustomerId = 1;
-const uint32_t kProjectId = 1;
+const uint32_t kCustomerId = 11;
+const uint32_t kProjectId = 12;
+const uint32_t kMetricId = 13;
 
-const size_t kNoOpEncodingByteOverhead = 30;
 const size_t kMaxBytesPerObservation = 50;
 const size_t kMaxBytesPerEnvelope = 200;
 const size_t kMaxBytesTotal = 1000;
-
-const std::chrono::seconds kInitialRpcDeadline(10);
-const std::chrono::seconds kDeadlinePerSendAttempt(60);
 const std::chrono::seconds kMaxSeconds = UploadScheduler::kMaxSeconds;
-
-// Returns a ProjectContext obtained by parsing the configuration specified
-// in shipping_manager_test_config.yaml
-std::shared_ptr<ProjectContext> GetTestProject() {
-  // Parse the base64-encoded, serialized CobaltRegistry in
-  // shipping_manager_test_config.h. This is generated from
-  // shipping_manager_test_config.yaml. Edit that yaml file to make changes. The
-  // variable name below, |kCobaltRegistryBase64|, must match what is
-  // specified in the build files.
-  std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltRegistryBase64(kCobaltRegistryBase64);
-  EXPECT_NE(nullptr, client_config);
-
-  return std::shared_ptr<ProjectContext>(new ProjectContext(
-      kCustomerId, kProjectId,
-      std::shared_ptr<ClientConfig>(client_config.release())));
-}
-
-struct FakeSendRetryer : public SendRetryerInterface {
-  explicit FakeSendRetryer(uint32_t metric_id = kDefaultMetricId)
-      : SendRetryerInterface(), metric_id(metric_id) {}
-
-  grpc::Status SendToShuffler(
-      std::chrono::seconds initial_rpc_deadline,
-      std::chrono::seconds overerall_deadline,
-      send_retryer::CancelHandle* cancel_handle,
-      const EncryptedMessage& encrypted_message) override {
-    // Decrypt encrypted_message. (No actual decryption is involved since
-    // we used the NONE encryption scheme.)
-    util::MessageDecrypter decrypter("");
-    Envelope recovered_envelope;
-    EXPECT_TRUE(
-        decrypter.DecryptMessage(encrypted_message, &recovered_envelope));
-    EXPECT_EQ(1, recovered_envelope.batch_size());
-    EXPECT_EQ(metric_id, recovered_envelope.batch(0).meta_data().metric_id());
-
-    std::unique_lock<std::mutex> lock(mutex);
-    send_call_count++;
-    observation_count +=
-        recovered_envelope.batch(0).encrypted_observation_size();
-    // We grab the return value before we block. This allows the test
-    // thread to wait for us to block, then change the value of
-    // status_to_return for the *next* send without changing it for
-    // the currently blocking send.
-    grpc::Status status = status_to_return;
-    if (should_block) {
-      is_blocking = true;
-      send_is_blocking_notifier.notify_all();
-      send_can_exit_notifier.wait(lock, [this] { return !should_block; });
-      is_blocking = false;
-    }
-    return status;
-  }
-
-  std::mutex mutex;
-  bool should_block = false;
-  std::condition_variable send_can_exit_notifier;
-  bool is_blocking = false;
-  std::condition_variable send_is_blocking_notifier;
-  grpc::Status status_to_return = grpc::Status::OK;
-  int send_call_count = 0;
-  int observation_count = 0;
-  uint32_t metric_id;
-};
 
 class FakeHTTPClient : public clearcut::HTTPClient {
  public:
   std::future<StatusOr<clearcut::HTTPResponse>> Post(
       clearcut::HTTPRequest request,
       std::chrono::steady_clock::time_point _ignored) {
+    std::unique_lock<std::mutex> lock(mutex);
+
     util::MessageDecrypter decrypter("");
 
     clearcut::LogRequest req;
@@ -134,15 +59,14 @@ class FakeHTTPClient : public clearcut::HTTPClient {
       EXPECT_TRUE(decrypter.DecryptMessage(
           log_event.cobalt_encrypted_envelope(), &recovered_envelope));
       EXPECT_EQ(1, recovered_envelope.batch_size());
-      EXPECT_EQ(kClearcutMetricId,
-                recovered_envelope.batch(0).meta_data().metric_id());
+      EXPECT_EQ(kMetricId, recovered_envelope.batch(0).meta_data().metric_id());
       observation_count +=
           recovered_envelope.batch(0).encrypted_observation_size();
     }
     send_call_count++;
 
     clearcut::HTTPResponse response;
-    response.http_code = 200;
+    response.http_code = http_response_code_to_return;
     clearcut::LogResponse resp;
     resp.SerializeToString(&response.response);
 
@@ -152,6 +76,8 @@ class FakeHTTPClient : public clearcut::HTTPClient {
     return response_promise.get_future();
   }
 
+  std::mutex mutex;
+  int http_response_code_to_return = 200;
   int send_call_count = 0;
   int observation_count = 0;
 };
@@ -161,72 +87,54 @@ class ShippingManagerTest : public ::testing::Test {
  public:
   ShippingManagerTest()
       : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
-        encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
         observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope,
-                           kMaxBytesTotal),
-        project_(GetTestProject()),
-        encoder_(project_, ClientSecret::GenerateNewSecret(), &system_data_) {}
+                           kMaxBytesTotal) {}
 
  protected:
   void Init(std::chrono::seconds schedule_interval,
-            std::chrono::seconds min_interval,
-            uint32_t metric_id = kDefaultMetricId) {
-    send_retryer_.reset(new FakeSendRetryer(metric_id));
+            std::chrono::seconds min_interval) {
     UploadScheduler upload_scheduler(schedule_interval, min_interval);
-    LegacyShippingManager::SendRetryerParams send_retryer_params(
-        kInitialRpcDeadline, kDeadlinePerSendAttempt);
-    if (metric_id == kDefaultMetricId) {
-      shipping_manager_.reset(new LegacyShippingManager(
-          upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
-          send_retryer_params, send_retryer_.get()));
-    } else {
-      auto http_client = std::make_unique<FakeHTTPClient>();
-      http_client_ = http_client.get();
-      shipping_manager_.reset(new ClearcutV1ShippingManager(
-          upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
-          std::make_unique<clearcut::ClearcutUploader>(
-              "https://test.com", std::move(http_client))));
-    }
+    auto http_client = std::make_unique<FakeHTTPClient>();
+    http_client_ = http_client.get();
+    shipping_manager_.reset(new ClearcutV1ShippingManager(
+        upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
+        std::make_unique<clearcut::ClearcutUploader>("https://test.com",
+                                                     std::move(http_client)),
+        nullptr /* internal_logger */, 1 /*max_attempts_per_upload*/));
     shipping_manager_->Start();
   }
 
-  ObservationStore::StoreStatus AddObservation(
-      size_t num_bytes, uint32_t metric_id = kDefaultMetricId) {
-    CHECK(num_bytes > kNoOpEncodingByteOverhead) << " num_bytes=" << num_bytes;
-    Encoder::Result result = encoder_.EncodeString(
-        metric_id, kNoOpEncodingId,
-        std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
+  ObservationStore::StoreStatus AddObservation(size_t num_bytes) {
+    CHECK_GT(num_bytes, 1);
     auto message = std::make_unique<EncryptedMessage>();
-    EXPECT_TRUE(
-        encrypt_to_analyzer_->Encrypt(*result.observation, message.get()));
+    // Because the MemoryObservationStore counts the size of an Observation
+    // to be the ciphertext size + 1, we set the ciphertext size to be
+    // num_bytes - 1.
+    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+    auto metadata = std::make_unique<ObservationMetadata>();
+    metadata->set_customer_id(kCustomerId);
+    metadata->set_project_id(kProjectId);
+    metadata->set_metric_id(kMetricId);
+
     auto retval = observation_store_.AddEncryptedObservation(
-        std::move(message), std::move(result.metadata));
+        std::move(message), std::move(metadata));
     shipping_manager_->NotifyObservationsAdded();
     return retval;
   }
 
   void CheckCallCount(int expected_call_count, int expected_observation_count) {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    EXPECT_EQ(expected_call_count, send_retryer_->send_call_count);
-    EXPECT_EQ(expected_observation_count, send_retryer_->observation_count);
-  }
-
-  void CheckHTTPCallCount(int expected_call_count,
-                          int expected_observation_count) {
     ASSERT_NE(nullptr, http_client_);
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
     EXPECT_EQ(expected_call_count, http_client_->send_call_count);
     EXPECT_EQ(expected_observation_count, http_client_->observation_count);
   }
 
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
-  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
   MemoryObservationStore observation_store_;
   FakeSystemData system_data_;
-  std::unique_ptr<FakeSendRetryer> send_retryer_;
   std::unique_ptr<ShippingManager> shipping_manager_;
   std::shared_ptr<ProjectContext> project_;
   FakeHTTPClient* http_client_ = nullptr;
-  Encoder encoder_;
 };
 
 // We construct a ShippingManager and destruct it without calling any methods.
@@ -328,8 +236,8 @@ TEST_F(ShippingManagerTest, ScheduledSend) {
   // We do not check the number of sends because that depends on the
   // timing interaction of the test thread and the worker thread and so it
   // would be flaky. Just check that all 3 Observations were sent.
-  std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-  EXPECT_EQ(2, send_retryer_->observation_count);
+  std::unique_lock<std::mutex> lock(http_client_->mutex);
+  EXPECT_EQ(2, http_client_->observation_count);
   EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
 }
 
@@ -343,11 +251,10 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   // Init with a very long time for the regular schedule interval but
   // zero for the minimum interval so the test doesn't have to wait.
   Init(kMaxSeconds, std::chrono::seconds::zero());
-
-  // Configure the FakeSendRetryer to fail every time.
+  // Configure the HttpClient to fail every time.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::CANCELLED;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 500;
   }
 
   // We can add 15 observations without the ObservationStore reporting that
@@ -365,12 +272,13 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   // The sixteenth Observation causes the ObservationStore to become almost
   // full and that causes the ShippingManager to attempt a send.
   EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+
   shipping_manager_->WaitUntilWorkerWaiting(kMaxSeconds);
+
   auto num_send_attempts = shipping_manager_->num_send_attempts();
   EXPECT_GT(num_send_attempts, 0u);
   EXPECT_EQ(num_send_attempts, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::CANCELLED,
-            shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(grpc::UNKNOWN, shipping_manager_->last_send_status().error_code());
 
   // We can add 10 more Observations bringing the total to 26,
   // without the ObservationStore being full.
@@ -384,19 +292,18 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   EXPECT_GT(shipping_manager_->num_send_attempts(), num_send_attempts);
   num_send_attempts = shipping_manager_->num_send_attempts();
   EXPECT_EQ(num_send_attempts, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::CANCELLED,
-            shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(grpc::UNKNOWN, shipping_manager_->last_send_status().error_code());
 
   // The 27th Observation will be rejected with kStoreFull.
   EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(40));
 
-  // Now configure the FakeSendRetryer to start succeeding,
+  // Now configure the HttpClient to start succeeding,
   // and reset the counts.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::OK;
-    send_retryer_->send_call_count = 0;
-    send_retryer_->observation_count = 0;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 200;
+    http_client_->send_call_count = 0;
+    http_client_->observation_count = 0;
   }
 
   // Send all 26 of the accumulated Observations.
@@ -427,11 +334,11 @@ TEST_F(ShippingManagerTest, TotalBytesSendThreshold) {
   // zero for the minimum interval so the test doesn't have to wait.
   Init(kMaxSeconds, std::chrono::seconds::zero());
 
-  // Configure the FakeSendRetryer to fail every time so that we can
+  // Configure the HttpClient to fail every time so that we can
   // accumulate Observation data in memory.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::CANCELLED;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 500;
   }
 
   // total_bytes_send_threshold_ = 0.6 * max_bytes_total_.
@@ -478,13 +385,13 @@ TEST_F(ShippingManagerTest, TotalBytesSendThreshold) {
   // (1 + 2 + 3 + 4 + 5) * 3 + (5*3*(15-5)) = 195
   CheckCallCount(45, 195);
 
-  // Now configure the FakeSendRetryer to start succeeding,
+  // Now configure the HttpClient to start succeeding,
   // and reset the counts.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::OK;
-    send_retryer_->send_call_count = 0;
-    send_retryer_->observation_count = 0;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 200;
+    http_client_->send_call_count = 0;
+    http_client_->observation_count = 0;
   }
 
   // Now we send the 16th Observattion. But notice that we do *not* invoke
@@ -520,14 +427,13 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Arrange for the first send to fail.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::CANCELLED;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 500;
   }
 
   // Add an Observation, invoke RequestSendSoon() with a callback.
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
-  EXPECT_EQ(ObservationStore::kOk,
-            AddObservation(kNoOpEncodingByteOverhead + 1));
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(31));
   shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
     captured_success_arg = success;
   });
@@ -541,8 +447,8 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Arrange for the next send to succeed.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::OK;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 200;
   }
 
   // Don't add another Observation but invoke RequestSendSoon() with a
@@ -560,14 +466,13 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Arrange for the next send to fail.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::CANCELLED;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 500;
   }
 
   // Invoke RequestSendSoon without a callback just so that there is an
   // Observation cached in the inner EnvelopeMaker.
-  EXPECT_EQ(ObservationStore::kOk,
-            AddObservation(kNoOpEncodingByteOverhead + 1));
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(31));
   shipping_manager_->RequestSendSoon();
   shipping_manager_->WaitUntilWorkerWaiting(kMaxSeconds);
   CheckCallCount(7, 7);
@@ -576,13 +481,12 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Arrange for the next send to succeed.
   {
-    std::unique_lock<std::mutex> lock(send_retryer_->mutex);
-    send_retryer_->status_to_return = grpc::Status::OK;
+    std::unique_lock<std::mutex> lock(http_client_->mutex);
+    http_client_->http_response_code_to_return = 200;
   }
 
   // Add an Observation, invoke RequestSendSoon() with a callback.
-  EXPECT_EQ(ObservationStore::kOk,
-            AddObservation(kNoOpEncodingByteOverhead + 1));
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(31));
   shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
     captured_success_arg = success;
   });
@@ -593,28 +497,6 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
   EXPECT_EQ(8u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(6u, shipping_manager_->num_failed_attempts());
   EXPECT_TRUE(captured_success_arg);
-}
-
-TEST_F(ShippingManagerTest, SendObservationToClearcut) {
-  // Init with a very long time for the regular schedule interval but
-  // zero for the minimum interval so the test doesn't have to wait.
-  Init(kMaxSeconds, std::chrono::seconds::zero(), kClearcutMetricId);
-
-  // Add some observations for clearcut
-  EXPECT_EQ(ObservationStore::kOk, AddObservation(40, kClearcutMetricId));
-  EXPECT_EQ(ObservationStore::kOk, AddObservation(41, kClearcutMetricId));
-
-  // Request send soon.
-  shipping_manager_->RequestSendSoon();
-
-  // Wait for both Observations to be sent.
-  shipping_manager_->WaitUntilIdle(kMaxSeconds);
-
-  // Ensure we sent stuff to clearcut.
-  CheckHTTPCallCount(1, 2);
-
-  // Ensure nothing was sent to legacy.
-  CheckCallCount(0, 0);
 }
 
 }  // namespace encoder

@@ -17,7 +17,6 @@
 #include "config/encodings.pb.h"
 #include "encoder/client_secret.h"
 #include "encoder/encoder.h"
-#include "encoder/send_retryer.h"
 #include "encoder/shipping_manager.h"
 #include "logger/encoder.h"
 #include "logger/project_context_factory.h"

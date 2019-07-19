@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "encoder/shipping_manager.h"
+
 #include <mutex>
 #include <utility>
 
 #include "./clearcut_extensions.pb.h"
 #include "./logging.h"
-#include "encoder/shipping_manager.h"
 #include "logger/logger_interface.h"
 
 namespace cobalt {
@@ -129,7 +130,6 @@ bool ShippingManager::shut_down() { return lock()->fields->shut_down; }
 void ShippingManager::ShutDown() {
   {
     auto locked = lock();
-    cancel_handle_.TryCancel();
     locked->fields->shut_down = true;
     locked->fields->shutdown_notifier.notify_all();
     locked->fields->add_observation_notifier.notify_all();
@@ -281,59 +281,14 @@ void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields,
   }
 }
 
-LegacyShippingManager::LegacyShippingManager(
-    const UploadScheduler& upload_scheduler,
-    ObservationStore* observation_store,
-    util::EncryptedMessageMaker* encrypt_to_shuffler,
-    const SendRetryerParams send_retryer_params,
-    SendRetryerInterface* send_retryer)
-    : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
-      send_retryer_params_(send_retryer_params),
-      send_retryer_(send_retryer) {
-  CHECK(send_retryer_);
-}
-
-std::unique_ptr<EnvelopeHolder> LegacyShippingManager::SendEnvelopeToBackend(
-    std::unique_ptr<EnvelopeHolder> envelope_to_send) {
-  EncryptedMessage encrypted_envelope;
-  if (!encrypt_to_shuffler_->Encrypt(envelope_to_send->GetEnvelope(),
-                                     &encrypted_envelope)) {
-    // TODO(rudominer) log
-    // Drop on floor.
-    return nullptr;
-  }
-  VLOG(5) << name() << " worker: Sending Envelope of size "
-          << envelope_to_send->Size() << " bytes to legacy backend.";
-  auto status = send_retryer_->SendToShuffler(
-      send_retryer_params_.initial_rpc_deadline_,
-      send_retryer_params_.deadline_per_send_attempt_, &cancel_handle_,
-      encrypted_envelope);
-  {
-    auto locked = lock();
-    locked->fields->num_send_attempts++;
-    if (!status.ok()) {
-      locked->fields->num_failed_attempts++;
-    }
-    locked->fields->last_send_status = status;
-  }
-  if (status.ok()) {
-    VLOG(4) << name() << "::SendOneEnvelope: OK";
-    return nullptr;
-  }
-
-  VLOG(4) << name() << ": Cobalt send to Shuffler failed: ("
-          << status.error_code() << ") " << status.error_message()
-          << ". Observations have been re-enqueued for later.";
-  return envelope_to_send;
-}
-
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler,
     ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
     std::unique_ptr<clearcut::ClearcutUploader> clearcut,
-    logger::LoggerInterface* internal_logger)
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
+      max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
       internal_metrics_(
           logger::InternalMetrics::NewWithLogger(internal_logger)) {}
@@ -366,7 +321,7 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
   util::Status status;
   {
     std::lock_guard<std::mutex> lock(clearcut_mutex_);
-    status = clearcut_->UploadEvents(&request);
+    status = clearcut_->UploadEvents(&request, max_attempts_per_upload_);
   }
   {
     auto locked = lock();
@@ -416,4 +371,3 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
 
 }  // namespace encoder
 }  // namespace cobalt
-

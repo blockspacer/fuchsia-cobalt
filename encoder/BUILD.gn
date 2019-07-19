@@ -33,12 +33,8 @@ static_library("encoder") {
     "observation_store.cc",
     "observation_store.h",
     "observation_store_update_recipient.h",
-    "send_retryer.cc",
-    "send_retryer.h",
     "shipping_manager.cc",
     "shipping_manager.h",
-    "shuffler_client.cc",
-    "shuffler_client.h",
     "system_data.cc",
     "system_data.h",
     "upload_scheduler.cc",
@@ -119,13 +115,6 @@ cobalt_config_header("generate_envelope_maker_test_config") {
   output_file = "envelope_maker_test_config.h"
 }
 
-# Generate shipping_manager_test_config.h from
-# shipping_manager_test_config.yaml.
-cobalt_config_header("generate_shipping_manager_test_config") {
-  input_yaml = "shipping_manager_test_config.yaml"
-  output_file = "shipping_manager_test_config.h"
-}
-
 # Generate file_observation_store_test_config.h from
 # file_observation_store_test_config.yaml.
 cobalt_config_header("generate_file_observation_store_test_config") {
@@ -143,10 +132,7 @@ source_set("unittests") {
     "envelope_maker_test.cc",
     "envelope_maker_test_config.h",
     "file_observation_store_test.cc",
-    "send_retryer_test.cc",
     "shipping_manager_test.cc",
-    "shipping_manager_test_config.h",
-    "shuffler_client_test.cc",
     "system_data_test.cc",
   ]
 
@@ -155,7 +141,6 @@ source_set("unittests") {
     ":generate_encoder_test_config",
     ":generate_envelope_maker_test_config",
     ":generate_file_observation_store_test_config",
-    ":generate_shipping_manager_test_config",
     ":legacy_project_context",
     "$cobalt_root:logging",
     "//third_party/abseil-cpp",
