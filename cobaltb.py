@@ -79,6 +79,7 @@ def ensureDir(dir_path):
   if not os.path.exists(dir_path):
     os.makedirs(dir_path)
 
+
 def out_dir(args):
   return os.path.abspath(os.path.join(THIS_DIR, args.out_dir))
 
@@ -100,30 +101,25 @@ def _update_config(args):
 
 def _build(args):
   gn_args = []
-  use_goma = False
   use_ccache = False
-  goma_dir = os.path.expanduser("~/goma")
+  goma_dir = os.path.expanduser('~/goma')
   if args.goma_dir:
     goma_dir = args.goma_dir
   if args.ccache:
     use_ccache = True
   if args.no_ccache:
     use_ccache = False
-  if args.goma:
-    use_goma = True
+
+  use_goma = os.path.exists(goma_dir)
+
   if args.no_goma:
     use_goma = False
-
-  if not use_goma and not use_ccache:
-    if os.path.exists(goma_dir):
-      use_goma = True
 
   if args.release:
     gn_args.append('is_debug=false')
   if use_goma:
     gn_args.append('use_goma=true')
-    if goma_dir != '':
-      gn_args.append('goma_dir=\"%s\"' % goma_dir)
+    gn_args.append('goma_dir=\"%s\"' % goma_dir)
   elif use_ccache:
     gn_args.append('use_ccache=true')
 
@@ -131,22 +127,26 @@ def _build(args):
     gn_args.append(args.args)
 
   if vars(args)['with']:
-    packages = "extra_package_labels=["
+    packages = 'extra_package_labels=['
     for target in vars(args)['with']:
       packages += "\"%s\"," % target
-    packages += "]"
+    packages += ']'
 
     gn_args.append(packages)
 
   # If goma isn't running, start it.
   if use_goma:
-    if not subprocess.check_output(['%s/gomacc' % goma_dir, 'port']).strip().isdigit():
+    if not subprocess.check_output(['%s/gomacc' % goma_dir, 'port'
+                                   ]).strip().isdigit():
       subprocess.check_call(['%s/goma_ctl.py' % goma_dir, 'ensure_start'])
 
-  subprocess.check_call([args.gn_path, 'gen', out_dir(args),
-    '--args=%s' % ' '.join(gn_args),
+  subprocess.check_call([
+      args.gn_path,
+      'gen',
+      out_dir(args),
+      '--args=%s' % ' '.join(gn_args),
   ])
-  subprocess.check_call([args.ninja_path , '-C', out_dir(args)])
+  subprocess.check_call([args.ninja_path, '-C', out_dir(args)])
 
 
 def _check_config(args):
@@ -236,9 +236,7 @@ def _lint(args):
 
 
 # Specifiers of subsets of tests to run
-TEST_FILTERS = [
-    'all', 'cpp', 'nocpp', 'go', 'nogo', 'perf', 'perf', 'other'
-]
+TEST_FILTERS = ['all', 'cpp', 'nocpp', 'go', 'nogo', 'perf', 'perf', 'other']
 
 
 # Returns 0 if all tests pass, otherwise returns 1. Prints a failure or success
@@ -279,7 +277,7 @@ def _test(args):
     this_failure_list = []
     for attempt in range(num_times_to_try):
       this_failure_list = test_runner.run_all_tests(
-          "tests/" + test_dir,
+          'tests/' + test_dir,
           verbose_count=_verbose_count,
           vmodule=_vmodule,
           test_args=test_args)
@@ -306,8 +304,12 @@ def _test(args):
 # Files and directories in the out directory to NOT delete when doing
 # a partial clean.
 TO_SKIP_ON_PARTIAL_CLEAN = {
-    'obj': {'third_party': True},
-    'gen': {'third_party': True},
+    'obj': {
+        'third_party': True
+    },
+    'gen': {
+        'third_party': True
+    },
     '.ninja_deps': True,
     '.ninja_log': True,
     'build.ninja': True,
@@ -327,7 +329,8 @@ def partial_clean(current_dir, exceptions):
     elif isinstance(exceptions[f], dict):
       partial_clean(full_path, exceptions[f])
     else:
-      print("Skipping", full_path)
+      print('Skipping', full_path)
+
 
 def _clean(args):
   if args.full:
@@ -716,8 +719,7 @@ def main():
   ########################################################
   sub_parser = subparsers.add_parser(
       'build', parents=[parent_parser], help='Builds Cobalt.')
-  sub_parser.add_argument(
-      '--gn_path', default='gn', help='Path to GN binary')
+  sub_parser.add_argument('--gn_path', default='gn', help='Path to GN binary')
   sub_parser.add_argument(
       '--ninja_path', default='ninja', help='Path to Ninja binary')
   sub_parser.add_argument(
@@ -725,13 +727,16 @@ def main():
   sub_parser.add_argument(
       '--ccache', action='store_true', help='The build should use ccache')
   sub_parser.add_argument(
-      '--no-ccache', action='store_true', help='The build should not use ccache')
+      '--no-ccache',
+      action='store_true',
+      help='The build should not use ccache')
   sub_parser.add_argument(
-      '--goma', action='store_true', help='The build should use goma')
+      '--no-goma',
+      action='store_true',
+      help='The build should not use goma. Otherwise goma is used if found.')
   sub_parser.add_argument(
-      '--no-goma', action='store_true', help='The build should not use goma')
-  sub_parser.add_argument(
-      '--goma_dir', default='',
+      '--goma_dir',
+      default='',
       help='The dir where goma is installed (defaults to ~/goma')
   sub_parser.add_argument(
       '--release', action='store_true', help='Should build release build')
