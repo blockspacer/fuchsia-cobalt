@@ -20,8 +20,7 @@
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using encoder::ClientSecret;
 
@@ -134,7 +133,7 @@ TEST(ForculusDecrypterTest, TestValueDecryption) {
   DoDecryptValueTest(value);
 
   // Test with an int value.
-  value.set_int_value(42);
+  value.set_int_value(42);  // NOLINT readability-magic-numbers
   DoDecryptValueTest(value);
 
   // Test with a blob value.
@@ -203,5 +202,4 @@ TEST(ForculusDecrypterTest, TestErrors) {
             decrypter.Decrypt(&plaintext));
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

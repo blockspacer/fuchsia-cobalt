@@ -19,12 +19,11 @@
 #include "util/crypto_util/base64.h"
 #include "util/log_based_metrics.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 // Stackdriver metric constants
 namespace {
-const char kAddObservationFailure[] =
+constexpr char kAddObservationFailure[] =
     "forculus-analyzer-add-observation-failure";
 }  // namespace
 
@@ -42,8 +41,8 @@ std::string ErrorString(const ForculusObservation& obs) {
 
 }  // namespace
 
-ForculusAnalyzer::ForculusAnalyzer(const cobalt::ForculusConfig& config)
-    : config_(config) {}
+ForculusAnalyzer::ForculusAnalyzer(cobalt::ForculusConfig config)
+    : config_(std::move(config)) {}
 
 bool ForculusAnalyzer::AddObservation(uint32_t day_index,
                                       const ForculusObservation& obs) {
@@ -150,5 +149,4 @@ size_t ForculusAnalyzer::KeyHasher::operator()(
   return std::hash<std::string>()(key.ciphertext);
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

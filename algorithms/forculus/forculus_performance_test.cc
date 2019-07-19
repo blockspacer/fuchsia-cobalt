@@ -25,8 +25,7 @@
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using encoder::ClientSecret;
 
@@ -52,10 +51,8 @@ ForculusObservation Encrypt(const std::string& plaintext, double* wall_timer,
   EXPECT_EQ(ForculusEncrypter::kOK, encrypter.Encrypt(plaintext, 0, &obs));
   std::clock_t c_end = std::clock();
   auto t_end = std::chrono::high_resolution_clock::now();
-  *wall_timer +=
-      std::chrono::duration<double, std::milli>(t_end - t_start).count() /
-      1000.0;
-  *cpu_timer += c_end - c_start;
+  *wall_timer += std::chrono::duration<double>(t_end - t_start).count();
+  *cpu_timer += static_cast<double>(c_end - c_start);
   return obs;
 }
 
@@ -74,9 +71,8 @@ void AddObservations(ForculusAnalyzer* forculus_analyzer,
     std::clock_t c_end = std::clock();
     auto t_end = std::chrono::high_resolution_clock::now();
     *decryption_wall_time +=
-        std::chrono::duration<double, std::milli>(t_end - t_start).count() /
-        1000.0;
-    *decryption_cpu_time += c_end - c_start;
+        std::chrono::duration<double>(t_end - t_start).count();
+    *decryption_cpu_time += static_cast<double>(c_end - c_start);
   }
 }
 
@@ -151,8 +147,7 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
   std::cout << "\n=================================================\n";
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);

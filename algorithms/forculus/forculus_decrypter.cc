@@ -20,8 +20,7 @@
 #include "algorithms/forculus/polynomial_computations.h"
 #include "util/crypto_util/cipher.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using crypto::SymmetricCipher;
 
@@ -96,5 +95,4 @@ ForculusDecrypter::Status ForculusDecrypter::Decrypt(
   return kOK;
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

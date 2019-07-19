@@ -16,8 +16,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 /****************************** Notice *************************************
  *
@@ -48,54 +47,62 @@ FieldElement FromInt(uint32_t x) {
 
 TEST(FieldElementTest, TestConstructors) {
   // Expect that the byte constructor discards all but the first 4 bytes.
-  FieldElement el = FromBytes({0, 1, 2, 3, 4, 5});
-  const byte* bytes = el.KeyBytes();
-  EXPECT_EQ(0, bytes[0]);
-  EXPECT_EQ(1, bytes[1]);
-  EXPECT_EQ(2, bytes[2]);
-  EXPECT_EQ(3, bytes[3]);
-  EXPECT_EQ(0, bytes[4]);
-  EXPECT_EQ(0, bytes[5]);
+  {
+    const FieldElement el = FromBytes({0, 1, 2, 3, 4, 5});
+    const byte* bytes = el.KeyBytes();
+    EXPECT_EQ(0, bytes[0]);
+    EXPECT_EQ(1, bytes[1]);
+    EXPECT_EQ(2, bytes[2]);
+    EXPECT_EQ(3, bytes[3]);
+    EXPECT_EQ(0, bytes[4]);
+    EXPECT_EQ(0, bytes[5]);
+  }
 
   // Expect that the string constructor discards all but the first 4 bytes.
-  el = FromString({0, 1, 2, 3, 4, 5, 6});
-  bytes = el.KeyBytes();
-  EXPECT_EQ(0, bytes[0]);
-  EXPECT_EQ(1, bytes[1]);
-  EXPECT_EQ(2, bytes[2]);
-  EXPECT_EQ(3, bytes[3]);
-  EXPECT_EQ(0, bytes[4]);
-  EXPECT_EQ(0, bytes[5]);
+  {
+    const FieldElement el = FromString({0, 1, 2, 3, 4, 5, 6});
+    const byte* bytes = el.KeyBytes();
+    EXPECT_EQ(0, bytes[0]);
+    EXPECT_EQ(1, bytes[1]);
+    EXPECT_EQ(2, bytes[2]);
+    EXPECT_EQ(3, bytes[3]);
+    EXPECT_EQ(0, bytes[4]);
+    EXPECT_EQ(0, bytes[5]);
+  }
 
   // Expect that 1 is represented in little-endian as 1 0 0 0 ...
-  el = FieldElement(true);
-  bytes = el.KeyBytes();
-  EXPECT_EQ(1, bytes[0]);
-  EXPECT_EQ(0, bytes[1]);
-  EXPECT_EQ(0, bytes[2]);
-  EXPECT_EQ(0, bytes[3]);
-  EXPECT_EQ(0, bytes[4]);
-  EXPECT_EQ(0, bytes[5]);
+  {
+    const FieldElement el = FieldElement(true);
+    const byte* bytes = el.KeyBytes();
+    EXPECT_EQ(1, bytes[0]);
+    EXPECT_EQ(0, bytes[1]);
+    EXPECT_EQ(0, bytes[2]);
+    EXPECT_EQ(0, bytes[3]);
+    EXPECT_EQ(0, bytes[4]);
+    EXPECT_EQ(0, bytes[5]);
+  }
 
   // Expect that 0 is represented as 0 0 0 ...
-  el = FieldElement(0);
-  bytes = el.KeyBytes();
-  EXPECT_EQ(0, bytes[0]);
-  EXPECT_EQ(0, bytes[1]);
-  EXPECT_EQ(0, bytes[2]);
-  EXPECT_EQ(0, bytes[3]);
-  EXPECT_EQ(0, bytes[4]);
-  EXPECT_EQ(0, bytes[5]);
+  {
+    const FieldElement el = FieldElement(false);
+    const byte* bytes = el.KeyBytes();
+    EXPECT_EQ(0, bytes[0]);
+    EXPECT_EQ(0, bytes[1]);
+    EXPECT_EQ(0, bytes[2]);
+    EXPECT_EQ(0, bytes[3]);
+    EXPECT_EQ(0, bytes[4]);
+    EXPECT_EQ(0, bytes[5]);
+  }
 
   // Test the copy constructor
-  FieldElement x = FromBytes({0, 1, 2, 3, 4, 5});
+  const FieldElement x = FromBytes({0, 1, 2, 3, 4, 5});
   FieldElement y(x);
   EXPECT_EQ(x, y);
 
   // Test the move constructor
   FieldElement z(std::move(y));
   EXPECT_EQ(x, z);
-  EXPECT_NE(x, y);
+  EXPECT_NE(x, y);  // NOLINT bugprone-use-after-move
 
   // Test the copy assignment operator
   y = x;
@@ -104,11 +111,11 @@ TEST(FieldElementTest, TestConstructors) {
   // Test the move assignment operator
   z = std::move(y);
   EXPECT_EQ(x, z);
-  EXPECT_NE(x, y);
+  EXPECT_NE(x, y);  // NOLINT bugprone-use-after-move
 }
 
 TEST(FieldElementTest, TestCopyBytesToString) {
-  FieldElement el = FromBytes({0, 1, 2, 3, 4, 5});
+  const FieldElement el = FromBytes({0, 1, 2, 3, 4, 5});
   std::string s;
   el.CopyBytesToString(&s);
   EXPECT_EQ(FieldElement::kDataSize, s.size());
@@ -124,7 +131,7 @@ TEST(FieldElementTest, TestArithmetic) {
   // Test that 2 + 3 = 5 with +=
   FieldElement x = FromInt(2);
   FieldElement y = FromInt(3);
-  FieldElement z = FromInt(5);
+  FieldElement z = FromInt(5);  // NOLINT readability-magic-number
   x += y;
   EXPECT_EQ(z, x);
 
@@ -142,7 +149,7 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(FromInt(3), FromInt(5) - FromInt(2));
 
   // Test that 5 - 2 = 3 using -=.
-  x = FromInt(5);
+  x = FromInt(5);  // NOLINT readability-magic-numbers
   y = FromInt(2);
   x -= y;
   EXPECT_EQ(FromInt(3), x);
@@ -159,8 +166,8 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(FieldElement(true), FromInt(1999000) - FromInt(1998999));
 
   // Test that 1999000 - 1998999 = 1 using -=
-  x = FromInt(1999000);
-  x -= FromInt(1998999);
+  x = FromInt(1999000);   // NOLINT readability-magic-numbers
+  x -= FromInt(1998999);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FieldElement(true), x);
 
   // Test that 3 * 5 = 15.
@@ -168,7 +175,7 @@ TEST(FieldElementTest, TestArithmetic) {
 
   // Test that 3 * 5 = 15 using *=
   x = FromInt(3);
-  x *= FromInt(5);
+  x *= FromInt(5);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FromInt(15), x);
 
   // Test that -1 * 2 = -2.
@@ -185,15 +192,15 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(x, x / x);
 
   // Check that 5/5 = 1
-  x = FromInt(5);
+  x = FromInt(5);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FieldElement(true), x / x);
 
   // Check that 10/5 = 2
-  y = FromInt(10);
+  y = FromInt(10);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FromInt(2), y / x);
 
   // Check that 10/5 = 2 using /=
-  y = FromInt(10);
+  y = FromInt(10);  // NOLINT readability-magic-numbers
   y /= x;
   EXPECT_EQ(FromInt(2), y);
 
@@ -217,13 +224,11 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(FromInt(4) / FromInt(9), x);
 
   // Check that 1999*1000/(1000 - 999) + 2001*999/(999 - 1000) = 1.
-  FieldElement x0 = FromInt(999);
-  FieldElement y0 = FromInt(1999);
-  FieldElement x1 = FromInt(1000);
-  FieldElement y1 = FromInt(2001);
+  FieldElement x0 = FromInt(999);   // NOLINT readability-magic-numbers
+  FieldElement y0 = FromInt(1999);  // NOLINT readability-magic-numbers
+  FieldElement x1 = FromInt(1000);  // NOLINT readability-magic-numbers
+  FieldElement y1 = FromInt(2001);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FieldElement(true), y0 * x1 / (x1 - x0) + y1 * x0 / (x0 - x1));
 }
 
-}  // namespace forculus
-
-}  // namespace cobalt
+}  // namespace cobalt::forculus

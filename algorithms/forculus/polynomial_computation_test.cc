@@ -15,8 +15,7 @@
 #include "algorithms/forculus/polynomial_computations.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 namespace {
 FieldElement FromBytes(std::vector<byte>&& bytes) {
@@ -37,7 +36,7 @@ TEST(PolynomialComputationsTest, TestEvaluateSmallPolynomial) {
 
   // Construct the 2nd degree polynomial 5 + 7x + 9x^2
   std::vector<FieldElement> coefficients;
-  for (byte i = 5; i <= 9; i += 2) {
+  for (byte i = 5; i <= 9; i += 2) {  // NOLINT readability-magic-numbers
     coefficients.emplace_back(FromInt(i));
   }
 
@@ -62,7 +61,7 @@ TEST(PolynomialComputationsTest, TestEvaluateSmallPolynomial) {
 TEST(PolynomialComputationsTest, TestEvaluateLargerPolynomial) {
   // Construct a 19th degree polynomial.
   std::vector<FieldElement> coefficients;
-  for (byte i = 1; i < 21; i++) {
+  for (byte i = 1; i < 21; i++) {  // NOLINT readability-magic-numbers
     coefficients.emplace_back(FromInt(i));
   }
 
@@ -85,13 +84,13 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
 
   // Construct the 2nd degree polynomial 5 + 7x + 9x^2
   std::vector<FieldElement> coefficients;
-  for (byte i = 5; i <= 9; i += 2) {
+  for (byte i = 5; i <= 9; i += 2) {  // NOLINT readability-magic-numbers
     coefficients.emplace_back(FromInt(i));
   }
 
   // Construct the x-values 2, 3, 4
   std::vector<FieldElement> x_values;
-  for (byte i = 2; i < 5; i++) {
+  for (byte i = 2; i < 5; i++) {  // NOLINT readability-magic-numbers
     x_values.emplace_back(FromInt(i));
   }
 
@@ -168,10 +167,10 @@ void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
 }
 
 TEST(PolynomialComputationsTest, TestInterpolate) {
-  std::vector<size_t> num_points_cases({2, 3, 20, 50});
-  std::vector<uint32_t> c0_cases({1, 10000, 100000, 1000000000});
-  std::vector<uint32_t> c_step_cases({1, 7, 111});
-  std::vector<uint32_t> x0_cases({1, 999});
+  const std::vector<size_t> num_points_cases({2, 3, 20, 50});
+  const std::vector<uint32_t> c0_cases({1, 10000, 100000, 1000000000});
+  const std::vector<uint32_t> c_step_cases({1, 7, 111});
+  const std::vector<uint32_t> x0_cases({1, 999});
   for (size_t num_points : num_points_cases) {
     for (uint32_t c0 : c0_cases) {
       for (int32_t c_step : c_step_cases) {
@@ -183,5 +182,4 @@ TEST(PolynomialComputationsTest, TestInterpolate) {
   }
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

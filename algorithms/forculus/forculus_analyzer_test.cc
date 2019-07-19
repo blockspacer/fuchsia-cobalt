@@ -21,8 +21,7 @@
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using encoder::ClientSecret;
 
@@ -83,21 +82,28 @@ TEST(ForculusAnalyzerTest, NoErrors) {
 
   // 20 * 5 observations of plaintext1 on day 0. (This means 20 different
   // clients each encrypting plaintext1 5 times on day 0.)
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 0, DAY, plaintext1, kThreshold, 5);
   // 20 * 5 observations of plaintext1 on day 1.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 1, DAY, plaintext1, kThreshold, 5);
 
   // 21 * 6 observations of plaintext2 on day 0.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 0, DAY, plaintext2, kThreshold + 1, 6);
   // 19 * 6 observations of plaintext2 on day 1. These will not be decrypted.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 1, DAY, plaintext2, kThreshold - 1, 6);
 
   // 19 * 7 observations of plaintext3 on day 0. These will not be decrypted.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 0, DAY, plaintext3, kThreshold - 1, 7);
   // 19 * 7 observations of plaintext3 on day 1. These will not be decrypted.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 1, DAY, plaintext3, kThreshold - 1, 7);
 
   // 22 * 8 observations of plaintext4 on day 3.
+  // NOLINTNEXTLINE
   AddObservations(&forculus_analyzer, 3, DAY, plaintext4, kThreshold + 2, 8);
 
   EXPECT_EQ(0u, forculus_analyzer.observation_errors());
@@ -139,9 +145,11 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
   // First we test with a DAY epoch, the default.
 
   // Add 10 observations on day 0,
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 0, DAY, plaintext, kThreshold - 10,
                   1);
   // and 10 observations on day 1.
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 1, DAY, plaintext, 10, 1);
 
   // Since day 0 and day 1 are different epochs we should not have decrypted the
@@ -151,12 +159,14 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Next we test with a WEEK epoch
   forculus_config.set_epoch_type(WEEK);
-  forculus_analyzer.reset(new ForculusAnalyzer(forculus_config));
+  forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10,
                   1);
   // and 10 observations on day 1.
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 1, WEEK, plaintext, 10, 1);
 
   // Since day 0 and day 1 are in the same epoch we should have decrypted the
@@ -165,12 +175,14 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
   EXPECT_EQ(1u, results.size());
 
   // Next we test with a WEEK epoch but two days in different weeks.
-  forculus_analyzer.reset(new ForculusAnalyzer(forculus_config));
+  forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10,
                   1);
   // and 10 observations on day 7.
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 7, WEEK, plaintext, 10, 1);
 
   // Since day 0 and day 7 are different epochs we should not have decrypted the
@@ -180,12 +192,14 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Next we test with a MONTH epoch
   forculus_config.set_epoch_type(MONTH);
-  forculus_analyzer.reset(new ForculusAnalyzer(forculus_config));
+  forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10,
                   1);
   // and 10 observations on day 7.
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 7, MONTH, plaintext, 10, 1);
 
   // Since day 0 and day 7 are in the same epoch we should have decrypted the
@@ -195,12 +209,14 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Finally we test with a MONTH epoch but two days in different months.
   forculus_config.set_epoch_type(MONTH);
-  forculus_analyzer.reset(new ForculusAnalyzer(forculus_config));
+  forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10,
                   1);
   // and 10 observations on day 31.
+  // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 31, MONTH, plaintext, 10, 1);
 
   // Since day 0 and day 31 are in different epochs we should not have decrypted
@@ -272,8 +288,7 @@ TEST(ForculusAnalyzerTest, WithErrors) {
   EXPECT_EQ(0u, results.size());
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);

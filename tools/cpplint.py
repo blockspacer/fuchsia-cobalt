@@ -35,6 +35,7 @@ SKIP_LINT_DIRS = [
 ]
 
 CLANG_TIDY_WHITELIST = [
+    os.path.join(SRC_ROOT_DIR, 'algorithms', 'forculus'),
     os.path.join(SRC_ROOT_DIR, 'keys'),
     os.path.join(SRC_ROOT_DIR, 'manifest'),
     os.path.join(SRC_ROOT_DIR, 'meta'),

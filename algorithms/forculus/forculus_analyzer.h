@@ -25,8 +25,7 @@
 #include "algorithms/forculus/forculus_decrypter.h"
 #include "config/encodings.pb.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 // A ForculusAnalyzer is constructed for the purpose of performing a single
 // Forculus analysis.
@@ -57,7 +56,7 @@ class ForculusAnalyzer {
  public:
   // Constructs a ForculusAnalyzer for the given config. All of the observations
   // added via AddObservation() must have been encoded using this config.
-  explicit ForculusAnalyzer(const cobalt::ForculusConfig& config);
+  explicit ForculusAnalyzer(cobalt::ForculusConfig config);
 
   // Adds an additional observation to be analyzed. All of the observations
   // added must be for the same metric part and must have been encoded using
@@ -176,7 +175,6 @@ class ForculusAnalyzer {
       decryption_map_;
 };
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_ALGORITHMS_FORCULUS_FORCULUS_ANALYZER_H_

@@ -23,8 +23,7 @@
 #include "util/crypto_util/cipher.h"
 #include "util/crypto_util/mac.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using crypto::SymmetricCipher;
 using crypto::hmac::HMAC;
@@ -95,6 +94,9 @@ std::vector<byte> DeriveMasterKey(uint32_t customer_id, uint32_t project_id,
   return master_key;
 }
 
+constexpr uint32_t kMinThreshold = 2;
+constexpr uint32_t kMaxThreshold = 1000000;
+
 }  // namespace
 
 class ForculusConfigValidator {
@@ -106,7 +108,7 @@ class ForculusConfigValidator {
     if (!client_secret.valid()) {
       return;
     }
-    if (threshold_ < 2 || threshold_ >= 1000000) {
+    if (threshold_ < kMinThreshold || threshold_ >= kMaxThreshold) {
       return;
     }
     valid_ = true;
@@ -136,7 +138,7 @@ ForculusEncrypter::ForculusEncrypter(const ForculusConfig& config,
       metric_part_name_(std::move(metric_part_name)),
       client_secret_(std::move(client_secret)) {}
 
-ForculusEncrypter::~ForculusEncrypter() {}
+ForculusEncrypter::~ForculusEncrypter() = default;
 
 ForculusEncrypter::Status ForculusEncrypter::EncryptValue(
     const ValuePart& value, uint32_t observation_day_index,
@@ -219,6 +221,4 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(
   return kOK;
 }
 
-}  // namespace forculus
-
-}  // namespace cobalt
+}  // namespace cobalt::forculus

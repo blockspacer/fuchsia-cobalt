@@ -25,8 +25,7 @@
 
 #include "util/crypto_util/types.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using crypto::byte;
 
@@ -54,16 +53,16 @@ class FieldElement {
   explicit FieldElement(bool one);
 
   // Move constructor.
-  FieldElement(FieldElement&& other) : bytes_(std::move(other.bytes_)) {}
+  FieldElement(FieldElement&& other) = default;
 
   // Copy constructor.
-  FieldElement(const FieldElement& other) : bytes_(other.bytes_) {}
+  FieldElement(const FieldElement& other) = default;
 
   // Copy assignment operator
-  void operator=(const FieldElement& other) { bytes_ = other.bytes_; }
+  FieldElement& operator=(const FieldElement& other) = default;
 
   // Move assignment operator
-  void operator=(FieldElement&& other) { bytes_ = std::move(other.bytes_); }
+  FieldElement& operator=(FieldElement&& other) = default;
 
   bool operator==(const FieldElement& other) const {
     return bytes_ == other.bytes_;
@@ -83,7 +82,7 @@ class FieldElement {
 
   // Convenience function that copies the underlying bytes of this element
   // into *target_string.
-  void CopyBytesToString(std::string* target_string) {
+  void CopyBytesToString(std::string* target_string) const {
     target_string->assign(reinterpret_cast<const char*>(bytes_.data()),
                           bytes_.size());
   }
@@ -93,7 +92,7 @@ class FieldElement {
   // symmetric cipher. The returned bytes are based on the underlying byte
   // representation of the FieldElement. Each FieldElement yields a different
   // key.
-  const byte* KeyBytes() const;
+  [[nodiscard]] const byte* KeyBytes() const;
 
   // Arithmetic operations below
 
@@ -129,7 +128,6 @@ class FieldElement {
 
 std::ostream& operator<<(std::ostream& os, const FieldElement& el);
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_

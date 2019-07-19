@@ -14,14 +14,13 @@
 
 #include "algorithms/forculus/polynomial_computations.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
-                      FieldElement x) {
+                      const FieldElement& x) {
   size_t num_coefficients = coefficients.size();
   FieldElement y = coefficients[num_coefficients - 1];
-  for (int i = num_coefficients - 2; i >= 0; i--) {
+  for (int i = static_cast<int>(num_coefficients) - 2; i >= 0; i--) {
     y *= x;
     y += coefficients[i];
   }
@@ -65,5 +64,4 @@ FieldElement InterpolateConstant(
   return product_of_xi * sigma;
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
