@@ -164,12 +164,12 @@ def _check_config(args):
 
 def _check_test_configs(args):
   testapp_config_path = os.path.join(args.config_dir, 'fuchsia', 'test_app2',
-                                     'config.yaml')
+                                     'metrics.yaml')
   if not _check_config_exists(testapp_config_path):
     return False
 
   prober_config_path = os.path.join(args.config_dir, 'fuchsia', 'prober',
-                                    'config.yaml')
+                                    'metrics.yaml')
   if not _check_config_exists(prober_config_path):
     print('Run this command and try again: ./cobaltb.py write_prober_config')
     return False
@@ -187,11 +187,11 @@ def _check_test_configs(args):
 
 def _write_prober_config(args):
   testapp_config_path = os.path.join(args.config_dir, 'fuchsia', 'test_app2',
-                                     'config.yaml')
+                                     'metrics.yaml')
   if not _check_config_exists(testapp_config_path):
     return False
   prober_config_path = os.path.join(args.config_dir, 'fuchsia', 'prober',
-                                    'config.yaml')
+                                    'metrics.yaml')
   if os.path.isfile(prober_config_path):
     print('This action will overwrite the file %s.' % prober_config_path)
     answer = input('Continue anyway? (y/N) ')
