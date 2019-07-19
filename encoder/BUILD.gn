@@ -66,7 +66,6 @@ static_library("encoder") {
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/logger:channel_mapper",
     "$cobalt_root/logger:internal_metrics",
-    "$cobalt_root/shuffler:shuffler_service",
     "$cobalt_root/third_party/clearcut:clearcut",
     "$cobalt_root/util:clock",
     "$cobalt_root/util:encrypted_message_util",
