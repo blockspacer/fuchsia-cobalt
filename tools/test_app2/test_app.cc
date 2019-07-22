@@ -40,12 +40,9 @@
 
 namespace cobalt {
 
-using config::ProjectConfigs;
 using encoder::ClearcutV1ShippingManager;
 using encoder::ClientSecret;
 using encoder::MemoryObservationStore;
-using encoder::ObservationStoreWriterInterface;
-using encoder::ShippingManager;
 using encoder::SystemData;
 using encoder::SystemDataInterface;
 using google::protobuf::RepeatedPtrField;
@@ -54,19 +51,16 @@ using logger::EventAggregator;
 using logger::EventValuesPtr;
 using logger::HistogramPtr;
 using logger::kOK;
-using logger::kOther;
 using logger::Logger;
 using logger::LoggerInterface;
 using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::ProjectContextFactory;
 using logger::Status;
-using util::ClockInterface;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
 using util::IncrementingClock;
 using util::PosixFileSystem;
-using util::StatusCode;
 using util::SystemClock;
 using util::TimeToDayIndex;
 
@@ -109,9 +103,9 @@ DEFINE_string(
 
 namespace {
 
-const size_t kMaxBytesPerObservation = 100 * 1024;
-const size_t kMaxBytesPerEnvelope = 1024 * 1024;
-const size_t kMaxBytesTotal = 10 * 1024 * 1024;
+constexpr size_t kMaxBytesPerObservation = 100 * 1024;
+constexpr size_t kMaxBytesPerEnvelope = 1024 * 1024;
+constexpr size_t kMaxBytesTotal = 10 * 1024 * 1024;
 const std::chrono::seconds kDeadlinePerSendAttempt(60);
 
 // Prints help for the interactive mode.
@@ -314,7 +308,7 @@ std::vector<std::string> Tokenize(const std::string& line) {
   do {
     std::string token;
     line_stream >> token;
-    std::remove(token.begin(), token.end(), ' ');
+    token.erase(std::remove(token.begin(), token.end(), ' '), token.end());
     if (!token.empty()) {
       tokens.push_back(token);
     }
@@ -331,7 +325,7 @@ static const int kDay = 86400;
 
 class RealLoggerFactory : public LoggerFactory {
  public:
-  virtual ~RealLoggerFactory() = default;
+  ~RealLoggerFactory() override = default;
 
   RealLoggerFactory(
       std::unique_ptr<EncryptedMessageMaker> observation_encrypter,
@@ -344,7 +338,7 @@ class RealLoggerFactory : public LoggerFactory {
       std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
       std::unique_ptr<SystemDataInterface> system_data);
 
-  std::unique_ptr<LoggerInterface> NewLogger(uint32_t day_index = 0u) override;
+  std::unique_ptr<LoggerInterface> NewLogger(uint32_t day_index) override;
   size_t ObservationCount() override;
   void ResetObservationCount() override;
   void ResetLocalAggregation() override;
@@ -393,14 +387,14 @@ RealLoggerFactory::RealLoggerFactory(
       local_aggregate_proto_store_(std::move(local_aggregate_proto_store)),
       obs_history_proto_store_(std::move(obs_history_proto_store)),
       system_data_(std::move(system_data)) {
-  encoder_.reset(
-      new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
-  observation_writer_.reset(
-      new ObservationWriter(observation_store_.get(), shipping_manager_.get(),
-                            observation_encrypter_.get()));
-  event_aggregator_.reset(new EventAggregator(
+  encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(),
+                                       system_data_.get());
+  observation_writer_ = std::make_unique<ObservationWriter>(
+      observation_store_.get(), shipping_manager_.get(),
+      observation_encrypter_.get());
+  event_aggregator_ = std::make_unique<EventAggregator>(
       encoder_.get(), observation_writer_.get(),
-      local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
+      local_aggregate_proto_store_.get(), obs_history_proto_store_.get());
 }
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(
@@ -429,16 +423,13 @@ void RealLoggerFactory::ResetObservationCount() {
 // TODO(pesk): also clear the contents of the ConsistentProtoStores if we
 // implement a mode which uses them.
 void RealLoggerFactory::ResetLocalAggregation() {
-  event_aggregator_.reset(new EventAggregator(
+  event_aggregator_ = std::make_unique<EventAggregator>(
       encoder_.get(), observation_writer_.get(),
-      local_aggregate_proto_store_.get(), obs_history_proto_store_.get()));
+      local_aggregate_proto_store_.get(), obs_history_proto_store_.get());
 }
 
 bool RealLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
-  if (kOK == event_aggregator_->GenerateObservationsNoWorker(day_index)) {
-    return true;
-  }
-  return false;
+  return kOK == event_aggregator_->GenerateObservationsNoWorker(day_index);
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {
@@ -450,10 +441,10 @@ bool RealLoggerFactory::SendAccumulatedObservations() {
 
 }  // namespace internal
 
-std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
+std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
   std::string registry_pb_path = FLAGS_config_bin_proto_path;
   // If no path is given, try to deduce it from the binary location.
-  if (registry_pb_path == "") {
+  if (registry_pb_path.empty()) {
     registry_pb_path = FindCobaltRegistryProto(argv);
   }
 
@@ -518,8 +509,9 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
   if (mode == TestApp::kAutomatic) {
     // In automatic mode, let the ShippingManager send to the Shuffler
     // every 10 seconds.
-    upload_scheduler = encoder::UploadScheduler(std::chrono::seconds(10),
-                                                std::chrono::seconds(1));
+    const auto upload_interval = std::chrono::seconds(10);
+    upload_scheduler =
+        encoder::UploadScheduler(upload_interval, std::chrono::seconds(1));
   }
   auto shipping_manager = std::make_unique<ClearcutV1ShippingManager>(
       upload_scheduler, observation_store.get(), envelope_encrypter.get(),
@@ -541,7 +533,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(int argc, char* argv[]) {
 }
 
 TestApp::TestApp(std::unique_ptr<LoggerFactory> logger_factory,
-                 const std::string initial_metric_name, Mode mode,
+                 const std::string& initial_metric_name, Mode mode,
                  std::ostream* ostream)
     : mode_(mode),
       logger_factory_(std::move(logger_factory)),
@@ -589,7 +581,7 @@ void TestApp::CommandLoop() {
   }
 }
 
-bool TestApp::ProcessCommandLine(const std::string command_line) {
+bool TestApp::ProcessCommandLine(const std::string& command_line) {
   return ProcessCommand(Tokenize(command_line));
 }
 
@@ -708,7 +700,6 @@ void TestApp::Log(const std::vector<std::string>& command) {
   }
 
   *ostream_ << "Unrecognized log method specified: " << command[2] << std::endl;
-  return;
 }
 
 uint32_t TestApp::CurrentDayIndex() {
@@ -720,12 +711,16 @@ uint32_t TestApp::CurrentDayIndex() {
 void TestApp::LogEvent(uint64_t num_clients,
                        const std::vector<std::string>& command) {
   auto command_size = command.size();
-  if (command_size < 4) {
+  const auto minimum_command_size = 4;
+  const auto maximum_command_size = 5;
+  if (command_size < minimum_command_size) {
     *ostream_ << "Malformed log event command. Expected one more "
                  "argument for <event_code>."
               << std::endl;
     return;
-  } else if (command_size > 5) {
+  }
+
+  if (command_size > maximum_command_size) {
     *ostream_ << "Malformed log event command: too many arguments."
               << std::endl;
     return;
@@ -737,9 +732,10 @@ void TestApp::LogEvent(uint64_t num_clients,
   }
 
   uint32_t day_index = 0;
-  if (command_size == 5 && !ParseDay(command[4], &day_index)) {
-    *ostream_ << "Unable to parse <day> from log command: " << command[4]
-              << std::endl;
+  if (command_size == maximum_command_size &&
+      !ParseDay(command[maximum_command_size - 1], &day_index)) {
+    *ostream_ << "Unable to parse <day> from log command: "
+              << command[maximum_command_size - 1] << std::endl;
     return;
   }
   LogEvent(num_clients, event_code, day_index);
@@ -773,45 +769,49 @@ void TestApp::LogEvent(size_t num_clients, uint32_t event_code,
 void TestApp::LogEventCount(uint64_t num_clients,
                             const std::vector<std::string>& command) {
   auto command_size = command.size();
-  if (command_size < 7) {
+  const auto minimum_command_size = 7;
+  const auto maximum_command_size = 8;
+  enum { INDEX = 3, COMPONENT, DURATION, COUNT, DAY };
+  if (command_size < minimum_command_size) {
     *ostream_ << "Malformed log event_count command: missing at least one "
                  "required argument."
               << std::endl;
     return;
   }
-  if (command_size > 8) {
+  if (command_size > maximum_command_size) {
     *ostream_ << "Malformed log event_count command: too many arguments."
               << std::endl;
   }
 
   int64_t event_code;
-  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
-    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+  if (!ParseNonNegativeInt(command[INDEX], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[INDEX]
               << std::endl;
     return;
   }
 
   int64_t duration;
-  if (!ParseNonNegativeInt(command[5], true, &duration)) {
-    *ostream_ << "Unable to parse <duration> from log command: " << command[5]
-              << std::endl;
+  if (!ParseNonNegativeInt(command[DURATION], true, &duration)) {
+    *ostream_ << "Unable to parse <duration> from log command: "
+              << command[DURATION] << std::endl;
     return;
   }
 
   int64_t count;
-  if (!ParseNonNegativeInt(command[6], true, &count)) {
-    *ostream_ << "Unable to parse <count> from log command: " << command[6]
+  if (!ParseNonNegativeInt(command[COUNT], true, &count)) {
+    *ostream_ << "Unable to parse <count> from log command: " << command[COUNT]
               << std::endl;
     return;
   }
   uint32_t day_index = 0u;
-  if (command_size == 8 && !ParseDay(command[7], &day_index)) {
-    *ostream_ << "Unable to parse <day> from log command: " << command[7]
+  if (command_size == maximum_command_size &&
+      !ParseDay(command[DAY], &day_index)) {
+    *ostream_ << "Unable to parse <day> from log command: " << command[DAY]
               << std::endl;
     return;
   }
 
-  LogEventCount(num_clients, event_code, command[4], duration, count,
+  LogEventCount(num_clients, event_code, command[COMPONENT], duration, count,
                 day_index);
 }
 
@@ -846,27 +846,29 @@ void TestApp::LogEventCount(size_t num_clients, uint32_t event_code,
 // command[2] = "elapsed_time"
 void TestApp::LogElapsedTime(uint64_t num_clients,
                              const std::vector<std::string>& command) {
-  if (command.size() != 6) {
+  enum { INDEX = 3, COMPONENT, ELAPSED_MICROS };
+  const auto expected_size = 6;
+  if (command.size() != expected_size) {
     *ostream_ << "Malformed log elapsed_time command. Expected 3 additional "
               << "parameters." << std::endl;
     return;
   }
 
   int64_t event_code;
-  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
-    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+  if (!ParseNonNegativeInt(command[INDEX], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[INDEX]
               << std::endl;
     return;
   }
 
   int64_t elapsed_micros;
-  if (!ParseNonNegativeInt(command[5], true, &elapsed_micros)) {
+  if (!ParseNonNegativeInt(command[ELAPSED_MICROS], true, &elapsed_micros)) {
     *ostream_ << "Unable to parse <elapsed_micros> from log command: "
-              << command[5] << std::endl;
+              << command[ELAPSED_MICROS] << std::endl;
     return;
   }
 
-  LogElapsedTime(num_clients, event_code, command[4], elapsed_micros);
+  LogElapsedTime(num_clients, event_code, command[COMPONENT], elapsed_micros);
 }
 
 void TestApp::LogElapsedTime(uint64_t num_clients, uint32_t event_code,
@@ -899,27 +901,29 @@ void TestApp::LogElapsedTime(uint64_t num_clients, uint32_t event_code,
 // command[2] = "frame_rate"
 void TestApp::LogFrameRate(uint64_t num_clients,
                            const std::vector<std::string>& command) {
-  if (command.size() != 6) {
+  enum { INDEX = 3, COMPONENT, FPS };
+  const auto expected_size = 6;
+  if (command.size() != expected_size) {
     *ostream_ << "Malformed log frame_rate command. Expected 3 additional "
               << "parameters." << std::endl;
     return;
   }
 
   int64_t event_code;
-  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
-    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+  if (!ParseNonNegativeInt(command[INDEX], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[INDEX]
               << std::endl;
     return;
   }
 
   float fps;
-  if (!ParseFloat(command[5], true, &fps)) {
-    *ostream_ << "Unable to parse <fps> from log command: " << command[5]
+  if (!ParseFloat(command[FPS], true, &fps)) {
+    *ostream_ << "Unable to parse <fps> from log command: " << command[FPS]
               << std::endl;
     return;
   }
 
-  LogFrameRate(num_clients, event_code, command[4], fps);
+  LogFrameRate(num_clients, event_code, command[COMPONENT], fps);
 }
 
 void TestApp::LogFrameRate(uint64_t num_clients, uint32_t event_code,
@@ -951,27 +955,29 @@ void TestApp::LogFrameRate(uint64_t num_clients, uint32_t event_code,
 // command[2] = "memory_usage"
 void TestApp::LogMemoryUsage(uint64_t num_clients,
                              const std::vector<std::string>& command) {
-  if (command.size() != 6) {
+  enum { INDEX = 3, COMPONENT, BYTES };
+  const auto expected_size = 6;
+  if (command.size() != expected_size) {
     *ostream_ << "Malformed log memory_usage command. Expected 3 additional "
               << "parameters." << std::endl;
     return;
   }
 
   int64_t event_code;
-  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
-    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+  if (!ParseNonNegativeInt(command[INDEX], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[INDEX]
               << std::endl;
     return;
   }
 
   int64_t bytes;
-  if (!ParseNonNegativeInt(command[5], true, &bytes)) {
-    *ostream_ << "Unable to parse <bytes> from log command: " << command[5]
+  if (!ParseNonNegativeInt(command[BYTES], true, &bytes)) {
+    *ostream_ << "Unable to parse <bytes> from log command: " << command[BYTES]
               << std::endl;
     return;
   }
 
-  LogMemoryUsage(num_clients, event_code, command[4], bytes);
+  LogMemoryUsage(num_clients, event_code, command[COMPONENT], bytes);
 }
 
 void TestApp::LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
@@ -1003,34 +1009,36 @@ void TestApp::LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
 // command[2] = "int_histogram"
 void TestApp::LogIntHistogram(uint64_t num_clients,
                               const std::vector<std::string>& command) {
-  if (command.size() != 7) {
+  enum { INDEX = 3, COMPONENT, BUCKET, COUNT };
+  const auto expected_size = 7;
+  if (command.size() != expected_size) {
     *ostream_ << "Malformed log int_histogram command. Expected 4 additional "
               << "parameters." << std::endl;
     return;
   }
 
   int64_t event_code;
-  if (!ParseNonNegativeInt(command[3], true, &event_code)) {
-    *ostream_ << "Unable to parse <index> from log command: " << command[3]
+  if (!ParseNonNegativeInt(command[INDEX], true, &event_code)) {
+    *ostream_ << "Unable to parse <index> from log command: " << command[INDEX]
               << std::endl;
     return;
   }
 
   int64_t bucket;
-  if (!ParseNonNegativeInt(command[5], true, &bucket)) {
-    *ostream_ << "Unable to parse <bucket> from log command: " << command[5]
-              << std::endl;
+  if (!ParseNonNegativeInt(command[BUCKET], true, &bucket)) {
+    *ostream_ << "Unable to parse <bucket> from log command: "
+              << command[BUCKET] << std::endl;
     return;
   }
 
   int64_t count;
-  if (!ParseNonNegativeInt(command[6], true, &count)) {
-    *ostream_ << "Unable to parse <count> from log command: " << command[6]
+  if (!ParseNonNegativeInt(command[COUNT], true, &count)) {
+    *ostream_ << "Unable to parse <count> from log command: " << command[COUNT]
               << std::endl;
     return;
   }
 
-  LogIntHistogram(num_clients, event_code, command[4], bucket, count);
+  LogIntHistogram(num_clients, event_code, command[COMPONENT], bucket, count);
 }
 
 void TestApp::LogIntHistogram(uint64_t num_clients, uint32_t event_code,
@@ -1141,7 +1149,6 @@ void TestApp::GenerateAggregatedObservations(
     return;
   }
   GenerateAggregatedObservationsAndSend(day_index);
-  return;
 }
 
 void TestApp::GenerateAggregatedObservationsAndSend(uint32_t day_index) {
@@ -1311,13 +1318,14 @@ bool TestApp::ParseFloat(const std::string& str, bool complain, float* x) {
 
 bool TestApp::ParseIndex(const std::string& str, uint32_t* index) {
   CHECK(index);
-  if (str.size() < 7) {
+  const auto index_len = strlen("index=");
+  if (str.size() < index_len + 1) {
     return false;
   }
-  if (str.substr(0, 6) != "index=") {
+  if (str.substr(0, index_len) != "index=") {
     return false;
   }
-  auto index_string = str.substr(6);
+  auto index_string = str.substr(index_len);
   std::istringstream iss(index_string);
   int64_t possible_index;
   iss >> possible_index;
@@ -1339,30 +1347,35 @@ bool TestApp::ParseIndex(const std::string& str, uint32_t* index) {
 
 bool TestApp::ParseDay(const std::string& str, uint32_t* day_index) {
   CHECK(day_index);
-  if (str.size() < 5 || str.substr(0, 4) != "day=") {
+  const auto day_len = strlen("day=");
+  if (str.size() < day_len + 1 || str.substr(0, day_len) != "day=") {
     *ostream_ << "Expected prefix 'day='." << std::endl;
     return false;
   }
-  auto day_string = str.substr(4);
+  auto day_string = str.substr(day_len);
+  const auto today_len = strlen("today");
 
   // Handle the case where |day_string| is "today", "today+N", or "today-N".
-  if (day_string.size() >= 5 && day_string.substr(0, 5) == "today") {
+  if (day_string.size() >= today_len &&
+      day_string.substr(0, today_len) == "today") {
     auto current_day_index = CurrentDayIndex();
-    if (day_string.size() == 5) {
+    if (day_string.size() == today_len) {
       *day_index = current_day_index;
       return true;
     }
 
-    if (day_string.size() > 6) {
+    if (day_string.size() > today_len + 1) {
       int64_t offset;
-      if (!ParseNonNegativeInt(day_string.substr(6), true, &offset)) {
+      if (!ParseNonNegativeInt(day_string.substr(today_len + 1), true,
+                               &offset)) {
         return false;
       }
-      auto modifier = day_string.substr(5, 1);
+      auto modifier = day_string.substr(today_len, 1);
       if (modifier == "+") {
         *day_index = (current_day_index + offset);
         return true;
-      } else if (modifier == "-") {
+      }
+      if (modifier == "-") {
         if (offset > current_day_index) {
           *ostream_
               << "Negative offset cannot be larger than the current day index."
@@ -1371,9 +1384,8 @@ bool TestApp::ParseDay(const std::string& str, uint32_t* day_index) {
         }
         *day_index = (current_day_index - offset);
         return true;
-      } else {
-        return false;
       }
+      return false;
     }
   }
 
@@ -1420,7 +1432,7 @@ bool TestApp::ParsePartValuePair(const std::string& pair,
 }
 
 CustomDimensionValue TestApp::ParseCustomDimensionValue(
-    std::string value_string) {
+    const std::string& value_string) {
   CustomDimensionValue value;
   int64_t int_val;
   uint32_t index;

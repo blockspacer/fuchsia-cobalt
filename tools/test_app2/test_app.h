@@ -27,6 +27,7 @@ class LoggerFactory {
 
   // Creates a new Logger. If a nonzero day index is provided, then the Logger
   // will log events with that day index.
+  // NOLINTNEXTLINE google-default-arguments
   virtual std::unique_ptr<logger::LoggerInterface> NewLogger(
       uint32_t day_index = 0) = 0;
 
@@ -46,7 +47,7 @@ class LoggerFactory {
 // The Cobalt testing client application.
 class TestApp {
  public:
-  static std::unique_ptr<TestApp> CreateFromFlagsOrDie(int argc, char* argv[]);
+  static std::unique_ptr<TestApp> CreateFromFlagsOrDie(char* argv[]);
 
   // Modes of operation of the Cobalt test application. An instance of
   // TestApp is in interactive mode unless set_mode() is invoked.
@@ -67,7 +68,7 @@ class TestApp {
 
   // Constructor. The |ostream| is used for emitting output in interactive mode.
   TestApp(std::unique_ptr<LoggerFactory> logger_factory,
-          const std::string initial_metric_name, Mode mode,
+          const std::string& initial_metric_name, Mode mode,
           std::ostream* ostream);
 
   TestApp(const TestApp& other) = delete;
@@ -85,7 +86,7 @@ class TestApp {
   // method is public so an instance of TestApp may be used as a library
   // and driven from another program. We use this in unit tests.
   // Returns false if an only if the specified command is "quit".
-  bool ProcessCommandLine(const std::string command_line);
+  bool ProcessCommandLine(const std::string& command_line);
 
   // Returns the current day index in UTC according to the test app's clock.
   uint32_t CurrentDayIndex();
@@ -179,7 +180,8 @@ class TestApp {
   bool ParsePartValuePair(const std::string& pair, std::string* part_name,
                           std::string* value);
 
-  CustomDimensionValue ParseCustomDimensionValue(std::string value_string);
+  CustomDimensionValue ParseCustomDimensionValue(
+      const std::string& value_string);
 
   logger::EventValuesPtr NewCustomEvent(
       std::vector<std::string> dimension_names,

@@ -29,9 +29,9 @@ DECLARE_uint32(num_clients);
 DECLARE_string(values);
 
 namespace {
-static const char kErrorOccurredMetricName[] = "ErrorOccurred";
+constexpr char kErrorOccurredMetricName[] = "ErrorOccurred";
 
-static const char kCobaltRegistry[] = R"(
+constexpr char kCobaltRegistry[] = R"(
 customers {
   customer_name: "Fuchsia"
   customer_id: 1
@@ -178,7 +178,7 @@ customers {
 // each day. Since Observation generation is faked here, this number does not
 // need to correspond to a test Metric registry. It just needs to be a positive
 // number.
-static const int kNumAggregatedObservations = 20;
+constexpr int kNumAggregatedObservations = 20;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   google::protobuf::TextFormat::Parser parser;

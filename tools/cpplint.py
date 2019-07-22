@@ -42,6 +42,7 @@ CLANG_TIDY_WHITELIST = [
     os.path.join(SRC_ROOT_DIR, 'logger'),
     os.path.join(SRC_ROOT_DIR, 'manifest'),
     os.path.join(SRC_ROOT_DIR, 'meta'),
+    os.path.join(SRC_ROOT_DIR, 'tools'),
 ]
 
 CLANG_TIDY_BLACKLIST = [

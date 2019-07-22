@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "tools/test_app2/test_app.h"
-
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "tools/test_app2/test_app.h"
 
 int main(int argc, char* argv[]) {
   google::SetUsageMessage(
@@ -18,7 +17,7 @@ int main(int argc, char* argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
-  auto app = cobalt::TestApp::CreateFromFlagsOrDie(argc, argv);
+  auto app = cobalt::TestApp::CreateFromFlagsOrDie(argv);
   app->Run();
 
   exit(0);
