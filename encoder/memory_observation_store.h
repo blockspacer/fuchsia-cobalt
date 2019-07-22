@@ -31,8 +31,7 @@ class MemoryObservationStore : public ObservationStore {
   size_t Size() const override;
   bool Empty() const override;
 
-  void ResetInternalMetrics(
-      logger::LoggerInterface* internal_logger = nullptr) override {
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger) override {
     internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
 

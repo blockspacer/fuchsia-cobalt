@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "encoder/envelope_maker.h"
+
 #include <memory>
 #include <utility>
 
-#include "encoder/envelope_maker.h"
-
 #include "./logging.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation,
                              size_t max_num_bytes)
@@ -118,5 +117,4 @@ void EnvelopeMaker::MergeWith(
   other->Clear();
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

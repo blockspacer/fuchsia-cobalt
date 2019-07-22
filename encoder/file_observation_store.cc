@@ -15,15 +15,14 @@
 #include "logger/logger_interface.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using statusor::StatusOr;
 using util::FileSystem;
 using util::Status;
 using util::StatusCode;
 
-const char kActiveFileName[] = "in_progress.data";
+constexpr char kActiveFileName[] = "in_progress.data";
 // The first part of the filename is 13 digits representing the milliseconds
 // since the unix epoch. The millisecond timestamp became 13 digits in
 // September 2001, and won't be 14 digits until 2286.
@@ -31,6 +30,9 @@ const char kActiveFileName[] = "in_progress.data";
 // The second part of the filename is 10 digits, which is a random number in the
 // range 1000000000-9999999999.
 const std::regex kFinalizedFileRegex(R"(\d{13}-\d{10}.data)");
+constexpr uint32_t kTimestampWidth = 13;
+constexpr uint64_t kMinRandomNumber = 1000000000;
+constexpr uint64_t kMaxRandomNumber = 9999999999;
 
 FileObservationStore::FileObservationStore(
     size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
@@ -59,7 +61,7 @@ FileObservationStore::FileObservationStore(
     auto fields = protected_fields_.lock();
     fields->finalized_bytes = 0;
 
-    for (auto file : ListFinalizedFiles()) {
+    for (const auto &file : ListFinalizedFiles()) {
       fields->finalized_bytes +=
           fs_->FileSize(FullPath(file)).ConsumeValueOr(0);
     }
@@ -142,7 +144,8 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     return kWriteFailed;
   }
 
-  if (active_file->ByteCount() >= (int64_t)max_bytes_per_envelope_) {
+  if (active_file->ByteCount() >=
+      static_cast<int64_t>(max_bytes_per_envelope_)) {
     VLOG(4) << name_ << ": In-progress file contains "
             << active_file->ByteCount()
             << " bytes (>= " << max_bytes_per_envelope_ << "). Finalizing it.";
@@ -202,14 +205,14 @@ FileObservationStore::FilenameGenerator::FilenameGenerator()
 
 FileObservationStore::FilenameGenerator::FilenameGenerator(
     std::function<int64_t()> now)
-    : now_(now), random_int_(1000000000, 9999999999) {}
+    : now_(std::move(now)), random_int_(kMinRandomNumber, kMaxRandomNumber) {}
 
 std::string FileObservationStore::FilenameGenerator::GenerateFilename() const {
   std::stringstream date;
   std::stringstream fname;
-  date << std::setfill('0') << std::setw(13) << now_();
-  fname << date.str().substr(0, 13) << "-" << random_int_(random_dev_)
-        << ".data";
+  date << std::setfill('0') << std::setw(kTimestampWidth) << now_();
+  fname << date.str().substr(0, kTimestampWidth) << "-"
+        << random_int_(random_dev_) << ".data";
   return fname.str();
 }
 
@@ -236,8 +239,9 @@ google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
       return nullptr;
     }
 
-    f->active_file.reset(
-        new google::protobuf::io::OstreamOutputStream(&f->active_fstream));
+    f->active_file =
+        std::make_unique<google::protobuf::io::OstreamOutputStream>(
+            &f->active_fstream);
   }
   return f->active_file.get();
 }
@@ -245,7 +249,7 @@ google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
 std::vector<std::string> FileObservationStore::ListFinalizedFiles() const {
   auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});
   std::vector<std::string> retval;
-  for (auto file : files) {
+  for (const auto &file : files) {
     if (std::regex_match(file, kFinalizedFileRegex)) {
       retval.push_back(file);
     }
@@ -258,9 +262,9 @@ StatusOr<std::string> FileObservationStore::GetOldestFinalizedFile(
   auto &f = *fields;
 
   std::string found_file_name;
-  for (auto file : ListFinalizedFiles()) {
+  for (const auto &file : ListFinalizedFiles()) {
     if (f->files_taken.find(file) == f->files_taken.end()) {
-      if (found_file_name == "") {
+      if (found_file_name.empty()) {
         found_file_name = file;
       } else {
         // We compare the file names to try to find the oldest one. This works
@@ -276,7 +280,7 @@ StatusOr<std::string> FileObservationStore::GetOldestFinalizedFile(
       }
     }
   }
-  if (found_file_name == "") {
+  if (found_file_name.empty()) {
     return Status(StatusCode::NOT_FOUND, "No finalized file");
   }
   return found_file_name;
@@ -317,7 +321,7 @@ void FileObservationStore::ReturnEnvelopeHolder(
           envelope.release()));
 
   auto fields = protected_fields_.lock();
-  for (auto file_name : env->file_names()) {
+  for (const auto &file_name : env->file_names()) {
     fields->files_taken.erase(file_name);
     fields->finalized_bytes +=
         fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
@@ -342,14 +346,14 @@ bool FileObservationStore::Empty() const { return Size() == 0; }
 
 void FileObservationStore::Delete() {
   auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});
-  for (auto file : files) {
+  for (const auto &file : files) {
     fs_->Delete(FullPath(file));
   }
   fs_->Delete(root_directory_);
 }
 
 FileObservationStore::FileEnvelopeHolder::~FileEnvelopeHolder() {
-  for (auto file_name : file_names_) {
+  for (const auto &file_name : file_names_) {
     fs_->Delete(FullPath(file_name));
   }
 }
@@ -380,7 +384,7 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
 
   ObservationStoreRecord stored;
 
-  for (auto file_name : file_names_) {
+  for (const auto &file_name : file_names_) {
     std::ifstream ifs(FullPath(file_name), std::ifstream::in);
     google::protobuf::io::IstreamInputStream iis(&ifs);
 
@@ -428,11 +432,10 @@ size_t FileObservationStore::FileEnvelopeHolder::Size() {
   }
 
   cached_file_size_ = 0;
-  for (auto file_name : file_names_) {
+  for (const auto &file_name : file_names_) {
     cached_file_size_ += fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
   }
   return cached_file_size_;
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

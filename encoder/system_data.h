@@ -25,16 +25,16 @@ class SystemDataInterface {
   virtual ~SystemDataInterface() = default;
 
   // Returns the SystemProfile for the current system.
-  virtual const SystemProfile& system_profile() const = 0;
+  [[nodiscard]] virtual const SystemProfile& system_profile() const = 0;
 
   // Returns a vector with all experiments the system has a notion of.
-  virtual const std::vector<Experiment>& experiments() const = 0;
+  [[nodiscard]] virtual const std::vector<Experiment>& experiments() const = 0;
 
   // Returns the current channel.
-  virtual const std::string& channel() const = 0;
+  [[nodiscard]] virtual const std::string& channel() const = 0;
 
   // Returns the current ReleaseStage.
-  virtual const ReleaseStage& release_stage() const = 0;
+  [[nodiscard]] virtual const ReleaseStage& release_stage() const = 0;
 };
 
 // The Encoder client creates a singleton instance of SystemData at start-up
@@ -62,7 +62,7 @@ class SystemData : public SystemDataInterface {
              const std::string& version = "",
              std::unique_ptr<logger::ChannelMapper> channel_mapper = nullptr);
 
-  virtual ~SystemData() = default;
+  ~SystemData() override = default;
 
   // Returns a vector with all experiments the system has a notion of.
   const std::vector<Experiment>& experiments() const override

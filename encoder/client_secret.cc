@@ -12,44 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <utility>
-
 #include "encoder/client_secret.h"
+
+#include <utility>
 
 #include "util/crypto_util/base64.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
-  // static
-  ClientSecret ClientSecret::GenerateNewSecret() {
-    crypto::Random rand;
-    return GenerateNewSecret(&rand);
-  }
+// static
+ClientSecret ClientSecret::GenerateNewSecret() {
+  crypto::Random rand;
+  return GenerateNewSecret(&rand);
+}
 
-  // static
-  ClientSecret ClientSecret::GenerateNewSecret(crypto::Random* rand) {
-    ClientSecret client_secret;
-    client_secret.bytes_.resize(kNumSecretBytes);
-    rand->RandomBytes(client_secret.bytes_.data(), kNumSecretBytes);
-    return client_secret;
-  }
+// static
+ClientSecret ClientSecret::GenerateNewSecret(crypto::Random* rand) {
+  ClientSecret client_secret;
+  client_secret.bytes_.resize(kNumSecretBytes);
+  rand->RandomBytes(client_secret.bytes_.data(), kNumSecretBytes);
+  return client_secret;
+}
 
-  // static
-  ClientSecret ClientSecret::FromToken(const std::string& token) {
-    ClientSecret client_secret;
-    crypto::Base64Decode(token, &client_secret.bytes_);
-    return client_secret;
-  }
+// static
+ClientSecret ClientSecret::FromToken(const std::string& token) {
+  ClientSecret client_secret;
+  crypto::Base64Decode(token, &client_secret.bytes_);
+  return client_secret;
+}
 
-  std::string ClientSecret::GetToken() {
-    std::string token;
-    crypto::Base64Encode(bytes_, &token);
-    return token;
-  }
+std::string ClientSecret::GetToken() {
+  std::string token;
+  crypto::Base64Encode(bytes_, &token);
+  return token;
+}
 
-
-}  // namespace encoder
-}  // namespace cobalt
-
+}  // namespace cobalt::encoder

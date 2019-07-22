@@ -8,8 +8,13 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
+
+namespace {
+
+constexpr float kAlmostFullThreshold = 0.6;
+
+}
 
 ObservationStore::ObservationStore(size_t max_bytes_per_observation,
                                    size_t max_bytes_per_envelope,
@@ -17,7 +22,7 @@ ObservationStore::ObservationStore(size_t max_bytes_per_observation,
     : max_bytes_per_observation_(max_bytes_per_observation),
       max_bytes_per_envelope_(max_bytes_per_envelope),
       max_bytes_total_(max_bytes_total),
-      almost_full_threshold_(0.6 * max_bytes_total_) {
+      almost_full_threshold_(kAlmostFullThreshold * max_bytes_total_) {
   CHECK_LE(max_bytes_per_observation_, max_bytes_per_envelope_);
   CHECK_LE(max_bytes_per_envelope_, max_bytes_total_);
   CHECK_LE(0, max_bytes_per_envelope_);
@@ -52,7 +57,7 @@ uint64_t ObservationStore::num_observations_added() const {
 }
 
 std::vector<uint64_t> ObservationStore::num_observations_added_for_reports(
-    std::vector<uint32_t> report_ids) const {
+    const std::vector<uint32_t> &report_ids) const {
   std::vector<uint64_t> num_obs;
   for (const auto &id : report_ids) {
     const auto &count = num_obs_per_report_.find(id);
@@ -69,5 +74,4 @@ void ObservationStore::ResetObservationCounter() {
   num_obs_per_report_.clear();
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

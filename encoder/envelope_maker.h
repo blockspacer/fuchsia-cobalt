@@ -62,8 +62,8 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   // if the provided observation's serialized, encrypted size is not too large
   // by itself, but adding the additional observation would cause the sum of the
   // sizes of all added Observations to be greater than this value.
-  EnvelopeMaker(size_t max_bytes_each_observation = SIZE_MAX,
-                size_t max_num_bytes = SIZE_MAX);
+  explicit EnvelopeMaker(size_t max_bytes_each_observation = SIZE_MAX,
+                         size_t max_num_bytes = SIZE_MAX);
 
   // CanAddObservation returns the status that EnvelopeMaker would return if you
   // passed the |message| into AddEncryptedObservation. This allows the user to

@@ -13,8 +13,7 @@
 #include "./gtest.h"
 #include "./logging.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 TEST(SystemDataTest, BasicTest) {
   SystemData system_data("test_product", "", "test_version");
@@ -28,7 +27,7 @@ TEST(SystemDataTest, BasicTest) {
   std::set<std::string> expected_board_names = {"Eve", "Generic ARM"};
 
   // CPU signatures we expect to see.
-  std::set<int> expected_signatures = {
+  static const std::set<int> expected_signatures = {
       0x0306D4,  // Intel Broadwell (model=0x3D family=0x6) stepping=0x4
       0x0306F0,  // Intel Broadwell (model=0x3F family=0x6) stepping=0x0
       0x0406E3,  // Intel Broadwell (model=0x4E family=0x6) stepping=0x3
@@ -78,6 +77,4 @@ TEST(SystemDataTest, SetChannelTest) {
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
 }
 
-}  // namespace encoder
-
-}  // namespace cobalt
+}  // namespace cobalt::encoder

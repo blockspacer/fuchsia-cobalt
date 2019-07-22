@@ -37,7 +37,9 @@ using crypto::byte;
 class ClientSecret {
  public:
   // Move constructor
-  ClientSecret(ClientSecret&& other) { bytes_ = std::move(other.bytes_); }
+  ClientSecret(ClientSecret&& other) noexcept {
+    bytes_ = std::move(other.bytes_);
+  }
 
   // Copy constructor
   ClientSecret(const ClientSecret& other) { bytes_ = other.bytes_; }
@@ -62,7 +64,7 @@ class ClientSecret {
 
   // Is this ClientSecret valid? An invalid ClientSecret may occur when an
   // invalid token is passed to FromToken(), or after a move occurs.
-  bool valid() const { return !bytes_.empty(); }
+  [[nodiscard]] bool valid() const { return !bytes_.empty(); }
 
   // Returns a token that may be used to reconstitute this ClientSecret
   // using the FromToken() function. Returns the empty string if this
@@ -71,7 +73,7 @@ class ClientSecret {
   // This method is not thread safe.
   std::string GetToken();
 
-  const byte* data() const { return bytes_.data(); }
+  [[nodiscard]] const byte* data() const { return bytes_.data(); }
 
   static const size_t kNumSecretBytes = 16;
 
@@ -81,7 +83,7 @@ class ClientSecret {
 
  private:
   // Private default constructor
-  ClientSecret() {}
+  ClientSecret() = default;
   std::vector<byte> bytes_;
 };
 

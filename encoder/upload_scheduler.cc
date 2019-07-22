@@ -4,14 +4,13 @@
 
 #include "encoder/upload_scheduler.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 // Definition of the static constant declared in shipping_manager.h.
 // This must be less than 2^31. There appears to be a bug in
 // std::condition_variable::wait_for() in which setting the wait time to
 // std::chrono::seconds::max() effectively sets the wait time to zero.
-const std::chrono::seconds UploadScheduler::kMaxSeconds(999999999);
+constexpr std::chrono::seconds UploadScheduler::kMaxSeconds(999999999);
 
 UploadScheduler::UploadScheduler(std::chrono::seconds target_interval,
                                  std::chrono::seconds min_interval,
@@ -40,5 +39,4 @@ std::chrono::seconds UploadScheduler::Interval() {
   return interval;
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

@@ -67,10 +67,10 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // envelopes owned by EnvelopeHolders to no longer be in the store.
   class EnvelopeHolder {
    public:
-    EnvelopeHolder() {}
+    EnvelopeHolder() = default;
 
     // When this EnvelopeHolder is deleted, the underlying data will be deleted.
-    virtual ~EnvelopeHolder() {}
+    virtual ~EnvelopeHolder() = default;
 
     // MergeWith takes posession of the Envelope owned by |other| and merges
     // that EnvelopeHolder's underlying data with that of its own. After the
@@ -114,7 +114,7 @@ class ObservationStore : public ObservationStoreWriterInterface {
                             size_t max_bytes_per_envelope,
                             size_t max_bytes_total);
 
-  virtual ~ObservationStore() {}
+  ~ObservationStore() override = default;
 
   // Returns a human-readable name for the StoreStatus.
   static std::string StatusDebugString(StoreStatus status);
@@ -123,9 +123,9 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // this causes the pool of observations to exceed max_bytes_per_envelope, then
   // the ObservationStore will construct an EnvelopeHolder to be returned from
   // TakeNextEnvelopeHolder().
-  virtual StoreStatus AddEncryptedObservation(
+  StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata) = 0;
+      std::unique_ptr<ObservationMetadata> metadata) override = 0;
 
   // Returns the next EnvelopeHolder from the list of EnvelopeHolders in the
   // store. If there are no more EnvelopeHolders available, this will return
@@ -142,36 +142,41 @@ class ObservationStore : public ObservationStoreWriterInterface {
 
   // Resets the internal metrics to use the provided logger.
   virtual void ResetInternalMetrics(
-      logger::LoggerInterface* internal_logger = nullptr) = 0;
+      logger::LoggerInterface* internal_logger) = 0;
 
   // Returns true when the size of the data in the ObservationStore exceeds 60%
   // of max_bytes_total.
-  bool IsAlmostFull() const;
+  [[nodiscard]] bool IsAlmostFull() const;
 
   // Returns an approximation of the size of all the data in the store.
-  virtual size_t Size() const = 0;
+  [[nodiscard]] virtual size_t Size() const = 0;
 
   // Returns wether or not the store is entirely empty.
-  virtual bool Empty() const = 0;
+  [[nodiscard]] virtual bool Empty() const = 0;
 
   // Returns the number of Observations that have been added to the
   // ObservationStore.
-  uint64_t num_observations_added() const;
+  [[nodiscard]] uint64_t num_observations_added() const;
 
   // Returns a vector containing the number of Observations that have been added
   // to the ObservationStore for each specified report ID.
-  std::vector<uint64_t> num_observations_added_for_reports(
-      std::vector<uint32_t> report_ids) const;
+  [[nodiscard]] std::vector<uint64_t> num_observations_added_for_reports(
+      const std::vector<uint32_t>& report_ids) const;
 
   // Resets the count of Observations that have been added to the
   // ObservationStore.
   void ResetObservationCounter();
 
  protected:
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   const size_t max_bytes_per_observation_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   const size_t max_bytes_per_envelope_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   const size_t max_bytes_total_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   const size_t almost_full_threshold_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::map<uint32_t, uint64_t> num_obs_per_report_;
 };
 

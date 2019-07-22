@@ -26,8 +26,7 @@
 #include "util/crypto_util/random.h"
 #include "util/datetime_util.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using forculus::ForculusEncrypter;
 using rappor::BasicRapporEncoder;
@@ -57,7 +56,7 @@ std::string DataCaseToString(ValuePart::DataCase data_case) {
 
 }  // namespace
 
-Encoder::Encoder(std::shared_ptr<ProjectContext> project,
+Encoder::Encoder(const std::shared_ptr<ProjectContext>& project,
                  ClientSecret client_secret,
                  const SystemDataInterface* system_data)
     : customer_id_(project->customer_id()),
@@ -103,11 +102,11 @@ Encoder::Status Encoder::EncodeForculus(
   }
 }
 
-Encoder::Status Encoder::EncodeRappor(uint32_t metric_id,
+Encoder::Status Encoder::EncodeRappor(uint32_t /*metric_id*/,
                                       uint32_t encoding_config_id,
                                       const ValuePart& value,
                                       const EncodingConfig* encoding_config,
-                                      const std::string& part_name,
+                                      const std::string& /*part_name*/,
                                       ObservationPart* observation_part) {
   if (value.data_case() != ValuePart::kStringValue) {
     LOG(ERROR) << "RAPPOR doesn't support "
@@ -133,8 +132,8 @@ Encoder::Status Encoder::EncodeRappor(uint32_t metric_id,
 }
 
 Encoder::Status Encoder::EncodeBasicRappor(
-    uint32_t metric_id, uint32_t encoding_config_id, const ValuePart& value,
-    const EncodingConfig* encoding_config, const std::string& part_name,
+    uint32_t /*metric_id*/, uint32_t encoding_config_id, const ValuePart& value,
+    const EncodingConfig* encoding_config, const std::string& /*part_name*/,
     ObservationPart* observation_part) {
   switch (value.data_case()) {
     case ValuePart::kStringValue:
@@ -168,8 +167,9 @@ Encoder::Status Encoder::EncodeBasicRappor(
   }
 }
 
-Encoder::Status Encoder::EncodeNoOp(uint32_t metric_id, const ValuePart& value,
-                                    const std::string& part_name,
+Encoder::Status Encoder::EncodeNoOp(uint32_t /*metric_id*/,
+                                    const ValuePart& value,
+                                    const std::string& /*part_name*/,
                                     ObservationPart* observation_part) {
   // TODO(rudominer) Notice we are copying the value here. If we pass
   // the parameter |value| by pointer instead of by const ref then we could
@@ -270,10 +270,10 @@ bool Encoder::CheckIntBucketDistribution(
   // overflow buckets.
   num_buckets += 2;
 
-  for (auto it = counts.begin(); it != counts.end(); ++it) {
+  for (const auto& it : counts) {
     // Check that all the specified bucket indices are valid.
-    if (it->first >= num_buckets) {
-      LOG(ERROR) << "Invalid bucket index " << it->first << " for Metric ("
+    if (it.first >= num_buckets) {
+      LOG(ERROR) << "Invalid bucket index " << it.first << " for Metric ("
                  << customer_id_ << ", " << project_id_ << ", " << metric_id
                  << ") - part " << part_name;
       return false;
@@ -382,7 +382,7 @@ Encoder::Result Encoder::Encode(uint32_t metric_id, const Value& value) {
   }
 
   // Create a new Observation and ObservationMetadata.
-  result.observation.reset(new Observation());
+  result.observation = std::make_unique<Observation>();
 
   // Generate the random_id field. Currently we use 8 bytes but our
   // infrastructure allows us to change that in the future if we wish to. The
@@ -393,7 +393,7 @@ Encoder::Result Encoder::Encode(uint32_t metric_id, const Value& value) {
       new std::string(kNumRandomBytes, 0));
   random_.RandomString(result.observation->mutable_random_id());
 
-  result.metadata.reset(new ObservationMetadata());
+  result.metadata = std::make_unique<ObservationMetadata>();
   result.metadata->set_customer_id(customer_id_);
   result.metadata->set_project_id(project_id_);
   result.metadata->set_metric_id(metric_id);
@@ -582,13 +582,12 @@ void Encoder::Value::AddBlobPart(uint32_t encoding_config_id,
 
 void Encoder::Value::AddIntBucketDistributionPart(
     uint32_t encoding_config_id, const std::string& part_name,
-    const std::map<uint32_t, uint64_t>& value) {
-  auto distribution =
+    const std::map<uint32_t, uint64_t>& distribution) {
+  auto distribution_out =
       AddPart(encoding_config_id, part_name).mutable_int_bucket_distribution();
-  for (auto it = value.begin(); it != value.end(); it++) {
-    (*distribution->mutable_counts())[it->first] = it->second;
+  for (auto it : distribution) {
+    (*distribution_out->mutable_counts())[it.first] = it.second;
   }
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

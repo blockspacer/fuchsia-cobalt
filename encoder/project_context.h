@@ -14,8 +14,7 @@
 #include "config/encoding_config.h"
 #include "config/metric_config.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 // A ProjectContext represents a particular Cobalt project and contains
 // a registry of the Metrics and EncodingConfigs contained in the project.
@@ -24,17 +23,18 @@ class ProjectContext {
   // Constructs a ProjectContext for the project with the given IDs
   // and ClientConfig.
   ProjectContext(uint32_t customer_id, uint32_t project_id,
-                 std::shared_ptr<config::ClientConfig> client_config);
+                 const std::shared_ptr<config::ClientConfig>& client_config);
 
   // Returns the Metric with the given ID in the project, or nullptr if there is
   // no such Metric. The caller does not take ownership of the returned
   // pointer.
-  const class Metric* Metric(uint32_t id) const;
+  [[nodiscard]] const class Metric* Metric(uint32_t id) const;
 
   // Returns the Metric with the given name in the project, or nullptr if there
   // is no such Metric. The caller does not take ownership of the returned
   // pointer.
-  const class Metric* Metric(const std::string& metric_name) const;
+  [[nodiscard]] const class Metric* Metric(
+      const std::string& metric_name) const;
 
   // Returns a map from MetricPart names to default encoding_ids for the metric
   // given by |id|. If no such metric exists, returns an empty map.
@@ -44,11 +44,11 @@ class ProjectContext {
   // Returns the EncodingConfig with the given ID in the project, or nullptr if
   // there is no such EncodingConfig. The caller does not take ownership of the
   // returned pointer.
-  const EncodingConfig* EncodingConfig(uint32_t id) const;
+  [[nodiscard]] const EncodingConfig* EncodingConfig(uint32_t id) const;
 
-  uint32_t customer_id() const { return customer_id_; }
+  [[nodiscard]] uint32_t customer_id() const { return customer_id_; }
 
-  uint32_t project_id() const { return project_id_; }
+  [[nodiscard]] uint32_t project_id() const { return project_id_; }
 
  private:
   const uint32_t customer_id_, project_id_;
@@ -61,7 +61,6 @@ class ProjectContext {
   std::shared_ptr<config::ClientConfig> client_config_;
 };
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder
 
 #endif  // COBALT_ENCODER_PROJECT_CONTEXT_H_

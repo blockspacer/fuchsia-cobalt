@@ -16,24 +16,26 @@
 #include "encoder/project_context.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using config::ClientConfig;
 
 namespace {
 
 // These must match values specified in the build files.
-const uint32_t kCustomerId = 1;
-const uint32_t kProjectId = 1;
+constexpr uint32_t kCustomerId = 1;
+constexpr uint32_t kProjectId = 1;
 
 // This unix timestamp corresponds to Friday Dec 2, 2016 in UTC
 // and Thursday Dec 1, 2016 in Pacific time.
-const time_t kSomeTimestamp = 1480647356;
+constexpr time_t kSomeTimestamp = 1480647356;
 // This is the day index for Friday Dec 2, 2016
-const uint32_t kUtcDayIndex = 17137;
+constexpr uint32_t kUtcDayIndex = 17137;
 // This is the day index for Thurs Dec 1, 2016
-const uint32_t kPacificDayIndex = 17136;
+constexpr uint32_t kPacificDayIndex = 17136;
+
+constexpr uint32_t kSecondsPerHour = 3600;
+constexpr int32_t kPacificTimezone = 8;
 
 // Returns a ProjectContext obtained by parsing the configuration specified
 // in envelope_maker_test_config.yaml
@@ -77,7 +79,7 @@ void CheckSinglePartResult(
     // seconds west of UTC. This value is not adjusted for daylight saving.
     // See https://www.gnu.org/software/libc/manual/html_node/ \
     //                              Time-Zone-Functions.html#Time-Zone-Functions
-    if (timezone / 3600 == 8) {
+    if (timezone / kSecondsPerHour == kPacificTimezone) {
       EXPECT_EQ(kPacificDayIndex, result.metadata->day_index());
     }
   }
@@ -162,7 +164,7 @@ void CheckSystemProfileValid(const Encoder::Result& result,
 // produced Observation has the |expected_type| and is non-empty.
 // Returns the encoded Observation.
 Observation DoEncodeStringTest(
-    std::string value, uint32_t metric_id, uint32_t encoding_config_id,
+    const std::string& value, uint32_t metric_id, uint32_t encoding_config_id,
     bool expect_utc, const ObservationPart::ValueCase& expected_encoding) {
   // Build the ProjectContext encapsulating our test config data.
   std::shared_ptr<ProjectContext> project = GetTestProject();
@@ -413,6 +415,7 @@ TEST(EncoderEncoderTest, EncodeIntBasicRappor) {
   // Metric 2 has a single integer part.
   // EncodingConfig 4 is Basic RAPPOR with int values. Here we need the value
   // to be one of the categories.
+  // NOLINTNEXTLINE
   DoEncodeIntTest(125, kSingleIntMetricId, kBasicIntRapporEncodingId, true,
                   ObservationPart::kBasicRappor);
 }
@@ -438,7 +441,7 @@ TEST(EncoderEncoderTest, EncodeIndex) {
 
   // Index 5 should yield kInalidArgs.
   expect_ok = false;
-  index = 5;
+  index = 5;  // NOLINT
   DoEncodeIndexTest(expect_ok, index, kIndexPartMetricId,
                     kBasicRappor5CategoriesEncodingId, expect_utc,
                     ObservationPart::kBasicRappor);
@@ -467,6 +470,7 @@ TEST(EncoderEncoderTest, EncodeIndex) {
                     ObservationPart::kBasicRappor);
 
   // Now we switch to metric 7 which has one double part. That should fail.
+  // NOLINTNEXTLINE
   DoEncodeIndexTest(expect_ok, index, 7, kBasicRappor5CategoriesEncodingId,
                     expect_utc, ObservationPart::kBasicRappor);
 
@@ -508,7 +512,7 @@ TEST(EncoderEncoderTest, EncodeDouble) {
   // Metric 7 has a single part of type DOUBLE.
   // EncodingConfig 7 is NoOp.
   bool expect_ok = true;
-  double value = 3.14159;
+  double value = M_PI;
   bool expect_utc = true;
   DoEncodeDoubleTest(expect_ok, value, kDoublePartMetricId, kNoOpEncodingId,
                      expect_utc, ObservationPart::kUnencoded);
@@ -557,6 +561,7 @@ TEST(EncoderEncoderTest, EncodeDouble) {
 TEST(EncoderEncoderTest, EncodeIntNoOp) {
   // Metric 2 has a single integer part.
   // EncodingConfig 7 is NoOp
+  // NOLINTNEXTLINE
   auto obs = DoEncodeIntTest(42, kSingleIntMetricId, kNoOpEncodingId, true,
                              ObservationPart::kUnencoded);
   EXPECT_EQ(42u,
@@ -568,7 +573,7 @@ TEST(EncoderEncoderTest, EncodeBlobForculus) {
   // Metric 3 has a single blob part.
   // EncodingConfig 1 is Forculus.
   std::string a_blob("This is a blob");
-  DoEncodeBlobTest((const void*)a_blob.data(), a_blob.size(),
+  DoEncodeBlobTest(reinterpret_cast<const void*>(a_blob.data()), a_blob.size(),
                    kSingleBlobMetricId, kForculusEncodingId, false,
                    ObservationPart::kForculus);
 }
@@ -578,9 +583,9 @@ TEST(EncoderEncoderTest, EncodeBlobNoOp) {
   // Metric 3 has a single blob part.
   // EncodingConfig 7 is NoOp.
   std::string a_blob("This is a blob");
-  auto obs = DoEncodeBlobTest((const void*)a_blob.data(), a_blob.size(),
-                              kSingleBlobMetricId, kNoOpEncodingId, false,
-                              ObservationPart::kUnencoded);
+  auto obs = DoEncodeBlobTest(
+      reinterpret_cast<const void*>(a_blob.data()), a_blob.size(),
+      kSingleBlobMetricId, kNoOpEncodingId, false, ObservationPart::kUnencoded);
   EXPECT_EQ("This is a blob",
             obs.parts().at("Part1").unencoded().unencoded_value().blob_value());
 }
@@ -589,7 +594,8 @@ TEST(EncoderEncoderTest, EncodeBlobNoOp) {
 TEST(EncoderEncoderTest, EncodeIntBucketDistributionNoOp) {
   // Metric 9 has a single int bucket distribution part.
   // EncodingConfig 7 is NoOp.
-  std::map<uint32_t, uint64_t> distribution = {{0, 10}, {2, 6}, {11, 1}};
+  std::map<uint32_t, uint64_t> distribution = {
+      {0, 10}, {2, 6}, {11, 1}};  // NOLINT
   bool expect_ok = true;
   bool expect_utc = true;
   auto obs = DoEncodeIntBucketDistributionTest(
@@ -627,7 +633,7 @@ TEST(EncoderEncoderTest, EncodeIntBucketDistributionNoOp) {
 
   // There are only 10 buckets + the overflow buckets configured.
   // This should fail.
-  distribution[12] = 10;
+  distribution[12] = 10;  // NOLINT
   DoEncodeIntBucketDistributionTest(expect_ok, distribution,
                                     kIntDistributionMetricId, kNoOpEncodingId,
                                     expect_utc, ObservationPart::kUnencoded);
@@ -680,7 +686,7 @@ TEST(EncoderEncoderTest, AdvancedApiNoErrors) {
   // EncodingConfig 2 is String RAPPOR
   value.AddStringPart(kRapporEncodingId, "city", "San Francisco");
   // EncodingConfig 4 is Basic RAPPOR with integer categories.
-  value.AddIntPart(kBasicIntRapporEncodingId, "rating", 125);
+  value.AddIntPart(kBasicIntRapporEncodingId, "rating", 125);  // NOLINT
   // Metric 4 has a "city" part of type STRING and
   // a "rating" part of type INT.
   Encoder::Result result = encoder.Encode(kCityRatingMetricId, value);
@@ -724,86 +730,86 @@ TEST(EncoderEncoderTest, AdvancedApiWithErrors) {
             encoder.Encode(kCityRatingMetricId, *value).status);
 
   // EncodingConfig 4 is Basic RAPPOR with integer categories.
-  value->AddIntPart(kBasicStringRapporEncodingId, "rating", 1234);
-  value->AddIntPart(kBasicStringRapporEncodingId, "dummy", 1234);
+  value->AddIntPart(kBasicStringRapporEncodingId, "rating", 1234);  // NOLINT
+  value->AddIntPart(kBasicStringRapporEncodingId, "dummy", 1234);   // NOLINT
 
   // Metric 4 has two parts but value has three parts.
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kCityRatingMetricId, *value).status);
 
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kRapporEncodingId, "city", "San Francisco");
   // "rating" is spelled wrong
-  value->AddIntPart(kBasicIntRapporEncodingId, "ratingx", 1234);
+  value->AddIntPart(kBasicIntRapporEncodingId, "ratingx", 1234);  // NOLINT
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kCityRatingMetricId, *value).status);
 
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kRapporEncodingId, "city", "San Francisco");
   // "rating" has the wrong type
   value->AddStringPart(kBasicIntRapporEncodingId, "rating", "1234");
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kCityRatingMetricId, *value).status);
 
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kRapporEncodingId, "city", "San Francisco");
   // There is no encoding_config 99.
-  value->AddIntPart(99, "rating", 1234);
+  value->AddIntPart(99, "rating", 1234);  // NOLINT
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kCityRatingMetricId, *value).status);
 
   // Forculus does not accept integer values.
-  value.reset(new Encoder::Value());
-  value->AddIntPart(kForculusEncodingId, "Part1", 42);
+  value = std::make_unique<Encoder::Value>();
+  value->AddIntPart(kForculusEncodingId, "Part1", 42);  // NOLINT
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kSingleIntMetricId, *value).status);
 
   // String RAPPOR does not accept integer values.
-  value.reset(new Encoder::Value());
-  value->AddIntPart(kRapporEncodingId, "Part1", 42);
+  value = std::make_unique<Encoder::Value>();
+  value->AddIntPart(kRapporEncodingId, "Part1", 42);  // NOLINT
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kSingleIntMetricId, *value).status);
 
   // String RAPPOR does not accept blob values.
-  value.reset(new Encoder::Value());
-  value->AddBlobPart(kRapporEncodingId, "Part1", (const void*)"1234", 4);
+  value = std::make_unique<Encoder::Value>();
+  value->AddBlobPart(kRapporEncodingId, "Part1",
+                     reinterpret_cast<const void*>("1234"), 4);
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kSingleBlobMetricId, *value).status);
 
   // Basic RAPPOR does not accept blob values.
-  value.reset(new Encoder::Value());
-  value->AddBlobPart(kBasicStringRapporEncodingId, "Part1", (const void*)"1234",
-                     4);
+  value = std::make_unique<Encoder::Value>();
+  value->AddBlobPart(kBasicStringRapporEncodingId, "Part1",
+                     reinterpret_cast<const void*>("1234"), 4);
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kSingleBlobMetricId, *value).status);
 
   // Basic RAPPOR requires the value to be one of the candidates.
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kBasicStringRapporEncodingId, "Part1", "San Francisco");
   EXPECT_EQ(Encoder::kInvalidArguments,
             encoder.Encode(kSingleStringMetricId, *value).status);
 
   // EncodingConfig 5 is an invalid Forculus config.
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kInvalidForculusEncodingId, "Part1", "dummy");
   EXPECT_EQ(Encoder::kInvalidConfig,
             encoder.Encode(kSingleStringMetricId, *value).status);
 
   // EncodingConfig 6 is an invalid String RAPPOR config.
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kInvalidRapporEncodingId, "Part1", "dummy");
   EXPECT_EQ(Encoder::kInvalidConfig,
             encoder.Encode(kSingleStringMetricId, *value).status);
 
   // Metric 5 is missing a time_zone_policy.
-  value.reset(new Encoder::Value());
+  value = std::make_unique<Encoder::Value>();
   value->AddStringPart(kForculusEncodingId, "Part1", "dummy");
   EXPECT_EQ(Encoder::kInvalidConfig,
             encoder.Encode(kNoTimeZoneMetricId, *value).status);
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

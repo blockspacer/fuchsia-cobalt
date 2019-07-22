@@ -11,8 +11,7 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 namespace {
 
@@ -25,18 +24,18 @@ namespace {
 std::string getBoardName(int signature) {
   // This function will only be run once per system boot, so this map will only
   // be created once.
-  std::map<int, std::string> knownCPUSignatures = {
+  static const std::map<int, std::string> knownCPUSignatures = {
       {0x806e9, "Eve"},
   };
 
   auto name = knownCPUSignatures.find(signature);
   if (name == knownCPUSignatures.end()) {
-    char sigstr[20];
+    char sigstr[20];  // NOLINT readability-magic-numbers
     snprintf(sigstr, sizeof(sigstr), "unknown:0x%X", signature);
     return sigstr;
-  } else {
-    return name->second;
   }
+
+  return name->second;
 }
 
 // Invokes the cpuid instruction on X86. |info_type| specifies which query
@@ -45,7 +44,8 @@ std::string getBoardName(int signature) {
 // results from registers EAX, EBX, ECX, EDX respectively are writtent into the
 // four entries of |cpu_info|. See for example the wikipedia article on
 // cpuid for more info.
-void Cpuid(int info_type, int cpu_info[4]) {
+void Cpuid(int info_type,
+           int cpu_info[4]) {  // NOLINT readability-non-const-parameter
   __asm__ volatile("cpuid\n"
                    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]),
                      "=d"(cpu_info[3])
@@ -59,7 +59,7 @@ void PopulateBoardName(SystemProfile* profile) {
   //       devices, so we think we can do better.
   // Anything else is considered to be "better" than just raw Cpuid or a lookup
   // table.
-  if (profile->board_name() == "" || profile->board_name() == "pc") {
+  if (profile->board_name().empty() || profile->board_name() == "pc") {
     // First we invoke Cpuid with info_type = 0 in order to obtain num_ids
     // and vendor_name.
     int cpu_info[4] = {-1};
@@ -146,5 +146,4 @@ void SystemData::PopulateSystemProfile() {
   PopulateBoardName(&system_profile_);
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

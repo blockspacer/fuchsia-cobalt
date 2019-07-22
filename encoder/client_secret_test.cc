@@ -19,8 +19,7 @@
 
 #include "./gtest.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 // Tests the basic functionality of ClientSecret.
 TEST(ClientSecretTest, BasicTest) {
@@ -48,7 +47,7 @@ TEST(ClientSecretTest, BasicTest) {
 
   // All secrets are valid except for 1b because it was moved from.
   EXPECT_TRUE(secret1.valid());
-  EXPECT_FALSE(secret1b.valid());
+  EXPECT_FALSE(secret1b.valid());  // NOLINT bugprone-use-after-move
   EXPECT_TRUE(secret1c.valid());
   EXPECT_TRUE(secret2.valid());
   EXPECT_TRUE(secret2b.valid());
@@ -59,7 +58,4 @@ TEST(ClientSecretTest, BasicTest) {
   EXPECT_EQ(std::string(), invalid_secret.GetToken());
 }
 
-}  // namespace encoder
-
-}  // namespace cobalt
-
+}  // namespace cobalt::encoder

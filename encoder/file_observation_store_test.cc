@@ -17,8 +17,7 @@
 // Generated from file_observation_store_test_config.yaml
 #include "encoder/file_observation_store_test_config.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using config::ClientConfig;
 using ::testing::MatchesRegex;
@@ -30,15 +29,15 @@ namespace {
 // These values must match the values specified in the invocation of
 // generate_test_config_h() in CMakeLists.txt. and in the invocation of
 // cobalt_config_header("generate_shipping_manager_test_config") in BUILD.gn.
-const uint32_t kCustomerId = 1;
-const uint32_t kProjectId = 1;
+constexpr uint32_t kCustomerId = 1;
+constexpr uint32_t kProjectId = 1;
 
-const size_t kNoOpEncodingByteOverhead = 34;
-const size_t kMaxBytesPerObservation = 100;
-const size_t kMaxBytesPerEnvelope = 400;
-const size_t kMaxBytesTotal = 10000;
+constexpr size_t kNoOpEncodingByteOverhead = 34;
+constexpr size_t kMaxBytesPerObservation = 100;
+constexpr size_t kMaxBytesPerEnvelope = 400;
+constexpr size_t kMaxBytesTotal = 10000;
 
-const std::string &test_dir_base = "/tmp/fos_test";
+constexpr char test_dir_base[] = "/tmp/fos_test";
 
 std::string GetTestDirName(const std::string &base) {
   std::stringstream fname;
@@ -77,9 +76,9 @@ class FileObservationStoreTest : public ::testing::Test {
   }
 
   void MakeStore() {
-    store_.reset(new FileObservationStore(
+    store_ = std::make_unique<FileObservationStore>(
         kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal,
-        std::make_unique<PosixFileSystem>(), test_dir_name_));
+        std::make_unique<PosixFileSystem>(), test_dir_name_);
   }
 
   void TearDown() override { store_->Delete(); }
@@ -100,10 +99,15 @@ class FileObservationStoreTest : public ::testing::Test {
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
 
  protected:
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::string test_dir_name_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<FileObservationStore> store_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   FakeSystemData system_data_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::shared_ptr<ProjectContext> project_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   Encoder encoder_;
 };
 
@@ -157,16 +161,18 @@ TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
 }
 
 TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
-  for (int i = 0; i < 5 * 4; i++) {
+  static const int num_envelopes = 5;
+  static const int envelope_size = 4;
+  for (int i = 0; i < num_envelopes * envelope_size; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(100)) << "i=" << i;
   }
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < num_envelopes; i++) {
     auto envelope = store_->TakeNextEnvelopeHolder();
     ASSERT_NE(envelope, nullptr);
     auto read_env = envelope->GetEnvelope();
     EXPECT_EQ(read_env.batch_size(), 1);
-    EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), 4);
+    EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), envelope_size);
   }
 }
 
@@ -205,13 +211,13 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   }
 
   // Check that kStoreFull is returned repeatedly.
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 100; i++) {  // NOLINT
     EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
         << "i=" << i;
   }
 
   // Now let's empty the store
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 100; i++) {  // NOLINT
     if (store_->TakeNextEnvelopeHolder() == nullptr) {
       break;
     }
@@ -247,7 +253,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   }
 
   // Check that kStoreFull is returned repeatedly.
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 100; i++) {  // NOLINT
     EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
         << "i=" << i;
   }
@@ -316,11 +322,11 @@ TEST_F(FileObservationStoreTest, HandlesCorruptFiles) {
 
 TEST_F(FileObservationStoreTest, StressTest) {
   std::random_device rd;
-  for (int i = 0; i < 5000; i++) {
+  for (int i = 0; i < 5000; i++) {  // NOLINT
     // Between 5-15 observations.
-    auto observations = (rd() % 10) + 5;
+    auto observations = (rd() % 10) + 5;  // NOLINT
     // Between 50-100 bytes per observation.
-    auto size = (rd() % 50) + 50;
+    auto size = (rd() % 50) + 50;  // NOLINT
     for (auto j = 0u; j < observations; j++) {
       EXPECT_EQ(ObservationStore::kOk, AddObservation(size));
     }
@@ -363,5 +369,4 @@ TEST(FilenameGenerator, PadsTimestamp) {
               MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

@@ -11,12 +11,11 @@
 #include "config/encoding_config.h"
 #include "config/metric_config.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 ProjectContext::ProjectContext(
     uint32_t customer_id, uint32_t project_id,
-    std::shared_ptr<config::ClientConfig> client_config)
+    const std::shared_ptr<config::ClientConfig>& client_config)
     : customer_id_(customer_id),
       project_id_(project_id),
       client_config_(client_config) {
@@ -38,7 +37,7 @@ ProjectContext::DefaultEncodingsForMetric(uint32_t id) {
     const auto* metric = client_config_->Metric(customer_id_, project_id_, id);
 
     if (metric) {
-      for (auto pair : metric->parts()) {
+      for (const auto& pair : metric->parts()) {
         encodings.insert(
             std::make_pair(pair.first, pair.second.default_encoding_id()));
       }
@@ -52,5 +51,5 @@ ProjectContext::DefaultEncodingsForMetric(uint32_t id) {
 const EncodingConfig* ProjectContext::EncodingConfig(uint32_t id) const {
   return client_config_->EncodingConfig(customer_id_, project_id_, id);
 }
-}  // namespace encoder
-}  // namespace cobalt
+
+}  // namespace cobalt::encoder

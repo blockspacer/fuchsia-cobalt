@@ -51,14 +51,14 @@ class FileObservationStore : public ObservationStore {
     // observation files are written. (e.g. /system/data/cobalt_legacy)
     //
     // |file_name|. The file name for the file containing the observations.
-    FileEnvelopeHolder(util::FileSystem *fs, const std::string &root_directory,
+    FileEnvelopeHolder(util::FileSystem *fs, std::string root_directory,
                        const std::string &file_name)
         : fs_(fs),
-          root_directory_(root_directory),
+          root_directory_(std::move(root_directory)),
           file_names_({file_name}),
           envelope_read_(false) {}
 
-    ~FileEnvelopeHolder();
+    ~FileEnvelopeHolder() override;
 
     void MergeWith(std::unique_ptr<EnvelopeHolder> container) override;
     const Envelope &GetEnvelope() override;
@@ -127,8 +127,7 @@ class FileObservationStore : public ObservationStore {
   size_t Size() const override;
   bool Empty() const override;
 
-  void ResetInternalMetrics(
-      logger::LoggerInterface *internal_logger = nullptr) override {
+  void ResetInternalMetrics(logger::LoggerInterface *internal_logger) override {
     internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
 

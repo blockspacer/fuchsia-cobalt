@@ -66,7 +66,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
-  virtual ~ShippingManager();
+  ~ShippingManager() override;
 
   // Starts the worker thread. Destruct this instance to stop the worker thread.
   // This method must be invoked exactly once.
@@ -91,7 +91,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // Observations were succesfully sent. It will be invoked with false if some
   // Observations were not able to be sent, but the status of any particular
   // Observation may not be determined. This is useful mainly in tests.
-  void RequestSendSoon(SendCallback send_callback);
+  void RequestSendSoon(const SendCallback& send_callback);
 
   // Blocks for |max_wait| seconds or until the worker thread has successfully
   // sent all previously added Observations and is idle, waiting for more
@@ -143,7 +143,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // it may be invoked via a (virtual) destructor and this can lead to a
   // C++ runtime error indicated by a crash printing the message
   // "Pure virtual function called!"
-  virtual std::string name() const { return "ShippingManager"; }
+  [[nodiscard]] virtual std::string name() const { return "ShippingManager"; }
 
   UploadScheduler upload_scheduler_;
 
@@ -152,6 +152,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   std::chrono::system_clock::time_point next_scheduled_send_time_;
 
  protected:
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   util::EncryptedMessageMaker* encrypt_to_shuffler_;
 
  private:
@@ -222,6 +223,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // acquiring a lock on the mutex. Destroy the returned std::unique_ptr to
   // release the mutex.
   std::unique_ptr<LockedFields> lock() {
+    // NOLINTNEXTLINE modernize-make-unique
     return std::unique_ptr<LockedFields>(
         new LockedFields(&_mutex_protected_fields_do_not_access_directly_));
   }
@@ -250,7 +252,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
-  virtual ~ClearcutV1ShippingManager() = default;
+  ~ClearcutV1ShippingManager() override = default;
 
   // Resets the internal metrics to use the provided logger.
   void ResetInternalMetrics(
@@ -263,7 +265,9 @@ class ClearcutV1ShippingManager : public ShippingManager {
       std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send)
       override;
 
-  std::string name() const override { return "ClearcutV1ShippingManager"; }
+  [[nodiscard]] std::string name() const override {
+    return "ClearcutV1ShippingManager";
+  }
 
   const size_t max_attempts_per_upload_;
 

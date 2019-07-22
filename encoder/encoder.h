@@ -89,7 +89,8 @@ class Encoder {
   //     not take ownership of system_data and system_data is allowed to be
   //     NULL, in which case no SystemProfile will be added to the
   //     ObservationMetadata.
-  Encoder(std::shared_ptr<ProjectContext> project, ClientSecret client_secret,
+  Encoder(const std::shared_ptr<ProjectContext>& project,
+          ClientSecret client_secret,
           const SystemDataInterface* system_data = nullptr);
 
   enum Status {

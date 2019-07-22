@@ -16,7 +16,7 @@ namespace encoder {
 // Mock of the SystemDataInterface. Used for testing.
 class FakeSystemData : public SystemDataInterface {
  public:
-  FakeSystemData() : release_stage_(ReleaseStage::GA) {
+  FakeSystemData() {
     system_profile_.set_os(SystemProfile::FUCHSIA);
     system_profile_.set_arch(SystemProfile::ARM_64);
     system_profile_.set_board_name("Testing Board");
@@ -41,7 +41,7 @@ class FakeSystemData : public SystemDataInterface {
  private:
   SystemProfile system_profile_;
   std::vector<Experiment> experiments_;
-  ReleaseStage release_stage_;
+  ReleaseStage release_stage_ = ReleaseStage::GA;
 };
 
 }  // namespace encoder

@@ -11,24 +11,23 @@
 #include "./logging.h"
 #include "logger/logger_interface.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
-typedef ObservationStore::EnvelopeHolder EnvelopeHolder;
+using EnvelopeHolder = ObservationStore::EnvelopeHolder;
 using cobalt::clearcut_extensions::LogEventExtension;
 
 namespace {
 
 // The number of upload failures after which ShippingManager will bail out of an
 // invocation of SendAllEnvelopes().
-static size_t kMaxFailuresWithoutSuccess = 3;
+constexpr size_t kMaxFailuresWithoutSuccess = 3;
 
 std::string ToString(const std::chrono::system_clock::time_point& t) {
   std::time_t time_struct = std::chrono::system_clock::to_time_t(t);
   return std::ctime(&time_struct);
 }
 
-grpc::Status CobaltStatusToGrpcStatus(util::Status status) {
+grpc::Status CobaltStatusToGrpcStatus(const util::Status& status) {
   return grpc::Status(static_cast<grpc::StatusCode>(status.error_code()),
                       status.error_message(), status.error_details());
 }
@@ -103,7 +102,7 @@ void ShippingManager::RequestSendSoonLockHeld(MutexProtectedFields* fields) {
 
 void ShippingManager::RequestSendSoon() { RequestSendSoon(SendCallback()); }
 
-void ShippingManager::RequestSendSoon(SendCallback send_callback) {
+void ShippingManager::RequestSendSoon(const SendCallback& send_callback) {
   VLOG(4) << name() << ": Expedited send requested.";
   auto locked = lock();
   RequestSendSoonLockHeld(locked->fields);
@@ -369,5 +368,4 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
       });
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

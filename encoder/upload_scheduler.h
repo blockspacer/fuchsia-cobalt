@@ -48,7 +48,9 @@ class UploadScheduler {
   UploadScheduler(std::chrono::seconds target_interval,
                   std::chrono::seconds min_interval);
 
-  std::chrono::seconds MinInterval() const { return min_interval_; }
+  [[nodiscard]] std::chrono::seconds MinInterval() const {
+    return min_interval_;
+  }
   std::chrono::seconds Interval();
 
  private:
