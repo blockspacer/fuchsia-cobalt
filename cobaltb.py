@@ -146,6 +146,16 @@ def _build(args):
       out_dir(args),
       '--args=%s' % ' '.join(gn_args),
   ])
+
+  # Create the compile_commands.json database required for clang-tidy.
+  contents = subprocess.check_output([
+      args.ninja_path, '-C',
+      out_dir(args), '-t', 'compdb', 'cc', 'cxx', 'objc', 'objcxx', 'asm'
+  ])
+  compile_commands = open('%s/compile_commands.json' % out_dir(args), 'w+')
+  compile_commands.write(contents)
+  compile_commands.close()
+
   subprocess.check_call([args.ninja_path, '-C', out_dir(args)])
 
 
@@ -229,7 +239,7 @@ def _fmt(args):
 
 def _lint(args):
   status = 0
-  status += cpplint.main()
+  status += cpplint.main(args.directory)
   status += golint.main()
 
   exit(status)
@@ -751,6 +761,7 @@ def main():
       'lint',
       parents=[parent_parser],
       help='Run language linters on all source files.')
+  sub_parser.add_argument('directory', nargs='*')
   sub_parser.set_defaults(func=_lint)
 
   ########################################################

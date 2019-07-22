@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 # Clang
-fuchsia/clang/${platform} git_revision:e518235aca345ad5dd708dd26c632e06122ffb09
+fuchsia/clang/${platform} git_revision:2eacf698802b5c8bc3c9e0031ac11cd0d79f9eae
 fuchsia/sysroot/linux-amd64 git_revision:a4aaacde9d37ccf91a0f8dc8267cb7ad5d9be283
 
 # Ninja
