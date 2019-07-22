@@ -31,8 +31,9 @@ using google::protobuf::RepeatedPtrField;
 namespace logger {
 
 namespace {
-static const uint32_t kCustomerId = 1;
-static const uint32_t kProjectId = 1;
+
+constexpr uint32_t kCustomerId = 1;
+constexpr uint32_t kProjectId = 1;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string cobalt_registry_bytes;
@@ -100,15 +101,15 @@ void CheckResult(const Encoder::Result& result, uint32_t expected_metric_id,
 
 class EncoderTest : public ::testing::Test {
  protected:
-  void SetUp() {
+  void SetUp() override {
     auto cobalt_registry = std::make_unique<CobaltRegistry>();
     ASSERT_TRUE(PopulateCobaltRegistry(cobalt_registry.get()));
     ProjectContextFactory project_context_factory(std::move(cobalt_registry));
     ASSERT_TRUE(project_context_factory.is_single_project());
     project_context_ = project_context_factory.TakeSingleProjectContext();
-    system_data_.reset(new FakeSystemData());
-    encoder_.reset(
-        new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
+    system_data_ = std::make_unique<FakeSystemData>();
+    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(),
+                                         system_data_.get());
   }
 
   std::pair<const MetricDefinition*, const ReportDefinition*>
@@ -127,8 +128,12 @@ class EncoderTest : public ::testing::Test {
     return {metric, report};
   }
 
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<Encoder> encoder_;
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<ProjectContext> project_context_;
+
+ private:
   std::unique_ptr<SystemDataInterface> system_data_;
 };
 
@@ -137,42 +142,50 @@ TEST_F(EncoderTest, EncodeBasicRapporObservation) {
   const char kReportName[] = "ErrorCountsByType";
   const uint32_t kExpectedMetricId = 1;
 
-  uint32_t day_index = 111;
-  uint32_t value_index = 9;
-  uint32_t num_categories = 8;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
-  // This should fail with kInvalidArguments because 9 > 8.
-  auto result = encoder_->EncodeBasicRapporObservation(
-      project_context_->RefMetric(pair.first), pair.second, day_index,
-      value_index, num_categories);
-  EXPECT_EQ(kInvalidArguments, result.status);
+  const uint32_t day_index = 111;
+  {
+    const uint32_t value_index = 9;
+    const uint32_t num_categories = 8;
+    // This should fail with kInvalidArguments because 9 > 8.
+    auto result = encoder_->EncodeBasicRapporObservation(
+        project_context_->RefMetric(pair.first), pair.second, day_index,
+        value_index, num_categories);
+    EXPECT_EQ(kInvalidArguments, result.status);
+  }
 
-  // This should fail with kInvalidConfig because num_categories is too large.
-  num_categories = 999999;
-  result = encoder_->EncodeBasicRapporObservation(
-      project_context_->RefMetric(pair.first), pair.second, day_index,
-      value_index, num_categories);
-  EXPECT_EQ(kInvalidConfig, result.status);
+  {
+    // This should fail with kInvalidConfig because num_categories is too large.
+    const uint32_t value_index = 9;
+    const uint32_t num_categories = 999999;
+    auto result = encoder_->EncodeBasicRapporObservation(
+        project_context_->RefMetric(pair.first), pair.second, day_index,
+        value_index, num_categories);
+    EXPECT_EQ(kInvalidConfig, result.status);
+  }
 
-  // If we use the wrong report, it won't have local_privacy_noise_level
-  // set and we should get InvalidConfig
-  num_categories = 128;
-  value_index = 10;
-  pair = GetMetricAndReport("ReadCacheHits", "ReadCacheHitCounts");
-  result = encoder_->EncodeBasicRapporObservation(
-      project_context_->RefMetric(pair.first), pair.second, day_index,
-      value_index, num_categories);
-  EXPECT_EQ(kInvalidConfig, result.status);
+  {
+    // If we use the wrong report, it won't have local_privacy_noise_level
+    // set and we should get InvalidConfig
+    const uint32_t num_categories = 128;
+    const uint32_t value_index = 10;
+    pair = GetMetricAndReport("ReadCacheHits", "ReadCacheHitCounts");
+    auto result = encoder_->EncodeBasicRapporObservation(
+        project_context_->RefMetric(pair.first), pair.second, day_index,
+        value_index, num_categories);
+    EXPECT_EQ(kInvalidConfig, result.status);
 
-  // Finally we pass all valid parameters and the operation should succeed.
-  pair = GetMetricAndReport(kMetricName, kReportName);
-  result = encoder_->EncodeBasicRapporObservation(
-      project_context_->RefMetric(pair.first), pair.second, day_index,
-      value_index, num_categories);
-  CheckResult(result, kExpectedMetricId, kErrorCountsByTypeReportId, day_index);
-  CheckDefaultSystemProfile(result);
-  ASSERT_TRUE(result.observation->has_basic_rappor());
-  EXPECT_FALSE(result.observation->basic_rappor().data().empty());
+    // Finally we pass all valid parameters and the operation should succeed.
+    pair = GetMetricAndReport(kMetricName, kReportName);
+    result = encoder_->EncodeBasicRapporObservation(
+        project_context_->RefMetric(pair.first), pair.second, day_index,
+        value_index, num_categories);
+    CheckResult(result, kExpectedMetricId, kErrorCountsByTypeReportId,
+                day_index);
+    CheckDefaultSystemProfile(result);
+    ASSERT_TRUE(result.observation->has_basic_rappor());
+    EXPECT_FALSE(result.observation->basic_rappor().data().empty());
+  }
 }
 
 TEST_F(EncoderTest, EncodeIntegerEventObservation) {
@@ -237,14 +250,14 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   const char kMetricName[] = "FileSystemWriteTimes";
   const char kReportName[] = "FileSystemWriteTimes_Histogram";
   const uint32_t kExpectedMetricId = 6;
-  const char kComponent[] = "";
+  const std::string kComponent;
   const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 9;
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
 
-  std::vector<uint32_t> indices = {0, 1, 2};
-  std::vector<uint32_t> counts = {100, 200, 300};
+  const std::vector<uint32_t> indices = {0, 1, 2};
+  const std::vector<uint32_t> counts = {100, 200, 300};
   auto histogram = NewHistogram(indices, counts);
   auto pair = GetMetricAndReport(kMetricName, kReportName);
   auto result = encoder_->EncodeHistogramObservation(

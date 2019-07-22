@@ -56,9 +56,9 @@ using testing::TestUpdateRecipient;
 
 namespace {
 // Number of seconds in a day
-const int kDay = 60 * 60 * 24;
+constexpr int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
-const int kYear = kDay * 365;
+constexpr int kYear = kDay * 365;
 
 template <typename T>
 std::string SerializeAsStringDeterministic(const T& message) {

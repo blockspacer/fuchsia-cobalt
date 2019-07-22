@@ -8,13 +8,12 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
 
 std::unordered_map<std::string, ReleaseStage> ConstructReleaseStageMap(
-    std::map<ReleaseStage, std::vector<std::string>> channel_map) {
+    const std::map<ReleaseStage, std::vector<std::string>> &channel_map) {
   std::unordered_map<std::string, ReleaseStage> retval;
 
   for (const auto &entry : channel_map) {
@@ -35,8 +34,8 @@ std::unordered_map<std::string, ReleaseStage> ConstructReleaseStageMap(
 }  // namespace
 
 ChannelMapper::ChannelMapper(
-    std::map<ReleaseStage, std::vector<std::string>> channel_map)
-    : release_stage_map_(ConstructReleaseStageMap(std::move(channel_map))) {}
+    const std::map<ReleaseStage, std::vector<std::string>> &channel_map)
+    : release_stage_map_(ConstructReleaseStageMap(channel_map)) {}
 
 ChannelMapper::ChannelMapper(std::vector<std::string> debug_channels)
     : ChannelMapper({{ReleaseStage::DEBUG, std::move(debug_channels)}}) {}
@@ -49,5 +48,4 @@ ReleaseStage ChannelMapper::ToReleaseStage(const std::string &channel) {
   return ReleaseStage::GA;
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

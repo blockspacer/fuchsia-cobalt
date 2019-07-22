@@ -10,8 +10,7 @@
 #include "./logging.h"
 #include "./tracing.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 using ::cobalt::encoder::ObservationStoreWriterInterface;
 
@@ -37,5 +36,4 @@ Status ObservationWriter::WriteObservation(
   return kOK;
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

@@ -10,16 +10,14 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 std::unique_ptr<InternalMetrics> InternalMetrics::NewWithLogger(
     LoggerInterface* logger) {
   if (logger) {
     return std::make_unique<InternalMetricsImpl>(logger);
-  } else {
-    return std::make_unique<NoOpInternalMetrics>();
   }
+  return std::make_unique<NoOpInternalMetrics>();
 }
 
 InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
@@ -89,5 +87,4 @@ void InternalMetricsImpl::BytesStored(
   }
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

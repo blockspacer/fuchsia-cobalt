@@ -19,11 +19,9 @@
 #include "logger/event_record.h"
 #include "util/datetime_util.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 using ::cobalt::rappor::RapporConfigHelper;
-using ::cobalt::util::ClockInterface;
 using ::cobalt::util::SystemClock;
 using ::cobalt::util::TimeToDayIndex;
 using ::google::protobuf::RepeatedField;
@@ -31,7 +29,7 @@ using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
-typedef LoggerCallsMadeMetricDimensionLoggerMethod LoggerMethod;
+using LoggerMethod = LoggerCallsMadeMetricDimensionLoggerMethod;
 
 // EventLogger is an abstract interface used internally in logger.cc to
 // dispatch logging logic based on Metric type. Below we create subclasses
@@ -129,7 +127,7 @@ class EventLogger {
 class OccurrenceEventLogger : public EventLogger {
  public:
   explicit OccurrenceEventLogger(Logger* logger) : EventLogger(logger) {}
-  virtual ~OccurrenceEventLogger() = default;
+  ~OccurrenceEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -144,7 +142,7 @@ class OccurrenceEventLogger : public EventLogger {
 class CountEventLogger : public EventLogger {
  public:
   explicit CountEventLogger(Logger* logger) : EventLogger(logger) {}
-  virtual ~CountEventLogger() = default;
+  ~CountEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -162,7 +160,7 @@ class IntegerPerformanceEventLogger : public EventLogger {
  protected:
   explicit IntegerPerformanceEventLogger(Logger* logger)
       : EventLogger(logger) {}
-  virtual ~IntegerPerformanceEventLogger() = default;
+  ~IntegerPerformanceEventLogger() override = default;
 
  private:
   Encoder::Result MaybeEncodeImmediateObservation(
@@ -178,7 +176,7 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
  public:
   explicit ElapsedTimeEventLogger(Logger* logger)
       : IntegerPerformanceEventLogger(logger) {}
-  virtual ~ElapsedTimeEventLogger() = default;
+  ~ElapsedTimeEventLogger() override = default;
 
  private:
   const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
@@ -194,7 +192,7 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
  public:
   explicit FrameRateEventLogger(Logger* logger)
       : IntegerPerformanceEventLogger(logger) {}
-  virtual ~FrameRateEventLogger() = default;
+  ~FrameRateEventLogger() override = default;
 
  private:
   const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
@@ -210,7 +208,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
  public:
   explicit MemoryUsageEventLogger(Logger* logger)
       : IntegerPerformanceEventLogger(logger) {}
-  virtual ~MemoryUsageEventLogger() = default;
+  ~MemoryUsageEventLogger() override = default;
 
  private:
   const RepeatedField<uint32_t>& EventCodes(const Event& event) override;
@@ -225,7 +223,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
 class IntHistogramEventLogger : public EventLogger {
  public:
   explicit IntHistogramEventLogger(Logger* logger) : EventLogger(logger) {}
-  virtual ~IntHistogramEventLogger() = default;
+  ~IntHistogramEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -238,7 +236,7 @@ class IntHistogramEventLogger : public EventLogger {
 class StringUsedEventLogger : public EventLogger {
  public:
   explicit StringUsedEventLogger(Logger* logger) : EventLogger(logger) {}
-  virtual ~StringUsedEventLogger() = default;
+  ~StringUsedEventLogger() override = default;
 
  private:
   Encoder::Result MaybeEncodeImmediateObservation(
@@ -250,7 +248,7 @@ class StringUsedEventLogger : public EventLogger {
 class CustomEventLogger : public EventLogger {
  public:
   explicit CustomEventLogger(Logger* logger) : EventLogger(logger) {}
-  virtual ~CustomEventLogger() = default;
+  ~CustomEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -273,7 +271,7 @@ void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
 
 }  // namespace
 
-//////////////////// Logger method implementations ////////////////////////
+/////////////////////// Logger method implementations //////////////////////////
 
 Logger::Logger(std::unique_ptr<ProjectContext> project_context,
                const Encoder* encoder, EventAggregator* event_aggregator,
@@ -298,10 +296,10 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context,
   CHECK(event_aggregator_);
   CHECK(observation_writer_);
   if (internal_logger) {
-    internal_metrics_.reset(new InternalMetricsImpl(internal_logger));
+    internal_metrics_ = std::make_unique<InternalMetricsImpl>(internal_logger);
   } else {
     // We were not provided with a metrics logger. We must create one.
-    internal_metrics_.reset(new NoOpInternalMetrics());
+    internal_metrics_ = std::make_unique<NoOpInternalMetrics>();
   }
   if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
     LOG(ERROR) << "Failed to provide aggregation configurations to the "
@@ -361,6 +359,7 @@ Status Logger::LogFrameRate(uint32_t metric_id,
   EventRecord event_record;
   auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
   CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
+  // NOLINTNEXTLINE readability-magic-numbers
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
   auto event_logger = std::make_unique<FrameRateEventLogger>(this);
   return event_logger->Log(metric_id, MetricDefinition::FRAME_RATE,
@@ -432,10 +431,10 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
   std::stringstream ss;
   ss << "Day index: " << event->day_index() << std::endl;
   if (event->has_occurrence_event()) {
-    auto e = event->occurrence_event();
+    const auto& e = event->occurrence_event();
     ss << "OccurrenceEvent: " << e.event_code() << std::endl;
   } else if (event->has_count_event()) {
-    auto e = event->count_event();
+    const auto& e = event->count_event();
     ss << "CountEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
@@ -445,7 +444,7 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
        << ", PeriodDurationMicros: " << e.period_duration_micros()
        << ", Count: " << e.count() << std::endl;
   } else if (event->has_elapsed_time_event()) {
-    auto e = event->elapsed_time_event();
+    const auto& e = event->elapsed_time_event();
     ss << "ElapsedTimeEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
@@ -454,7 +453,7 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
     ss << ", Component: " << e.component()
        << ", ElapsedMicros: " << e.elapsed_micros() << std::endl;
   } else if (event->has_frame_rate_event()) {
-    auto e = event->frame_rate_event();
+    const auto& e = event->frame_rate_event();
     ss << "FrameRateEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
@@ -464,7 +463,7 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
        << ", FramesPer1000Seconds: " << e.frames_per_1000_seconds()
        << std::endl;
   } else if (event->has_memory_usage_event()) {
-    auto e = event->memory_usage_event();
+    const auto& e = event->memory_usage_event();
     ss << "MemoryUsageEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
@@ -473,7 +472,7 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
     ss << ", Component: " << e.component() << ", Bytes: " << e.bytes()
        << std::endl;
   } else if (event->has_int_histogram_event()) {
-    auto e = event->int_histogram_event();
+    const auto& e = event->int_histogram_event();
     ss << "IntHistogramEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
@@ -484,10 +483,10 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
       ss << "| " << bucket.index() << " = " << bucket.count() << std::endl;
     }
   } else if (event->has_string_used_event()) {
-    auto e = event->string_used_event();
+    const auto& e = event->string_used_event();
     ss << "StringUsedEvent: " << e.str() << std::endl;
   } else if (event->has_custom_event()) {
-    auto e = event->custom_event();
+    const auto& e = event->custom_event();
     ss << "CustomEvent:";
     if (e.values().empty()) {
       ss << " (Empty)";
@@ -642,7 +641,7 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id,
   return ValidateEvent(*event_record);
 }
 
-Status EventLogger::ValidateEvent(const EventRecord& event_record) {
+Status EventLogger::ValidateEvent(const EventRecord& /*event_record*/) {
   return kOK;
 }
 
@@ -677,7 +676,7 @@ Status EventLogger::ValidateEventCodes(
     return kInvalidArguments;
   }
   for (int i = 0; i < event_codes.size(); i++) {
-    auto dim = metric.metric_dimensions(i);
+    const auto& dim = metric.metric_dimensions(i);
     auto code = event_codes.Get(i);
 
     // This verifies the two possible validation modes for a metric_dimension.
@@ -720,8 +719,8 @@ Status EventLogger::ValidateEventCodes(
 
 // The default implementation of MaybeUpdateLocalAggregation does nothing
 // and returns OK.
-Status EventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                EventRecord* event_record) {
+Status EventLogger::MaybeUpdateLocalAggregation(
+    const ReportDefinition& /*report*/, EventRecord* /*event_record*/) {
   return kOK;
 }
 
@@ -746,8 +745,8 @@ Status EventLogger::MaybeGenerateImmediateObservation(
 // The default implementation of MaybeEncodeImmediateObservation does
 // nothing and returns OK.
 Encoder::Result EventLogger::MaybeEncodeImmediateObservation(
-    const ReportDefinition& report, bool may_invalidate,
-    EventRecord* event_record) {
+    const ReportDefinition& /*report*/, bool /*may_invalidate*/,
+    EventRecord* /*event_record*/) {
   TRACE_DURATION("cobalt_core", "EventLogger::MaybeEncodeImmediateObservation");
   Encoder::Result result;
   result.status = kOK;
@@ -792,7 +791,7 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
-    const ReportDefinition& report, bool may_invalidate,
+    const ReportDefinition& report, bool /*may_invalidate*/,
     EventRecord* event_record) {
   TRACE_DURATION("cobalt_core",
                  "OccurrenceEventLogger::MaybeEncodeImmediateObservation");
@@ -867,8 +866,7 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(
       }
       return encoder()->EncodeIntegerEventObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          count_event->event_code(), std::move(component),
-          count_event->count());
+          count_event->event_code(), component, count_event->count());
     }
     // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
     // generation of an immediate observation.
@@ -896,11 +894,10 @@ Status CountEventLogger::MaybeUpdateLocalAggregation(
   }
 }
 
-/////////////// IntegerPerformanceEventLogger method implementations
-//////////////
+///////////// IntegerPerformanceEventLogger method implementations /////////////
 
 Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
-    const ReportDefinition& report, bool may_invalidate,
+    const ReportDefinition& report, bool /*may_invalidate*/,
     EventRecord* event_record) {
   TRACE_DURATION(
       "cobalt_core",
@@ -932,8 +929,7 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-////////////// ElapsedTimeEventLogger method implementations
-//////////////////////
+////////////// ElapsedTimeEventLogger method implementations ///////////////////
 
 const RepeatedField<uint32_t>& ElapsedTimeEventLogger::EventCodes(
     const Event& event) {
@@ -969,7 +965,7 @@ Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(
   }
 }
 
-////////////// FrameRateEventLogger method implementations /////////////////
+//////////////// FrameRateEventLogger method implementations ///////////////////
 
 const RepeatedField<uint32_t>& FrameRateEventLogger::EventCodes(
     const Event& event) {
@@ -1005,8 +1001,7 @@ Status FrameRateEventLogger::MaybeUpdateLocalAggregation(
   }
 }
 
-////////////// MemoryUsageEventLogger method implementations
-//////////////////////
+////////////// MemoryUsageEventLogger method implementations ///////////////////
 const RepeatedField<uint32_t>& MemoryUsageEventLogger::EventCodes(
     const Event& event) {
   CHECK(event.has_memory_usage_event());
@@ -1041,8 +1036,7 @@ Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(
   }
 }
 
-/////////////// IntHistogramEventLogger method implementations
-////////////////////
+///////////// IntHistogramEventLogger method implementations ///////////////////
 
 Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.event->has_int_histogram_event());
@@ -1131,11 +1125,10 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-/////////////// StringUsedEventLogger method implementations
-//////////////////////
+/////////////// StringUsedEventLogger method implementations ///////////////////
 
 Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
-    const ReportDefinition& report, bool may_invalidate,
+    const ReportDefinition& report, bool /*may_invalidate*/,
     EventRecord* event_record) {
   TRACE_DURATION("cobalt_core",
                  "StringUsedEventLogger::MaybeEncodeImmediateObservation");
@@ -1162,10 +1155,9 @@ Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-/////////////// CustomEventLogger method implementations
-//////////////////////////
+/////////////// CustomEventLogger method implementations ///////////////////////
 
-Status CustomEventLogger::ValidateEvent(const EventRecord& event_record) {
+Status CustomEventLogger::ValidateEvent(const EventRecord& /*event_record*/) {
   // TODO(ninai) Add proto validation.
   return kOK;
 }
@@ -1204,5 +1196,4 @@ Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

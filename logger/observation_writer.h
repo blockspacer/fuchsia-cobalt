@@ -41,15 +41,15 @@ class ObservationWriter {
                     util::EncryptedMessageMaker* observation_encrypter)
       : observation_store_(observation_store),
         update_recipient_(update_recipient),
-        observation_encrypter_(observation_encrypter)
-  {}
+        observation_encrypter_(observation_encrypter) {}
 
   // Given an Observation |observation| and an ObservationMetadata |metadata|,
   // writes an encryption of the Observation together with the unencrypted
   // metadata to the Observation Store, and notifies the UpdateRecipient that an
   // Observation has been added to the store.
-  Status WriteObservation(const Observation2& observation,
-                          std::unique_ptr<ObservationMetadata> metadata) const;
+  [[nodiscard]] Status WriteObservation(
+      const Observation2& observation,
+      std::unique_ptr<ObservationMetadata> metadata) const;
 
  private:
   encoder::ObservationStoreWriterInterface* observation_store_;

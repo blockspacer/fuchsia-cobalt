@@ -8,8 +8,7 @@
 
 #include "./gtest.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 TEST(ChannelMapper, TestBasicMapper) {
   ChannelMapper mapper(
@@ -52,5 +51,4 @@ TEST(ChannelMapper, TestMapper) {
   EXPECT_EQ(mapper.ToReleaseStage("prod-main"), ReleaseStage::GA);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

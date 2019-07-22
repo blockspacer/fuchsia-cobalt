@@ -16,8 +16,7 @@
 #include "config/packed_event_codes.h"
 #include "logger/project_context.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
@@ -76,7 +75,7 @@ Status TranslateBasicRapporEncoderStatus(MetricRef metric,
 
 Encoder::Encoder(ClientSecret client_secret,
                  const encoder::SystemDataInterface* system_data)
-    : client_secret_(client_secret), system_data_(system_data) {}
+    : client_secret_(std::move(client_secret)), system_data_(system_data) {}
 
 Encoder::Result Encoder::EncodeBasicRapporObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
@@ -94,7 +93,7 @@ Encoder::Result Encoder::EncodeBasicRapporObservation(
   float prob_bit_flip =
       RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
   basic_rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  basic_rappor_config.set_prob_1_stays_1(1.0 - prob_bit_flip);
+  basic_rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
 
   // TODO(rudominer) Stop copying the client_secret_ on each Encode*()
   // operation.
@@ -125,7 +124,7 @@ Encoder::Result Encoder::EncodeRapporObservation(MetricRef metric,
   float prob_bit_flip =
       RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
   rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  rappor_config.set_prob_1_stays_1(1.0 - prob_bit_flip);
+  rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
 
   RapporEncoder rappor_encoder(rappor_config, client_secret_);
   ValuePart string_value;
@@ -201,7 +200,7 @@ Encoder::Result Encoder::EncodeForculusObservation(
 
 Encoder::Result Encoder::EncodeIntegerEventObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const RepeatedField<uint32_t>& event_codes, const std::string component,
+    const RepeatedField<uint32_t>& event_codes, const std::string& component,
     int64_t value) const {
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
@@ -223,7 +222,7 @@ Encoder::Result Encoder::EncodeIntegerEventObservation(
 
 Encoder::Result Encoder::EncodeHistogramObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const RepeatedField<uint32_t>& event_codes, const std::string component,
+    const RepeatedField<uint32_t>& event_codes, const std::string& component,
     HistogramPtr histogram) const {
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
@@ -281,7 +280,7 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(
 
 Encoder::Result Encoder::EncodePerDeviceNumericObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const std::string component, const RepeatedField<uint32_t>& event_codes,
+    const std::string& component, const RepeatedField<uint32_t>& event_codes,
     int64_t count, uint32_t window_size) const {
   auto result = EncodeIntegerEventObservation(metric, report, day_index,
                                               event_codes, component, count);
@@ -317,7 +316,7 @@ Encoder::Result Encoder::EncodeNullBasicRapporObservation(
   float prob_bit_flip =
       RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
   basic_rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  basic_rappor_config.set_prob_1_stays_1(1.0 - prob_bit_flip);
+  basic_rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
 
   // TODO(rudominer) Stop copying the client_secret_ on each Encode*()
   // operation.
@@ -390,5 +389,4 @@ Encoder::Result Encoder::MakeObservation(MetricRef metric,
   return result;
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

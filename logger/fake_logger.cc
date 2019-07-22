@@ -19,9 +19,7 @@
 #include "logger/logger_interface.h"
 #include "util/status.h"
 
-namespace cobalt {
-namespace logger {
-namespace testing {
+namespace cobalt::logger::testing {
 
 namespace {
 
@@ -91,6 +89,7 @@ Status FakeLogger::LogFrameRate(uint32_t metric_id,
   event.set_metric_id(metric_id);
   auto* frame_rate_event = event.mutable_frame_rate_event();
   CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
+  // NOLINTNEXTLINE readability-magic-numbers
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
   last_event_logged_ = event;
 
@@ -151,6 +150,4 @@ Status FakeLogger::LogCustomEvent(uint32_t metric_id,
   return Status::kOK;
 }
 
-}  // namespace testing
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger::testing

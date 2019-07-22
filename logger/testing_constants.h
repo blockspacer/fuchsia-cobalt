@@ -32,25 +32,26 @@ namespace testing {
 namespace all_report_types {
 
 // MetricReportIds of the locally aggregated reports in this registry
-const MetricReportId kDeviceBootsMetricReportId =
+constexpr MetricReportId kDeviceBootsMetricReportId =
     MetricReportId(kDeviceBootsMetricId, kDeviceBootsUniqueDevicesReportId);
-const MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
+constexpr MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
     kFeaturesActiveMetricId, kFeaturesActiveUniqueDevicesReportId);
-const MetricReportId kEventsOccurredMetricReportId = MetricReportId(
+constexpr MetricReportId kEventsOccurredMetricReportId = MetricReportId(
     kEventsOccurredMetricId, kEventsOccurredUniqueDevicesReportId);
-const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
+constexpr MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
-const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
+constexpr MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
-const MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
+constexpr MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
     kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
-const MetricReportId kStreamingTimeMinMetricReportId =
+constexpr MetricReportId kStreamingTimeMinMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
-const MetricReportId kStreamingTimeMaxMetricReportId =
+constexpr MetricReportId kStreamingTimeMaxMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
-const MetricReportId kLoginModuleFrameRateMinMetricReportId = MetricReportId(
-    kLoginModuleFrameRateMetricId, kLoginModuleFrameRatePerDeviceMinReportId);
-const MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
+constexpr MetricReportId kLoginModuleFrameRateMinMetricReportId =
+    MetricReportId(kLoginModuleFrameRateMetricId,
+                   kLoginModuleFrameRatePerDeviceMinReportId);
+constexpr MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
     kLedgerMemoryUsageMetricId, kLedgerMemoryUsagePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
@@ -97,9 +98,9 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 namespace mixed_time_zone {
 
 // MetricReportIds of the locally aggregated reports in this registry
-const MetricReportId kDeviceBootsMetricReportId =
+constexpr MetricReportId kDeviceBootsMetricReportId =
     MetricReportId(kDeviceBootsMetricId, kDeviceBootsUniqueDevicesReportId);
-const MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
+constexpr MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
     kFeaturesActiveMetricId, kFeaturesActiveUniqueDevicesReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
@@ -121,19 +122,20 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 namespace per_device_numeric_stats {
 
 // MetricReportIds of the locally aggregated reports in this registry
-const MetricReportId kSettingsChangedMetricReportId = MetricReportId(
+constexpr MetricReportId kSettingsChangedMetricReportId = MetricReportId(
     kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
-const MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
+constexpr MetricReportId kConnectionFailuresMetricReportId = MetricReportId(
     kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
-const MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
+constexpr MetricReportId kStreamingTimeTotalMetricReportId = MetricReportId(
     kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
-const MetricReportId kStreamingTimeMinMetricReportId =
+constexpr MetricReportId kStreamingTimeMinMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMinReportId);
-const MetricReportId kStreamingTimeMaxMetricReportId =
+constexpr MetricReportId kStreamingTimeMaxMetricReportId =
     MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceMaxReportId);
-const MetricReportId kLoginModuleFrameRateMinMetricReportId = MetricReportId(
-    kLoginModuleFrameRateMetricId, kLoginModuleFrameRatePerDeviceMinReportId);
-const MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
+constexpr MetricReportId kLoginModuleFrameRateMinMetricReportId =
+    MetricReportId(kLoginModuleFrameRateMetricId,
+                   kLoginModuleFrameRatePerDeviceMinReportId);
+constexpr MetricReportId kLedgerMemoryUsageMaxMetricReportId = MetricReportId(
     kLedgerMemoryUsageMetricId, kLedgerMemoryUsagePerDeviceMaxReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
@@ -170,11 +172,11 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 namespace unique_actives {
 
 // MetricReportIds of the locally aggregated reports in this registry
-const MetricReportId kDeviceBootsMetricReportId =
+constexpr MetricReportId kDeviceBootsMetricReportId =
     MetricReportId(kDeviceBootsMetricId, kDeviceBootsUniqueDevicesReportId);
-const MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
+constexpr MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
     kFeaturesActiveMetricId, kFeaturesActiveUniqueDevicesReportId);
-const MetricReportId kNetworkActivityMetricReportId = MetricReportId(
+constexpr MetricReportId kNetworkActivityMetricReportId = MetricReportId(
     kNetworkActivityMetricId, kNetworkActivityUniqueDevicesReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
@@ -203,11 +205,11 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 namespace unique_actives_noise_free {
 
 // MetricReportIds of the locally aggregated reports in this registry
-const MetricReportId kDeviceBootsMetricReportId =
+constexpr MetricReportId kDeviceBootsMetricReportId =
     MetricReportId(kDeviceBootsMetricId, kDeviceBootsUniqueDevicesReportId);
-const MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
+constexpr MetricReportId kFeaturesActiveMetricReportId = MetricReportId(
     kFeaturesActiveMetricId, kFeaturesActiveUniqueDevicesReportId);
-const MetricReportId kEventsOccurredMetricReportId = MetricReportId(
+constexpr MetricReportId kEventsOccurredMetricReportId = MetricReportId(
     kEventsOccurredMetricId, kEventsOccurredUniqueDevicesReportId);
 
 // Expected parameters of the locally aggregated reports in this registry

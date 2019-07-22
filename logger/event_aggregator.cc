@@ -203,7 +203,7 @@ EventAggregator::EventAggregator(
       obs_history_ = AggregatedObservationHistoryStore();
     }
   }
-  clock_.reset(new SystemClock());
+  clock_ = std::make_unique<SystemClock>();
 }
 
 void EventAggregator::Start() {
@@ -630,7 +630,7 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc,
   CHECK_GE(day_index_local, kMaxAllowedAggregationWindowSize + backfill_days_);
 
   auto locked = protected_aggregate_store_.lock();
-  for (auto pair : locked->local_aggregate_store.by_report_key()) {
+  for (const auto& pair : locked->local_aggregate_store.by_report_key()) {
     uint32_t day_index;
     switch (pair.second.aggregation_config().metric().time_zone_policy()) {
       case MetricDefinition::UTC: {
@@ -798,8 +798,7 @@ uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
        day_index <= obs_day_index; day_index++) {
     auto day_aggregate = daily_aggregates.by_day_index().find(day_index);
     if (day_aggregate != daily_aggregates.by_day_index().end() &&
-        day_aggregate->second.activity_daily_aggregate().activity_indicator() ==
-            true) {
+        day_aggregate->second.activity_daily_aggregate().activity_indicator()) {
       return day_index;
     }
   }

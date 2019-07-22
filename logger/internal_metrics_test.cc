@@ -9,12 +9,12 @@
 #include "./gtest.h"
 #include "logger/fake_logger.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
-const int64_t kNumBytes = 123;
-const uint32_t kCustomerId = 1;
-const uint32_t kProjectId = 2;
+constexpr int64_t kNumBytes = 123;
+constexpr uint32_t kCustomerId = 1;
+constexpr uint32_t kProjectId = 2;
+constexpr uint32_t kMany = 100;
 
 class InternalMetricsImplTest : public ::testing::Test {
  public:
@@ -47,7 +47,7 @@ TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
   InternalMetricsImpl metrics(&logger);
 
   metrics.PauseLogging();
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < kMany; i++) {
     metrics.LoggerCalled(
         LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
         GetTestProject());
@@ -75,7 +75,7 @@ TEST_F(InternalMetricsImplTest, BytesUploadedPauseWorks) {
   InternalMetricsImpl metrics(&logger);
 
   metrics.PauseLogging();
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < kMany; i++) {
     metrics.BytesUploaded(
         PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
   }
@@ -101,7 +101,7 @@ TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
   InternalMetricsImpl metrics(&logger);
 
   metrics.PauseLogging();
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < kMany; i++) {
     metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted,
                         kNumBytes, kCustomerId, kProjectId);
   }
@@ -109,5 +109,4 @@ TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
   ASSERT_EQ(logger.call_count(), 0);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

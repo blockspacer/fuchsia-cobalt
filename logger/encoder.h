@@ -25,14 +25,13 @@ namespace cobalt {
 namespace logger {
 
 // A HistogramPtr provides a moveable way of passing the buckets of a Histogram.
-typedef std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>
-    HistogramPtr;
+using HistogramPtr =
+    std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>;
 
 // A EventValuesPtr provides a moveable way of passing the dimensions of a
 // custom event.
-typedef std::unique_ptr<
-    google::protobuf::Map<std::string, CustomDimensionValue>>
-    EventValuesPtr;
+using EventValuesPtr =
+    std::unique_ptr<google::protobuf::Map<std::string, CustomDimensionValue>>;
 
 // An Encoder is used for creating Observations, including applying any
 // privacy-preserving encodings that may be employed. An Observation
@@ -162,7 +161,7 @@ class Encoder {
   Result EncodeIntegerEventObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      const std::string component, int64_t value) const;
+      const std::string& component, int64_t value) const;
 
   // Encodes an Observation of type HistogramObservation.
   //
@@ -186,7 +185,7 @@ class Encoder {
   Result EncodeHistogramObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      const std::string component, HistogramPtr histogram) const;
+      const std::string& component, HistogramPtr histogram) const;
 
   // Encodes an Observation of type CustomObservation.
   //
@@ -306,7 +305,7 @@ class Encoder {
   // but it is the caller's responsibility to ensure this.
   Result EncodePerDeviceNumericObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-      const std::string component,
+      const std::string& component,
       const google::protobuf::RepeatedField<uint32_t>& event_codes,
       int64_t count, uint32_t window_size) const;
 

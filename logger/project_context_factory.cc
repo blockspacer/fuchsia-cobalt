@@ -7,14 +7,12 @@
 #include <utility>
 
 #include "./logging.h"
-
 #include "config/metric_definition.pb.h"
 #include "config/project.pb.h"
 #include "config/project_configs.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
 
@@ -74,7 +72,7 @@ ProjectContextFactory::ProjectContextFactory(
 }
 
 std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
-    std::string customer_name, std::string project_name,
+    const std::string& customer_name, const std::string& project_name,
     ReleaseStage release_stage) {
   if (project_configs_ == nullptr) {
     return nullptr;
@@ -126,5 +124,4 @@ ProjectContextFactory::NewSingleLegacyProjectContext() {
                                  client_config_->single_project_id());
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

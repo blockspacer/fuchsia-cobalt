@@ -21,7 +21,7 @@ namespace cobalt {
 namespace logger {
 
 // A pair (metric ID, report ID).
-typedef std::pair<uint32_t, uint32_t> MetricReportId;
+using MetricReportId = std::pair<uint32_t, uint32_t>;
 
 // A reference object that gives access to the names and IDs of a Metric and
 // its owning Project and Customer. One way to obtain a MetricRef is the method
@@ -33,16 +33,16 @@ class MetricRef {
   // being used.
   MetricRef(const Project* project, const MetricDefinition* metric_definition);
 
-  const Project& project() const;
+  [[nodiscard]] const Project& project() const;
 
-  std::string ProjectDebugString() const;
+  [[nodiscard]] std::string ProjectDebugString() const;
 
-  uint32_t metric_id() const;
+  [[nodiscard]] uint32_t metric_id() const;
 
-  const std::string& metric_name() const;
+  [[nodiscard]] const std::string& metric_name() const;
 
   // Returns the string <customer_name>.<project_name>.<metric_name>
-  std::string FullyQualifiedName() const;
+  [[nodiscard]] std::string FullyQualifiedName() const;
 
  private:
   friend class ProjectContext;
@@ -99,13 +99,13 @@ class ProjectContext {
 
   // Returns the MetricDefinition for the metric with the given ID, or
   // nullptr if there is no such metric.
-  const MetricDefinition* GetMetric(const uint32_t metric_id) const;
+  const MetricDefinition* GetMetric(uint32_t metric_id) const;
 
   // Makes a MetricRef that wraps this ProjectContext's Project and the given
   // metric_definition (which should have been obtained via GetMetric()).
   // The Project and MetricDefinition must remain valid as long as the returned
   // MetricRef is being used.
-  const MetricRef RefMetric(const MetricDefinition* metric_definition) const;
+  MetricRef RefMetric(const MetricDefinition* metric_definition) const;
 
   // Gives access to the metadata for the project.
   const Project& project() const { return project_; }

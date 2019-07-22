@@ -101,7 +101,7 @@ class ProjectContextFactory {
   // factory's CobaltRegistry. This ProjectContextFactory must remain alive as
   // long as the returned ProjectContext is being used.
   std::unique_ptr<ProjectContext> NewProjectContext(
-      std::string customer_name, std::string project_name,
+      const std::string& customer_name, const std::string& project_name,
       ReleaseStage release_stage = GA);
 
   // If is_single_project() is true, then this returns a

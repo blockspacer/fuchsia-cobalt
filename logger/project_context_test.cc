@@ -20,15 +20,14 @@
 
 using cobalt::config::ProjectConfigs;
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
-const char kCustomerA[] = "CustomerA";
-const uint32_t kCustomerAId = 123;
-const char kProjectA1[] = "ProjectA1";
-const char kMetricA1a[] = "MetricA1a";
-const uint32_t kMetricA1aId = 1;
+constexpr char kCustomerA[] = "CustomerA";
+constexpr uint32_t kCustomerAId = 123;
+constexpr char kProjectA1[] = "ProjectA1";
+constexpr char kMetricA1a[] = "MetricA1a";
+constexpr uint32_t kMetricA1aId = 1;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string cobalt_registry_bytes;
@@ -42,7 +41,7 @@ bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
 
 class ProjectContextTest : public ::testing::Test {
  protected:
-  void SetUp() {
+  void SetUp() override {
     // We create a ProjectConfigs by first creating a CobaltRegistry from
     // the ASCII proto above.
     auto cobalt_config = std::make_unique<CobaltRegistry>();
@@ -84,6 +83,7 @@ class ProjectContextTest : public ::testing::Test {
     EXPECT_EQ(nullptr, project_context.GetMetric(42));
   }
 
+  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::shared_ptr<ProjectConfigs> project_configs_;
 };
 
@@ -106,5 +106,4 @@ TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
   CheckProjectContextA1(*project_context);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

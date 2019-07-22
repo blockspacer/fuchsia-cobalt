@@ -17,14 +17,13 @@ namespace cobalt {
 namespace logger {
 
 // A HistogramPtr provides a moveable way of passing the buckets of a Histogram.
-typedef std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>
-    HistogramPtr;
+using HistogramPtr =
+    std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>;
 
 // A EventValuesPtr provides a moveable way of passing the dimensions of a
 // custom event.
-typedef std::unique_ptr<
-    google::protobuf::Map<std::string, CustomDimensionValue>>
-    EventValuesPtr;
+using EventValuesPtr =
+    std::unique_ptr<google::protobuf::Map<std::string, CustomDimensionValue>>;
 
 }  // namespace logger
 }  // namespace cobalt

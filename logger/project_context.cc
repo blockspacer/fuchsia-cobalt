@@ -8,11 +8,7 @@
 
 #include "./logging.h"
 
-namespace cobalt {
-namespace logger {
-
-using statusor::StatusOr;
-using util::StatusCode;
+namespace cobalt::logger {
 
 namespace {
 
@@ -22,8 +18,8 @@ void PopulateProject(uint32_t customer_id, uint32_t project_id,
                      ReleaseStage release_stage, Project* project) {
   project->set_customer_id(customer_id);
   project->set_project_id(project_id);
-  project->set_customer_name(std::move(customer_name));
-  project->set_project_name(std::move(project_name));
+  project->set_customer_name(customer_name);
+  project->set_project_name(project_name);
   project->set_release_stage(release_stage);
 }
 
@@ -116,10 +112,11 @@ const MetricDefinition* ProjectContext::GetMetric(
   return iter->second;
 }
 
-const MetricRef ProjectContext::RefMetric(
+MetricRef ProjectContext::RefMetric(
     const MetricDefinition* metric_definition) const {
   return MetricRef(&project_, metric_definition);
 }
+
 std::string ProjectContext::DebugString() const {
 #ifdef PROTO_LITE
   return project_.project_name();
@@ -152,5 +149,4 @@ std::string ProjectContext::FullMetricName(
   return FullMetricName(project_, metric_definition);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

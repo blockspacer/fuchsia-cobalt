@@ -39,16 +39,34 @@ CLANG_TIDY_WHITELIST = [
     os.path.join(SRC_ROOT_DIR, 'config'),
     os.path.join(SRC_ROOT_DIR, 'encoder'),
     os.path.join(SRC_ROOT_DIR, 'keys'),
+    os.path.join(SRC_ROOT_DIR, 'logger'),
     os.path.join(SRC_ROOT_DIR, 'manifest'),
     os.path.join(SRC_ROOT_DIR, 'meta'),
 ]
 
+CLANG_TIDY_BLACKLIST = [
+    # TODO(pesk): Clean up the magic numbers in these test files.
+    os.path.join(SRC_ROOT_DIR, 'logger', 'event_aggregator_test.cc'),
+    os.path.join(SRC_ROOT_DIR, 'logger', 'logger_test.cc'),
+]
 
-def use_clang_tidy(path):
+
+def clang_tidy_whitelisted(path):
   for whitelist in CLANG_TIDY_WHITELIST:
     if path.startswith(whitelist):
       return True
   return False
+
+
+def clang_tidy_blacklisted(path):
+  for blacklist in CLANG_TIDY_BLACKLIST:
+    if path.startswith(blacklist):
+      return True
+  return False
+
+
+def use_clang_tidy(path):
+  return clang_tidy_whitelisted(path) and not clang_tidy_blacklisted(path)
 
 
 def main(only_directories=[]):

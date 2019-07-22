@@ -55,7 +55,7 @@ class InternalMetrics {
   // longer be ignored.
   virtual void ResumeLogging() = 0;
 
-  virtual ~InternalMetrics() {}
+  virtual ~InternalMetrics() = default;
 };
 
 // NoOpInternalMetrics is to be used when the LoggerInterface* provided to the
@@ -77,7 +77,7 @@ class NoOpInternalMetrics : public InternalMetrics {
   void PauseLogging() override {}
   void ResumeLogging() override {}
 
-  ~NoOpInternalMetrics() override {}
+  ~NoOpInternalMetrics() override = default;
 };
 
 // InternalMetricsImpl is the actual implementation of InternalMetrics. It is a
@@ -100,7 +100,7 @@ class InternalMetricsImpl : public InternalMetrics {
   void PauseLogging() override { paused_ = true; }
   void ResumeLogging() override { paused_ = false; }
 
-  ~InternalMetricsImpl() override {}
+  ~InternalMetricsImpl() override = default;
 
  private:
   bool paused_;

@@ -22,27 +22,20 @@
 #include "logger/project_context_factory.h"
 #include "util/encrypted_message_util.h"
 
-using ::google::protobuf::util::MessageDifferencer;
-
 namespace cobalt {
 
 using crypto::byte;
 using crypto::hash::DIGEST_SIZE;
-
-using config::ProjectConfigs;
-
 using encoder::ClientSecret;
-
 using rappor::BasicRapporEncoder;
-using rappor::RapporConfigHelper;
-
-using util::EncryptedMessageMaker;
 using util::MessageDecrypter;
 
-namespace logger {
-namespace testing {
+namespace logger::testing {
 
 namespace {
+
+constexpr uint32_t kComponentNameHashSize = 32;
+
 // Populates |*hash_out| with the SHA256 of |component|, unless |component|
 // is empty in which case *hash_out is set to the empty string also. An
 // empty string indicates that the component_name feature is not being used.
@@ -270,7 +263,7 @@ bool FetchAggregatedObservations(
 
 bool CheckNumericEventObservations(
     const std::vector<uint32_t>& expected_report_ids,
-    uint32_t expected_event_code, const std::string expected_component_name,
+    uint32_t expected_event_code, const std::string& expected_component_name,
     int64_t expected_int_value, FakeObservationStore* observation_store,
     TestUpdateRecipient* update_recipient) {
   size_t expected_num_observations = expected_report_ids.size();
@@ -291,8 +284,10 @@ bool CheckNumericEventObservations(
         return false;
       }
     } else {
-      EXPECT_EQ(numeric_event.component_name_hash().size(), 32u);
-      if (numeric_event.component_name_hash().size() != 32u) {
+      EXPECT_EQ(numeric_event.component_name_hash().size(),
+                kComponentNameHashSize);
+      if (numeric_event.component_name_hash().size() !=
+          kComponentNameHashSize) {
         return false;
       }
     }
@@ -394,10 +389,7 @@ bool CheckUniqueActivesObservations(
     }
   }
   // Check that every expected Observation has been received.
-  if (!expected_values.empty()) {
-    return false;
-  }
-  return true;
+  return expected_values.empty();
 }
 
 bool CheckPerDeviceNumericObservations(
@@ -422,7 +414,7 @@ bool CheckPerDeviceNumericObservations(
       for (const auto& expected_obs : window_size_pair.second) {
         expected_params.daily_num_obs++;
         expected_params.num_obs_per_report[id_pair.first.first]++;
-        std::string component = std::get<0>(expected_obs);
+        const std::string& component = std::get<0>(expected_obs);
         std::string component_hash;
         HashComponentNameIfNotEmpty(component, &component_hash);
         component_hashes[component_hash] = component;
@@ -475,9 +467,8 @@ bool CheckPerDeviceNumericObservations(
     auto hash_iter = component_hashes.find(obs_component_hash);
     if (hash_iter == component_hashes.end()) {
       return false;
-    } else {
-      obs_component = component_hashes[obs_component_hash];
     }
+    obs_component = component_hashes[obs_component_hash];
     auto obs_tuple = std::make_tuple(
         obs_component,
         obs.per_device_numeric().integer_event_obs().event_code(),
@@ -513,13 +504,9 @@ bool CheckPerDeviceNumericObservations(
     }
     expected_report_participation_obs.erase(obs_key);
   }
-  if (!expected_report_participation_obs.empty()) {
-    return false;
-  }
 
-  return true;
+  return expected_report_participation_obs.empty();
 }
 
-}  // namespace testing
-}  // namespace logger
+}  // namespace logger::testing
 }  // namespace cobalt

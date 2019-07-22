@@ -74,7 +74,7 @@ class Logger : public LoggerInterface {
          ObservationWriter* observation_writer,
          LoggerInterface* internal_logger = nullptr);
 
-  virtual ~Logger() = default;
+  ~Logger() override = default;
 
   Status LogEvent(uint32_t metric_id, uint32_t event_code) override;
 
