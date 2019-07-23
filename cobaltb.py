@@ -234,7 +234,7 @@ def _make_prober_config(testapp_config_path, output_path):
 
 
 def _fmt(args):
-  gitfmt.fmt(args.committed)
+  gitfmt.fmt(args.committed, args.all)
 
 
 def _lint(args):
@@ -772,10 +772,15 @@ def main():
       parents=[parent_parser],
       help='Run language formatter on modified files.')
   sub_parser.add_argument(
-      '-committed',
+      '--committed',
       action='store_true',
       default=False,
       help='Also run on files modified in the latest commit.')
+  sub_parser.add_argument(
+      '--all',
+      action='store_true',
+      default=False,
+      help='Run on all tracked files.')
   sub_parser.set_defaults(func=_fmt)
 
   ########################################################

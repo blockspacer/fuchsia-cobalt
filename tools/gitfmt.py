@@ -96,8 +96,10 @@ class FormattingSession(object):
 
   def __init__(self, root_dir):
     self._formatters = [
-        Formatter([".h", ".cc", ".proto"],
-                  ["clang-format", "-i", "-style=google"]),
+        Formatter([".h", ".cc", ".proto"], [
+            "clang-format", "-style=file", "-fallback-style=Google",
+            "-sort-includes", "-i"
+        ]),
         Formatter([".go"], ["gofmt", "-w"]),
         Formatter([".gn"], ["gn", "format", "--in-place"]),
         Formatter([".py"], ["pyformat", "-i"]),
@@ -169,17 +171,38 @@ def _git_show():
   return [l.split() for l in lines[1:] if len(l.split()) >= 2]
 
 
+IGNORED_FILES = [
+    "third_party",
+    "build",
+    "config/config_parser/src/source_generator/source_generator_test_files",
+]
+
+
+def _ignored_file(f):
+  for name in IGNORED_FILES:
+    if f.startswith(name):
+      return True
+  return False
+
+
+def _git_ls_files():
+  "Get all tracked files."
+  ls_files_str = _run_command(["git", "ls-files"])
+  return [["M", l] for l in ls_files_str.split("\n") if not _ignored_file(l)]
+
+
 def _git_root_dir():
   "Get the root of the current git repository."
   root_dir = _run_command(["git", "rev-parse", "--show-toplevel"])
   return root_dir.strip()
 
 
-def fmt(also_fmt_last_commit, repo_path=None):
+def fmt(also_fmt_last_commit, also_fmt_all_tracked, repo_path=None):
   """Format changed files in a git repository.
 
   If also_fmt_last_commit is True, also format files changes in the latest
   commit.
+  If also_fmt_all_tracked is True, also format all tracked files.
   If repo_path is None, use the current git repository. If repo_path is not
   None, format files in that repository.
   """
@@ -193,6 +216,8 @@ def fmt(also_fmt_last_commit, repo_path=None):
     changes = _git_status()
     if also_fmt_last_commit:
       changes += _git_show()
+    if also_fmt_all_tracked:
+      changes = _git_ls_files()
     session = FormattingSession(repo_path)
     session.format_changed(changes)
   finally:
@@ -200,4 +225,4 @@ def fmt(also_fmt_last_commit, repo_path=None):
 
 
 if __name__ == "__main__":
-  fmt(True)
+  fmt(True, False)
