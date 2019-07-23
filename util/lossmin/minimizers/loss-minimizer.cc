@@ -12,8 +12,8 @@ namespace cobalt_lossmin {
 
 constexpr double kLossThreshold = 1e-12;
 
-bool LossMinimizer::Run(int max_epochs, int loss_epochs, int convergence_epochs,
-                        Weights *weights, std::vector<double> *loss) {
+bool LossMinimizer::Run(int max_epochs, int loss_epochs, int convergence_epochs, Weights *weights,
+                        std::vector<double> *loss) {
   // If the initial guess is exact skip the update.
   if (Loss(*weights) < kLossThreshold) {
     set_converged(true);
@@ -58,8 +58,7 @@ bool LossMinimizer::Run(int max_epochs, int loss_epochs, int convergence_epochs,
 }
 
 // By default only check if gradient is == 0.
-void LossMinimizer::ConvergenceCheck(const Weights &weights,
-                                     const Weights &gradient) {
+void LossMinimizer::ConvergenceCheck(const Weights &weights, const Weights &gradient) {
   if (gradient.squaredNorm() / weights.size() < convergence_threshold_) {
     set_reached_solution(true);
     set_converged(true);
@@ -71,8 +70,7 @@ void LossMinimizer::SimpleConvergenceCheck(const std::vector<double> &loss) {
   // (loss[t-1] - loss[t]) / loss[t-1] is below 'simple_convergence_threshold_'.
   if (loss.size() > num_convergence_epochs_) {
     double loss_difference = 0.0;
-    for (size_t i = loss.size() - num_convergence_epochs_; i < loss.size();
-         ++i) {
+    for (size_t i = loss.size() - num_convergence_epochs_; i < loss.size(); ++i) {
       if (loss[i - 1] > kLossThreshold) {
         loss_difference = std::max(loss_difference, 1 - loss[i] / loss[i - 1]);
       } else {

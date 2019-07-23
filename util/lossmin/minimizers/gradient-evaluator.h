@@ -31,9 +31,7 @@ class GradientEvaluator {
  public:
   // Constructor sets up the dataset.
   GradientEvaluator(const InstanceSet &instances, const LabelSet &labels)
-      : instances_(instances),
-        instances_transposed_(instances.transpose()),
-        labels_(labels) {}
+      : instances_(instances), instances_transposed_(instances.transpose()), labels_(labels) {}
 
   virtual ~GradientEvaluator() = default;
 
@@ -99,9 +97,7 @@ class GradientEvaluator {
   [[nodiscard]] const InstanceSet &instances() const { return instances_; }
 
   // Returns the transpose pf instances.
-  [[nodiscard]] const InstanceSet &instances_transposed() const {
-    return instances_transposed_;
-  }
+  [[nodiscard]] const InstanceSet &instances_transposed() const { return instances_transposed_; }
 
   // Returns the labels.
   [[nodiscard]] const LabelSet &labels() const { return labels_; }

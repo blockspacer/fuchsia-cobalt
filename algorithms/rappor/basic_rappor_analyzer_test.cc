@@ -36,8 +36,7 @@ namespace {
 // Given a string of "0"s and "1"s of length a multiple of 8, returns
 // a BasicRapporObservation whose data is equal to the bytes whose binary
 // representation is given by the string.
-BasicRapporObservation BasicRapporObservationFromString(
-    const std::string& binary_string) {
+BasicRapporObservation BasicRapporObservationFromString(const std::string& binary_string) {
   BasicRapporObservation obs;
   obs.set_data(BinaryStringToData(binary_string));
   return obs;
@@ -94,19 +93,15 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   // Adds an observation to analyzer_ described by |binary_string|. Expects
   // the operation to result in an error.
   void AddObservationExpectFalse(const std::string& binary_string) {
-    EXPECT_FALSE(analyzer_->AddObservation(
-        BasicRapporObservationFromString(binary_string)));
-    CheckState(add_good_observation_call_count_,
-               ++add_bad_observation_call_count_);
+    EXPECT_FALSE(analyzer_->AddObservation(BasicRapporObservationFromString(binary_string)));
+    CheckState(add_good_observation_call_count_, ++add_bad_observation_call_count_);
   }
 
   // Adds an observation to analyzer_ described by |binary_string|. Expects
   // the operation to succeed.
   void AddObservation(const std::string& binary_string) {
-    EXPECT_TRUE(analyzer_->AddObservation(
-        BasicRapporObservationFromString(binary_string)));
-    CheckState(++add_good_observation_call_count_,
-               add_bad_observation_call_count_);
+    EXPECT_TRUE(analyzer_->AddObservation(BasicRapporObservationFromString(binary_string)));
+    CheckState(++add_good_observation_call_count_, add_bad_observation_call_count_);
   }
 
   // Invokes AddObservation() many times.
@@ -118,8 +113,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   }
 
   // Checks that analyzer_ has the expected number observations and errors.
-  void CheckState(size_t expected_num_observations,
-                  size_t expected_observation_errors) {
+  void CheckState(size_t expected_num_observations, size_t expected_observation_errors) {
     EXPECT_EQ(expected_num_observations, analyzer_->num_observations());
     EXPECT_EQ(expected_observation_errors, analyzer_->observation_errors());
   }
@@ -136,13 +130,10 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
 
   // Invokes analyzer_->Analyze() and checks the count and std_error in
   // the given position.
-  void AnalyzeAndCheckOnePosition(int position, double expected_estimate,
-                                  double expected_std_err) {
+  void AnalyzeAndCheckOnePosition(int position, double expected_estimate, double expected_std_err) {
     auto results = analyzer_->Analyze();
-    EXPECT_FLOAT_EQ(expected_estimate, results[position].count_estimate)
-        << "position=" << position;
-    EXPECT_FLOAT_EQ(expected_std_err, results[position].std_error)
-        << "position=" << position;
+    EXPECT_FLOAT_EQ(expected_estimate, results[position].count_estimate) << "position=" << position;
+    EXPECT_FLOAT_EQ(expected_std_err, results[position].std_error) << "position=" << position;
   }
 
   // Tests basic RAPPOR focusing on only a single bit at a time. No encoder
@@ -155,12 +146,10 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
   //
   // Uses the currently set values for prob_0_becomes_1_ and prob_1_stays_1_.
   // There will be |n| total observations with |y| 1's and |n-y| 0's.
-  void OneBitTest(int n, int y, double expected_estimate,
-                  double expected_std_err) {
+  void OneBitTest(int n, int y, double expected_estimate, double expected_std_err) {
     // We pick five different bits out of the 24 bits to test.
     for (int bit_index : {0, 1, 8, 15, 23}) {
-      SCOPED_TRACE(std::to_string(bit_index) + ", " + std::to_string(n) + ", " +
-                   std::to_string(y));
+      SCOPED_TRACE(std::to_string(bit_index) + ", " + std::to_string(n) + ", " + std::to_string(y));
       // Construct an analyzer for 24 bit Basic RAPPOR.
       SetAnalyzer(24);  // NOLINT
       // Add y observations with a 1 in position |bit_index|.
@@ -170,8 +159,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
       // NOLINTNEXTLINE
       AddObservations(BuildBitPatternString(24, bit_index, '0', '0'), n - y);
       // Analyze and check position |bit_index|
-      AnalyzeAndCheckOnePosition(bit_index, expected_estimate,
-                                 expected_std_err);
+      AnalyzeAndCheckOnePosition(bit_index, expected_estimate, expected_std_err);
     }
   }
 
@@ -209,8 +197,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
 
     (*accumulated_count_estimate) += results[0].count_estimate;
     (*accumulated_std_err_estimate) += results[0].std_error;
-    double clipped_count_estimate =
-        std::max(0.0, std::min(n * 1.0, results[0].count_estimate));
+    double clipped_count_estimate = std::max(0.0, std::min(n * 1.0, results[0].count_estimate));
     double actual_error = (clipped_count_estimate - y);
     (*accumulated_actual_square_error) += actual_error * actual_error;
   }
@@ -236,8 +223,7 @@ class BasicRapporAnalyzerTest : public ::testing::Test {
     static const int kNumTrials = 100;
 
     for (int trial = 0; trial < kNumTrials; trial++) {
-      OneCategoryExperiment(n, y, &accumulated_count_estimate,
-                            &accumulated_std_err_estimate,
+      OneCategoryExperiment(n, y, &accumulated_count_estimate, &accumulated_std_err_estimate,
                             &accumulated_actual_square_error);
     }
 
@@ -410,8 +396,7 @@ TEST_F(BasicRapporAnalyzerTest, RawCountsThousandCategories) {
     // For i = 0, 10, 20, 30, .....
     for (int bit_index = 0; bit_index < 1000; bit_index += 10) {  // NOLINT
       // Add an observation with category i alone set.
-      AddObservation(
-          BuildBitPatternString(1000, bit_index, '1', '0'));  // NOLINT
+      AddObservation(BuildBitPatternString(1000, bit_index, '1', '0'));  // NOLINT
     }
   }
 

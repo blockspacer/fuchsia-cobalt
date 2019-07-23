@@ -57,8 +57,7 @@ class GcsUtil {
   //
   // service_account_json_path. The path to a json file containg a Google
   // service account private key.
-  bool Init(const std::string ca_certs_path,
-            const std::string& service_account_json_path);
+  bool Init(const std::string ca_certs_path, const std::string& service_account_json_path);
 
   // Uploads a blob to Google Cloud Storage. |num_bytes| from |data| are
   // uploaded to the given |path| within the given |bucket|. This will succeed
@@ -72,9 +71,8 @@ class GcsUtil {
   // and forward slashes.
   //
   // |timeout_seconds| is used as the HTTP request timeout.
-  bool Upload(const std::string& bucket, const std::string& path,
-              const std::string mime_type, const char* data, size_t num_bytes,
-              uint32_t timeout_seconds);
+  bool Upload(const std::string& bucket, const std::string& path, const std::string mime_type,
+              const char* data, size_t num_bytes, uint32_t timeout_seconds);
 
   // Uploads a blob to Google Cloud Storage. Bytes will be read from |stream|
   // until EOF. The bytes are uploaded to the given |path| within the given
@@ -89,9 +87,8 @@ class GcsUtil {
   // and forward slashes.
   //
   // |timeout_seconds| is used as the HTTP request timeout.
-  bool Upload(const std::string& bucket, const std::string& path,
-              const std::string mime_type, std::istream* stream,
-              uint32_t timeout_seconds);
+  bool Upload(const std::string& bucket, const std::string& path, const std::string mime_type,
+              std::istream* stream, uint32_t timeout_seconds);
 
   // Attempts to connect with Google Cloud Storage and query for the metadata
   // for the specified bucket. This will succeed only if the service
@@ -112,9 +109,8 @@ class GcsUtil {
   // //third_party/google-api-cpp-client in this header file.
   //
   // This method takes ownership of |data_reader|.
-  bool Upload(const std::string& bucket, const std::string& path,
-              const std::string mime_type, void* data_reader,
-              uint32_t timeout_seconds);
+  bool Upload(const std::string& bucket, const std::string& path, const std::string mime_type,
+              void* data_reader, uint32_t timeout_seconds);
 
   struct Impl;
   std::unique_ptr<Impl> impl_;

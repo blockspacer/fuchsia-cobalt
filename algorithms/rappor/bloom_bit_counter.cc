@@ -26,10 +26,8 @@ namespace cobalt::rappor {
 
 // Stackdriver metric constants
 namespace {
-constexpr char kBloomBitCounterConstructorFailure[] =
-    "bloom-bit-counter-constructor-failure";
-constexpr char kAddObservationFailure[] =
-    "bloom-bin-counter-add-observation-failure";
+constexpr char kBloomBitCounterConstructorFailure[] = "bloom-bit-counter-constructor-failure";
+constexpr char kAddObservationFailure[] = "bloom-bin-counter-add-observation-failure";
 constexpr int kBitsPerByte = 8;
 }  // namespace
 
@@ -50,15 +48,14 @@ BloomBitCounter::BloomBitCounter(const RapporConfig& config)
 
 bool BloomBitCounter::AddObservation(const RapporObservation& obs) {
   if (!config_->valid()) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure)
-        << "RapporConfig is invalid";
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure) << "RapporConfig is invalid";
     observation_errors_++;
     return false;
   }
   if (obs.data().size() != num_bloom_bytes_) {
     LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure)
-        << "RapporObservation has the wrong number of bytes: "
-        << obs.data().size() << ". Expecting " << num_bloom_bytes_;
+        << "RapporObservation has the wrong number of bytes: " << obs.data().size()
+        << ". Expecting " << num_bloom_bytes_;
     observation_errors_++;
     return false;
   }
@@ -84,11 +81,9 @@ bool BloomBitCounter::AddObservation(const RapporObservation& obs) {
   // for zero bytes.
   std::vector<size_t>& bit_sums = estimated_bloom_counts_[cohort].bit_sums;
   size_t bit_index = 0;
-  for (size_t byte_index = num_bloom_bytes_ - 1; byte_index >= 0;
-       byte_index--) {
+  for (size_t byte_index = num_bloom_bytes_ - 1; byte_index >= 0; byte_index--) {
     uint8_t bit_mask = 1;
-    for (int bit_in_byte_index = 0; bit_in_byte_index < kBitsPerByte;
-         bit_in_byte_index++) {
+    for (int bit_in_byte_index = 0; bit_in_byte_index < kBitsPerByte; bit_in_byte_index++) {
       if (bit_index >= bit_sums.size()) {
         return true;
       }

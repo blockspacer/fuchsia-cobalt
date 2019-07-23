@@ -37,16 +37,13 @@ class RapporConfigHelper {
 
   // Returns the number of categories to use for the Basic RAPPOR encoding.
   // This is the same as the number of bits.
-  static size_t BasicRapporNumCategories(
-      const MetricDefinition& metric_definition);
+  static size_t BasicRapporNumCategories(const MetricDefinition& metric_definition);
 
   // Returns the number of cohorts to use for the String RAPPOR encoding.
-  static size_t StringRapporNumCohorts(
-      const ReportDefinition& report_definition);
+  static size_t StringRapporNumCohorts(const ReportDefinition& report_definition);
 
   // Returns the number of bits to use for the String RAPPOR encoding.
-  static size_t StringRapporNumBloomBits(
-      const ReportDefinition& report_definition);
+  static size_t StringRapporNumBloomBits(const ReportDefinition& report_definition);
 };
 
 }  // namespace rappor

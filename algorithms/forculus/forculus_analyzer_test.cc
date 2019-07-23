@@ -40,20 +40,18 @@ ForculusObservation Encrypt(uint32_t day_index, const EpochType& epoch_type,
   config.set_epoch_type(epoch_type);
 
   // Construct an Encrypter.
-  ForculusEncrypter encrypter(config, 0, 0, 0, "",
-                              ClientSecret::GenerateNewSecret());
+  ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
-  EXPECT_EQ(ForculusEncrypter::kOK,
-            encrypter.Encrypt(plaintext, day_index, &obs));
+  EXPECT_EQ(ForculusEncrypter::kOK, encrypter.Encrypt(plaintext, day_index, &obs));
   return obs;
 }
 
 // Creates and adds observations to |forculus_analyzer| based on the parameters.
 void AddObservations(ForculusAnalyzer* forculus_analyzer, uint32_t day_index,
-                     const EpochType& epoch_type, const std::string& plaintext,
-                     int num_clients, int num_copies_per_client) {
+                     const EpochType& epoch_type, const std::string& plaintext, int num_clients,
+                     int num_copies_per_client) {
   // Simulate num_clients different clients.
   for (int i = 0; i < num_clients; i++) {
     auto observation = Encrypt(day_index, epoch_type, plaintext);
@@ -108,9 +106,8 @@ TEST(ForculusAnalyzerTest, NoErrors) {
 
   EXPECT_EQ(0u, forculus_analyzer.observation_errors());
   static const size_t kExpectedNumObservations =
-      kThreshold * 5 + kThreshold * 5 + (kThreshold + 1) * 6 +
-      (kThreshold - 1) * 6 + (kThreshold - 1) * 7 + (kThreshold - 1) * 7 +
-      (kThreshold + 2) * 8;
+      kThreshold * 5 + kThreshold * 5 + (kThreshold + 1) * 6 + (kThreshold - 1) * 6 +
+      (kThreshold - 1) * 7 + (kThreshold - 1) * 7 + (kThreshold + 2) * 8;
   EXPECT_EQ(kExpectedNumObservations, forculus_analyzer.num_observations());
   auto results = forculus_analyzer.TakeResults();
 
@@ -137,8 +134,7 @@ TEST(ForculusAnalyzerTest, NoErrors) {
 TEST(ForculusAnalyzerTest, TestEpochTypes) {
   ForculusConfig forculus_config;
   forculus_config.set_threshold(kThreshold);
-  std::unique_ptr<ForculusAnalyzer> forculus_analyzer(
-      new ForculusAnalyzer(forculus_config));
+  std::unique_ptr<ForculusAnalyzer> forculus_analyzer(new ForculusAnalyzer(forculus_config));
 
   const std::string plaintext("Some text");
 
@@ -146,8 +142,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Add 10 observations on day 0,
   // NOLINTNEXTLINE
-  AddObservations(forculus_analyzer.get(), 0, DAY, plaintext, kThreshold - 10,
-                  1);
+  AddObservations(forculus_analyzer.get(), 0, DAY, plaintext, kThreshold - 10, 1);
   // and 10 observations on day 1.
   // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 1, DAY, plaintext, 10, 1);
@@ -163,8 +158,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Add 10 observations on day 0,
   // NOLINTNEXTLINE
-  AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10,
-                  1);
+  AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10, 1);
   // and 10 observations on day 1.
   // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 1, WEEK, plaintext, 10, 1);
@@ -179,8 +173,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Add 10 observations on day 0,
   // NOLINTNEXTLINE
-  AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10,
-                  1);
+  AddObservations(forculus_analyzer.get(), 0, WEEK, plaintext, kThreshold - 10, 1);
   // and 10 observations on day 7.
   // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 7, WEEK, plaintext, 10, 1);
@@ -196,8 +189,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Add 10 observations on day 0,
   // NOLINTNEXTLINE
-  AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10,
-                  1);
+  AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10, 1);
   // and 10 observations on day 7.
   // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 7, MONTH, plaintext, 10, 1);
@@ -213,8 +205,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 
   // Add 10 observations on day 0,
   // NOLINTNEXTLINE
-  AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10,
-                  1);
+  AddObservations(forculus_analyzer.get(), 0, MONTH, plaintext, kThreshold - 10, 1);
   // and 10 observations on day 31.
   // NOLINTNEXTLINE
   AddObservations(forculus_analyzer.get(), 31, MONTH, plaintext, 10, 1);

@@ -16,8 +16,7 @@
 
 namespace cobalt::forculus {
 
-FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
-                      const FieldElement& x) {
+FieldElement Evaluate(const std::vector<FieldElement>& coefficients, const FieldElement& x) {
   size_t num_coefficients = coefficients.size();
   FieldElement y = coefficients[num_coefficients - 1];
   for (int i = static_cast<int>(num_coefficients) - 2; i >= 0; i--) {
@@ -27,9 +26,8 @@ FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
   return y;
 }
 
-FieldElement InterpolateConstant(
-    const std::vector<const FieldElement*>& x_values,
-    const std::vector<const FieldElement*>& y_values) {
+FieldElement InterpolateConstant(const std::vector<const FieldElement*>& x_values,
+                                 const std::vector<const FieldElement*>& y_values) {
   size_t num_values = x_values.size();
   // Our goal is to find c0, the constant term of the polynomial that passes
   // through all of the points we were given. We use Lagrange Interpolation:

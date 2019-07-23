@@ -197,17 +197,14 @@ LassoRunner::LassoRunner(const InstanceSet* matrix) : matrix_(matrix) {
   use_linear_path_ = kUseLinearPath;
 }
 
-void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
-                                     const double max_solution_1_norm,
-                                     const LabelSet& as_label_set,
-                                     Weights* est_candidate_weights,
+void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs, const double max_solution_1_norm,
+                                     const LabelSet& as_label_set, Weights* est_candidate_weights,
                                      std::vector<int>* second_step_cols) {
   // Construct the lossmin minimizer objects.
   // TODO(bazyli): remove this copy
   InstanceSet candidate_matrix = *matrix_;
   GradientEvaluator grad_eval(candidate_matrix, as_label_set);
-  ParallelBoostingWithMomentum minimizer(
-      0.0, 0.0, grad_eval);  // penalties will be set later.
+  ParallelBoostingWithMomentum minimizer(0.0, 0.0, grad_eval);  // penalties will be set later.
 
   // Initialize the solution vector to zero vector for the lasso path and
   // compute the initial gradient (this will be used to get initial l1 penalty
@@ -217,22 +214,19 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
   grad_eval.SparseGradient(*est_candidate_weights, &initial_gradient);
 
   // Set the minimizer absolute convergence constants.
-  const double initial_mean_gradient_norm =
-      initial_gradient.norm() / num_candidates;
-  const double kConvergenceThreshold =
+  const double initial_mean_gradient_norm = initial_gradient.norm() / num_candidates;
+  const double kConvergenceThreshold = std::max(
+      min_convergence_threshold_, kRelativeConvergenceThreshold * initial_mean_gradient_norm);
+  const double kInLassoPathConvergenceThreshold =
       std::max(min_convergence_threshold_,
-               kRelativeConvergenceThreshold * initial_mean_gradient_norm);
-  const double kInLassoPathConvergenceThreshold = std::max(
-      min_convergence_threshold_,
-      kRelativeInLassoPathConvergenceThreshold * initial_mean_gradient_norm);
+               kRelativeInLassoPathConvergenceThreshold * initial_mean_gradient_norm);
 
   // Set the constants for lasso path computations.
   const double l1max = initial_gradient.array().abs().maxCoeff();
   const double l1min = l1_max_to_l1_min_ratio_ * l1max;
   const double l2 = l2_to_l1_ratio_ * l1min;
   const double l1delta = (l1max - l1min) / num_lasso_steps_;
-  const double l1mult =
-      std::exp(std::log(l1_max_to_l1_min_ratio_) / num_lasso_steps_);
+  const double l1mult = std::exp(std::log(l1_max_to_l1_min_ratio_) / num_lasso_steps_);
 
   // Set up the minimizer.
   minimizer.set_zero_threshold(zero_threshold_);
@@ -242,8 +236,7 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
   minimizer.compute_and_set_learning_rates();  // learning rates must be
                                                // re-computed when l2 penalty
                                                // changes.
-  VLOG(4) << "Lasso in-path convergence threshold =="
-          << kInLassoPathConvergenceThreshold;
+  VLOG(4) << "Lasso in-path convergence threshold ==" << kInLassoPathConvergenceThreshold;
   VLOG(4) << "Lasso final convergence threshold ==" << kConvergenceThreshold;
 
   // Initialize variables to track the lasso path computations.
@@ -259,15 +252,14 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
   for (; i < num_lasso_steps_ && total_epochs_run < kMaxEpochs; i++) {
     VLOG(4) << "Minimizing " << i << "-th Lasso subproblem";
 
-    if (how_many_nonzero_coeffs >= max_nonzero_coeffs ||
-        i == num_lasso_steps_ - 1 || solution_1_norm >= max_solution_1_norm) {
+    if (how_many_nonzero_coeffs >= max_nonzero_coeffs || i == num_lasso_steps_ - 1 ||
+        solution_1_norm >= max_solution_1_norm) {
       // Enter the final lasso subproblem.
       minimizer.set_convergence_threshold(kConvergenceThreshold);
       if (i < num_lasso_steps_ - 1) {
         // If stopping criteria are met before reaching maximum number of steps,
         // use l1 from previous run.
-        l1_this_step =
-            use_linear_path_ ? l1_this_step + l1delta : l1_this_step / l1mult;
+        l1_this_step = use_linear_path_ ? l1_this_step + l1delta : l1_this_step / l1mult;
         i = num_lasso_steps_ - 1;
       }
       VLOG(4) << "Entered last Run";
@@ -284,22 +276,20 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
 
     VLOG(4) << "The l1 penalty used == " << l1_this_step;
 
-    minimizer.Run(kMaxEpochs, kLossEpochs, kConvergenceMeasures,
-                  est_candidate_weights, &loss_history);
+    minimizer.Run(kMaxEpochs, kLossEpochs, kConvergenceMeasures, est_candidate_weights,
+                  &loss_history);
 
     // Compute the 1-norm of the current solution and the number of nonzero
     // coefficients.
     solution_1_norm = est_candidate_weights->lpNorm<1>();
-    how_many_nonzero_coeffs =
-        (est_candidate_weights->array() > zero_threshold_).count();
+    how_many_nonzero_coeffs = (est_candidate_weights->array() > zero_threshold_).count();
 
     VLOG(4) << "Ran " << minimizer.num_epochs_run() << " epochs in this step.";
     VLOG(4) << "Num of nonzero coefficients found: " << how_many_nonzero_coeffs;
     VLOG(4) << "Solution 1-norm == " << solution_1_norm;
     total_epochs_run += minimizer.num_epochs_run();
 
-    l1_this_step =
-        use_linear_path_ ? l1_this_step - l1delta : l1_this_step * l1mult;
+    l1_this_step = use_linear_path_ ? l1_this_step - l1delta : l1_this_step * l1mult;
   }
 
   VLOG(4) << "Ran " << total_epochs_run << " epochs in total.";
@@ -324,11 +314,12 @@ void LassoRunner::RunFirstRapporStep(const int max_nonzero_coeffs,
   }
 }
 
-void LassoRunner::GetExactValuesAndStdErrs(
-    const double l1, const Weights& est_candidate_weights,
-    const std::vector<double>& est_standard_errs, const InstanceSet& instances,
-    const LabelSet& as_label_set, Weights* exact_est_candidate_weights,
-    Weights* est_candidate_errors) {
+void LassoRunner::GetExactValuesAndStdErrs(const double l1, const Weights& est_candidate_weights,
+                                           const std::vector<double>& est_standard_errs,
+                                           const InstanceSet& instances,
+                                           const LabelSet& as_label_set,
+                                           Weights* exact_est_candidate_weights,
+                                           Weights* est_candidate_errors) {
   // Note(bazyli): If convergence thresholds are too small relative to
   // kMaxEpochsSingleRun then some of the runs of the algorithm may not
   // converge. If less than 5 converge then the standard errors are set to 0. If
@@ -340,16 +331,14 @@ void LassoRunner::GetExactValuesAndStdErrs(
   const int num_candidates = est_candidate_weights.size();
   const int num_labels = as_label_set.size();
   const int min_num_converged_for_standard_errors = 5;
-  int num_converged =
-      0;  // We record the number of runs in which the minimizer
-          // actually converged (although if everything is fine,
-          // i.e. all constants have appropriate values for the given case, this
-          // should be equal to num_runs at completion).
+  int num_converged = 0;  // We record the number of runs in which the minimizer
+                          // actually converged (although if everything is fine,
+                          // i.e. all constants have appropriate values for the given case, this
+                          // should be equal to num_runs at completion).
 
   // We will need the solutions from all runs to compute the mean solution and
   // standard errors.
-  std::vector<Weights>
-      est_weights_runs;  // vector for storing solutions from different runs
+  std::vector<Weights> est_weights_runs;  // vector for storing solutions from different runs
   Weights mean_est_weights = Weights::Zero(num_candidates);
 
   // In each run create a new_label_set by adding Gaussian noise to the original
@@ -358,8 +347,7 @@ void LassoRunner::GetExactValuesAndStdErrs(
     LabelSet new_label_set = as_label_set;
 
     for (int j = 0; j < num_labels; j++) {
-      std::normal_distribution<double> nrm_distr(
-          0, static_cast<double>(est_standard_errs[j]));
+      std::normal_distribution<double> nrm_distr(0, static_cast<double>(est_standard_errs[j]));
       double noise = nrm_distr(random_dev_);
       new_label_set(j) += noise;
     }
@@ -375,11 +363,10 @@ void LassoRunner::GetExactValuesAndStdErrs(
     ParallelBoostingWithMomentum minimizer(l1, l2, grad_eval);
     Weights initial_gradient = Weights(num_candidates);
     grad_eval.SparseGradient(new_candidate_weights, &initial_gradient);
-    double initial_mean_gradient_norm =
-        initial_gradient.norm() / num_candidates;
-    double convergence_threshold = std::max(
-        min_convergence_threshold_,
-        kRelativeConvergenceThreshold2Step * initial_mean_gradient_norm);
+    double initial_mean_gradient_norm = initial_gradient.norm() / num_candidates;
+    double convergence_threshold =
+        std::max(min_convergence_threshold_,
+                 kRelativeConvergenceThreshold2Step * initial_mean_gradient_norm);
 
     // Set up and run the minimizer.
     minimizer.set_converged(false);
@@ -387,12 +374,11 @@ void LassoRunner::GetExactValuesAndStdErrs(
     minimizer.set_phi_center(new_candidate_weights);
     minimizer.set_convergence_threshold(convergence_threshold);
     minimizer.set_zero_threshold(zero_threshold_);
-    minimizer.set_simple_convergence_threshold(
-        kSimpleConvergenceThreshold2Step);
+    minimizer.set_simple_convergence_threshold(kSimpleConvergenceThreshold2Step);
     minimizer.set_alpha(alpha_);
     minimizer.set_beta(1 - alpha_);
-    minimizer.Run(kMaxEpochsSingleRun, kLossEpochs, kConvergenceMeasures,
-                  &new_candidate_weights, &loss_history_not_used);
+    minimizer.Run(kMaxEpochsSingleRun, kLossEpochs, kConvergenceMeasures, &new_candidate_weights,
+                  &loss_history_not_used);
 
     if (minimizer.converged()) {
       // Update the mean and store the current solution.

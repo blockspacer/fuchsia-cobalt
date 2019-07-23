@@ -36,8 +36,7 @@ template <class RT>
 // If |error_collector| is not null then it will be notified of any parsing
 // errors or warnings.
 static std::pair<std::unique_ptr<Registry<RT>>, Status> FromFile(
-    const std::string& file_path,
-    google::protobuf::io::ErrorCollector* error_collector) {
+    const std::string& file_path, google::protobuf::io::ErrorCollector* error_collector) {
   // Make an empty registry to return;
   std::unique_ptr<Registry<RT>> registry(new Registry<RT>());
 
@@ -74,8 +73,7 @@ template <class RT>
 // If |error_collector| is not null then it will be notified of any parsing
 // errors or warnings.
 static std::pair<std::unique_ptr<Registry<RT>>, Status> FromString(
-    const std::string& contents,
-    google::protobuf::io::ErrorCollector* error_collector) {
+    const std::string& contents, google::protobuf::io::ErrorCollector* error_collector) {
   // Make an empty registry to return;
   std::unique_ptr<Registry<RT>> registry(new Registry<RT>());
 

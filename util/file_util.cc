@@ -44,8 +44,7 @@ statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
   if (!stream.good()) {
     return Status(NOT_FOUND, "Error reading file at " + file_path);
   }
-  file_contents.assign((std::istreambuf_iterator<char>(stream)),
-                       std::istreambuf_iterator<char>());
+  file_contents.assign((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
   if (!stream.good()) {
     return Status(NOT_FOUND, "Error reading file at " + file_path);
   }
@@ -53,8 +52,7 @@ statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
   return file_contents;
 }
 
-statusor::StatusOr<std::string> ReadNonEmptyTextFile(
-    const std::string& file_path) {
+statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path) {
   auto read_file_result = ReadTextFile(file_path);
   if (!read_file_result.ok()) {
     return read_file_result;

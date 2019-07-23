@@ -33,16 +33,14 @@ static const uint32_t kThreshold = 20;
 
 namespace {
 
-ForculusObservation Encrypt(const std::string& plaintext, double* wall_timer,
-                            double* cpu_timer) {
+ForculusObservation Encrypt(const std::string& plaintext, double* wall_timer, double* cpu_timer) {
   // Make a config with the given threshold
   ForculusConfig config;
   config.set_threshold(kThreshold);
   config.set_epoch_type(DAY);
 
   // Construct an Encrypter.
-  ForculusEncrypter encrypter(config, 0, 0, 0, "",
-                              ClientSecret::GenerateNewSecret());
+  ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
@@ -56,22 +54,18 @@ ForculusObservation Encrypt(const std::string& plaintext, double* wall_timer,
   return obs;
 }
 
-void AddObservations(ForculusAnalyzer* forculus_analyzer,
-                     const std::string& plaintext, int num_clients,
-                     double* encryption_wall_time, double* encryption_cpu_time,
-                     double* decryption_wall_time,
-                     double* decryption_cpu_time) {
+void AddObservations(ForculusAnalyzer* forculus_analyzer, const std::string& plaintext,
+                     int num_clients, double* encryption_wall_time, double* encryption_cpu_time,
+                     double* decryption_wall_time, double* decryption_cpu_time) {
   // Simulate num_clients different clients.
   for (int i = 0; i < num_clients; i++) {
-    auto observation =
-        Encrypt(plaintext, encryption_wall_time, encryption_cpu_time);
+    auto observation = Encrypt(plaintext, encryption_wall_time, encryption_cpu_time);
     auto c_start = std::clock();
     auto t_start = std::chrono::high_resolution_clock::now();
     EXPECT_TRUE(forculus_analyzer->AddObservation(0, observation));
     std::clock_t c_end = std::clock();
     auto t_end = std::chrono::high_resolution_clock::now();
-    *decryption_wall_time +=
-        std::chrono::duration<double>(t_end - t_start).count();
+    *decryption_wall_time += std::chrono::duration<double>(t_end - t_start).count();
     *decryption_cpu_time += static_cast<double>(c_end - c_start);
   }
 }
@@ -96,8 +90,7 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
   ForculusConfig forculus_config;
   forculus_config.set_threshold(kThreshold);
   ForculusAnalyzer forculus_analyzer(forculus_config);
-  std::ifstream stream("algorithms/forculus/word_counts.txt",
-                       std::ifstream::in);
+  std::ifstream stream("algorithms/forculus/word_counts.txt", std::ifstream::in);
   std::string line;
   double encryption_wall_time = 0;
   double encryption_cpu_time = 0;
@@ -111,9 +104,8 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
     line_stream >> word;
     int count;
     line_stream >> count;
-    AddObservations(&forculus_analyzer, word, count, &encryption_wall_time,
-                    &encryption_cpu_time, &decryption_wall_time,
-                    &decryption_cpu_time);
+    AddObservations(&forculus_analyzer, word, count, &encryption_wall_time, &encryption_cpu_time,
+                    &decryption_wall_time, &decryption_cpu_time);
   }
 
   // The number of rows in the file word_counts.txt.
@@ -133,17 +125,14 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
 
   std::cout << "\n=================================================\n";
   std::cout << "Rows read: " << num_rows << std::endl;
-  std::cout << "Plaintexts encrypted: " << kExpectedNumObservations
-            << std::endl;
+  std::cout << "Plaintexts encrypted: " << kExpectedNumObservations << std::endl;
   std::cout << "Ciphertexts decrypted: " << results.size() << std::endl;
-  std::cout << "Total encryption wall time: " << encryption_wall_time
+  std::cout << "Total encryption wall time: " << encryption_wall_time << " seconds.\n";
+  std::cout << "Total encryption cpu time: " << encryption_cpu_time / CLOCKS_PER_SEC
             << " seconds.\n";
-  std::cout << "Total encryption cpu time: "
-            << encryption_cpu_time / CLOCKS_PER_SEC << " seconds.\n";
-  std::cout << "Total decryption wall time: " << decryption_wall_time
+  std::cout << "Total decryption wall time: " << decryption_wall_time << " seconds.\n";
+  std::cout << "Total decryption cpu time: " << decryption_cpu_time / CLOCKS_PER_SEC
             << " seconds.\n";
-  std::cout << "Total decryption cpu time: "
-            << decryption_cpu_time / CLOCKS_PER_SEC << " seconds.\n";
   std::cout << "\n=================================================\n";
 }
 

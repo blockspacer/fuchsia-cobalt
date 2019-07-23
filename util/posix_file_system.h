@@ -17,8 +17,7 @@ namespace util {
 class PosixFileSystem : public FileSystem {
  public:
   bool MakeDirectory(const std::string &directory) override;
-  statusor::StatusOr<std::vector<std::string>> ListFiles(
-      const std::string &directory) override;
+  statusor::StatusOr<std::vector<std::string>> ListFiles(const std::string &directory) override;
   bool Delete(const std::string &file) override;
   statusor::StatusOr<size_t> FileSize(const std::string &file) override;
   bool FileExists(const std::string &file) override;

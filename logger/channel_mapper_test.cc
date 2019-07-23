@@ -11,8 +11,7 @@
 namespace cobalt::logger {
 
 TEST(ChannelMapper, TestBasicMapper) {
-  ChannelMapper mapper(
-      {"debug-channel-1", "debug-channel-2", "debug-channel-3"});
+  ChannelMapper mapper({"debug-channel-1", "debug-channel-2", "debug-channel-3"});
 
   // Only debug channels should map to DEBUG.
   EXPECT_EQ(mapper.ToReleaseStage("debug-channel-1"), ReleaseStage::DEBUG);

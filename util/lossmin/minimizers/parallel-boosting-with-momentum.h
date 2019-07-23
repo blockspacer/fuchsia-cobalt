@@ -21,8 +21,7 @@ class GradientEvaluator;
 
 class ParallelBoostingWithMomentum : public LossMinimizer {
  public:
-  ParallelBoostingWithMomentum(double l1, double l2,
-                               const GradientEvaluator &gradient_evaluator)
+  ParallelBoostingWithMomentum(double l1, double l2, const GradientEvaluator &gradient_evaluator)
       : LossMinimizer(l1, l2, gradient_evaluator) {
     Setup();
   }
@@ -45,8 +44,7 @@ class ParallelBoostingWithMomentum : public LossMinimizer {
   // root is divided by weights.size() is compared to convergence_thresold().
   // If convergence is determined, sets the appropriate flags so that
   // converged() == true and reached_solution() == true.
-  void ConvergenceCheck(const Weights &weights,
-                        const Weights &gradient) override;
+  void ConvergenceCheck(const Weights &weights, const Weights &gradient) override;
 
   // Returns the total loss for given parameters |weights|, including l1 and l2
   // regularization. Uses sparse matrix multiply from Eigen.
@@ -79,8 +77,7 @@ class ParallelBoostingWithMomentum : public LossMinimizer {
   //     weights[j] = weights[j] - grad_y[j] / learning_rates[j]
   //     weights[j] =
   //         sign(weights[j]) * max(0, weights[j], l1 / learning_rates[j])
-  void EpochUpdate(Weights *weights, int epoch,
-                   bool check_convergence) override;
+  void EpochUpdate(Weights *weights, int epoch, bool check_convergence) override;
 
   // Per-coordinate learning rates.
   VectorXd learning_rates_;

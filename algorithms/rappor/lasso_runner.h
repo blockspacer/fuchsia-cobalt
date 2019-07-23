@@ -128,18 +128,15 @@ class LassoRunner {
   // The problem is repeatedly solved using the parallel boosting with momentum
   // algorithm with |est_candidate_weights| as the initial guess.
   // The variables exact_est_candidate_weights and est_candidate_errors
-  void GetExactValuesAndStdErrs(
-      double l1, const cobalt_lossmin::Weights& est_candidate_weights,
-      const std::vector<double>& est_standard_errs,
-      const cobalt_lossmin::InstanceSet& instances,
-      const cobalt_lossmin::LabelSet& as_label_set,
-      cobalt_lossmin::Weights* exact_est_candidate_weights,
-      cobalt_lossmin::Weights* est_candidate_errors);
+  void GetExactValuesAndStdErrs(double l1, const cobalt_lossmin::Weights& est_candidate_weights,
+                                const std::vector<double>& est_standard_errs,
+                                const cobalt_lossmin::InstanceSet& instances,
+                                const cobalt_lossmin::LabelSet& as_label_set,
+                                cobalt_lossmin::Weights* exact_est_candidate_weights,
+                                cobalt_lossmin::Weights* est_candidate_errors);
 
   // Returns reference to minimizer_data_.
-  [[nodiscard]] const MinimizerData& minimizer_data() const {
-    return minimizer_data_;
-  }
+  [[nodiscard]] const MinimizerData& minimizer_data() const { return minimizer_data_; }
 
  private:
   friend class LassoRunnerTest;

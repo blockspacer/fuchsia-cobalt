@@ -43,14 +43,10 @@ TEST(PackEventCodes, IgnoresExtraElements) {
 }
 
 TEST(PackEventCodes, DoesNotOverflow) {
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){32769}),
-            0x1000000000000001u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 32769}),
-            0x1000000000008000u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 32769}),
-            0x1000000040000000u);
-  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 0, 32769}),
-            0x1000200000000000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){32769}), 0x1000000000000001u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 32769}), 0x1000000000008000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 32769}), 0x1000000040000000u);
+  ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){0, 0, 0, 32769}), 0x1000200000000000u);
 }
 
 TEST(PackEventCodes, UpgradesToV1) {
@@ -68,35 +64,31 @@ TEST(UnpackEventCodes, DecodesSingleElement) {
 }
 
 TEST(UnpackEventCodes, UnpacksFiveElements) {
-  ASSERT_EQ(
-      UnpackEventCodes(0b10101101011111010110110111101111100111001111100000u),
-      ((std::vector<uint32_t>){
-          0b1111100000,
-          0b1110011100,
-          0b1101111011,
-          0b1111010110,
-          0b1010110101,
-      }));
+  ASSERT_EQ(UnpackEventCodes(0b10101101011111010110110111101111100111001111100000u),
+            ((std::vector<uint32_t>){
+                0b1111100000,
+                0b1110011100,
+                0b1101111011,
+                0b1111010110,
+                0b1010110101,
+            }));
 }
 
 TEST(UnpackEventCodes, UnpacksFourV1Elements) {
-  ASSERT_EQ(
-      UnpackEventCodes(
-          0b1101101010010101101011111010110110111101111100111001111100000u),
-      ((std::vector<uint32_t>){
-          0b111001111100000u,
-          0b110111101111100u,
-          0b101011111010110u,
-          0b101101010010101u,
-      }));
+  ASSERT_EQ(UnpackEventCodes(0b1101101010010101101011111010110110111101111100111001111100000u),
+            ((std::vector<uint32_t>){
+                0b111001111100000u,
+                0b110111101111100u,
+                0b101011111010110u,
+                0b101101010010101u,
+            }));
 }
 
 TEST(UnpackEventCodes, ReturnsZeroesOnUnknownVersion) {
   ASSERT_EQ(
       // This packed_event_codes has a version of 2, which we don't know how to
       // decode.
-      UnpackEventCodes(0x200ABCDEF1234567),
-      ((std::vector<uint32_t>){0, 0, 0, 0, 0}));
+      UnpackEventCodes(0x200ABCDEF1234567), ((std::vector<uint32_t>){0, 0, 0, 0, 0}));
 }
 
 TEST(BackAndForth, PackUnpackIsStable) {

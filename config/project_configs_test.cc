@@ -25,9 +25,7 @@ std::string NameForId(const std::string& prefix, uint32_t id) {
   return stream.str();
 }
 
-std::string CustomerNameForId(uint32_t id) {
-  return NameForId("Customer-", id);
-}
+std::string CustomerNameForId(uint32_t id) { return NameForId("Customer-", id); }
 std::string ProjectNameForId(uint32_t id) { return NameForId("Project-", id); }
 std::string ReportNameForId(uint32_t id) { return NameForId("Report-", id); }
 std::string MetricNameForId(uint32_t id) { return NameForId("Metric-", id); }
@@ -56,8 +54,7 @@ void SetupProject(uint32_t project_id, ProjectConfig* project) {
   }
 }
 
-void SetupCustomer(uint32_t customer_id, size_t num_projects,
-                   CustomerConfig* customer) {
+void SetupCustomer(uint32_t customer_id, size_t num_projects, CustomerConfig* customer) {
   customer->set_customer_id(customer_id);
   customer->set_customer_name(CustomerNameForId(customer_id));
   for (auto i = 1u; i <= num_projects; i++) {
@@ -66,12 +63,10 @@ void SetupCustomer(uint32_t customer_id, size_t num_projects,
 }
 
 std::unique_ptr<CobaltRegistry> NewTestRegistry(
-    size_t num_customers,
-    const std::function<size_t(uint32_t)>& num_projects_for_customer_fn) {
+    size_t num_customers, const std::function<size_t(uint32_t)>& num_projects_for_customer_fn) {
   auto cobalt_registry = std::make_unique<CobaltRegistry>();
   for (size_t i = 1u; i <= num_customers; i++) {
-    SetupCustomer(i, num_projects_for_customer_fn(i),
-                  cobalt_registry->add_customers());
+    SetupCustomer(i, num_projects_for_customer_fn(i), cobalt_registry->add_customers());
   }
   return cobalt_registry;
 }
@@ -82,12 +77,11 @@ std::unique_ptr<CobaltRegistry> NewTestRegistry() {
 
 // Constructs a ProjectConfigs that wraps a CobaltRegistry with the
 // specified number of customers and projects-per-customer.
-std::unique_ptr<ProjectConfigs> NewProjectConfigs(
-    size_t num_customers, size_t num_projects_per_customer) {
+std::unique_ptr<ProjectConfigs> NewProjectConfigs(size_t num_customers,
+                                                  size_t num_projects_per_customer) {
   return std::make_unique<ProjectConfigs>(NewTestRegistry(
-      num_customers, [num_projects_per_customer](uint32_t /*unused*/) {
-        return num_projects_per_customer;
-      }));
+      num_customers,
+      [num_projects_per_customer](uint32_t /*unused*/) { return num_projects_per_customer; }));
 }
 
 }  // namespace
@@ -95,8 +89,7 @@ std::unique_ptr<ProjectConfigs> NewProjectConfigs(
 class ProjectConfigsTest : public ::testing::Test {
  protected:
   // Checks that |*customer_config| is as expected.
-  bool CheckCustomer(uint32_t expected_customer_id,
-                     const CustomerConfig* customer_config) {
+  bool CheckCustomer(uint32_t expected_customer_id, const CustomerConfig* customer_config) {
     EXPECT_NE(nullptr, customer_config);
     if (customer_config == nullptr) {
       return false;
@@ -107,10 +100,8 @@ class ProjectConfigsTest : public ::testing::Test {
     if (expected_customer_id != customer_id) {
       return false;
     }
-    EXPECT_EQ(CustomerNameForId(expected_customer_id),
-              customer_config->customer_name());
-    if (CustomerNameForId(expected_customer_id) !=
-        customer_config->customer_name()) {
+    EXPECT_EQ(CustomerNameForId(expected_customer_id), customer_config->customer_name());
+    if (CustomerNameForId(expected_customer_id) != customer_config->customer_name()) {
       return false;
     }
     size_t expected_num_projects = NumProjectsForCustomer(customer_id);
@@ -120,8 +111,7 @@ class ProjectConfigsTest : public ::testing::Test {
   }
 
   // Checks that |*project_config| is as expected.
-  bool CheckProject(uint32_t expected_project_id,
-                    const ProjectConfig* project_config) {
+  bool CheckProject(uint32_t expected_project_id, const ProjectConfig* project_config) {
     EXPECT_NE(nullptr, project_config);
     if (project_config == nullptr) {
       return false;
@@ -131,10 +121,8 @@ class ProjectConfigsTest : public ::testing::Test {
     if (expected_project_id != project_config->project_id()) {
       return false;
     }
-    EXPECT_EQ(ProjectNameForId(expected_project_id),
-              project_config->project_name());
-    if (ProjectNameForId(expected_project_id) !=
-        project_config->project_name()) {
+    EXPECT_EQ(ProjectNameForId(expected_project_id), project_config->project_name());
+    if (ProjectNameForId(expected_project_id) != project_config->project_name()) {
       return false;
     }
     size_t num_metrics = project_config->metrics_size();
@@ -144,60 +132,53 @@ class ProjectConfigsTest : public ::testing::Test {
 
   // Checks that |project_configs| is as expected.
   bool CheckProjectConfigs(const ProjectConfigs& project_configs) {
-    for (uint32_t customer_id = 1; customer_id <= kNumCustomers;
-         customer_id++) {
+    for (uint32_t customer_id = 1; customer_id <= kNumCustomers; customer_id++) {
       std::string expected_customer_name = CustomerNameForId(customer_id);
       size_t expected_num_projects = NumProjectsForCustomer(customer_id);
 
       // Check getting the customer by name.
-      bool success = CheckCustomer(
-          customer_id,
-          project_configs.GetCustomerConfig(expected_customer_name));
+      bool success =
+          CheckCustomer(customer_id, project_configs.GetCustomerConfig(expected_customer_name));
       EXPECT_TRUE(success);
       if (!success) {
         return false;
       }
 
       // Check getting the customer by ID.
-      success = CheckCustomer(customer_id,
-                              project_configs.GetCustomerConfig(customer_id));
+      success = CheckCustomer(customer_id, project_configs.GetCustomerConfig(customer_id));
       EXPECT_TRUE(success);
       if (!success) {
         return false;
       }
 
-      for (uint32_t project_id = 1; project_id <= expected_num_projects;
-           project_id++) {
+      for (uint32_t project_id = 1; project_id <= expected_num_projects; project_id++) {
         std::string project_name = ProjectNameForId(project_id);
 
         // Check getting the project by name.
-        bool success =
-            CheckProject(project_id, project_configs.GetProjectConfig(
-                                         expected_customer_name, project_name));
+        bool success = CheckProject(
+            project_id, project_configs.GetProjectConfig(expected_customer_name, project_name));
         EXPECT_TRUE(success);
         if (!success) {
           return false;
         }
 
         // Check getting the project by ID.
-        success = CheckProject(project_id, project_configs.GetProjectConfig(
-                                               customer_id, project_id));
+        success =
+            CheckProject(project_id, project_configs.GetProjectConfig(customer_id, project_id));
         EXPECT_TRUE(success);
         if (!success) {
           return false;
         }
 
         // Check using an invalid project name
-        auto* project = project_configs.GetProjectConfig(expected_customer_name,
-                                                         "InvalidName");
+        auto* project = project_configs.GetProjectConfig(expected_customer_name, "InvalidName");
         EXPECT_EQ(nullptr, project);
         if (project != nullptr) {
           return false;
         }
 
         // Check using an invalid project_id.
-        project = project_configs.GetProjectConfig(
-            customer_id, expected_num_projects + project_id);
+        project = project_configs.GetProjectConfig(customer_id, expected_num_projects + project_id);
         EXPECT_EQ(nullptr, project);
         if (project != nullptr) {
           return false;
@@ -327,8 +308,7 @@ TEST_F(ProjectConfigsTest, CreateFromCobaltRegistryBase64) {
   cobalt_registry->SerializeToString(&bytes);
   std::string cobalt_registry_base64;
   crypto::Base64Encode(bytes, &cobalt_registry_base64);
-  auto project_configs =
-      ProjectConfigs::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
+  auto project_configs = ProjectConfigs::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   EXPECT_TRUE(CheckProjectConfigs(*project_configs));
 }
 
@@ -359,17 +339,13 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_EQ(1u, project_configs->single_project_id());
   EXPECT_EQ("Project-Name1", project_configs->single_project_name());
   // Test TakeSingleProjectConfg() in the case that there is a single project.
-  EXPECT_NE(
-      project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"),
-      nullptr);
+  EXPECT_NE(project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"), nullptr);
   auto project_config = project_configs->TakeSingleProjectConfig();
   EXPECT_TRUE(project_config != nullptr);
   EXPECT_EQ("Project-Name1", project_config->project_name());
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_TRUE(project_configs->is_empty());
-  EXPECT_EQ(
-      project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"),
-      nullptr);
+  EXPECT_EQ(project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"), nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with 2
   // projects is not empty and is not a single project.

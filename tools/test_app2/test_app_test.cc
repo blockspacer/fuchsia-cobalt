@@ -214,8 +214,7 @@ TestLoggerFactory::TestLoggerFactory(const ProjectContext* project_context)
       observation_store_(new FakeObservationStore),
       last_obs_generation_(0) {}
 
-std::unique_ptr<LoggerInterface> TestLoggerFactory::NewLogger(
-    uint32_t day_index) {
+std::unique_ptr<LoggerInterface> TestLoggerFactory::NewLogger(uint32_t day_index) {
   return nullptr;
 }
 
@@ -233,9 +232,8 @@ bool TestLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
   if (day_index > last_obs_generation_) {
     for (int i = 0; i < kNumAggregatedObservations; i++) {
       if (encoder::ObservationStore::kOk !=
-          observation_store_->AddEncryptedObservation(
-              std::make_unique<EncryptedMessage>(),
-              std::make_unique<ObservationMetadata>())) {
+          observation_store_->AddEncryptedObservation(std::make_unique<EncryptedMessage>(),
+                                                      std::make_unique<ObservationMetadata>())) {
         return false;
       }
     }
@@ -246,9 +244,7 @@ bool TestLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
 
 bool TestLoggerFactory::SendAccumulatedObservations() { return true; }
 
-const ProjectContext* TestLoggerFactory::project_context() {
-  return project_context_;
-}
+const ProjectContext* TestLoggerFactory::project_context() { return project_context_; }
 
 }  // namespace
 
@@ -261,11 +257,9 @@ class TestAppTest : public ::testing::Test {
     ProjectContextFactory project_context_factory(std::move(cobalt_registry));
     ASSERT_TRUE(project_context_factory.is_single_project());
     project_context_ = project_context_factory.TakeSingleProjectContext();
-    std::unique_ptr<LoggerFactory> logger_factory(
-        new TestLoggerFactory(project_context_.get()));
-    test_app_.reset(new TestApp(std::move(logger_factory),
-                                kErrorOccurredMetricName, TestApp::kInteractive,
-                                &output_stream_));
+    std::unique_ptr<LoggerFactory> logger_factory(new TestLoggerFactory(project_context_.get()));
+    test_app_.reset(new TestApp(std::move(logger_factory), kErrorOccurredMetricName,
+                                TestApp::kInteractive, &output_stream_));
   }
 
  protected:
@@ -356,8 +350,7 @@ TEST_F(TestAppTest, ParseNonNegativeInt) {
 
   // Input shouldn't contain non-numeric characters or floats.
   EXPECT_FALSE(test_app_->ParseNonNegativeInt("1.5asdf", true, &x));
-  EXPECT_TRUE(
-      OutputContains("Expected non-negative integer instead of 1.5asdf"));
+  EXPECT_TRUE(OutputContains("Expected non-negative integer instead of 1.5asdf"));
   ClearOutput();
   EXPECT_FALSE(test_app_->ParseNonNegativeInt("$10#%", true, &x));
   EXPECT_TRUE(OutputContains("Expected non-negative integer instead of $10#%"));
@@ -417,22 +410,18 @@ TEST_F(TestAppTest, ParseIndex) {
 
   // Input should only contain one element.
   EXPECT_FALSE(test_app_->ParseIndex("index=1 2", &x));
-  EXPECT_TRUE(
-      OutputContains("Expected small non-negative integer instead of 1 2"));
+  EXPECT_TRUE(OutputContains("Expected small non-negative integer instead of 1 2"));
   ClearOutput();
 
   // Input shouldn't contain non-numeric characters or floats.
   EXPECT_FALSE(test_app_->ParseIndex("index=1.5asdf", &x));
-  EXPECT_TRUE(
-      OutputContains("Expected small non-negative integer instead of 1.5asdf"));
+  EXPECT_TRUE(OutputContains("Expected small non-negative integer instead of 1.5asdf"));
   ClearOutput();
   EXPECT_FALSE(test_app_->ParseIndex("index=$10#%", &x));
-  EXPECT_TRUE(
-      OutputContains("Expected small non-negative integer instead of $10#%"));
+  EXPECT_TRUE(OutputContains("Expected small non-negative integer instead of $10#%"));
   ClearOutput();
   EXPECT_FALSE(test_app_->ParseIndex("index=10.0", &x));
-  EXPECT_TRUE(
-      OutputContains("Expected small non-negative integer instead of 10.0"));
+  EXPECT_TRUE(OutputContains("Expected small non-negative integer instead of 10.0"));
   ClearOutput();
 }
 
@@ -464,8 +453,7 @@ TEST_F(TestAppTest, ParseDay) {
   // Input shouldn't contain non-numerical characters other than prefixes
   // "day=", "day=today", "day=today+", or "day=today-"
   EXPECT_FALSE(test_app_->ParseDay("day=yesterday", &d));
-  EXPECT_TRUE(OutputContains(
-      "Expected small non-negative integer instead of yesterday."));
+  EXPECT_TRUE(OutputContains("Expected small non-negative integer instead of yesterday."));
   ClearOutput();
   EXPECT_FALSE(test_app_->ParseDay("day=today+two", &d));
   EXPECT_TRUE(OutputContains("Expected non-negative integer instead of two."));
@@ -474,8 +462,7 @@ TEST_F(TestAppTest, ParseDay) {
   // Disallow input of the form "day=today-N" with N greater than today's day
   // index.
   EXPECT_FALSE(test_app_->ParseDay("day=today-20000000000", &d));
-  EXPECT_TRUE(OutputContains(
-      "Negative offset cannot be larger than the current day index."));
+  EXPECT_TRUE(OutputContains("Negative offset cannot be larger than the current day index."));
   ClearOutput();
 }
 
@@ -650,8 +637,7 @@ TEST_F(TestAppTest, ProcessCommandLineEncodeBad) {
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 0"));
-  EXPECT_TRUE(
-      OutputContains("Malformed log command. <num> must be positive: 0"));
+  EXPECT_TRUE(OutputContains("Malformed log command. <num> must be positive: 0"));
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 3.14 bar"));
@@ -659,9 +645,9 @@ TEST_F(TestAppTest, ProcessCommandLineEncodeBad) {
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100"));
-  EXPECT_TRUE(OutputContains(
-      "Malformed log command. Expected log method to be specified "
-      "after <num>."));
+  EXPECT_TRUE(
+      OutputContains("Malformed log command. Expected log method to be specified "
+                     "after <num>."));
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 foo"));
@@ -675,8 +661,7 @@ TEST_F(TestAppTest, ProcessCommandLineEncodeBad) {
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 event foo bar baz"));
-  EXPECT_TRUE(
-      OutputContains("Malformed log event command: too many arguments."));
+  EXPECT_TRUE(OutputContains("Malformed log event command: too many arguments."));
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 event_count"));
@@ -685,10 +670,8 @@ TEST_F(TestAppTest, ProcessCommandLineEncodeBad) {
                      "required argument."));
 
   ClearOutput();
-  EXPECT_TRUE(test_app_->ProcessCommandLine(
-      "log 100 event_count foo bar baz two three four"));
-  EXPECT_TRUE(
-      OutputContains("Malformed log event_count command: too many arguments."));
+  EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 event_count foo bar baz two three four"));
+  EXPECT_TRUE(OutputContains("Malformed log event_count command: too many arguments."));
 
   ClearOutput();
   EXPECT_TRUE(test_app_->ProcessCommandLine("log 100 event foo"));
@@ -759,8 +742,7 @@ TEST_F(TestAppTest, ProcessCommandLineGenerate) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("generate day=150000"));
   EXPECT_TRUE(OutputContains("Generated"));
-  EXPECT_TRUE(
-      OutputContains("locally aggregated observations for day index 150000"));
+  EXPECT_TRUE(OutputContains("locally aggregated observations for day index 150000"));
   ClearOutput();
 }
 
@@ -768,8 +750,7 @@ TEST_F(TestAppTest, ProcessCommandLineGenerate) {
 TEST_F(TestAppTest, ProcessCommandLineGenerateBad) {
   // generate takes at most 1 argument.
   EXPECT_TRUE(test_app_->ProcessCommandLine("generate foo bar"));
-  EXPECT_TRUE(
-      OutputContains("Malformed generate command: too many arguments."));
+  EXPECT_TRUE(OutputContains("Malformed generate command: too many arguments."));
   ClearOutput();
 }
 
@@ -800,13 +781,11 @@ TEST_F(TestAppTest, GenerateAndReset) {
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("generate day=15000"));
-  EXPECT_TRUE(OutputContains(
-      "Generated 0 locally aggregated observations for day index 15000"));
+  EXPECT_TRUE(OutputContains("Generated 0 locally aggregated observations for day index 15000"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("generate day=14999"));
-  EXPECT_TRUE(OutputContains(
-      "Generated 0 locally aggregated observations for day index 14999"));
+  EXPECT_TRUE(OutputContains("Generated 0 locally aggregated observations for day index 14999"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("reset-aggregation"));

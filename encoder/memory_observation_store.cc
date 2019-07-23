@@ -17,27 +17,22 @@ constexpr float kSendThresholdPercent = 0.6;
 
 }
 
-MemoryObservationStore::MemoryObservationStore(
-    size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
-    size_t max_bytes_total, logger::LoggerInterface* internal_logger)
-    : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope,
-                       max_bytes_total),
-      envelope_send_threshold_size_(
-          size_t(kSendThresholdPercent * max_bytes_per_envelope_)),
-      current_envelope_(
-          new EnvelopeMaker(max_bytes_per_observation, max_bytes_per_envelope)),
+MemoryObservationStore::MemoryObservationStore(size_t max_bytes_per_observation,
+                                               size_t max_bytes_per_envelope,
+                                               size_t max_bytes_total,
+                                               logger::LoggerInterface* internal_logger)
+    : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope, max_bytes_total),
+      envelope_send_threshold_size_(size_t(kSendThresholdPercent * max_bytes_per_envelope_)),
+      current_envelope_(new EnvelopeMaker(max_bytes_per_observation, max_bytes_per_envelope)),
       finalized_envelopes_size_(0),
-      internal_metrics_(
-          logger::InternalMetrics::NewWithLogger(internal_logger)) {}
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)) {}
 
 ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
-    std::unique_ptr<EncryptedMessage> message,
-    std::unique_ptr<ObservationMetadata> metadata) {
+    std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata) {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
 
-  internal_metrics_->BytesStored(
-      logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
-      SizeLocked(), metadata->customer_id(), metadata->project_id());
+  internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
+                                 SizeLocked(), metadata->customer_id(), metadata->project_id());
 
   if (SizeLocked() > max_bytes_total_) {
     VLOG(4) << "MemoryObservationStore::AddEncryptedObservation(): Rejecting "
@@ -60,20 +55,17 @@ ObservationStore::StoreStatus MemoryObservationStore::AddEncryptedObservation(
   uint32_t project_id = metadata->project_id();
   auto report_id = metadata->report_id();
 
-  auto status = current_envelope_->AddEncryptedObservation(std::move(message),
-                                                           std::move(metadata));
+  auto status = current_envelope_->AddEncryptedObservation(std::move(message), std::move(metadata));
   if (status == kOk) {
     num_obs_per_report_[report_id]++;
-    internal_metrics_->BytesStored(
-        logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded,
-        SizeLocked(), customer_id, project_id);
+    internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded,
+                                   SizeLocked(), customer_id, project_id);
   }
   return status;
 }
 
 std::unique_ptr<EnvelopeMaker> MemoryObservationStore::NewEnvelopeMaker() {
-  return std::make_unique<EnvelopeMaker>(max_bytes_per_observation_,
-                                         max_bytes_per_envelope_);
+  return std::make_unique<EnvelopeMaker>(max_bytes_per_observation_, max_bytes_per_envelope_);
 }
 
 std::unique_ptr<ObservationStore::EnvelopeHolder>
@@ -88,8 +80,7 @@ MemoryObservationStore::TakeOldestEnvelopeHolderLocked() {
   return retval;
 }
 
-void MemoryObservationStore::AddEnvelopeToSend(
-    std::unique_ptr<EnvelopeHolder> holder, bool back) {
+void MemoryObservationStore::AddEnvelopeToSend(std::unique_ptr<EnvelopeHolder> holder, bool back) {
   finalized_envelopes_size_ += holder->Size();
   if (back) {
     finalized_envelopes_.push_back(std::move(holder));
@@ -98,16 +89,14 @@ void MemoryObservationStore::AddEnvelopeToSend(
   }
 }
 
-std::unique_ptr<ObservationStore::EnvelopeHolder>
-MemoryObservationStore::TakeNextEnvelopeHolder() {
+std::unique_ptr<ObservationStore::EnvelopeHolder> MemoryObservationStore::TakeNextEnvelopeHolder() {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
 
   auto retval = NewEnvelopeMaker();
   size_t retval_size = 0;
   while (!finalized_envelopes_.empty() &&
          (retval_size == 0 ||
-          (retval_size + finalized_envelopes_.front()->Size() <=
-           max_bytes_per_envelope_))) {
+          (retval_size + finalized_envelopes_.front()->Size() <= max_bytes_per_envelope_))) {
     retval->MergeWith(TakeOldestEnvelopeHolderLocked());
     retval_size = retval->Size();
   }

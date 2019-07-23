@@ -19,8 +19,7 @@
 
 namespace cobalt::util {
 
-bool PemUtil::ReadTextFile(const std::string& file_path,
-                           std::string* file_contents) {
+bool PemUtil::ReadTextFile(const std::string& file_path, std::string* file_contents) {
   if (!file_contents) {
     return false;
   }

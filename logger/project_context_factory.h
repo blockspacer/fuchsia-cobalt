@@ -68,15 +68,12 @@ class ProjectContextFactory {
   // Constructs a ProjectContextFactory containing the given CobaltRegistry.
   // |cobalt_registry| must not be null.
   // Invoke is_valid() to determine if the CobbaltRegistry is valid
-  explicit ProjectContextFactory(
-      std::unique_ptr<CobaltRegistry> cobalt_registry);
+  explicit ProjectContextFactory(std::unique_ptr<CobaltRegistry> cobalt_registry);
 
   // Returns true if the factory's CobaltRegistry exists (meaning we were
   // able to parse the  |cobalt_regsitry_bytes| passed to the constructor)
   // and is non-empty.
-  bool is_valid() {
-    return project_configs_ != nullptr || client_config_ != nullptr;
-  }
+  bool is_valid() { return project_configs_ != nullptr || client_config_ != nullptr; }
 
   // Returns true if the factory's CobaltRegistry is valid and contains
   // a single project and that is a Cobalt 1.0 project.
@@ -100,9 +97,9 @@ class ProjectContextFactory {
   // Important: The returned ProjectContext contains a pointer into this
   // factory's CobaltRegistry. This ProjectContextFactory must remain alive as
   // long as the returned ProjectContext is being used.
-  std::unique_ptr<ProjectContext> NewProjectContext(
-      const std::string& customer_name, const std::string& project_name,
-      ReleaseStage release_stage = GA);
+  std::unique_ptr<ProjectContext> NewProjectContext(const std::string& customer_name,
+                                                    const std::string& project_name,
+                                                    ReleaseStage release_stage = GA);
 
   // If is_single_project() is true, then this returns a
   // ProjectContext for the unique Cobalt 1.0 project contained in the factory's
@@ -116,8 +113,7 @@ class ProjectContextFactory {
   // from the CobaltRegistry and is now owned by the ProjectContext. If nullptr
   // is not returned then this ProjectContextFactory becomes invalid and
   // shoud be discarded.
-  std::unique_ptr<ProjectContext> TakeSingleProjectContext(
-      ReleaseStage release_stage = GA);
+  std::unique_ptr<ProjectContext> TakeSingleProjectContext(ReleaseStage release_stage = GA);
 
   // Returns a ProjectContext for the Cobalt 0.1 project with the given
   // (customer_id, project_id), if the factory's CobaltRegistry is valid and
@@ -129,8 +125,8 @@ class ProjectContextFactory {
   // Note: The returned ProjectContext contains a shared pointer into
   // this factory's CobaltRegistry. It does not matter whether or not this
   // ProjectContextFactory remains alive.
-  std::unique_ptr<encoder::ProjectContext> NewLegacyProjectContext(
-      uint32_t customer_id, uint32_t project_id);
+  std::unique_ptr<encoder::ProjectContext> NewLegacyProjectContext(uint32_t customer_id,
+                                                                   uint32_t project_id);
 
   // If is_single_legacy_project() is true, returns a ProjectContext for the
   // unique Cobalt 0.1 project contained in the factory's CobaltRegistry.

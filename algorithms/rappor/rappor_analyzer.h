@@ -72,8 +72,7 @@ class RapporAnalyzer {
   // but Analyze() will return INVALID_ARGUMENT.
   //
   // TODO(rudominer) Enhance this API to also accept DP release parameters.
-  explicit RapporAnalyzer(const RapporConfig& config,
-                          const RapporCandidateList* candidates);
+  explicit RapporAnalyzer(const RapporConfig& config, const RapporCandidateList* candidates);
 
   // Adds an additional observation to be analyzed. The observation must have
   // been encoded using the RapporConfig passed to the constructor.
@@ -163,9 +162,8 @@ class RapporAnalyzer {
   //
   // See the note at the bottom of rappor_anlayzer.cc for a justification of
   // the formulas.
-  grpc::Status ExtractEstimatedBitCountRatiosAndStdErrors(
-      Eigen::VectorXd* est_bit_count_ratios,
-      std::vector<double>* est_std_errors);
+  grpc::Status ExtractEstimatedBitCountRatiosAndStdErrors(Eigen::VectorXd* est_bit_count_ratios,
+                                                          std::vector<double>* est_std_errors);
 
   BloomBitCounter bit_counter_;
 

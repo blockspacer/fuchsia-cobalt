@@ -39,9 +39,8 @@ class ObservationStoreWriterInterface {
     kWriteFailed,
   };
 
-  virtual StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata) = 0;
+  virtual StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
+                                              std::unique_ptr<ObservationMetadata> metadata) = 0;
 };
 
 // ObservationStore is an abstract interface to an underlying store of encrypted
@@ -110,8 +109,7 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // REQUIRED:
   // 0 <= max_bytes_per_observation <= max_bytes_per_envelope <= max_bytes_total
   // 0 <= max_bytes_per_envelope
-  explicit ObservationStore(size_t max_bytes_per_observation,
-                            size_t max_bytes_per_envelope,
+  explicit ObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
                             size_t max_bytes_total);
 
   ~ObservationStore() override = default;
@@ -123,9 +121,8 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // this causes the pool of observations to exceed max_bytes_per_envelope, then
   // the ObservationStore will construct an EnvelopeHolder to be returned from
   // TakeNextEnvelopeHolder().
-  StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata) override = 0;
+  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
+                                      std::unique_ptr<ObservationMetadata> metadata) override = 0;
 
   // Returns the next EnvelopeHolder from the list of EnvelopeHolders in the
   // store. If there are no more EnvelopeHolders available, this will return
@@ -137,12 +134,10 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // so that it may be returned by a later call to TakeNextEnvelopeHolder(). Use
   // this when an envelope failed to upload, so the underlying data should not
   // be deleted.
-  virtual void ReturnEnvelopeHolder(
-      std::unique_ptr<EnvelopeHolder> envelope) = 0;
+  virtual void ReturnEnvelopeHolder(std::unique_ptr<EnvelopeHolder> envelope) = 0;
 
   // Resets the internal metrics to use the provided logger.
-  virtual void ResetInternalMetrics(
-      logger::LoggerInterface* internal_logger) = 0;
+  virtual void ResetInternalMetrics(logger::LoggerInterface* internal_logger) = 0;
 
   // Returns true when the size of the data in the ObservationStore exceeds 60%
   // of max_bytes_total.

@@ -83,21 +83,19 @@ constexpr uint32_t kBitsPerByte = 8;
 
 }  // namespace
 
-RapporEncoder::RapporEncoder(const RapporConfig& config,
-                             ClientSecret client_secret)
+RapporEncoder::RapporEncoder(const RapporConfig& config, ClientSecret client_secret)
     : config_(new RapporConfigValidator(config)),
       random_(new crypto::Random()),
       client_secret_(std::move(client_secret)),
       cohort_num_(DeriveCohortFromSecret()) {}
 
-bool RapporEncoder::HashValueAndCohort(
-    const std::string& serialized_value, uint32_t cohort_num,
-    uint32_t num_hashes, byte hashed_value[crypto::hash::DIGEST_SIZE]) {
+bool RapporEncoder::HashValueAndCohort(const std::string& serialized_value, uint32_t cohort_num,
+                                       uint32_t num_hashes,
+                                       byte hashed_value[crypto::hash::DIGEST_SIZE]) {
   // We append the cohort to the value before hashing.
   std::vector<byte> hash_input(serialized_value.size() + sizeof(cohort_num_));
   std::memcpy(hash_input.data(), &serialized_value[0], serialized_value.size());
-  std::memcpy(hash_input.data() + serialized_value.size(), &cohort_num,
-              sizeof(cohort_num_));
+  std::memcpy(hash_input.data() + serialized_value.size(), &cohort_num, sizeof(cohort_num_));
 
   // Now we hash |hash_input| into |hashed_value|.
   // We are going to use two bytes of |hashed_value| for each hash in the Bloom
@@ -107,15 +105,13 @@ bool RapporEncoder::HashValueAndCohort(
   return crypto::hash::Hash(hash_input.data(), hash_input.size(), hashed_value);
 }
 
-uint32_t RapporEncoder::ExtractBitIndex(
-    byte const hashed_value[crypto::hash::DIGEST_SIZE], size_t hash_index,
-    uint32_t num_bits) {
+uint32_t RapporEncoder::ExtractBitIndex(byte const hashed_value[crypto::hash::DIGEST_SIZE],
+                                        size_t hash_index, uint32_t num_bits) {
   // Each bloom filter consumes two bytes of |hashed_value|. Note that
   // num_bits is required to be a power of 2 (this is checked in the
   // constructor of RapporConfigValidator) so that the mod operation below
   // preserves the uniform distribution of |hashed_value|.
-  return (*reinterpret_cast<const uint16_t*>(&hashed_value[hash_index * 2])) %
-         num_bits;
+  return (*reinterpret_cast<const uint16_t*>(&hashed_value[hash_index * 2])) % num_bits;
 }
 
 std::string RapporEncoder::MakeBloomBits(const ValuePart& value) {
@@ -127,8 +123,7 @@ std::string RapporEncoder::MakeBloomBits(const ValuePart& value) {
   value.SerializeToString(&serialized_value);
 
   byte hashed_value[crypto::hash::DIGEST_SIZE];
-  if (!HashValueAndCohort(serialized_value, cohort_num_, num_hashes,
-                          hashed_value)) {
+  if (!HashValueAndCohort(serialized_value, cohort_num_, num_hashes, hashed_value)) {
     VLOG(1) << "Hash() failed";
     return "";
   }
@@ -164,8 +159,7 @@ uint32_t RapporEncoder::AttemptDeriveCohortFromSecret(size_t attempt_number) {
   // Invoke HMAC.
   byte hashed_value[crypto::hmac::TAG_SIZE];
   if (!HMAC(client_secret_.data(), ClientSecret::kNumSecretBytes,
-            reinterpret_cast<byte*>(&attempt_number), sizeof(attempt_number),
-            hashed_value)) {
+            reinterpret_cast<byte*>(&attempt_number), sizeof(attempt_number), hashed_value)) {
     VLOG(1) << "HMAC() failed!";
     return UINT32_MAX;
   }
@@ -173,8 +167,7 @@ uint32_t RapporEncoder::AttemptDeriveCohortFromSecret(size_t attempt_number) {
   // Interpret the first two bytes of hashed_value as an unsigned integer
   // and mod by num_cohorts_2_power.
   CHECK_GT(config_->num_cohorts_2_power(), 0u);
-  return *(reinterpret_cast<uint16_t*>(hashed_value)) %
-         config_->num_cohorts_2_power();
+  return *(reinterpret_cast<uint16_t*>(hashed_value)) % config_->num_cohorts_2_power();
 }
 
 uint32_t RapporEncoder::DeriveCohortFromSecret() {
@@ -194,8 +187,7 @@ uint32_t RapporEncoder::DeriveCohortFromSecret() {
   }
 }
 
-Status RapporEncoder::Encode(const ValuePart& value,
-                             RapporObservation* observation_out) {
+Status RapporEncoder::Encode(const ValuePart& value, RapporObservation* observation_out) {
   if (!config_->valid()) {
     return kInvalidConfig;
   }
@@ -217,8 +209,8 @@ Status RapporEncoder::Encode(const ValuePart& value,
   // TODO(rudominer) Consider supporting prr in future versions of Cobalt.
 
   // Randomly flip some of the bits based on the probabilities p and q.
-  auto status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-                         random_.get(), &data);
+  auto status =
+      FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(), random_.get(), &data);
   if (status != kOK) {
     return status;
   }
@@ -228,14 +220,12 @@ Status RapporEncoder::Encode(const ValuePart& value,
   return kOK;
 }
 
-BasicRapporEncoder::BasicRapporEncoder(const BasicRapporConfig& config,
-                                       ClientSecret client_secret)
+BasicRapporEncoder::BasicRapporEncoder(const BasicRapporConfig& config, ClientSecret client_secret)
     : config_(new RapporConfigValidator(config)),
       random_(new crypto::Random()),
       client_secret_(std::move(client_secret)) {}
 
-Status BasicRapporEncoder::Encode(const ValuePart& value,
-                                  BasicRapporObservation* observation_out) {
+Status BasicRapporEncoder::Encode(const ValuePart& value, BasicRapporObservation* observation_out) {
   TRACE_DURATION("cobalt_core", "BasicRapporEncoder::Encode");
   std::string data;
   auto status = InitializeObservationData(&data);
@@ -245,9 +235,8 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
 
   auto bit_index = config_->bit_index(value);
   if (bit_index == -1) {
-    LOG(ERROR)
-        << "BasicRapporEncoder::Encode(): The given value was not one of "
-        << "the categories: " << DebugString(value);
+    LOG(ERROR) << "BasicRapporEncoder::Encode(): The given value was not one of "
+               << "the categories: " << DebugString(value);
     return kInvalidInput;
   }
   // Indexed from the right, i.e. the least-significant bit.
@@ -260,8 +249,7 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
   // TODO(rudominer) Consider supporting prr in future versions of Cobalt.
 
   // Randomly flip some of the bits based on the probabilities p and q.
-  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-                    random_.get(), &data);
+  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(), random_.get(), &data);
   if (status != kOK) {
     return status;
   }
@@ -270,16 +258,14 @@ Status BasicRapporEncoder::Encode(const ValuePart& value,
   return kOK;
 }
 
-Status BasicRapporEncoder::EncodeNullObservation(
-    BasicRapporObservation* observation_out) {
+Status BasicRapporEncoder::EncodeNullObservation(BasicRapporObservation* observation_out) {
   std::string data;
   auto status = InitializeObservationData(&data);
   if (status != kOK) {
     return status;
   }
   // Randomly flip some of the bits based on the probabilities p and q.
-  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(),
-                    random_.get(), &data);
+  status = FlipBits(config_->prob_0_becomes_1(), config_->prob_1_stays_1(), random_.get(), &data);
   if (status != kOK) {
     return status;
   }

@@ -35,33 +35,25 @@ class FakeLogger : public LoggerInterface {
  public:
   Status LogEvent(uint32_t metric_id, uint32_t event_code) override;
 
-  Status LogEventCount(uint32_t metric_id,
-                       const std::vector<uint32_t>& event_codes,
-                       const std::string& component,
-                       int64_t period_duration_micros, uint32_t count) override;
+  Status LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                       const std::string& component, int64_t period_duration_micros,
+                       uint32_t count) override;
 
-  Status LogElapsedTime(uint32_t metric_id,
-                        const std::vector<uint32_t>& event_codes,
-                        const std::string& component,
-                        int64_t elapsed_micros) override;
+  Status LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                        const std::string& component, int64_t elapsed_micros) override;
 
-  Status LogFrameRate(uint32_t metric_id,
-                      const std::vector<uint32_t>& event_codes,
+  Status LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                       const std::string& component, float fps) override;
 
-  Status LogMemoryUsage(uint32_t metric_id,
-                        const std::vector<uint32_t>& event_codes,
+  Status LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t bytes) override;
 
-  Status LogIntHistogram(uint32_t metric_id,
-                         const std::vector<uint32_t>& event_codes,
-                         const std::string& component,
-                         HistogramPtr histogram) override;
+  Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                         const std::string& component, HistogramPtr histogram) override;
 
   Status LogString(uint32_t metric_id, const std::string& str) override;
 
-  Status LogCustomEvent(uint32_t metric_id,
-                        EventValuesPtr event_values) override;
+  Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
   uint32_t call_count() { return call_count_; }
   Event last_event_logged() { return last_event_logged_; }

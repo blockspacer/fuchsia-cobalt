@@ -51,8 +51,7 @@ TEST_F(RapporAnalyzerTest, BuildCandidateMapSmallTest) {
 
   // Check the associated sparse matrix.
   std::ostringstream stream;
-  stream << candidate_matrix().block(0, 0, kNumCohorts * kNumBloomBits,
-                                     kNumCandidates);
+  stream << candidate_matrix().block(0, 0, kNumCohorts * kNumBloomBits, kNumCandidates);
   const char* kExpectedMatrixString =
       "0 0 0 0 0 \n"
       "0 0 0 0 0 \n"
@@ -123,8 +122,7 @@ TEST_F(RapporAnalyzerTest, BuildCandidateMapSmallTestWithDuplicates) {
 
   // Check the associated sparse matrix.
   std::ostringstream stream;
-  stream << candidate_matrix().block(0, 0, kNumCohorts * kNumBloomBits,
-                                     kNumCandidates);
+  stream << candidate_matrix().block(0, 0, kNumCohorts * kNumBloomBits, kNumCandidates);
   const char* kExpectedMatrixString =
       "1 0 1 0 0 \n"
       "0 0 0 0 0 \n"
@@ -186,8 +184,7 @@ TEST_F(RapporAnalyzerTest, BuildCandidateMapCompareWithEncoder) {
     // with no noise added. Confirm that the BloomFilter is the same as
     // the one implied by the CandidateMap at the appropriate candidate
     // and cohort.
-    EXPECT_EQ(BuildBitString(candidate, encoder.cohort()),
-              DataToBinaryString(observation.data()));
+    EXPECT_EQ(BuildBitString(candidate, encoder.cohort()), DataToBinaryString(observation.data()));
   }
 }
 
@@ -254,20 +251,18 @@ TEST_F(RapporAnalyzerTest, SimpleAnalyzeTest) {
   static const uint32_t kNumBloomBits = 8;
   static const bool print_estimates = false;
 
-  std::vector<int> candidate_indices(100, 5);  // NOLINT
-  std::vector<int> true_candidate_counts = {0,   0, 0, 0, 0,
-                                            100, 0, 0, 0, 0};  // NOLINT
-  ShortExperimentWithAnalyze(
-      "p=0, q=1, only candidate 5", kNumCandidates, kNumBloomBits, kNumCohorts,
-      kNumHashes, candidate_indices, true_candidate_counts, print_estimates);
+  std::vector<int> candidate_indices(100, 5);                                 // NOLINT
+  std::vector<int> true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};  // NOLINT
+  ShortExperimentWithAnalyze("p=0, q=1, only candidate 5", kNumCandidates, kNumBloomBits,
+                             kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
+                             print_estimates);
 
   candidate_indices = std::vector<int>(20, 1);                // NOLINT
   candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
   candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
   true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
-  ShortExperimentWithAnalyze("p=0, q=1, several candidates", kNumCandidates,
-                             kNumBloomBits, kNumCohorts, kNumHashes,
-                             candidate_indices, true_candidate_counts,
+  ShortExperimentWithAnalyze("p=0, q=1, several candidates", kNumCandidates, kNumBloomBits,
+                             kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
                              print_estimates);
 
   prob_0_becomes_1_ = 0.1;  // NOLINT
@@ -275,18 +270,16 @@ TEST_F(RapporAnalyzerTest, SimpleAnalyzeTest) {
 
   candidate_indices = std::vector<int>(100, 5);              // NOLINT
   true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};  // NOLINT
-  ShortExperimentWithAnalyze("p=0.1, q=0.9, only candidate 5", kNumCandidates,
-                             kNumBloomBits, kNumCohorts, kNumHashes,
-                             candidate_indices, true_candidate_counts,
+  ShortExperimentWithAnalyze("p=0.1, q=0.9, only candidate 5", kNumCandidates, kNumBloomBits,
+                             kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
                              print_estimates);
 
   candidate_indices = std::vector<int>(20, 1);                // NOLINT
   candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
   candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
   true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
-  ShortExperimentWithAnalyze("p=0.1, q=0.9, several candidates", kNumCandidates,
-                             kNumBloomBits, kNumCohorts, kNumHashes,
-                             candidate_indices, true_candidate_counts,
+  ShortExperimentWithAnalyze("p=0.1, q=0.9, several candidates", kNumCandidates, kNumBloomBits,
+                             kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
                              print_estimates);
 }
 

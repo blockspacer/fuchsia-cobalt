@@ -27,8 +27,7 @@ using crypto::hash::DIGEST_SIZE;
 
 namespace {
 // Factors out some common validation logic.
-bool CommonValidate(float prob_0_becomes_1, float prob_1_stays_1,
-                    float prob_rr) {
+bool CommonValidate(float prob_0_becomes_1, float prob_1_stays_1, float prob_rr) {
   if (prob_0_becomes_1 < 0.0 || prob_0_becomes_1 > 1.0) {
     LOG(ERROR) << "prob_0_becomes_1 is not valid";
     return false;
@@ -52,8 +51,7 @@ constexpr int64_t max_num_categories = 1024;
 // Extracts the categories from |config| and populates |*categories|.  We
 // support string and integer categories and we use ValueParts to represent
 // these two uniformly. Returns true if |config| is valid or  false otherwise.
-bool ExtractCategories(const BasicRapporConfig& config,
-                       std::vector<ValuePart>* categories) {
+bool ExtractCategories(const BasicRapporConfig& config, std::vector<ValuePart>* categories) {
   switch (config.categories_case()) {
     case BasicRapporConfig::kStringCategories: {
       int64_t num_categories = config.string_categories().category_size();
@@ -137,8 +135,7 @@ RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
     LOG(ERROR) << "k = num_bits must be a power of 2.";
     return;
   }
-  if (num_hashes_ < 1 || num_hashes_ > max_num_hashes ||
-      num_hashes_ >= num_bits_) {
+  if (num_hashes_ < 1 || num_hashes_ > max_num_hashes || num_hashes_ >= num_bits_) {
     LOG(ERROR) << "For k = num_bits and h = num_hashes we require  1 <= h <= 8 "
                   "and h < k.";
     return;
@@ -181,8 +178,7 @@ RapporConfigValidator::RapporConfigValidator(const BasicRapporConfig& config)
   for (const auto& category : categories_) {
     std::string serialized_value_part;
     category.SerializeToString(&serialized_value_part);
-    auto result =
-        category_to_bit_index_.emplace(serialized_value_part, index++);
+    auto result = category_to_bit_index_.emplace(serialized_value_part, index++);
     if (!result.second) {
       return;
     }

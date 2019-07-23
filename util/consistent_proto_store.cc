@@ -19,8 +19,7 @@ using google::protobuf::MessageLite;
 constexpr char kTmpSuffix[] = ".tmp";
 constexpr char kOverrideSuffix[] = ".override";
 
-ConsistentProtoStore::ConsistentProtoStore(std::string filename,
-                                           std::unique_ptr<FileSystem> fs)
+ConsistentProtoStore::ConsistentProtoStore(std::string filename, std::unique_ptr<FileSystem> fs)
     : primary_file_(std::move(filename)),
       tmp_file_(primary_file_ + kTmpSuffix),
       override_file_(primary_file_ + kOverrideSuffix),
@@ -66,8 +65,7 @@ Status ConsistentProtoStore::Write(const MessageLite &proto) {
       if (!status.ok()) {
         // If renaming override_file_ to primary_file_ fails, we should bail
         // since a write operation is not safe.
-        return Status(status.error_code(),
-                      "Error during recovery: " + status.error_message(),
+        return Status(status.error_code(), "Error during recovery: " + status.error_message(),
                       status.error_details());
       }
     }
@@ -94,23 +92,21 @@ Status ConsistentProtoStore::Read(MessageLite *proto) {
 
   std::ifstream input(primary_file_);
   if (!input) {
-    return Status(StatusCode::NOT_FOUND,
-                  "Unable to open the file at `" + primary_file_ + "`",
+    return Status(StatusCode::NOT_FOUND, "Unable to open the file at `" + primary_file_ + "`",
                   strerror(errno));
   }
 
   google::protobuf::io::IstreamInputStream istream(&input);
   if (!proto->ParseFromZeroCopyStream(&istream)) {
-    return Status(
-        StatusCode::INVALID_ARGUMENT,
-        "Unable to parse the protobuf from the store. Data is corrupt.");
+    return Status(StatusCode::INVALID_ARGUMENT,
+                  "Unable to parse the protobuf from the store. Data is corrupt.");
   }
 
   if (!input.eof()) {
-    return Status(StatusCode::DATA_LOSS,
-                  "Reading from the file at `" + primary_file_ +
-                      "` did not reach the end of the file.",
-                  strerror(errno));
+    return Status(
+        StatusCode::DATA_LOSS,
+        "Reading from the file at `" + primary_file_ + "` did not reach the end of the file.",
+        strerror(errno));
   }
 
   return Status::OK;
@@ -119,19 +115,16 @@ Status ConsistentProtoStore::Read(MessageLite *proto) {
 Status ConsistentProtoStore::WriteToTmp(const MessageLite &proto) {
   std::ofstream tmpfile(tmp_file_);
   if (!tmpfile) {
-    return Status(
-        StatusCode::DATA_LOSS,
-        "Unable to open the temp file to write the proto `" + tmp_file_ + "`",
-        strerror(errno));
+    return Status(StatusCode::DATA_LOSS,
+                  "Unable to open the temp file to write the proto `" + tmp_file_ + "`",
+                  strerror(errno));
   }
   google::protobuf::io::OstreamOutputStream outstream(&tmpfile);
   if (!proto.SerializeToZeroCopyStream(&outstream)) {
-    return Status(StatusCode::DATA_LOSS,
-                  "Unable to serialize proto to the output stream.");
+    return Status(StatusCode::DATA_LOSS, "Unable to serialize proto to the output stream.");
   }
   if (!tmpfile) {
-    return Status(StatusCode::DATA_LOSS,
-                  "Writing proto to temp file (" + tmp_file_ + ") failed.",
+    return Status(StatusCode::DATA_LOSS, "Writing proto to temp file (" + tmp_file_ + ") failed.",
                   strerror(errno));
   }
   return Status::OK;
@@ -139,10 +132,9 @@ Status ConsistentProtoStore::WriteToTmp(const MessageLite &proto) {
 
 Status ConsistentProtoStore::MoveTmpToOverride() {
   if (!fs_->Rename(tmp_file_, override_file_)) {
-    return Status(
-        StatusCode::DATA_LOSS,
-        "Unable to rename `" + tmp_file_ + "` => `" + override_file_ + "`.",
-        strerror(errno));
+    return Status(StatusCode::DATA_LOSS,
+                  "Unable to rename `" + tmp_file_ + "` => `" + override_file_ + "`.",
+                  strerror(errno));
   }
 
   return Status::OK;
@@ -155,8 +147,7 @@ Status ConsistentProtoStore::DeletePrimary() {
   }
 
   if (!fs_->Delete(primary_file_)) {
-    return Status(StatusCode::ABORTED,
-                  "Unable to remove old file `" + primary_file_ + "`.",
+    return Status(StatusCode::ABORTED, "Unable to remove old file `" + primary_file_ + "`.",
                   strerror(errno));
   }
 
@@ -165,10 +156,9 @@ Status ConsistentProtoStore::DeletePrimary() {
 
 Status ConsistentProtoStore::MoveOverrideToPrimary() {
   if (!fs_->Rename(override_file_, primary_file_)) {
-    return Status(
-        StatusCode::ABORTED,
-        "Unable to rename `" + override_file_ + "` => `" + primary_file_ + "`.",
-        strerror(errno));
+    return Status(StatusCode::ABORTED,
+                  "Unable to rename `" + override_file_ + "` => `" + primary_file_ + "`.",
+                  strerror(errno));
   }
 
   return Status::OK;

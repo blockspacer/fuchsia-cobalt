@@ -28,23 +28,20 @@ std::string ToString(const std::chrono::system_clock::time_point& t) {
 }
 
 grpc::Status CobaltStatusToGrpcStatus(const util::Status& status) {
-  return grpc::Status(static_cast<grpc::StatusCode>(status.error_code()),
-                      status.error_message(), status.error_details());
+  return grpc::Status(static_cast<grpc::StatusCode>(status.error_code()), status.error_message(),
+                      status.error_details());
 }
 
 }  // namespace
 
-ShippingManager::ShippingManager(
-    const UploadScheduler& upload_scheduler,
-    ObservationStore* observation_store,
-    util::EncryptedMessageMaker* encrypt_to_shuffler)
+ShippingManager::ShippingManager(const UploadScheduler& upload_scheduler,
+                                 ObservationStore* observation_store,
+                                 util::EncryptedMessageMaker* encrypt_to_shuffler)
     : upload_scheduler_(upload_scheduler),
-      next_scheduled_send_time_(std::chrono::system_clock::now() +
-                                upload_scheduler_.Interval()),
+      next_scheduled_send_time_(std::chrono::system_clock::now() + upload_scheduler_.Interval()),
       encrypt_to_shuffler_(encrypt_to_shuffler) {
   CHECK(observation_store);
-  _mutex_protected_fields_do_not_access_directly_.observation_store =
-      observation_store;
+  _mutex_protected_fields_do_not_access_directly_.observation_store = observation_store;
 }
 
 ShippingManager::~ShippingManager() {
@@ -167,13 +164,11 @@ void ShippingManager::Run() {
     // upload_scheduler_.MinInterval() period.
 
     // Sleep for upload_scheduler_.MinInterval() or until shut_down_.
-    VLOG(4) << name() << " worker: sleeping for "
-            << upload_scheduler_.MinInterval().count() << " seconds.";
-    locked->fields->shutdown_notifier.wait_for(
-        locked->lock, upload_scheduler_.MinInterval(),
-        [&locked] { return (locked->fields->shut_down); });
-    VLOG(4) << name() << " worker: waking up from sleep. shut_down_="
-            << locked->fields->shut_down;
+    VLOG(4) << name() << " worker: sleeping for " << upload_scheduler_.MinInterval().count()
+            << " seconds.";
+    locked->fields->shutdown_notifier.wait_for(locked->lock, upload_scheduler_.MinInterval(),
+                                               [&locked] { return (locked->fields->shut_down); });
+    VLOG(4) << name() << " worker: waking up from sleep. shut_down_=" << locked->fields->shut_down;
     if (locked->fields->shut_down) {
       return;
     }
@@ -191,8 +186,7 @@ void ShippingManager::Run() {
       locked->fields->idle = true;
       locked->fields->idle_notifier.notify_all();
       locked->fields->add_observation_notifier.wait(locked->lock, [&locked] {
-        return (locked->fields->shut_down ||
-                !locked->fields->observation_store->Empty());
+        return (locked->fields->shut_down || !locked->fields->observation_store->Empty());
       });
       VLOG(5) << name()
               << " worker: Waking up because an Observation was "
@@ -201,30 +195,25 @@ void ShippingManager::Run() {
     } else {
       auto now = std::chrono::system_clock::now();
       VLOG(4) << name() << ": now: " << ToString(now)
-              << " next_scheduled_send_time_: "
-              << ToString(next_scheduled_send_time_);
-      if (next_scheduled_send_time_ <= now ||
-          locked->fields->expedited_send_requested) {
+              << " next_scheduled_send_time_: " << ToString(next_scheduled_send_time_);
+      if (next_scheduled_send_time_ <= now || locked->fields->expedited_send_requested) {
         VLOG(4) << name() << " worker: time to send now.";
         locked->fields->expedited_send_requested = false;
         locked->lock.unlock();
         SendAllEnvelopes();
-        next_scheduled_send_time_ =
-            std::chrono::system_clock::now() + upload_scheduler_.Interval();
+        next_scheduled_send_time_ = std::chrono::system_clock::now() + upload_scheduler_.Interval();
         locked->lock.lock();
       } else {
         // Wait until the next scheduled send time or until notified of
         // a new request for an expedited send or we are shut down.
-        auto time =
-            std::chrono::system_clock::to_time_t(next_scheduled_send_time_);
+        auto time = std::chrono::system_clock::to_time_t(next_scheduled_send_time_);
         VLOG(4) << name() << " worker: waiting until " << std::ctime(&time)
                 << " for next scheduled send.";
         locked->fields->waiting_for_schedule = true;
         locked->fields->waiting_for_schedule_notifier.notify_all();
         locked->fields->expedited_send_notifier.wait_until(
             locked->lock, next_scheduled_send_time_, [&locked] {
-              return (locked->fields->shut_down ||
-                      locked->fields->expedited_send_requested);
+              return (locked->fields->shut_down || locked->fields->expedited_send_requested);
             });
         locked->fields->waiting_for_schedule = false;
       }
@@ -252,8 +241,7 @@ void ShippingManager::SendAllEnvelopes() {
       // failed EnvelopeHolder to the store.
       success = false;
       failures_without_success++;
-      lock()->fields->observation_store->ReturnEnvelopeHolder(
-          std::move(failed_holder));
+      lock()->fields->observation_store->ReturnEnvelopeHolder(std::move(failed_holder));
     }
 
     if (failures_without_success >= kMaxFailuresWithoutSuccess) {
@@ -269,8 +257,7 @@ void ShippingManager::SendAllEnvelopes() {
   }
 }
 
-void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields,
-                                                  bool success) {
+void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields, bool success) {
   fields->expedited_send_requested = false;
   std::vector<SendCallback> callbacks_to_invoke;
   callbacks_to_invoke.swap(fields->send_callback_queue);
@@ -281,41 +268,35 @@ void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields,
 }
 
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
-    const UploadScheduler& upload_scheduler,
-    ObservationStore* observation_store,
+    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
-    std::unique_ptr<clearcut::ClearcutUploader> clearcut,
-    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload)
+    std::unique_ptr<clearcut::ClearcutUploader> clearcut, logger::LoggerInterface* internal_logger,
+    size_t max_attempts_per_upload)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
-      internal_metrics_(
-          logger::InternalMetrics::NewWithLogger(internal_logger)) {}
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)) {}
 
-std::unique_ptr<EnvelopeHolder>
-ClearcutV1ShippingManager::SendEnvelopeToBackend(
+std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
   auto log_extension = std::make_unique<LogEventExtension>();
 
-  if (!encrypt_to_shuffler_->Encrypt(
-          envelope_to_send->GetEnvelope(),
-          log_extension->mutable_cobalt_encrypted_envelope())) {
+  if (!encrypt_to_shuffler_->Encrypt(envelope_to_send->GetEnvelope(),
+                                     log_extension->mutable_cobalt_encrypted_envelope())) {
     // TODO(rudominer) log
     // Drop on floor.
     return nullptr;
   }
 
-  VLOG(5) << name() << " worker: Sending Envelope of size "
-          << envelope_to_send->Size() << " bytes to clearcut.";
+  VLOG(5) << name() << " worker: Sending Envelope of size " << envelope_to_send->Size()
+          << " bytes to clearcut.";
 
-  internal_metrics_->BytesUploaded(
-      logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
-      envelope_to_send->Size());
+  internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
+                                   envelope_to_send->Size());
 
   clearcut::LogRequest request;
   request.set_log_source(clearcut::kFuchsiaCobaltShufflerInputDevel);
-  request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext,
-                                                 log_extension.release());
+  request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
 
   util::Status status;
   {
@@ -333,16 +314,14 @@ ClearcutV1ShippingManager::SendEnvelopeToBackend(
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
 
-    internal_metrics_->BytesUploaded(
-        logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
-        envelope_to_send->Size());
+    internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
+                                     envelope_to_send->Size());
 
     return nullptr;
   }
 
-  VLOG(4) << name() << ": Cobalt send to Shuffler failed: ("
-          << status.error_code() << ") " << status.error_message()
-          << ". Observations have been re-enqueued for later.";
+  VLOG(4) << name() << ": Cobalt send to Shuffler failed: (" << status.error_code() << ") "
+          << status.error_message() << ". Observations have been re-enqueued for later.";
   return envelope_to_send;
 }
 
@@ -361,11 +340,9 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
   if (locked->fields->shut_down || locked->fields->waiting_for_schedule) {
     return;
   }
-  locked->fields->waiting_for_schedule_notifier.wait_for(
-      locked->lock, max_wait, [&locked] {
-        return (locked->fields->shut_down ||
-                locked->fields->waiting_for_schedule);
-      });
+  locked->fields->waiting_for_schedule_notifier.wait_for(locked->lock, max_wait, [&locked] {
+    return (locked->fields->shut_down || locked->fields->waiting_for_schedule);
+  });
 }
 
 }  // namespace cobalt::encoder

@@ -31,8 +31,7 @@ namespace cobalt::rappor {
 
 namespace {
 // Makes a RapporConfig with the given data (and num_hashes=2).
-RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, float p,
-                    float q) {
+RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, float p, float q) {
   RapporConfig config;
   config.set_num_bloom_bits(num_bloom_bits);
   config.set_num_hashes(2);
@@ -50,34 +49,28 @@ class BloomBitCounterTest : public ::testing::Test {
   // with the given arguments and the current values of prob_0_becomes_1_,
   // prob_1_stays_1_.
   void SetBitCounter(uint32_t num_bloom_bits, uint32_t num_cohorts) {
-    bit_counter_ = std::make_unique<BloomBitCounter>(Config(
-        num_bloom_bits, num_cohorts, prob_0_becomes_1_, prob_1_stays_1_));
+    bit_counter_ = std::make_unique<BloomBitCounter>(
+        Config(num_bloom_bits, num_cohorts, prob_0_becomes_1_, prob_1_stays_1_));
     add_good_observation_call_count_ = 0;
     add_bad_observation_call_count_ = 0;
   }
 
   // Adds an observation to bit_counter_ described by |binary_string| for the
   // given cohort. Expects the operation to result in an error.
-  void AddObservationExpectFalse(uint32_t cohort,
-                                 const std::string &binary_string) {
-    EXPECT_FALSE(bit_counter_->AddObservation(
-        RapporObservationFromString(cohort, binary_string)));
-    CheckState(add_good_observation_call_count_,
-               ++add_bad_observation_call_count_);
+  void AddObservationExpectFalse(uint32_t cohort, const std::string &binary_string) {
+    EXPECT_FALSE(bit_counter_->AddObservation(RapporObservationFromString(cohort, binary_string)));
+    CheckState(add_good_observation_call_count_, ++add_bad_observation_call_count_);
   }
 
   // Adds an observation to bit_counter_ described by |binary_string| for the
   // given cohort. Expects the operation to succeed.
   void AddObservation(uint32_t cohort, const std::string &binary_string) {
-    EXPECT_TRUE(bit_counter_->AddObservation(
-        RapporObservationFromString(cohort, binary_string)));
-    CheckState(++add_good_observation_call_count_,
-               add_bad_observation_call_count_);
+    EXPECT_TRUE(bit_counter_->AddObservation(RapporObservationFromString(cohort, binary_string)));
+    CheckState(++add_good_observation_call_count_, add_bad_observation_call_count_);
   }
 
   // Invokes AddObservation() many times.
-  void AddObservations(uint32_t cohort, const std::string &binary_string,
-                       int num_times) {
+  void AddObservations(uint32_t cohort, const std::string &binary_string, int num_times) {
     for (int count = 0; count < num_times; count++) {
       SCOPED_TRACE(std::string("count=") + std::to_string(count));
       AddObservation(cohort, binary_string);
@@ -85,8 +78,7 @@ class BloomBitCounterTest : public ::testing::Test {
   }
 
   // Checks that bit_counter_ has the expected number observations and errors.
-  void CheckState(size_t expected_num_observations,
-                  size_t expected_observation_errors) {
+  void CheckState(size_t expected_num_observations, size_t expected_observation_errors) {
     EXPECT_EQ(expected_num_observations, bit_counter_->num_observations());
     EXPECT_EQ(expected_observation_errors, bit_counter_->observation_errors());
   }
@@ -94,35 +86,27 @@ class BloomBitCounterTest : public ::testing::Test {
   // Checks that bit_counter_ has the expected raw count for the given cohort
   // and bit index.
   void ExpectRawCount(uint32_t cohort, size_t index, size_t expected_count) {
-    EXPECT_EQ(expected_count,
-              bit_counter_->estimated_bloom_counts_[cohort].bit_sums[index]);
+    EXPECT_EQ(expected_count, bit_counter_->estimated_bloom_counts_[cohort].bit_sums[index]);
   }
 
   // Checks that bit_counter_ has the expected raw counts for the given cohort.
-  void ExpectRawCounts(uint32_t cohort,
-                       const std::vector<size_t> &expected_counts) {
-    EXPECT_EQ(expected_counts,
-              bit_counter_->estimated_bloom_counts_[cohort].bit_sums);
+  void ExpectRawCounts(uint32_t cohort, const std::vector<size_t> &expected_counts) {
+    EXPECT_EQ(expected_counts, bit_counter_->estimated_bloom_counts_[cohort].bit_sums);
   }
 
   // Invokes bit_countr_->EstimateCounts() and checks the count and std_error in
   // the given bit index for the given cohort.
-  void EstimateCountsAndCheck(size_t cohort, size_t index,
-                              double expected_estimate,
+  void EstimateCountsAndCheck(size_t cohort, size_t index, double expected_estimate,
                               double expected_std_err) {
     auto estimated_counts = bit_counter_->EstimateCounts();
     ASSERT_GT(estimated_counts.size(), cohort)
         << "size=" << estimated_counts.size() << ", cohort=" << cohort;
     ASSERT_GT(estimated_counts[cohort].count_estimates.size(), index)
-        << "size=" << estimated_counts[cohort].count_estimates.size()
-        << ", index=" << index;
+        << "size=" << estimated_counts[cohort].count_estimates.size() << ", index=" << index;
     ASSERT_GT(estimated_counts[cohort].std_errors.size(), index)
-        << "size=" << estimated_counts[cohort].std_errors.size()
-        << ", index=" << index;
-    EXPECT_FLOAT_EQ(expected_estimate,
-                    estimated_counts[cohort].count_estimates[index]);
-    EXPECT_FLOAT_EQ(expected_std_err,
-                    estimated_counts[cohort].std_errors[index]);
+        << "size=" << estimated_counts[cohort].std_errors.size() << ", index=" << index;
+    EXPECT_FLOAT_EQ(expected_estimate, estimated_counts[cohort].count_estimates[index]);
+    EXPECT_FLOAT_EQ(expected_std_err, estimated_counts[cohort].std_errors[index]);
   }
 
   // Tests BloomBitCounter focusing on only a single bit at a time.
@@ -133,28 +117,24 @@ class BloomBitCounterTest : public ::testing::Test {
   //
   // Uses the currently set values for prob_0_becomes_1_ and prob_1_stays_1_.
   // There will be |n| total observations with |y| 1's and |n-y| 0's.
-  void OneBitTest(int n, int y, double expected_estimate,
-                  double expected_std_err) {
+  void OneBitTest(int n, int y, double expected_estimate, double expected_std_err) {
     // We pick five different bits out of the 32 bits to test.
     for (int bit_index : {0, 1, 8, 19, 31}) {
       // We pick five different cohorts of the 100 cohorts to test.
       for (int cohort : {0, 1, 47, 61, 99}) {
-        SCOPED_TRACE(std::to_string(bit_index) + ", " + std::to_string(cohort) +
-                     ", " + std::to_string(n) + ", " + std::to_string(y));
+        SCOPED_TRACE(std::to_string(bit_index) + ", " + std::to_string(cohort) + ", " +
+                     std::to_string(n) + ", " + std::to_string(y));
         // Construct a BloomBitCounter with 32 bits and 100 cohorts.
         SetBitCounter(32, 100);  // NOLINT
         // Add y observations with a 1 in position |bit_index|.
         // NOLINTNEXTLINE
-        AddObservations(cohort, BuildBitPatternString(32, bit_index, '1', '0'),
-                        y);
+        AddObservations(cohort, BuildBitPatternString(32, bit_index, '1', '0'), y);
         // Add n-y observations with a 0 in position |bit_index|.
         // NOLINTNEXTLINE
-        AddObservations(cohort, BuildBitPatternString(32, bit_index, '0', '0'),
-                        n - y);
+        AddObservations(cohort, BuildBitPatternString(32, bit_index, '0', '0'), n - y);
 
         // Analyze and check position |bit_index|
-        EstimateCountsAndCheck(cohort, bit_index, expected_estimate,
-                               expected_std_err);
+        EstimateCountsAndCheck(cohort, bit_index, expected_estimate, expected_std_err);
       }
     }
   }

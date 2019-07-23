@@ -18,9 +18,7 @@
 namespace cobalt::forculus {
 
 namespace {
-FieldElement FromBytes(std::vector<byte>&& bytes) {
-  return FieldElement(std::move(bytes));
-}
+FieldElement FromBytes(std::vector<byte>&& bytes) { return FieldElement(std::move(bytes)); }
 
 FieldElement FromInt(uint32_t x) {
   std::vector<byte> bytes(sizeof(x));
@@ -110,8 +108,7 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
   }
 
   // Interpolate to recover the constant term.
-  FieldElement constant_term =
-      InterpolateConstant(x_value_pointers, y_value_pointers);
+  FieldElement constant_term = InterpolateConstant(x_value_pointers, y_value_pointers);
 
   EXPECT_EQ(coefficients[0], constant_term);
 }
@@ -124,8 +121,8 @@ TEST(PolynomialComputationsTest, TestInterpolateSmallPolynomial) {
 // Evaluates n y-values: y0, y1, ... y_{n-1} where y_i = f(x_i)
 //
 // Invokes the function InterpolateConstat() and checks that we get back c0.
-void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
-                         uint32_t x0, uint32_t x_step) {
+void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step, uint32_t x0,
+                         uint32_t x_step) {
   // Construct the coefficients of the polynomial.
   std::vector<FieldElement> coefficients;
   uint32_t c = c0;
@@ -157,13 +154,11 @@ void DoInterpolationTest(size_t num_points, uint32_t c0, uint32_t c_step,
   }
 
   // Interpolate to recover the constant term.
-  FieldElement constant_term =
-      InterpolateConstant(x_value_pointers, y_value_pointers);
+  FieldElement constant_term = InterpolateConstant(x_value_pointers, y_value_pointers);
 
   // Check that we got the right constant term.
   EXPECT_EQ(coefficients[0], constant_term)
-      << num_points << ", " << c0 << ", " << c_step << ", " << x0 << ", "
-      << x_step;
+      << num_points << ", " << c0 << ", " << c_step << ", " << x0 << ", " << x_step;
 }
 
 TEST(PolynomialComputationsTest, TestInterpolate) {

@@ -28,8 +28,7 @@ class PemUtil {
   // Reads the text file at the specified path and writes the contents into
   // |*file_contents|. The file must contain at most |kMaxFileSize| bytes.
   // Returns true for success or false for failure.
-  static bool ReadTextFile(const std::string& file_path,
-                           std::string* file_contents);
+  static bool ReadTextFile(const std::string& file_path, std::string* file_contents);
 };
 
 }  // namespace util

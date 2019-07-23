@@ -62,16 +62,13 @@ class Logger : public LoggerInterface {
   // |internal_logger| An instance of LoggerInterface, used internally by the
   // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
   // internal logging will be performed by this Logger.
-  Logger(std::unique_ptr<ProjectContext> project_context,
-         const Encoder* encoder, EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer,
-         encoder::SystemDataInterface* system_data,
-         LoggerInterface* internal_logger = nullptr);
+  Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
+         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
+         encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger = nullptr);
 
   // DEPRECATED Constructor
-  Logger(std::unique_ptr<ProjectContext> project_context,
-         const Encoder* encoder, EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer,
+  Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
+         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
          LoggerInterface* internal_logger = nullptr);
 
   ~Logger() override = default;
@@ -82,49 +79,41 @@ class Logger : public LoggerInterface {
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogEventCount;
-  Status LogEventCount(uint32_t metric_id,
-                       const std::vector<uint32_t>& event_codes,
-                       const std::string& component,
-                       int64_t period_duration_micros, uint32_t count) override;
+  Status LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                       const std::string& component, int64_t period_duration_micros,
+                       uint32_t count) override;
 
   // In order to import the LogElapsedTime method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogElapsedTime;
-  Status LogElapsedTime(uint32_t metric_id,
-                        const std::vector<uint32_t>& event_codes,
-                        const std::string& component,
-                        int64_t elapsed_micros) override;
+  Status LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                        const std::string& component, int64_t elapsed_micros) override;
 
   // In order to import the LogFrameRate method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogFrameRate;
-  Status LogFrameRate(uint32_t metric_id,
-                      const std::vector<uint32_t>& event_codes,
+  Status LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                       const std::string& component, float fps) override;
 
   // In order to import the LogMemoryUsage method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogMemoryUsage;
-  Status LogMemoryUsage(uint32_t metric_id,
-                        const std::vector<uint32_t>& event_codes,
+  Status LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t bytes) override;
 
   // In order to import the LogIntHistogram method that doesn't take a vector of
   // event_codes, we need to manually import it, since c++ won't do it
   // automatically.
   using LoggerInterface::LogIntHistogram;
-  Status LogIntHistogram(uint32_t metric_id,
-                         const std::vector<uint32_t>& event_codes,
-                         const std::string& component,
-                         HistogramPtr histogram) override;
+  Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                         const std::string& component, HistogramPtr histogram) override;
 
   Status LogString(uint32_t metric_id, const std::string& str) override;
 
-  Status LogCustomEvent(uint32_t metric_id,
-                        EventValuesPtr event_values) override;
+  Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
   InternalMetrics* internal_metrics() { return internal_metrics_.get(); }
   const ProjectContext* project_context() { return project_context_.get(); }

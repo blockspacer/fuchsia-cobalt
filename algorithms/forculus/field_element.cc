@@ -95,8 +95,7 @@ uint32_t Inverse(uint32_t b) {
   while (r_k1 != 0) {
     uint64_t q_k = r_k2 / r_k1;
     uint64_t r_k = r_k2 % r_k1;
-    uint64_t t_k =
-        ((t_k2 + kLargestPrime) - (q_k * t_k1) % kLargestPrime) % kLargestPrime;
+    uint64_t t_k = ((t_k2 + kLargestPrime) - (q_k * t_k1) % kLargestPrime) % kLargestPrime;
 
     r_k2 = r_k1;
     r_k1 = r_k;
@@ -112,8 +111,7 @@ uint32_t Inverse(uint32_t b) {
 
 const size_t FieldElement::kDataSize;
 
-FieldElement::FieldElement(std::vector<byte>&& bytes)
-    : bytes_(std::move(bytes)) {
+FieldElement::FieldElement(std::vector<byte>&& bytes) : bytes_(std::move(bytes)) {
   // NOTE: In our temporary, insecure implementation we discard all but the
   // first 32 bits of the input.
   bytes_.resize(sizeof(uint32_t));
@@ -151,9 +149,9 @@ FieldElement FieldElement::operator+(const FieldElement& other) const {
 }
 
 void FieldElement::operator+=(const FieldElement& other) {
-  uint64_t sum = (static_cast<uint64_t>(AsInt32(bytes_)) +
-                  static_cast<uint64_t>(AsInt32(other.bytes_))) %
-                 kLargestPrime;
+  uint64_t sum =
+      (static_cast<uint64_t>(AsInt32(bytes_)) + static_cast<uint64_t>(AsInt32(other.bytes_))) %
+      kLargestPrime;
   FromUInt64(sum, &bytes_);
 }
 
@@ -213,8 +211,7 @@ const byte* FieldElement::KeyBytes() const { return bytes_.data(); }
 std::ostream& operator<<(std::ostream& os, const FieldElement& el) {
   const byte* data = el.KeyBytes();
   for (size_t i = 0; i < FieldElement::kDataSize; i++) {
-    os << std::hex << std::setfill('0') << std::setw(2)
-       << static_cast<uint32_t>(*data) << " ";
+    os << std::hex << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(*data) << " ";
     data++;
   }
   return os;

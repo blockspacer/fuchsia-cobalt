@@ -44,10 +44,8 @@ TEST(HashTest, TestHash) {
   }
 
   // Compare this to an expected result.
-  EXPECT_EQ(
-      std::string(
-          "fc11f3cbffea99f65944e50e72e5bfc09674eed67bcebcd76ec0f9dc90faef05"),
-      stream.str());
+  EXPECT_EQ(std::string("fc11f3cbffea99f65944e50e72e5bfc09674eed67bcebcd76ec0f9dc90faef05"),
+            stream.str());
 }
 
 }  // namespace hash

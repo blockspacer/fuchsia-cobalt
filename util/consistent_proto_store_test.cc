@@ -42,9 +42,7 @@ class TestConsistentProtoStore : public ConsistentProtoStore {
   void FailNextWriteToTmp() { fail_write_tmp_ = true; }
   void FailNextMoveTmpToOverride() { fail_move_tmp_ = true; }
   void FailNextDeletePrimary() { fail_delete_primary_ = true; }
-  void FailNextMoveOverrideToPrimary() {
-    fail_move_override_to_primary_ = true;
-  }
+  void FailNextMoveOverrideToPrimary() { fail_move_override_to_primary_ = true; }
 
  private:
   Status WriteToTmp(const google::protobuf::MessageLite &proto) override {
@@ -88,8 +86,7 @@ class TestConsistentProtoStore : public ConsistentProtoStore {
 class ConsistentProtoStoreTest : public ::testing::Test {
  public:
   ConsistentProtoStoreTest()
-      : directory_(GetTestDirName(test_dir_base)),
-        store_(directory_ + "/Proto") {}
+      : directory_(GetTestDirName(test_dir_base)), store_(directory_ + "/Proto") {}
 
   void Mkdir() {
     PosixFileSystem fs;
@@ -202,8 +199,7 @@ TEST_F(ConsistentProtoStoreTest, ReadCorrupt) {
   TestProto p;
   auto stat = store_.Read(&p);
   EXPECT_FALSE(stat.ok());
-  EXPECT_EQ(stat.error_message(),
-            "Unable to parse the protobuf from the store. Data is corrupt.");
+  EXPECT_EQ(stat.error_message(), "Unable to parse the protobuf from the store. Data is corrupt.");
   EXPECT_EQ(stat.error_details(), "");
 }
 

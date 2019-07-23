@@ -14,15 +14,14 @@ void LassoRunnerTest::SetLassoRunner(const InstanceSet* matrix) {
   lasso_runner_ = std::make_unique<LassoRunner>(matrix);
 }
 
-void LassoRunnerTest::CheckFirstRapporStepCorrectness(
-    const LabelSet& right_hand_side, const Weights& results) {
+void LassoRunnerTest::CheckFirstRapporStepCorrectness(const LabelSet& right_hand_side,
+                                                      const Weights& results) {
   // Get the penalty paramaters.
   const double l1 = lasso_runner_->minimizer_data_.l1;
   const double l2 = lasso_runner_->minimizer_data_.l2;
   const double zero_threshold = lasso_runner_->minimizer_data_.zero_threshold;
   // Reference to the problem matrix.
-  const Eigen::SparseMatrix<double, Eigen::RowMajor>* A_matrix(
-      lasso_runner_->matrix_);
+  const Eigen::SparseMatrix<double, Eigen::RowMajor>* A_matrix(lasso_runner_->matrix_);
 
   // Check that the minimizer converged and that minimizer info makes sense.
   EXPECT_EQ(lasso_runner_->minimizer_data_.converged, true);
@@ -50,27 +49,21 @@ void LassoRunnerTest::CheckFirstRapporStepCorrectness(
 
   // Compute the KKT condition violation.
   Eigen::VectorXd estimate_error;
-  estimate_error =
-      ((results.array() > zero_threshold).select(gradient.array() + l1, 0))
-          .matrix();
+  estimate_error = ((results.array() > zero_threshold).select(gradient.array() + l1, 0)).matrix();
+  estimate_error += ((results.array() < -zero_threshold).select(gradient.array() - l1, 0)).matrix();
   estimate_error +=
-      ((results.array() < -zero_threshold).select(gradient.array() - l1, 0))
+      ((abs(results.array()) <= zero_threshold).select(abs(gradient.array()) - l1, 0).max(0))
           .matrix();
-  estimate_error += ((abs(results.array()) <= zero_threshold)
-                         .select(abs(gradient.array()) - l1, 0)
-                         .max(0))
-                        .matrix();
   // The correctness check is relatively lax because the algorithm could have
   // converged before reaching the solution. On the other hand, the convergence
   // thresholds should be such that this holds.
   EXPECT_LE(estimate_error.norm() / results.size(), 1e-3);
 }
 
-void LassoRunnerTest::CheckNonzeroCandidates(
-    const std::vector<int>& nonzero_cols, const Weights& results) {
+void LassoRunnerTest::CheckNonzeroCandidates(const std::vector<int>& nonzero_cols,
+                                             const Weights& results) {
   for (int i = 0; i < results.size(); i++) {
-    if (std::find(nonzero_cols.begin(), nonzero_cols.end(), i) !=
-        nonzero_cols.end()) {
+    if (std::find(nonzero_cols.begin(), nonzero_cols.end(), i) != nonzero_cols.end()) {
       EXPECT_GE(results[i], lasso_runner_->zero_threshold_);
     } else {
       EXPECT_LE(results[i], lasso_runner_->zero_threshold_);
@@ -90,15 +83,13 @@ void LassoRunnerTest::CheckLassoRunnerParameters() {
 }
 
 // Creates a random sparse m x n matrix with positive entries.
-InstanceSet LassoRunnerTest::RandomMatrix(const int m, const int n,
-                                          const int num_nonzero_entries) {
+InstanceSet LassoRunnerTest::RandomMatrix(const int m, const int n, const int num_nonzero_entries) {
   std::vector<Eigen::Triplet<double>> triplets(num_nonzero_entries);
   std::uniform_int_distribution<int> m_distribution(0, m - 1);
   std::uniform_int_distribution<int> n_distribution(0, n - 1);
   static const double min_entry = 1.0;
   static const double max_entry = 1.0;
-  std::uniform_real_distribution<double> real_distribution(min_entry,
-                                                           max_entry);
+  std::uniform_real_distribution<double> real_distribution(min_entry, max_entry);
   for (int k = 0; k < num_nonzero_entries; k++) {
     uint32_t i = m_distribution(random_dev_);
     uint32_t j = n_distribution(random_dev_);

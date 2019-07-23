@@ -34,14 +34,10 @@ TEST(TestUtilsTest, DataToBinaryString) {
   EXPECT_EQ(DataToBinaryString(std::string("\1\xFE", 2)), "0000000111111110");
 
   // Three bytes
-  EXPECT_EQ(DataToBinaryString(std::string("\0\0\0", 3)),
-            "000000000000000000000000");
-  EXPECT_EQ(DataToBinaryString(std::string("\0\0\1", 3)),
-            "000000000000000000000001");
-  EXPECT_EQ(DataToBinaryString(std::string("\0\1\0", 3)),
-            "000000000000000100000000");
-  EXPECT_EQ(DataToBinaryString(std::string("\1\1\0", 3)),
-            "000000010000000100000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\0\0", 3)), "000000000000000000000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\0\1", 3)), "000000000000000000000001");
+  EXPECT_EQ(DataToBinaryString(std::string("\0\1\0", 3)), "000000000000000100000000");
+  EXPECT_EQ(DataToBinaryString(std::string("\1\1\0", 3)), "000000010000000100000000");
 }
 
 // Test the function BinaryStringToData
@@ -60,14 +56,10 @@ TEST(TestUtilsTest, BinaryStringToData) {
   EXPECT_EQ(std::string("\1\xFE", 2), BinaryStringToData("0000000111111110"));
 
   // Three bytes
-  EXPECT_EQ(std::string("\0\0\0", 3),
-            BinaryStringToData("000000000000000000000000"));
-  EXPECT_EQ(std::string("\0\0\1", 3),
-            BinaryStringToData("000000000000000000000001"));
-  EXPECT_EQ(std::string("\0\1\0", 3),
-            BinaryStringToData("000000000000000100000000"));
-  EXPECT_EQ(std::string("\1\1\0", 3),
-            BinaryStringToData("000000010000000100000000"));
+  EXPECT_EQ(std::string("\0\0\0", 3), BinaryStringToData("000000000000000000000000"));
+  EXPECT_EQ(std::string("\0\0\1", 3), BinaryStringToData("000000000000000000000001"));
+  EXPECT_EQ(std::string("\0\1\0", 3), BinaryStringToData("000000000000000100000000"));
+  EXPECT_EQ(std::string("\1\1\0", 3), BinaryStringToData("000000010000000100000000"));
 }
 
 }  // namespace cobalt::rappor

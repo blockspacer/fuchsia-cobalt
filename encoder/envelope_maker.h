@@ -69,14 +69,12 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   // passed the |message| into AddEncryptedObservation. This allows the user to
   // check if a call will succeed before moving the unique_ptr into
   // AddEncryptedObservation.
-  ObservationStore::StoreStatus CanAddObservation(
-      const EncryptedMessage& message);
+  ObservationStore::StoreStatus CanAddObservation(const EncryptedMessage& message);
 
   // AddEncryptedObservation adds a message and its associated metadata to the
   // store. This should return the same value as CanAddObservation.
   ObservationStore::StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata);
+      std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata);
 
   const Envelope& GetEnvelope() override { return envelope_; }
 
@@ -88,8 +86,7 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
     num_bytes_ = 0;
   }
 
-  void MergeWith(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> other) override;
+  void MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> other) override;
 
   // Returns an approximation to the size of the Envelope in bytes. This value
   // is the sum of the sizes of the serialized, encrypted Observations contained

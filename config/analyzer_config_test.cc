@@ -60,16 +60,13 @@ TEST(AnalyzerConfigTest, BadFileNameDeathTest) {
 TEST(AnalyzerConfigTest, NotValidAsciiProtoFileDeathTest) {
   FLAGS_cobalt_config_dir = "config";
   FLAGS_cobalt_encoding_configs_file_name = "analyzer_config_test.cc";
-  ASSERT_DEATH(AnalyzerConfig::CreateFromFlagsOrDie(),
-               "Error while parsing file");
+  ASSERT_DEATH(AnalyzerConfig::CreateFromFlagsOrDie(), "Error while parsing file");
 }
 
 TEST(AnalyzerConfigTest, DuplicateRegistrationDeathTest) {
   FLAGS_cobalt_config_dir = "config/test_files";
-  FLAGS_cobalt_encoding_configs_file_name =
-      "registered_encodings_contains_duplicate.txt";
-  ASSERT_DEATH(AnalyzerConfig::CreateFromFlagsOrDie(),
-               "Duplicate ID found in file");
+  FLAGS_cobalt_encoding_configs_file_name = "registered_encodings_contains_duplicate.txt";
+  ASSERT_DEATH(AnalyzerConfig::CreateFromFlagsOrDie(), "Duplicate ID found in file");
 }
 
 TEST(AnalyzerConfigTest, ValidCobaltRegistryProto) {

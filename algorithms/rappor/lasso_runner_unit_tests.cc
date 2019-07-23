@@ -37,9 +37,8 @@ TEST_F(LassoRunnerTest, ZeroSolution) {
 
   // Reset the runner and run first lasso step.
   lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
-  lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
-                                    right_hand_side, &results,
-                                    &second_step_cols);
+  lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm, right_hand_side,
+                                    &results, &second_step_cols);
   // Check that the Lasso parameters make numerical sense.
   CheckLassoRunnerParameters();
   // Check that the result is zero.
@@ -95,9 +94,8 @@ TEST_F(LassoRunnerTest, ExactSolution) {
   // Reset the lasso runner and perform the first step of RAPPOR.
   lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
   MakeLastLassoStepExact();
-  lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
-                                    right_hand_side, &results,
-                                    &second_step_cols);
+  lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm, right_hand_side,
+                                    &results, &second_step_cols);
   // Check solution correctness.
   CheckLassoRunnerParameters();
   CheckFirstRapporStepCorrectness(right_hand_side, results);
@@ -142,9 +140,8 @@ TEST_F(LassoRunnerTest, MaxNonzeros) {
     Weights results = Weights::Zero(n);
     std::vector<int> second_step_cols;
     lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
-    lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
-                                      right_hand_side, &results,
-                                      &second_step_cols);
+    lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm, right_hand_side,
+                                      &results, &second_step_cols);
     // Check that parameters make numerical sense and that the solution is
     // correct.
     CheckLassoRunnerParameters();
@@ -153,8 +150,7 @@ TEST_F(LassoRunnerTest, MaxNonzeros) {
 
     // Since the last step of lasso is computed with a different accuracy, we
     // relax the check. This is heuristic.
-    EXPECT_LE(second_step_cols.size(),
-              static_cast<uint32_t>(1.2 * max_nonzero_coeffs + 5));
+    EXPECT_LE(second_step_cols.size(), static_cast<uint32_t>(1.2 * max_nonzero_coeffs + 5));
   }
 }
 
@@ -187,15 +183,13 @@ TEST_F(LassoRunnerTest, MaxNorm) {
     LabelSet right_hand_side = random_right_hand_side;
 
     int max_nonzero_coeffs = n + 1;
-    double max_solution_1_norm =
-        real_distribution(random_dev_) * random_solution.lpNorm<1>() + 1.0;
+    double max_solution_1_norm = real_distribution(random_dev_) * random_solution.lpNorm<1>() + 1.0;
 
     Weights results = Weights::Zero(n);
     std::vector<int> second_step_cols;
     lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
-    lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm,
-                                      right_hand_side, &results,
-                                      &second_step_cols);
+    lasso_runner_->RunFirstRapporStep(max_nonzero_coeffs, max_solution_1_norm, right_hand_side,
+                                      &results, &second_step_cols);
     // Check that parameters make numerical sense and that the solution is
     // correct.
     CheckLassoRunnerParameters();
@@ -204,8 +198,7 @@ TEST_F(LassoRunnerTest, MaxNorm) {
 
     // Since the last step of lasso is computed with a different accuracy we
     // relax the check. This is heuristic.
-    EXPECT_LE(results.lpNorm<1>(),
-              static_cast<double>(1.5 * max_solution_1_norm));
+    EXPECT_LE(results.lpNorm<1>(), static_cast<double>(1.5 * max_solution_1_norm));
   }
 }
 
@@ -258,9 +251,8 @@ TEST_F(LassoRunnerTest, SecondStepExactness) {
 
   // Reset the lasso runner and run the second RAPPOR step.
   lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
-  lasso_runner_->GetExactValuesAndStdErrs(
-      l1_penalty, initial_guess, standard_errs, matrix, right_hand_side,
-      &results, &estimated_errs);
+  lasso_runner_->GetExactValuesAndStdErrs(l1_penalty, initial_guess, standard_errs, matrix,
+                                          right_hand_side, &results, &estimated_errs);
 
   // Check the correctness of the solution and that the estimated errors are
   // zero.
@@ -303,16 +295,13 @@ TEST_F(LassoRunnerTest, SecondStepErrors) {
   Weights results = Weights::Zero(n);
   Weights estimated_errs = Weights::Zero(n);
   lasso_runner_ = std::make_unique<LassoRunner>(&matrix);
-  lasso_runner_->GetExactValuesAndStdErrs(
-      l1_penalty, initial_guess, standard_errs, matrix, right_hand_side,
-      &results, &estimated_errs);
+  lasso_runner_->GetExactValuesAndStdErrs(l1_penalty, initial_guess, standard_errs, matrix,
+                                          right_hand_side, &results, &estimated_errs);
 
   // The solution should be close but we should not count on exactness.
   EXPECT_LE((results - random_solution).norm() / random_solution.norm(), 1e-1);
   // Check that the error estimates are reasonable.
-  EXPECT_LE(
-      (estimated_errs - errors_to_compare).norm() / errors_to_compare.norm(),
-      0.5);
+  EXPECT_LE((estimated_errs - errors_to_compare).norm() / errors_to_compare.norm(), 0.5);
 }
 
 }  // namespace cobalt::rappor

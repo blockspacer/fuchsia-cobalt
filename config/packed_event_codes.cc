@@ -39,8 +39,8 @@ std::vector<uint32_t> UnpackEventCodes(uint64_t packed_event_codes) {
 
   std::vector<uint32_t> event_codes(num_event_codes);
   for (uint64_t i = 0; i < num_event_codes; i++) {
-    event_codes[i] = (packed_event_codes & (mask << (event_code_size * i))) >>
-                     (event_code_size * i);
+    event_codes[i] =
+        (packed_event_codes & (mask << (event_code_size * i))) >> (event_code_size * i);
   }
   return event_codes;
 }

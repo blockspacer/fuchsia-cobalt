@@ -32,8 +32,8 @@ class RapporAnalyzerTest : public ::testing::Test {
   // Sets the member variable analyzer_ to a new RapporAnalyzer configured
   // with the given arguments and the current values of prob_0_becomes_1_,
   // prob_1_stays_1_.
-  void SetAnalyzer(uint32_t num_candidates, uint32_t num_bloom_bits,
-                   uint32_t num_cohorts, uint32_t num_hashes);
+  void SetAnalyzer(uint32_t num_candidates, uint32_t num_bloom_bits, uint32_t num_cohorts,
+                   uint32_t num_hashes);
 
   void BuildCandidateMap();
 
@@ -56,9 +56,8 @@ class RapporAnalyzerTest : public ::testing::Test {
 
   void ExtractEstimatedBitCountRatios(Eigen::VectorXd* est_bit_count_ratios);
 
-  void ExtractEstimatedBitCountRatiosAndStdErrors(
-      Eigen::VectorXd* est_bit_count_ratios,
-      std::vector<double>* est_std_errors);
+  void ExtractEstimatedBitCountRatiosAndStdErrors(Eigen::VectorXd* est_bit_count_ratios,
+                                                  std::vector<double>* est_std_errors);
 
   void AddObservationsForCandidates(const std::vector<int>& candidate_indices);
 
@@ -71,11 +70,9 @@ class RapporAnalyzerTest : public ::testing::Test {
   // in a random order.
   std::vector<int> GenerateRandomMapOfIds(int num_candidates);
 
-  std::vector<int> CountsEstimatesFromResults(
-      const std::vector<CandidateResult>& results);
+  std::vector<int> CountsEstimatesFromResults(const std::vector<CandidateResult>& results);
 
-  Eigen::VectorXd VectorFromCounts(
-      const std::vector<int>& exact_candidate_counts);
+  Eigen::VectorXd VectorFromCounts(const std::vector<int>& exact_candidate_counts);
 
   // Checks how well the |exact_candidate_counts| reproduces the right hand side
   // of the equation solved by Analyze(). The function prints the value of
@@ -93,10 +90,9 @@ class RapporAnalyzerTest : public ::testing::Test {
   // given vector solves it.
   void CheckExactSolution(const std::vector<int>& exact_candidate_counts);
 
-  void PrintTrueCountsAndEstimates(
-      const std::string& case_label, uint32_t num_candidates,
-      const std::vector<CandidateResult>& results,
-      const std::vector<int>& true_candidate_counts);
+  void PrintTrueCountsAndEstimates(const std::string& case_label, uint32_t num_candidates,
+                                   const std::vector<CandidateResult>& results,
+                                   const std::vector<int>& true_candidate_counts);
 
   // Assess utility of |results|. The informal measure suggested by mironov is:
   // "Largest n such that at most 10% of the n highest hitters are identified as
@@ -111,38 +107,33 @@ class RapporAnalyzerTest : public ::testing::Test {
 
   // Computes the least squares fit on the candidate matrix using QR,
   // for the given rhs in |est_bit_count_ratios| and saves it to |results|
-  grpc::Status ComputeLeastSquaresFitQR(
-      const Eigen::VectorXd& est_bit_count_ratios,
-      std::vector<CandidateResult>* results);
+  grpc::Status ComputeLeastSquaresFitQR(const Eigen::VectorXd& est_bit_count_ratios,
+                                        std::vector<CandidateResult>* results);
 
   // Runs a simple least squares problem for Ax = b on the candidate matrix
   // using QR algorithm from eigen library; this is to see the results
   // without penalty terms (note: in an overdetermined system the solution
   // is not unique so this is more a helper testing function to cross-check
   // the behavior of regression without penalty)
-  void RunSimpleLinearRegressionReference(
-      const std::string& case_label, uint32_t num_candidates,
-      uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-      const std::vector<int>& candidate_indices,
-      const std::vector<int>& true_candidate_counts);
+  void RunSimpleLinearRegressionReference(const std::string& case_label, uint32_t num_candidates,
+                                          uint32_t num_bloom_bits, uint32_t num_cohorts,
+                                          uint32_t num_hashes,
+                                          const std::vector<int>& candidate_indices,
+                                          const std::vector<int>& true_candidate_counts);
 
   // Invokes the Analyze() method using the given parameters. Checks that
   // the algorithms converges and that the result vector has the correct length.
-  void ShortExperimentWithAnalyze(const std::string& case_label,
-                                  uint32_t num_candidates,
+  void ShortExperimentWithAnalyze(const std::string& case_label, uint32_t num_candidates,
                                   uint32_t num_bloom_bits, uint32_t num_cohorts,
-                                  uint32_t num_hashes,
-                                  const std::vector<int>& candidate_indices,
+                                  uint32_t num_hashes, const std::vector<int>& candidate_indices,
                                   const std::vector<int>& true_candidate_counts,
                                   bool print_estimates);
 
   // Same as ShortExperimentWithAnalyze() but also measures the time taken by
   // Analyze(), calls CheckExactSolution() to assess the loss of information,
   // and calls AssessUtility() to compare the results with true counts.
-  void LongExperimentWithAnalyze(const std::string& case_label,
-                                 uint32_t num_candidates,
-                                 uint32_t num_bloom_bits, uint32_t num_cohorts,
-                                 uint32_t num_hashes,
+  void LongExperimentWithAnalyze(const std::string& case_label, uint32_t num_candidates,
+                                 uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
                                  const std::vector<int>& candidate_indices,
                                  const std::vector<int>& true_candidate_counts,
                                  bool print_estimates);
@@ -150,11 +141,11 @@ class RapporAnalyzerTest : public ::testing::Test {
   // Similar to ShortExperimentWithAnalyze except it also
   // computes the estimates for both Analyze and simple regression using QR,
   // which is computed on exactly the same system.
-  void CompareAnalyzeToSimpleRegression(
-      const std::string& case_label, uint32_t num_candidates,
-      uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes,
-      const std::vector<int>& candidate_indices,
-      const std::vector<int>& true_candidate_counts);
+  void CompareAnalyzeToSimpleRegression(const std::string& case_label, uint32_t num_candidates,
+                                        uint32_t num_bloom_bits, uint32_t num_cohorts,
+                                        uint32_t num_hashes,
+                                        const std::vector<int>& candidate_indices,
+                                        const std::vector<int>& true_candidate_counts);
 
  private:
   RapporCandidateList candidate_list_;

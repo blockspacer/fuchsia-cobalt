@@ -44,19 +44,17 @@ constexpr char kReadConfigFromCobaltRegistryFileFailure[] =
     "analyzer-config-manager-read-config-from-cobalt-config-file-failure";
 }  // namespace
 
-AnalyzerConfigManager::AnalyzerConfigManager(
-    std::shared_ptr<AnalyzerConfig> config,
-    std::string cobalt_registry_proto_path,
-    std::string config_update_repository_url,
-    std::string config_parser_bin_path)
+AnalyzerConfigManager::AnalyzerConfigManager(std::shared_ptr<AnalyzerConfig> config,
+                                             std::string cobalt_registry_proto_path,
+                                             std::string config_update_repository_url,
+                                             std::string config_parser_bin_path)
     : cobalt_registry_proto_path_(cobalt_registry_proto_path),
       update_repository_path_(config_update_repository_url),
       config_parser_bin_path_(config_parser_bin_path) {
   ptr_ = config;
 }
 
-AnalyzerConfigManager::AnalyzerConfigManager(
-    std::shared_ptr<AnalyzerConfig> config) {
+AnalyzerConfigManager::AnalyzerConfigManager(std::shared_ptr<AnalyzerConfig> config) {
   ptr_ = config;
 }
 
@@ -65,27 +63,23 @@ std::shared_ptr<AnalyzerConfig> AnalyzerConfigManager::GetCurrent() {
   return ptr_;
 }
 
-std::shared_ptr<AnalyzerConfigManager>
-AnalyzerConfigManager::CreateFromFlagsOrDie() {
+std::shared_ptr<AnalyzerConfigManager> AnalyzerConfigManager::CreateFromFlagsOrDie() {
   if (FLAGS_cobalt_registry_proto_path.empty()) {
     auto config = AnalyzerConfig::CreateFromFlagsOrDie();
-    return std::shared_ptr<AnalyzerConfigManager>(
-        new AnalyzerConfigManager(std::move(config)));
+    return std::shared_ptr<AnalyzerConfigManager>(new AnalyzerConfigManager(std::move(config)));
   }
 
   // If a file containing a serialized CobaltRegistry is specified, we load the
   // initial configuration from that file.
-  auto config = ReadConfigFromSerializedCobaltRegistryFile(
-      FLAGS_cobalt_registry_proto_path);
+  auto config = ReadConfigFromSerializedCobaltRegistryFile(FLAGS_cobalt_registry_proto_path);
   if (!config) {
     LOG(FATAL) << "Could not load the initial configuration.";
   }
   LOG(INFO) << "Initial configuration loaded.";
 
-  auto manager =
-      std::shared_ptr<AnalyzerConfigManager>(new AnalyzerConfigManager(
-          std::move(config), FLAGS_cobalt_registry_proto_path,
-          FLAGS_config_update_repository_url, FLAGS_config_parser_bin_path));
+  auto manager = std::shared_ptr<AnalyzerConfigManager>(
+      new AnalyzerConfigManager(std::move(config), FLAGS_cobalt_registry_proto_path,
+                                FLAGS_config_update_repository_url, FLAGS_config_parser_bin_path));
   manager->Update(120);
   return manager;
 }
@@ -111,8 +105,8 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
 
   errno = 0;
   // The variable "environ" is the current environment found in unistd.h.
-  int status = posix_spawn(&pid, config_parser_bin_path_.c_str(), nullptr,
-                           &spawnattr, const_cast<char* const*>(argv), environ);
+  int status = posix_spawn(&pid, config_parser_bin_path_.c_str(), nullptr, &spawnattr,
+                           const_cast<char* const*>(argv), environ);
 
   if (0 != status) {
     LOG_STACKDRIVER_COUNT_METRIC(ERROR, kUpdateFailure)
@@ -149,11 +143,9 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
       return false;
     }
   }
-  LOG(INFO) << "Done getting updated configuration from "
-            << update_repository_path_;
+  LOG(INFO) << "Done getting updated configuration from " << update_repository_path_;
 
-  auto config =
-      ReadConfigFromSerializedCobaltRegistryFile(cobalt_registry_proto_path_);
+  auto config = ReadConfigFromSerializedCobaltRegistryFile(cobalt_registry_proto_path_);
   std::lock_guard<std::mutex> lock(m_);
   ptr_.reset(config.release());
 
@@ -161,30 +153,26 @@ bool AnalyzerConfigManager::Update(unsigned int timeout_seconds) {
   return true;
 }
 
-std::unique_ptr<AnalyzerConfig>
-AnalyzerConfigManager::ReadConfigFromSerializedCobaltRegistryFile(
+std::unique_ptr<AnalyzerConfig> AnalyzerConfigManager::ReadConfigFromSerializedCobaltRegistryFile(
     std::string config_path) {
   std::ifstream config_file_stream;
   config_file_stream.open(config_path);
   if (!config_file_stream) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
-                                 kReadConfigFromCobaltRegistryFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltRegistryFileFailure)
         << "Could not open config proto: " << config_path;
     return nullptr;
   }
 
   CobaltRegistry cobalt_config;
   if (!cobalt_config.ParseFromIstream(&config_file_stream)) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
-                                 kReadConfigFromCobaltRegistryFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltRegistryFileFailure)
         << "Could not parse config proto: " << config_path;
     return nullptr;
   }
 
   auto config = AnalyzerConfig::CreateFromCobaltRegistryProto(&cobalt_config);
   if (!config) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR,
-                                 kReadConfigFromCobaltRegistryFileFailure)
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kReadConfigFromCobaltRegistryFileFailure)
         << "Error creating AnalyzerConfig: " << config_path;
     return nullptr;
   }

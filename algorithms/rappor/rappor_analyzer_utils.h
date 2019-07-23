@@ -16,11 +16,10 @@ namespace cobalt::rappor {
 // Constructs a submatrix of |full_matrix| composed of columns corresponding to
 // indices in |second_step_cols|. |num_cohorts| and |num_hashes| are needed to
 // determine the number of nonzero entries of the matrix.
-void PrepareSecondRapporStepMatrix(
-    cobalt_lossmin::InstanceSet* second_step_matrix,
-    const std::vector<int>& second_step_cols,
-    const cobalt_lossmin::InstanceSet& full_matrix, int num_cohorts,
-    int num_hashes);
+void PrepareSecondRapporStepMatrix(cobalt_lossmin::InstanceSet* second_step_matrix,
+                                   const std::vector<int>& second_step_cols,
+                                   const cobalt_lossmin::InstanceSet& full_matrix, int num_cohorts,
+                                   int num_hashes);
 
 }  // namespace cobalt::rappor
 

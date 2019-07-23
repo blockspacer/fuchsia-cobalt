@@ -24,9 +24,7 @@ class ClockInterface {
 // A clock that returns the real system time.
 class SystemClock : public ClockInterface {
  public:
-  std::chrono::system_clock::time_point now() override {
-    return std::chrono::system_clock::now();
-  }
+  std::chrono::system_clock::time_point now() override { return std::chrono::system_clock::now(); }
 };
 
 // A clock that returns an incrementing sequence of tics each time it is called.
@@ -52,9 +50,7 @@ class IncrementingClock : public ClockInterface {
   std::chrono::system_clock::time_point peek_now() { return time_; }
 
   // Set the value by which the clock is incremented each time it is called.
-  void set_increment(std::chrono::system_clock::duration increment) {
-    increment_ = increment;
-  }
+  void set_increment(std::chrono::system_clock::duration increment) { increment_ = increment; }
 
   // Increment the clock's current time once.
   void increment_by(std::chrono::system_clock::duration increment) {
@@ -66,8 +62,7 @@ class IncrementingClock : public ClockInterface {
 
   void set_time(std::chrono::system_clock::time_point t) { time_ = t; }
 
-  void set_callback(
-      std::function<void(std::chrono::system_clock::time_point)> c) {
+  void set_callback(std::function<void(std::chrono::system_clock::time_point)> c) {
     callback_ = std::move(c);
   }
 
@@ -80,10 +75,8 @@ class IncrementingClock : public ClockInterface {
 
  private:
   std::chrono::system_clock::time_point time_ =
-      std::chrono::system_clock::time_point(
-          std::chrono::system_clock::duration(0));
-  std::chrono::system_clock::duration increment_ =
-      std::chrono::system_clock::duration(1);
+      std::chrono::system_clock::time_point(std::chrono::system_clock::duration(0));
+  std::chrono::system_clock::duration increment_ = std::chrono::system_clock::duration(1);
   std::function<void(std::chrono::system_clock::time_point)> callback_;
 };
 

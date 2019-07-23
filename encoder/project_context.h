@@ -33,13 +33,11 @@ class ProjectContext {
   // Returns the Metric with the given name in the project, or nullptr if there
   // is no such Metric. The caller does not take ownership of the returned
   // pointer.
-  [[nodiscard]] const class Metric* Metric(
-      const std::string& metric_name) const;
+  [[nodiscard]] const class Metric* Metric(const std::string& metric_name) const;
 
   // Returns a map from MetricPart names to default encoding_ids for the metric
   // given by |id|. If no such metric exists, returns an empty map.
-  const std::unordered_map<std::string, uint32_t>& DefaultEncodingsForMetric(
-      uint32_t id);
+  const std::unordered_map<std::string, uint32_t>& DefaultEncodingsForMetric(uint32_t id);
 
   // Returns the EncodingConfig with the given ID in the project, or nullptr if
   // there is no such EncodingConfig. The caller does not take ownership of the
@@ -55,8 +53,7 @@ class ProjectContext {
 
   // The keys are metric_ids and the values are maps from MetricPart names to
   // default encoding_ids.
-  std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>>
-      default_encodings_;
+  std::unordered_map<uint32_t, std::unordered_map<std::string, uint32_t>> default_encodings_;
 
   std::shared_ptr<config::ClientConfig> client_config_;
 };

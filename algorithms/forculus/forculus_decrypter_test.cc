@@ -36,13 +36,11 @@ ForculusObservation Encrypt(const std::string& plaintext) {
   config.set_threshold(kThreshold);
 
   // Construct an Encrypter.
-  ForculusEncrypter encrypter(config, 0, 0, 0, "",
-                              ClientSecret::GenerateNewSecret());
+  ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
 
   // Invoke Encrypt() and check the status.
   ForculusObservation obs;
-  EXPECT_EQ(ForculusEncrypter::kOK,
-            encrypter.Encrypt(plaintext, kDayIndex, &obs));
+  EXPECT_EQ(ForculusEncrypter::kOK, encrypter.Encrypt(plaintext, kDayIndex, &obs));
   return obs;
 }
 
@@ -55,13 +53,11 @@ ForculusObservation EncryptValue(const ValuePart& value) {
   config.set_threshold(kThreshold);
 
   // Construct an Encrypter.
-  ForculusEncrypter encrypter(config, 0, 0, 0, "",
-                              ClientSecret::GenerateNewSecret());
+  ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
 
   // Invoke EncryptValue() and check the status.
   ForculusObservation obs;
-  EXPECT_EQ(ForculusEncrypter::kOK,
-            encrypter.EncryptValue(value, kDayIndex, &obs));
+  EXPECT_EQ(ForculusEncrypter::kOK, encrypter.EncryptValue(value, kDayIndex, &obs));
   return obs;
 }
 
@@ -167,8 +163,7 @@ TEST(ForculusDecrypterTest, TestErrors) {
   EXPECT_EQ(1u, decrypter.size());
 
   // Trying to add Obervation 2 will yield kInconsistentPoints.
-  EXPECT_EQ(ForculusDecrypter::kInconsistentPoints,
-            decrypter.AddObservation(obs2));
+  EXPECT_EQ(ForculusDecrypter::kInconsistentPoints, decrypter.AddObservation(obs2));
 
   // Trying to decrypt now will yield kNontEnoughPoints.
   std::string plaintext;
@@ -178,8 +173,7 @@ TEST(ForculusDecrypterTest, TestErrors) {
   // ciphertext. Now trying to add it yields kWrongCiphertext.
   obs2.set_ciphertext("A different ciphertext");
   obs2.set_point_x("23456");
-  EXPECT_EQ(ForculusDecrypter::kWrongCiphertext,
-            decrypter.AddObservation(obs2));
+  EXPECT_EQ(ForculusDecrypter::kWrongCiphertext, decrypter.AddObservation(obs2));
 
   // Fix observation 2 and we can successfully add it.
   obs2.set_ciphertext("A ciphertext");
@@ -198,8 +192,7 @@ TEST(ForculusDecrypterTest, TestErrors) {
 
   // Now there are enough points to try to decrypt but the decryption will
   // fail because the ciphertext is not a real ciphertext.
-  EXPECT_EQ(ForculusDecrypter::kDecryptionFailed,
-            decrypter.Decrypt(&plaintext));
+  EXPECT_EQ(ForculusDecrypter::kDecryptionFailed, decrypter.Decrypt(&plaintext));
 }
 
 }  // namespace cobalt::forculus

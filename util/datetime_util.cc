@@ -64,8 +64,7 @@ CalendarDate TimeInfoToCalendarDate(const TimeInfo& time_info) {
 }  // namespace
 
 template <typename T>
-inline uint32_t TimeToDayIndex(time_t time,
-                               typename T::TimeZonePolicy time_zone) {
+inline uint32_t TimeToDayIndex(time_t time, typename T::TimeZonePolicy time_zone) {
   TimeInfo time_info;
   switch (time_zone) {
     case T::LOCAL:
@@ -84,8 +83,7 @@ uint32_t TimeToDayIndex(time_t time, Metric::TimeZonePolicy time_zone) {
   return TimeToDayIndex<Metric>(time, time_zone);
 }
 
-uint32_t TimeToDayIndex(time_t time,
-                        MetricDefinition::TimeZonePolicy time_zone) {
+uint32_t TimeToDayIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone) {
   return TimeToDayIndex<MetricDefinition>(time, time_zone);
 }
 
@@ -99,10 +97,9 @@ uint32_t CalendarDateToDayIndex(const CalendarDate& calendar_date) {
   // problem presented in CalendarDateToDayIndexAltImpl() in
   // datetime_util_test.cc.
 
-  if (calendar_date.year < kEpochYearZero ||
-      calendar_date.year >= kMaxCalendarYear || calendar_date.month < 1 ||
-      calendar_date.month > kMonthsPerYear || calendar_date.day_of_month < 1 ||
-      calendar_date.day_of_month > kMaxDaysPerMonth) {
+  if (calendar_date.year < kEpochYearZero || calendar_date.year >= kMaxCalendarYear ||
+      calendar_date.month < 1 || calendar_date.month > kMonthsPerYear ||
+      calendar_date.day_of_month < 1 || calendar_date.day_of_month > kMaxDaysPerMonth) {
     return kInvalidIndex;
   }
 
@@ -132,10 +129,8 @@ uint32_t CalendarDateToDayIndex(const CalendarDate& calendar_date) {
   // n=5 (July)   -> 30*5 + 3
   // n=6 (August) -> 30*6 + 4
   // etc.
-  const uint32_t doy =
-      (153 * (calendar_date.month + (calendar_date.month > 2 ? -3 : 9)) + 2) /
-          5 +
-      calendar_date.day_of_month - 1;
+  const uint32_t doy = (153 * (calendar_date.month + (calendar_date.month > 2 ? -3 : 9)) + 2) / 5 +
+                       calendar_date.day_of_month - 1;
 
   // Now we compute the day of the era. This is relatively easy using
   // the formula for leap years described at the top of this file.
@@ -145,9 +140,7 @@ uint32_t CalendarDateToDayIndex(const CalendarDate& calendar_date) {
   return era * kNumDaysPerEra + doe - kEpochOffset;
 }
 
-time_t MidnightUtcFromDayIndex(uint32_t day_index) {
-  return day_index * kNumUnixSecondsPerDay;
-}
+time_t MidnightUtcFromDayIndex(uint32_t day_index) { return day_index * kNumUnixSecondsPerDay; }
 
 CalendarDate DayIndexToCalendarDate(uint32_t day_index) {
   // This function is an inverse to CalendarDateToDayIndex.
@@ -170,8 +163,7 @@ uint32_t CalendarDateToWeekIndex(const CalendarDate& calendar_date) {
 
 CalendarDate WeekIndexToCalendarDate(uint32_t week_index) {
   // Day zero was a Thursday which is 4 days after Sunday.
-  return DayIndexToCalendarDate(week_index * kDaysPerWeek -
-                                (week_index > 0 ? 4 : 0));
+  return DayIndexToCalendarDate(week_index * kDaysPerWeek - (week_index > 0 ? 4 : 0));
 }
 
 uint32_t DayIndexToMonthIndex(uint32_t day_index) {
@@ -183,8 +175,7 @@ uint32_t CalendarDateToMonthIndex(const CalendarDate& calendar_date) {
       calendar_date.month > kMonthsPerYear) {
     return UINT32_MAX;
   }
-  return kMonthsPerYear * (calendar_date.year - kEpochYearZero) +
-         calendar_date.month - 1;
+  return kMonthsPerYear * (calendar_date.year - kEpochYearZero) + calendar_date.month - 1;
 }
 
 CalendarDate MonthIndexToCalendarDate(uint32_t month_index) {
@@ -197,9 +188,7 @@ CalendarDate MonthIndexToCalendarDate(uint32_t month_index) {
 
 // Returns the the given time as a number of seconds since the Unix epoch.
 int64_t ToUnixSeconds(std::chrono::system_clock::time_point t) {
-  return (std::chrono::duration_cast<std::chrono::seconds>(
-              t.time_since_epoch()))
-      .count();
+  return (std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch())).count();
 }
 
 // Returns the given number of seconds since the Unix epoch as a time_point.

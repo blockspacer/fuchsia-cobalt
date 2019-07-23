@@ -25,13 +25,11 @@ namespace cobalt {
 namespace logger {
 
 // A HistogramPtr provides a moveable way of passing the buckets of a Histogram.
-using HistogramPtr =
-    std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>;
+using HistogramPtr = std::unique_ptr<google::protobuf::RepeatedPtrField<HistogramBucket>>;
 
 // A EventValuesPtr provides a moveable way of passing the dimensions of a
 // custom event.
-using EventValuesPtr =
-    std::unique_ptr<google::protobuf::Map<std::string, CustomDimensionValue>>;
+using EventValuesPtr = std::unique_ptr<google::protobuf::Map<std::string, CustomDimensionValue>>;
 
 // An Encoder is used for creating Observations, including applying any
 // privacy-preserving encodings that may be employed. An Observation
@@ -107,8 +105,7 @@ class Encoder {
   //     not take ownership of system_data and system_data is allowed to be
   //     NULL, in which case no SystemProfile will be added to the
   //     ObservationMetadata.
-  Encoder(encoder::ClientSecret client_secret,
-          const encoder::SystemDataInterface* system_data);
+  Encoder(encoder::ClientSecret client_secret, const encoder::SystemDataInterface* system_data);
 
   // The output of the Encode*() methods is a triple consisting of a status
   // and, if the status is kOK, a new observation and its metadata. The
@@ -136,8 +133,7 @@ class Encoder {
   //
   // num_categories: The number of categories to use in the Basic RAPPOR
   // encoding.
-  Result EncodeBasicRapporObservation(MetricRef metric,
-                                      const ReportDefinition* report,
+  Result EncodeBasicRapporObservation(MetricRef metric, const ReportDefinition* report,
                                       uint32_t day_index, uint32_t value_index,
                                       uint32_t num_categories) const;
 
@@ -158,10 +154,10 @@ class Encoder {
   // |component_name_hash| field.
   //
   // value: This will populate the Observation's |value| field.
-  Result EncodeIntegerEventObservation(
-      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-      const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      const std::string& component, int64_t value) const;
+  Result EncodeIntegerEventObservation(MetricRef metric, const ReportDefinition* report,
+                                       uint32_t day_index,
+                                       const google::protobuf::RepeatedField<uint32_t>& event_codes,
+                                       const std::string& component, int64_t value) const;
 
   // Encodes an Observation of type HistogramObservation.
   //
@@ -182,10 +178,10 @@ class Encoder {
   // histogram: This will be used to populate the Observation's |buckets| field.
   // This method does not validate |histogram| against the Metric definition.
   // That is the caller's responsibility.
-  Result EncodeHistogramObservation(
-      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-      const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      const std::string& component, HistogramPtr histogram) const;
+  Result EncodeHistogramObservation(MetricRef metric, const ReportDefinition* report,
+                                    uint32_t day_index,
+                                    const google::protobuf::RepeatedField<uint32_t>& event_codes,
+                                    const std::string& component, HistogramPtr histogram) const;
 
   // Encodes an Observation of type CustomObservation.
   //
@@ -200,10 +196,8 @@ class Encoder {
   // event_values: This will be used to populate the Observation's |values|
   // field. This method does not validate |event_values| against the Metric's
   // proto definition. That is the caller's responsibility.
-  Result EncodeCustomObservation(MetricRef metric,
-                                 const ReportDefinition* report,
-                                 uint32_t day_index,
-                                 EventValuesPtr event_values) const;
+  Result EncodeCustomObservation(MetricRef metric, const ReportDefinition* report,
+                                 uint32_t day_index, EventValuesPtr event_values) const;
 
   // Encodes an Observation of type RapporObservation.
   //
@@ -221,10 +215,8 @@ class Encoder {
   // day_index: The day index associated with the Observation being encoded.
   //
   // str: The string to encode using String RAPPOR.
-  Result EncodeRapporObservation(MetricRef metric,
-                                 const ReportDefinition* report,
-                                 uint32_t day_index,
-                                 const std::string& str) const;
+  Result EncodeRapporObservation(MetricRef metric, const ReportDefinition* report,
+                                 uint32_t day_index, const std::string& str) const;
 
   // Encodes an Observation of type ForculusObservation.
   //
@@ -239,10 +231,8 @@ class Encoder {
   // day_index: The day index associated with the Observation being encoded.
   //
   // str: The string to encrypt using Forculus.
-  Result EncodeForculusObservation(MetricRef metric,
-                                   const ReportDefinition* report,
-                                   uint32_t day_index,
-                                   const std::string& str) const;
+  Result EncodeForculusObservation(MetricRef metric, const ReportDefinition* report,
+                                   uint32_t day_index, const std::string& str) const;
 
   // Encodes an Observation of type UniqueActivesObservation.
   //
@@ -273,10 +263,8 @@ class Encoder {
   // window_size: The number of days in the window associated with the
   // Observation. This should be one of the window sizes specified in |report|,
   // but it is the caller's responsibility to ensure this.
-  Result EncodeUniqueActivesObservation(MetricRef metric,
-                                        const ReportDefinition* report,
-                                        uint32_t day_index, uint32_t event_code,
-                                        bool was_active,
+  Result EncodeUniqueActivesObservation(MetricRef metric, const ReportDefinition* report,
+                                        uint32_t day_index, uint32_t event_code, bool was_active,
                                         uint32_t window_size) const;
 
   // Encodes an Observation of type PerDeviceNumericObservation.
@@ -305,8 +293,7 @@ class Encoder {
   // but it is the caller's responsibility to ensure this.
   Result EncodePerDeviceNumericObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-      const std::string& component,
-      const google::protobuf::RepeatedField<uint32_t>& event_codes,
+      const std::string& component, const google::protobuf::RepeatedField<uint32_t>& event_codes,
       int64_t count, uint32_t window_size) const;
 
   // Encodes an Observation of type ReportParticipationObservation.
@@ -318,18 +305,15 @@ class Encoder {
   // encoded.
   //
   // day_index: The day index associated with the Observation being encoded.
-  Result EncodeReportParticipationObservation(MetricRef metric,
-                                              const ReportDefinition* report,
+  Result EncodeReportParticipationObservation(MetricRef metric, const ReportDefinition* report,
                                               uint32_t day_index) const;
 
  private:
   // Encodes a BasicRapporObservation for a given |metric|, |report|, and
   // |day_index| in which the data field is a Basic RAPPOR encoding of a vector
   // of |num_categories| zero bits.
-  Result EncodeNullBasicRapporObservation(MetricRef metric,
-                                          const ReportDefinition* report,
-                                          uint32_t day_index,
-                                          uint32_t num_categories) const;
+  Result EncodeNullBasicRapporObservation(MetricRef metric, const ReportDefinition* report,
+                                          uint32_t day_index, uint32_t num_categories) const;
 
   // Makes an Observation and ObservationMetadata with all information that
   // is independent of which Encode*() method is being invoked.

@@ -19,8 +19,8 @@
 
 namespace cobalt::crypto::hmac {
 
-bool HMAC(const byte *key, const size_t key_len, const byte *data,
-          const size_t data_len, byte tag[TAG_SIZE]) {
+bool HMAC(const byte *key, const size_t key_len, const byte *data, const size_t data_len,
+          byte tag[TAG_SIZE]) {
   unsigned int out_len_unused;
   return HMAC(EVP_sha256(), key, key_len, data, data_len, tag, &out_len_unused);
 }

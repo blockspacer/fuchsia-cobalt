@@ -57,28 +57,23 @@ class SystemData : public SystemDataInterface {
   // |version|: The version of the running system. The use of this field is
   // system-specific. For example on Fuchsia a possible value for |version| is
   // "20190220_01_RC00".
-  SystemData(const std::string& product_name,
-             const std::string& board_name_suggestion,
+  SystemData(const std::string& product_name, const std::string& board_name_suggestion,
              const std::string& version = "",
              std::unique_ptr<logger::ChannelMapper> channel_mapper = nullptr);
 
   ~SystemData() override = default;
 
   // Returns a vector with all experiments the system has a notion of.
-  const std::vector<Experiment>& experiments() const override
-      LOCKS_EXCLUDED(experiments_mutex_) {
+  const std::vector<Experiment>& experiments() const override LOCKS_EXCLUDED(experiments_mutex_) {
     absl::ReaderMutexLock lock(&experiments_mutex_);
     return experiments_;
   }
 
   // Returns the SystemProfile for the current system.
-  const SystemProfile& system_profile() const override {
-    return system_profile_;
-  }
+  const SystemProfile& system_profile() const override { return system_profile_; }
 
   // Resets the experiment state to the one provided.
-  void SetExperimentState(std::vector<Experiment> experiments)
-      LOCKS_EXCLUDED(experiments_mutex_) {
+  void SetExperimentState(std::vector<Experiment> experiments) LOCKS_EXCLUDED(experiments_mutex_) {
     absl::WriterMutexLock lock(&experiments_mutex_);
     experiments_ = std::move(experiments);
   }
@@ -86,9 +81,7 @@ class SystemData : public SystemDataInterface {
   // Resets the current channel value.
   void SetChannel(const std::string& channel);
 
-  const std::string& channel() const override {
-    return system_profile_.channel();
-  }
+  const std::string& channel() const override { return system_profile_.channel(); }
 
   const ReleaseStage& release_stage() const override { return current_stage_; }
 

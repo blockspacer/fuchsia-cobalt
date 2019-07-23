@@ -50,14 +50,10 @@ class BasicRapporAnalyzer {
   // was discarded due to an error. If this number is not zero it indicates
   // that the Analyzer received data that was not created by a legitimate
   // Cobalt client. See the error logs for details of the errors.
-  [[nodiscard]] size_t observation_errors() const {
-    return observation_errors_;
-  }
+  [[nodiscard]] size_t observation_errors() const { return observation_errors_; }
 
   // The number of categories being analyzed.
-  [[nodiscard]] size_t num_categories() const {
-    return category_counts_.size();
-  }
+  [[nodiscard]] size_t num_categories() const { return category_counts_.size(); }
 
   struct CategoryResult {
     ValuePart category;

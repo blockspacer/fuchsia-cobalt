@@ -87,8 +87,7 @@ struct CalendarDate {
   uint32_t year = kDefaultCalendarYear;
 
   bool operator==(const CalendarDate& other) const {
-    return (other.day_of_month == day_of_month && other.month == month &&
-            other.year == year);
+    return (other.day_of_month == day_of_month && other.month == month && other.year == year);
   }
 };
 
@@ -96,8 +95,7 @@ struct CalendarDate {
 // or UINT32_MAX if |time_zone| is not valid. |time| must be a Unix timestamp,
 // that is a number of Unix seconds since the Unix epoch.
 uint32_t TimeToDayIndex(time_t time, Metric::TimeZonePolicy time_zone);
-uint32_t TimeToDayIndex(time_t time,
-                        MetricDefinition::TimeZonePolicy time_zone);
+uint32_t TimeToDayIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone);
 
 // Returns the Unix time for midnight of the day with the given |day_index|
 // in UTC.

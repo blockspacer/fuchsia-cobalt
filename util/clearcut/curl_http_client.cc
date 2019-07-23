@@ -27,17 +27,15 @@ CurlHTTPClient::CurlHTTPClient() {
 std::future<StatusOr<HTTPResponse>> CurlHTTPClient::Post(
     HTTPRequest request, std::chrono::steady_clock::time_point deadline) {
   return std::async(std::launch::async,
-                    [request = std::move(request),
-                     deadline]() mutable -> StatusOr<HTTPResponse> {
+                    [request = std::move(request), deadline]() mutable -> StatusOr<HTTPResponse> {
                       auto handle_or = CurlHandle::Init();
                       if (!handle_or.ok()) {
                         return handle_or.status();
                       }
                       auto handle = handle_or.ConsumeValueOrDie();
-                      auto timeout_ms =
-                          std::chrono::duration_cast<std::chrono::milliseconds>(
-                              deadline - std::chrono::steady_clock::now())
-                              .count();
+                      auto timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            deadline - std::chrono::steady_clock::now())
+                                            .count();
                       handle->SetTimeout(timeout_ms);
                       handle->SetHeaders(request.headers);
                       return handle->Post(request.url, request.body);

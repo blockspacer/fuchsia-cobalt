@@ -59,12 +59,10 @@ const EVP_AEAD* GetAEAD() {
 constexpr byte kAllZeroNonce[SymmetricCipher::NONCE_SIZE] = {0x00};
 
 // Serializes the public key in |eckey| into |buffer|. Returns true on success.
-bool SerializeECPublicKey(EC_KEY* eckey,
-                          byte buffer[HybridCipher::PUBLIC_KEY_SIZE]) {
-  return EC_POINT_point2oct(
-             EC_KEY_get0_group(eckey), EC_KEY_get0_public_key(eckey),
-             POINT_CONVERSION_COMPRESSED, buffer, HybridCipher::PUBLIC_KEY_SIZE,
-             nullptr) == HybridCipher::PUBLIC_KEY_SIZE;
+bool SerializeECPublicKey(EC_KEY* eckey, byte buffer[HybridCipher::PUBLIC_KEY_SIZE]) {
+  return EC_POINT_point2oct(EC_KEY_get0_group(eckey), EC_KEY_get0_public_key(eckey),
+                            POINT_CONVERSION_COMPRESSED, buffer, HybridCipher::PUBLIC_KEY_SIZE,
+                            nullptr) == HybridCipher::PUBLIC_KEY_SIZE;
 }
 
 // Generates a cryptographically secure public/private key pair (g^x, x),
@@ -124,8 +122,8 @@ std::unique_ptr<EC_KEY, decltype(&::EC_KEY_free)> BuildECKeyPublic(
   }
 
   // Read bytes from public_key into ecpoint
-  if (!EC_POINT_oct2point(EC_KEY_get0_group(eckey.get()), ecpoint.get(),
-                          public_key, HybridCipher::PUBLIC_KEY_SIZE, nullptr)) {
+  if (!EC_POINT_oct2point(EC_KEY_get0_group(eckey.get()), ecpoint.get(), public_key,
+                          HybridCipher::PUBLIC_KEY_SIZE, nullptr)) {
     eckey.reset();
     return eckey;
   }
@@ -178,29 +176,25 @@ SymmetricCipher::SymmetricCipher() : context_(new CipherContext()) {}
 
 SymmetricCipher::~SymmetricCipher() = default;
 
-bool SymmetricCipher::set_key(const byte key[KEY_SIZE]) {
-  return context_->SetKey(key);
-}
+bool SymmetricCipher::set_key(const byte key[KEY_SIZE]) { return context_->SetKey(key); }
 
-bool SymmetricCipher::Encrypt(const byte nonce[NONCE_SIZE], const byte* ptext,
-                              size_t ptext_len, std::vector<byte>* ctext) {
+bool SymmetricCipher::Encrypt(const byte nonce[NONCE_SIZE], const byte* ptext, size_t ptext_len,
+                              std::vector<byte>* ctext) {
   size_t max_out_len = EVP_AEAD_max_overhead(GetAEAD()) + ptext_len;
   ctext->resize(max_out_len);
   size_t out_len;
-  int rc =
-      EVP_AEAD_CTX_seal(context_->get(), ctext->data(), &out_len, max_out_len,
-                        nonce, NONCE_SIZE, ptext, ptext_len, nullptr, 0);
+  int rc = EVP_AEAD_CTX_seal(context_->get(), ctext->data(), &out_len, max_out_len, nonce,
+                             NONCE_SIZE, ptext, ptext_len, nullptr, 0);
   ctext->resize(out_len);
   return rc;
 }
 
-bool SymmetricCipher::Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext,
-                              size_t ctext_len, std::vector<byte>* ptext) {
+bool SymmetricCipher::Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext, size_t ctext_len,
+                              std::vector<byte>* ptext) {
   ptext->resize(ctext_len);
   size_t out_len;
-  int rc =
-      EVP_AEAD_CTX_open(context_->get(), ptext->data(), &out_len, ptext->size(),
-                        nonce, NONCE_SIZE, ctext, ctext_len, nullptr, 0);
+  int rc = EVP_AEAD_CTX_open(context_->get(), ptext->data(), &out_len, ptext->size(), nonce,
+                             NONCE_SIZE, ctext, ctext_len, nullptr, 0);
   ptext->resize(out_len);
   return rc;
 }
@@ -208,9 +202,8 @@ bool SymmetricCipher::Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext,
 // HybridCipher methods.
 
 // static
-bool HybridCipher::GenerateKeyPair(
-    byte public_key[HybridCipher::PUBLIC_KEY_SIZE],
-    byte private_key[HybridCipher::PRIVATE_KEY_SIZE]) {
+bool HybridCipher::GenerateKeyPair(byte public_key[HybridCipher::PUBLIC_KEY_SIZE],
+                                   byte private_key[HybridCipher::PRIVATE_KEY_SIZE]) {
   auto key = GenerateHybridCipherKeyPair(public_key, private_key);
   return (key != nullptr);
 }
@@ -222,16 +215,14 @@ bool HybridCipher::GenerateKeyPairPEM(std::string* public_key_pem_out,
   if (!eckey) {
     return false;
   }
-  std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(EVP_PKEY_new(),
-                                                               ::EVP_PKEY_free);
+  std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(EVP_PKEY_new(), ::EVP_PKEY_free);
   if (!evpkey) {
     return false;
   }
   if (!EVP_PKEY_set1_EC_KEY(evpkey.get(), eckey.get())) {
     return false;
   }
-  std::unique_ptr<BIO, decltype(&::BIO_free)> mem_bio(BIO_new(BIO_s_mem()),
-                                                      ::BIO_free);
+  std::unique_ptr<BIO, decltype(&::BIO_free)> mem_bio(BIO_new(BIO_s_mem()), ::BIO_free);
 
   // Write the public key as a pem
   if (!PEM_write_bio_PUBKEY(mem_bio.get(), evpkey.get())) {
@@ -247,8 +238,8 @@ bool HybridCipher::GenerateKeyPairPEM(std::string* public_key_pem_out,
 
   // Write the private key as a pem
   mem_bio.reset(BIO_new(BIO_s_mem()));
-  if (!PEM_write_bio_PrivateKey(mem_bio.get(), evpkey.get(), nullptr, nullptr,
-                                0, nullptr, nullptr)) {
+  if (!PEM_write_bio_PrivateKey(mem_bio.get(), evpkey.get(), nullptr, nullptr, 0, nullptr,
+                                nullptr)) {
     return false;
   }
   if (!BIO_mem_contents(mem_bio.get(), &contents, &content_length)) {
@@ -286,16 +277,14 @@ bool HybridCipher::set_public_key_pem(const std::string& key_pem) {
 
   // Read a public key from the PEM in the memory BIO, construct an EVP_PKEY.
   std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(
-      PEM_read_bio_PUBKEY(mem_bio.get(), nullptr, nullptr, nullptr),
-      ::EVP_PKEY_free);
+      PEM_read_bio_PUBKEY(mem_bio.get(), nullptr, nullptr, nullptr), ::EVP_PKEY_free);
   if (!evpkey) {
     return false;
   }
 
   context_->ResetKey();
 
-  return EVP_PKEY_set1_EC_KEY(context_->GetKey(),
-                              EVP_PKEY_get0_EC_KEY(evpkey.get()));
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(), EVP_PKEY_get0_EC_KEY(evpkey.get()));
 }
 
 bool HybridCipher::set_private_key(const byte private_key[PRIVATE_KEY_SIZE]) {
@@ -331,36 +320,31 @@ bool HybridCipher::set_private_key_pem(const std::string& key_pem) {
 
   // Read a private key from the PEM in the memory BIO, construct an EVP_PKEY.
   std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(
-      PEM_read_bio_PrivateKey(mem_bio.get(), nullptr, nullptr, nullptr),
-      ::EVP_PKEY_free);
+      PEM_read_bio_PrivateKey(mem_bio.get(), nullptr, nullptr, nullptr), ::EVP_PKEY_free);
   if (!evpkey) {
     return false;
   }
 
   context_->ResetKey();
-  return EVP_PKEY_set1_EC_KEY(context_->GetKey(),
-                              EVP_PKEY_get0_EC_KEY(evpkey.get()));
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(), EVP_PKEY_get0_EC_KEY(evpkey.get()));
 }
 
-bool HybridCipher::Encrypt(const byte* ptext, size_t ptext_len,
-                           std::vector<byte>* hybrid_ctext) {
+bool HybridCipher::Encrypt(const byte* ptext, size_t ptext_len, std::vector<byte>* hybrid_ctext) {
   byte public_key_part[PUBLIC_KEY_SIZE];
   byte salt[SALT_SIZE];
   std::vector<byte> symmetric_ctext;
-  if (!EncryptInternal(ptext, ptext_len, public_key_part, salt,
-                       &symmetric_ctext)) {
+  if (!EncryptInternal(ptext, ptext_len, public_key_part, salt, &symmetric_ctext)) {
     return false;
   }
   hybrid_ctext->resize(symmetric_ctext.size() + PUBLIC_KEY_SIZE + SALT_SIZE);
   std::memcpy(hybrid_ctext->data(), public_key_part, PUBLIC_KEY_SIZE);
   std::memcpy(hybrid_ctext->data() + PUBLIC_KEY_SIZE, salt, SALT_SIZE);
-  std::memcpy(hybrid_ctext->data() + PUBLIC_KEY_SIZE + SALT_SIZE,
-              symmetric_ctext.data(), symmetric_ctext.size());
+  std::memcpy(hybrid_ctext->data() + PUBLIC_KEY_SIZE + SALT_SIZE, symmetric_ctext.data(),
+              symmetric_ctext.size());
   return true;
 }
 
-bool HybridCipher::public_key_fingerprint(
-    byte fingerprint[SHA256_DIGEST_LENGTH]) {
+bool HybridCipher::public_key_fingerprint(byte fingerprint[SHA256_DIGEST_LENGTH]) {
   byte buffer[HybridCipher::PUBLIC_KEY_SIZE];
   if (!SerializeECPublicKey(EVP_PKEY_get0_EC_KEY(context_->GetKey()), buffer)) {
     return false;
@@ -383,10 +367,9 @@ bool HybridCipher::EncryptInternal(const byte* ptext, size_t ptext_len,
   }
 
   byte shared_key[ECDH_SHARED_KEY_SIZE];  // To store g^(xy) after ECDH
-  const EC_POINT* ec_pub_point =
-      EC_KEY_get0_public_key(EVP_PKEY_get0_EC_KEY(context_->GetKey()));
-  size_t shared_key_len = ECDH_compute_key(shared_key, sizeof(shared_key),
-                                           ec_pub_point, eckey.get(), nullptr);
+  const EC_POINT* ec_pub_point = EC_KEY_get0_public_key(EVP_PKEY_get0_EC_KEY(context_->GetKey()));
+  size_t shared_key_len =
+      ECDH_compute_key(shared_key, sizeof(shared_key), ec_pub_point, eckey.get(), nullptr);
   if (shared_key_len != sizeof(shared_key)) {
     return false;
   }
@@ -399,11 +382,9 @@ bool HybridCipher::EncryptInternal(const byte* ptext, size_t ptext_len,
   byte hkdf_derived_key[SymmetricCipher::KEY_SIZE];
   std::vector<byte> hkdf_input(PUBLIC_KEY_SIZE + ECDH_SHARED_KEY_SIZE);
   std::memcpy(hkdf_input.data(), public_key_part_out, PUBLIC_KEY_SIZE);
-  std::memcpy(hkdf_input.data() + PUBLIC_KEY_SIZE, shared_key,
-              ECDH_SHARED_KEY_SIZE);
-  if (!HKDF(hkdf_derived_key, SymmetricCipher::KEY_SIZE, EVP_sha512(),
-            hkdf_input.data(), hkdf_input.size(), salt_out, SALT_SIZE, nullptr,
-            0)) {
+  std::memcpy(hkdf_input.data() + PUBLIC_KEY_SIZE, shared_key, ECDH_SHARED_KEY_SIZE);
+  if (!HKDF(hkdf_derived_key, SymmetricCipher::KEY_SIZE, EVP_sha512(), hkdf_input.data(),
+            hkdf_input.size(), salt_out, SALT_SIZE, nullptr, 0)) {
     return false;
   }
 
@@ -413,8 +394,7 @@ bool HybridCipher::EncryptInternal(const byte* ptext, size_t ptext_len,
   }
   // For hybrid mode, we can fix the nonce to all zeroes without losing
   // security. See: https://goto.google.com/aes-gcm-zero-nonce-security
-  if (!symm_cipher_->Encrypt(kAllZeroNonce, ptext, ptext_len,
-                             symmetric_ctext_out)) {
+  if (!symm_cipher_->Encrypt(kAllZeroNonce, ptext, ptext_len, symmetric_ctext_out)) {
     return false;
   }
 
@@ -422,8 +402,7 @@ bool HybridCipher::EncryptInternal(const byte* ptext, size_t ptext_len,
   return true;
 }
 
-bool HybridCipher::Decrypt(const byte* hybrid_ctext, size_t ctext_len,
-                           std::vector<byte>* ptext) {
+bool HybridCipher::Decrypt(const byte* hybrid_ctext, size_t ctext_len, std::vector<byte>* ptext) {
   if (!hybrid_ctext || ctext_len < PUBLIC_KEY_SIZE + SALT_SIZE + 1) {
     return false;
   }
@@ -433,19 +412,17 @@ bool HybridCipher::Decrypt(const byte* hybrid_ctext, size_t ctext_len,
 }
 
 bool HybridCipher::DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
-                                   const byte salt[SALT_SIZE],
-                                   const byte* symmetric_ctext,
-                                   size_t symmetric_ctext_len,
-                                   std::vector<byte>* ptext) {
+                                   const byte salt[SALT_SIZE], const byte* symmetric_ctext,
+                                   size_t symmetric_ctext_len, std::vector<byte>* ptext) {
   auto eckey = BuildECKeyPublic(public_key_part);
   if (!eckey) {
     return false;
   }
 
   byte shared_key[ECDH_SHARED_KEY_SIZE];  // To store g^(xy) after ECDH
-  size_t shared_key_len = ECDH_compute_key(
-      shared_key, sizeof(shared_key), EC_KEY_get0_public_key(eckey.get()),
-      EVP_PKEY_get0_EC_KEY(context_->GetKey()), nullptr);
+  size_t shared_key_len =
+      ECDH_compute_key(shared_key, sizeof(shared_key), EC_KEY_get0_public_key(eckey.get()),
+                       EVP_PKEY_get0_EC_KEY(context_->GetKey()), nullptr);
   if (shared_key_len != sizeof(shared_key)) {
     return false;
   }
@@ -454,11 +431,9 @@ bool HybridCipher::DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
   byte hkdf_derived_key[SymmetricCipher::KEY_SIZE];
   std::vector<byte> hkdf_input(PUBLIC_KEY_SIZE + ECDH_SHARED_KEY_SIZE);
   std::memcpy(hkdf_input.data(), public_key_part, PUBLIC_KEY_SIZE);
-  std::memcpy(hkdf_input.data() + PUBLIC_KEY_SIZE, shared_key,
-              ECDH_SHARED_KEY_SIZE);
-  if (!HKDF(hkdf_derived_key, SymmetricCipher::KEY_SIZE, EVP_sha512(),
-            hkdf_input.data(), hkdf_input.size(), salt, SALT_SIZE, nullptr,
-            0)) {
+  std::memcpy(hkdf_input.data() + PUBLIC_KEY_SIZE, shared_key, ECDH_SHARED_KEY_SIZE);
+  if (!HKDF(hkdf_derived_key, SymmetricCipher::KEY_SIZE, EVP_sha512(), hkdf_input.data(),
+            hkdf_input.size(), salt, SALT_SIZE, nullptr, 0)) {
     return false;
   }
 
@@ -468,8 +443,7 @@ bool HybridCipher::DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
   }
 
   // Our encryption always uses the all-zero nonce.
-  if (!symm_cipher_->Decrypt(kAllZeroNonce, symmetric_ctext,
-                             symmetric_ctext_len, ptext)) {
+  if (!symm_cipher_->Decrypt(kAllZeroNonce, symmetric_ctext, symmetric_ctext_len, ptext)) {
     return false;
   }
 

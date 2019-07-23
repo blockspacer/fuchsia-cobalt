@@ -40,8 +40,7 @@ class CurlHandle {
  private:
   CurlHandle();
 
-  static size_t WriteResponseData(char *ptr, size_t size, size_t nmemb,
-                                  void *userdata);
+  static size_t WriteResponseData(char *ptr, size_t size, size_t nmemb, void *userdata);
   Status CURLCodeToStatus(CURLcode code);
 
   char errbuf_[CURL_ERROR_SIZE];

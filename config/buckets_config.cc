@@ -30,14 +30,12 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateFromProto(
     const IntegerBuckets& int_buckets) {
   switch (int_buckets.buckets_case()) {
     case IntegerBuckets::kExponential:
-      return CreateExponential(int_buckets.exponential().floor(),
-                               int_buckets.exponential().num_buckets(),
-                               int_buckets.exponential().initial_step(),
-                               int_buckets.exponential().step_multiplier());
+      return CreateExponential(
+          int_buckets.exponential().floor(), int_buckets.exponential().num_buckets(),
+          int_buckets.exponential().initial_step(), int_buckets.exponential().step_multiplier());
 
     case IntegerBuckets::kLinear:
-      return CreateLinear(int_buckets.linear().floor(),
-                          int_buckets.linear().num_buckets(),
+      return CreateLinear(int_buckets.linear().floor(), int_buckets.linear().num_buckets(),
                           int_buckets.linear().step_size());
 
     case IntegerBuckets::BUCKETS_NOT_SET:
@@ -46,8 +44,9 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateFromProto(
   }
 }
 
-std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateLinear(
-    int64_t floor, uint32_t num_buckets, uint32_t step_size) {
+std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateLinear(int64_t floor,
+                                                                       uint32_t num_buckets,
+                                                                       uint32_t step_size) {
   if (num_buckets == 0) {
     LOG(ERROR) << "LinearIntegerBucket with 0 buckets.";
     return std::unique_ptr<IntegerBucketConfig>();
@@ -67,8 +66,7 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateLinear(
 }
 
 std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateExponential(
-    int64_t floor, uint32_t num_buckets, uint32_t initial_step,
-    uint32_t step_multiplier) {
+    int64_t floor, uint32_t num_buckets, uint32_t initial_step, uint32_t step_multiplier) {
   if (num_buckets == 0) {
     LOG(ERROR) << "ExponentialIntegerBucket with 0 buckets.";
     return std::unique_ptr<IntegerBucketConfig>();

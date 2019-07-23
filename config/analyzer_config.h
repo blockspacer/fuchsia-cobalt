@@ -40,8 +40,7 @@ class AnalyzerConfig {
 
   // Constructs and returns an instance of AnalyzerConfig by swapping all of
   // the datat out of |config|.
-  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltRegistryProto(
-      CobaltRegistry* config);
+  static std::unique_ptr<AnalyzerConfig> CreateFromCobaltRegistryProto(CobaltRegistry* config);
 
   // Constructs and returns an instance of AnalyzerConfig by first parsing
   // a CobaltRegistry proto message from cobalt_registry_proto_text which should
@@ -58,15 +57,13 @@ class AnalyzerConfig {
   // Returns the EncodingConfig with the given ID triple, or nullptr if there is
   // no such EncodingConfig. The caller does not take ownership of the returned
   // pointer.
-  const EncodingConfig* EncodingConfig(uint32_t customer_id,
-                                       uint32_t project_id,
+  const EncodingConfig* EncodingConfig(uint32_t customer_id, uint32_t project_id,
                                        uint32_t encoding_config_id);
 
   // Returns the Metric with the given ID triple, or nullptr if there is
   // no such Metric. The caller does not take ownership of the returned
   // pointer.
-  const Metric* Metric(uint32_t customer_id, uint32_t project_id,
-                       uint32_t metric_id);
+  const Metric* Metric(uint32_t customer_id, uint32_t project_id, uint32_t metric_id);
 
   // Returns the ReportConfig with the given ID triple, or nullptr if there is
   // no such ReportConfig. The caller does not take ownership of the returned
@@ -75,9 +72,7 @@ class AnalyzerConfig {
                                    uint32_t report_config_id);
 
   // Returns a shared pointer to the ReportRegistry.
-  std::shared_ptr<config::ReportRegistry> report_registry() {
-    return report_configs_;
-  }
+  std::shared_ptr<config::ReportRegistry> report_registry() { return report_configs_; }
 
  private:
   std::shared_ptr<config::EncodingRegistry> encoding_configs_;

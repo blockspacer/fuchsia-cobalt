@@ -40,8 +40,7 @@ TEST(KeysTests, TestAnalyzerCobaltEncryptionKey) {
   std::string key_bytes;
   ReadKey("analyzer_public.cobalt_key", &key_bytes);
 
-  auto maker_result =
-      cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
+  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
   ASSERT_TRUE(maker_result.ok());
 
   cobalt::EncryptedMessage encrypted_message;
@@ -55,8 +54,7 @@ TEST(KeysTests, TestShufflerCobaltEncryptionKey) {
   std::string key_bytes;
   ReadKey("shuffler_public.cobalt_key", &key_bytes);
 
-  auto maker_result =
-      cobalt::util::EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
+  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   ASSERT_TRUE(maker_result.ok());
 
   cobalt::EncryptedMessage encrypted_message;

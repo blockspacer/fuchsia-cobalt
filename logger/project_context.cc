@@ -12,10 +12,9 @@ namespace cobalt::logger {
 
 namespace {
 
-void PopulateProject(uint32_t customer_id, uint32_t project_id,
-                     const std::string& customer_name,
-                     const std::string& project_name,
-                     ReleaseStage release_stage, Project* project) {
+void PopulateProject(uint32_t customer_id, uint32_t project_id, const std::string& customer_name,
+                     const std::string& project_name, ReleaseStage release_stage,
+                     Project* project) {
   project->set_customer_id(customer_id);
   project->set_project_id(project_id);
   project->set_customer_name(customer_name);
@@ -25,8 +24,7 @@ void PopulateProject(uint32_t customer_id, uint32_t project_id,
 
 }  // namespace
 
-MetricRef::MetricRef(const Project* project,
-                     const MetricDefinition* metric_definition)
+MetricRef::MetricRef(const Project* project, const MetricDefinition* metric_definition)
     : project_(project), metric_definition_(metric_definition) {}
 
 const Project& MetricRef::project() const { return *project_; }
@@ -41,35 +39,27 @@ std::string MetricRef::ProjectDebugString() const {
 
 uint32_t MetricRef::metric_id() const { return metric_definition_->id(); }
 
-const std::string& MetricRef::metric_name() const {
-  return metric_definition_->metric_name();
-}
+const std::string& MetricRef::metric_name() const { return metric_definition_->metric_name(); }
 
 std::string MetricRef::FullyQualifiedName() const {
   return ProjectContext::FullMetricName(*project_, *metric_definition_);
 }
 
-ProjectContext::ProjectContext(uint32_t customer_id,
-                               const std::string& customer_name,
+ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
                                std::unique_ptr<ProjectConfig> project_config,
                                ReleaseStage release_stage)
-    : ProjectContext(customer_id, customer_name, nullptr,
-                     std::move(project_config), release_stage) {}
-
-ProjectContext::ProjectContext(uint32_t customer_id,
-                               const std::string& customer_name,
-                               const ProjectConfig* project_config,
-                               ReleaseStage release_stage)
-    : ProjectContext(customer_id, customer_name, project_config, nullptr,
+    : ProjectContext(customer_id, customer_name, nullptr, std::move(project_config),
                      release_stage) {}
 
-ProjectContext::ProjectContext(
-    uint32_t customer_id, const std::string& customer_name,
-    const ProjectConfig* project_config,
-    std::unique_ptr<ProjectConfig> owned_project_config,
-    ReleaseStage release_stage)
-    : project_config_(project_config),
-      maybe_null_project_config_(std::move(owned_project_config)) {
+ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
+                               const ProjectConfig* project_config, ReleaseStage release_stage)
+    : ProjectContext(customer_id, customer_name, project_config, nullptr, release_stage) {}
+
+ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
+                               const ProjectConfig* project_config,
+                               std::unique_ptr<ProjectConfig> owned_project_config,
+                               ReleaseStage release_stage)
+    : project_config_(project_config), maybe_null_project_config_(std::move(owned_project_config)) {
   CHECK(project_config_ || maybe_null_project_config_);
   CHECK(!(project_config_ && maybe_null_project_config_));
   if (!project_config_) {
@@ -85,8 +75,7 @@ ProjectContext::ProjectContext(
     } else {
       LOG(ERROR) << "ProjectContext constructor found a MetricDefinition "
                     "for the wrong project. Expected customer "
-                 << project_.customer_name()
-                 << " (id=" << project_.customer_id() << "), project "
+                 << project_.customer_name() << " (id=" << project_.customer_id() << "), project "
                  << project_.project_name() << " (id=" << project_.project_id()
                  << "). Found customer_id=" << metric.customer_id()
                  << " project_id=" << metric.project_id();
@@ -94,8 +83,7 @@ ProjectContext::ProjectContext(
   }
 }
 
-const MetricDefinition* ProjectContext::GetMetric(
-    const uint32_t metric_id) const {
+const MetricDefinition* ProjectContext::GetMetric(const uint32_t metric_id) const {
   auto iter = metrics_by_id_.find(metric_id);
   if (iter == metrics_by_id_.end()) {
     return nullptr;
@@ -103,8 +91,7 @@ const MetricDefinition* ProjectContext::GetMetric(
   return iter->second;
 }
 
-const MetricDefinition* ProjectContext::GetMetric(
-    const std::string& metric_name) const {
+const MetricDefinition* ProjectContext::GetMetric(const std::string& metric_name) const {
   auto iter = metrics_by_name_.find(metric_name);
   if (iter == metrics_by_name_.end()) {
     return nullptr;
@@ -112,8 +99,7 @@ const MetricDefinition* ProjectContext::GetMetric(
   return iter->second;
 }
 
-MetricRef ProjectContext::RefMetric(
-    const MetricDefinition* metric_definition) const {
+MetricRef ProjectContext::RefMetric(const MetricDefinition* metric_definition) const {
   return MetricRef(&project_, metric_definition);
 }
 
@@ -132,20 +118,15 @@ std::string ProjectContext::FullyQualifiedName(const Project& project) {
   return stream.str();
 }
 
-std::string ProjectContext::FullMetricName(const Project& project,
-                                           const MetricDefinition& metric) {
+std::string ProjectContext::FullMetricName(const Project& project, const MetricDefinition& metric) {
   std::ostringstream stream;
-  stream << FullyQualifiedName(project) << "." << metric.metric_name() << "("
-         << metric.id() << ")";
+  stream << FullyQualifiedName(project) << "." << metric.metric_name() << "(" << metric.id() << ")";
   return stream.str();
 }
 
-std::string ProjectContext::FullyQualifiedName() const {
-  return FullyQualifiedName(project_);
-}
+std::string ProjectContext::FullyQualifiedName() const { return FullyQualifiedName(project_); }
 
-std::string ProjectContext::FullMetricName(
-    const MetricDefinition& metric_definition) const {
+std::string ProjectContext::FullMetricName(const MetricDefinition& metric_definition) const {
   return FullMetricName(project_, metric_definition);
 }
 

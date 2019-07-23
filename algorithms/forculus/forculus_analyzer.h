@@ -85,8 +85,7 @@ class ForculusAnalyzer {
 
   // A ResultInfo contains info about one particular recovered plaintext.
   struct ResultInfo {
-    explicit ResultInfo(size_t total_count)
-        : total_count(total_count), num_epochs(1) {}
+    explicit ResultInfo(size_t total_count) : total_count(total_count), num_epochs(1) {}
 
     // The total number of observations added to this ForculusAnalyzer that
     // decrypted to the plaintext. This is not the number of *distinct encoder
@@ -117,9 +116,7 @@ class ForculusAnalyzer {
   // This is because the contents of the returned map have been moved out
   // of the ForculusAnalyzer leaving the ForculusAnalyzer in an undefined
   // state.
-  std::map<std::string, std::unique_ptr<ResultInfo>> TakeResults() {
-    return std::move(results_);
-  }
+  std::map<std::string, std::unique_ptr<ResultInfo>> TakeResults() { return std::move(results_); }
 
  private:
   ForculusConfig config_;
@@ -171,8 +168,7 @@ class ForculusAnalyzer {
   };
 
   // A map from DecrypterGroupKeys to their DecrypterResults.
-  std::unordered_map<DecrypterGroupKey, DecrypterResult, KeyHasher>
-      decryption_map_;
+  std::unordered_map<DecrypterGroupKey, DecrypterResult, KeyHasher> decryption_map_;
 };
 
 }  // namespace cobalt::forculus

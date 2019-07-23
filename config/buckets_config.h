@@ -22,8 +22,7 @@ class IntegerBucketConfig {
   // provided IntegerBuckets proto message.
   // If it fails, it will log an error message and the returned pointer will be
   // null.
-  static std::unique_ptr<IntegerBucketConfig> CreateFromProto(
-      const IntegerBuckets& int_buckets);
+  static std::unique_ptr<IntegerBucketConfig> CreateFromProto(const IntegerBuckets& int_buckets);
 
   // Maps an integer value to a bucket index.
   // Recall that index 0 is the index of the underflow bucket and
@@ -38,8 +37,7 @@ class IntegerBucketConfig {
 
  private:
   // Constructs an IntegerBucketConfig with the specified floors. See floors_.
-  explicit IntegerBucketConfig(const std::vector<int64_t>& floors)
-      : floors_(floors) {}
+  explicit IntegerBucketConfig(const std::vector<int64_t>& floors) : floors_(floors) {}
 
   // Creates an IntegerBucketConfig with exponentially-sized buckets.
   // There will be num_buckets+2 buckets created with the first bucket being
@@ -47,9 +45,9 @@ class IntegerBucketConfig {
   // See ExponentialIntegerBuckets in metrics.proto.
   // If it fails, it will log an error message and the returned pointer will be
   // null.
-  static std::unique_ptr<IntegerBucketConfig> CreateExponential(
-      int64_t floor, uint32_t num_buckets, uint32_t initial_step,
-      uint32_t step_multiplier);
+  static std::unique_ptr<IntegerBucketConfig> CreateExponential(int64_t floor, uint32_t num_buckets,
+                                                                uint32_t initial_step,
+                                                                uint32_t step_multiplier);
 
   // Creates an IntegerBucketConfig with identically-sized buckets.
   // There will be num_buckets+2 buckets created with the first bucket being
@@ -57,8 +55,7 @@ class IntegerBucketConfig {
   // See LinearIntegerBuckets in metrics.proto.
   // If it fails, it will log an error message and the returned pointer will be
   // null.
-  static std::unique_ptr<IntegerBucketConfig> CreateLinear(int64_t floor,
-                                                           uint32_t num_buckets,
+  static std::unique_ptr<IntegerBucketConfig> CreateLinear(int64_t floor, uint32_t num_buckets,
                                                            uint32_t step_size);
 
   // floors_ are the floors of the buckets.

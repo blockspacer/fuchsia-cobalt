@@ -27,8 +27,7 @@ class ChannelMapper {
   // that should map to that ReleaseStage. All unmatched channels will map to
   // ReleaseStage::GA. If a channel is listed for multiple ReleaseStages, only
   // the first encountered ReleaseStage will be used.
-  explicit ChannelMapper(
-      const std::map<ReleaseStage, std::vector<std::string>> &channel_map);
+  explicit ChannelMapper(const std::map<ReleaseStage, std::vector<std::string>> &channel_map);
 
   // Constructs an instance of ChannelMapper in which any of the given channels
   // map to ReleaseStage::DEBUG and all other channels map to ReleaseStage::GA.

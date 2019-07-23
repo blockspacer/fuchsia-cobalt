@@ -85,8 +85,8 @@ uint64_t PackEventCodes_v1(const Iterator& event_codes) {
     if (i >= kV1NumEventCodes) {
       break;
     }
-    packed_event_codes |= ((static_cast<uint64_t>(code) & kV1EventCodeMask)
-                           << (kV1EventCodeSize * i));
+    packed_event_codes |=
+        ((static_cast<uint64_t>(code) & kV1EventCodeMask) << (kV1EventCodeSize * i));
     i += 1;
   }
   return packed_event_codes;
@@ -113,8 +113,8 @@ uint64_t PackEventCodes(const Iterator& event_codes) {
       // We need to fall back to a v1 encoder
       return PackEventCodes_v1(event_codes);
     }
-    packed_event_codes |= ((static_cast<uint64_t>(code) & kEventCodeMask)
-                           << (kV0EventCodeSize * i));
+    packed_event_codes |=
+        ((static_cast<uint64_t>(code) & kEventCodeMask) << (kV0EventCodeSize * i));
     i += 1;
   }
   return packed_event_codes;

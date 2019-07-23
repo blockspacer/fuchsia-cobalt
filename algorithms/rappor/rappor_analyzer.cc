@@ -40,8 +40,7 @@ constexpr char kAnalyzeFailure[] = "rappor-analyzer-analyze-failure";
 
 using crypto::byte;
 
-RapporAnalyzer::RapporAnalyzer(const RapporConfig& config,
-                               const RapporCandidateList* candidates)
+RapporAnalyzer::RapporAnalyzer(const RapporConfig& config, const RapporCandidateList* candidates)
     : bit_counter_(config), config_(bit_counter_.config()) {
   candidate_map_.candidate_list = candidates;
   // candidate_map_.candidate_cohort_maps remains empty for now. It
@@ -53,8 +52,7 @@ bool RapporAnalyzer::AddObservation(const RapporObservation& obs) {
   return bit_counter_.AddObservation(obs);
 }
 
-grpc::Status RapporAnalyzer::Analyze(
-    std::vector<CandidateResult>* results_out) {
+grpc::Status RapporAnalyzer::Analyze(std::vector<CandidateResult>* results_out) {
   CHECK(results_out);
 
   // TODO(rudominer) Consider inserting here an analysis of the distribution
@@ -75,8 +73,7 @@ grpc::Status RapporAnalyzer::Analyze(
   // vectors.
   Eigen::VectorXd est_bit_count_ratios;
   std::vector<double> est_std_errors;
-  ExtractEstimatedBitCountRatiosAndStdErrors(&est_bit_count_ratios,
-                                             &est_std_errors);
+  ExtractEstimatedBitCountRatiosAndStdErrors(&est_bit_count_ratios, &est_std_errors);
 
   // Note(rudominer) The cobalt_lossmin's GradientEvaluator constructor takes a
   // const LabelSet& parameter but est_bit_count_ratios is a
@@ -187,10 +184,10 @@ grpc::Status RapporAnalyzer::Analyze(
   // more than kMaxNonzeroCoefficients). This is a heuristic to ensure that the
   // matrix in the second step is full column rank.
   // TODO(bazyli): Add "bogus candidates" stopping criterion.
-  const int max_nonzero_coeffs = std::min(
-      num_candidates, std::min(static_cast<int>(kColumns2RowsRatioSecondStep *
-                                                num_cohorts * num_bits),
-                               kMaxNonzeroCoefficients));
+  const int max_nonzero_coeffs =
+      std::min(num_candidates,
+               std::min(static_cast<int>(kColumns2RowsRatioSecondStep * num_cohorts * num_bits),
+                        kMaxNonzeroCoefficients));
 
   // We will need to construct the matrix for the second step. This matrix
   // is composed of columns corresponding to identified nonzero candidates
@@ -199,17 +196,14 @@ grpc::Status RapporAnalyzer::Analyze(
   // Initialize the solution vector to zero vector for the lasso path.
   Weights est_candidate_weights = Weights::Zero(num_candidates);
   // Run the first step of RAPPOR to get potential nonzero candidates.
-  lasso_runner.RunFirstRapporStep(max_nonzero_coeffs, kMaxSolution1Norm,
-                                  as_label_set, &est_candidate_weights,
-                                  &second_step_cols);
+  lasso_runner.RunFirstRapporStep(max_nonzero_coeffs, kMaxSolution1Norm, as_label_set,
+                                  &est_candidate_weights, &second_step_cols);
 
   // Build the matrix for the second step of RAPPOR.
   const uint32_t second_step_num_candidates = second_step_cols.size();
-  InstanceSet candidate_submatrix_second_step(candidate_matrix_.rows(),
-                                              second_step_num_candidates);
-  PrepareSecondRapporStepMatrix(&candidate_submatrix_second_step,
-                                second_step_cols, candidate_matrix_,
-                                num_cohorts, num_hashes);
+  InstanceSet candidate_submatrix_second_step(candidate_matrix_.rows(), second_step_num_candidates);
+  PrepareSecondRapporStepMatrix(&candidate_submatrix_second_step, second_step_cols,
+                                candidate_matrix_, num_cohorts, num_hashes);
 
   // We can now run the second step of RAPPOR.
   // ************************************************************************
@@ -264,26 +258,23 @@ grpc::Status RapporAnalyzer::Analyze(
   // ************************************************************************
 
   // Prepare initial guess for the second step of RAPPOR.
-  Weights est_candidate_weights_second_step =
-      Weights(second_step_num_candidates);
+  Weights est_candidate_weights_second_step = Weights(second_step_num_candidates);
   for (uint32_t i = 0; i < second_step_num_candidates; i++) {
     int first_step_col_num = second_step_cols[i];
-    est_candidate_weights_second_step[i] =
-        est_candidate_weights[first_step_col_num];
+    est_candidate_weights_second_step[i] = est_candidate_weights[first_step_col_num];
   }
 
   // Initialize the input. We will use kL1FirstToSecondStep fraction of the
   // penalty used in the last subproblem of lasso path.
-  const double l1_second_step =
-      kL1FirstToSecondStep * lasso_runner.minimizer_data().l1;
+  const double l1_second_step = kL1FirstToSecondStep * lasso_runner.minimizer_data().l1;
   Weights exact_candidate_weights_second_step(num_candidates);
   Weights est_candidate_errors_second_step(num_candidates);
   // Run the second step of RAPPOR to obtain better estimates of candidate
   // values, and estimates of standard errors.
-  lasso_runner.GetExactValuesAndStdErrs(
-      l1_second_step, est_candidate_weights_second_step, est_std_errors,
-      candidate_submatrix_second_step, as_label_set,
-      &exact_candidate_weights_second_step, &est_candidate_errors_second_step);
+  lasso_runner.GetExactValuesAndStdErrs(l1_second_step, est_candidate_weights_second_step,
+                                        est_std_errors, candidate_submatrix_second_step,
+                                        as_label_set, &exact_candidate_weights_second_step,
+                                        &est_candidate_errors_second_step);
 
   // Prepare the final solution vector.
   results_out->resize(num_candidates);
@@ -320,14 +311,12 @@ grpc::Status RapporAnalyzer::Analyze(
 }
 
 grpc::Status RapporAnalyzer::ExtractEstimatedBitCountRatiosAndStdErrors(
-    Eigen::VectorXd* est_bit_count_ratios,
-    std::vector<double>* est_std_errors) {
+    Eigen::VectorXd* est_bit_count_ratios, std::vector<double>* est_std_errors) {
   VLOG(5) << "RapporAnalyzer::ExtractEstimatedBitCountRatiosAndStdErrors()";
   CHECK(est_bit_count_ratios);
 
   if (!config_->valid()) {
-    return grpc::Status(grpc::INVALID_ARGUMENT,
-                        "Invalid RapporConfig passed to constructor.");
+    return grpc::Status(grpc::INVALID_ARGUMENT, "Invalid RapporConfig passed to constructor.");
   }
 
   if (candidate_map_.candidate_list == nullptr ||
@@ -343,8 +332,7 @@ grpc::Status RapporAnalyzer::ExtractEstimatedBitCountRatiosAndStdErrors(
   est_bit_count_ratios->resize(num_cohorts * num_bits);
   est_std_errors->resize(num_cohorts * num_bits);
 
-  const std::vector<CohortCounts>& estimated_counts =
-      bit_counter_.EstimateCounts();
+  const std::vector<CohortCounts>& estimated_counts = bit_counter_.EstimateCounts();
   CHECK(estimated_counts.size() == num_cohorts);
 
   int cohort_block_base = 0;
@@ -357,8 +345,7 @@ grpc::Status RapporAnalyzer::ExtractEstimatedBitCountRatiosAndStdErrors(
           cohort_data.count_estimates[bit_index] /
           static_cast<double>(cohort_data.num_observations);
       (*est_std_errors)[cohort_block_base + bloom_index] =
-          cohort_data.std_errors[bit_index] /
-          static_cast<double>(cohort_data.num_observations);
+          cohort_data.std_errors[bit_index] / static_cast<double>(cohort_data.num_observations);
     }
     cohort_block_base += num_bits;
   }
@@ -368,8 +355,7 @@ grpc::Status RapporAnalyzer::ExtractEstimatedBitCountRatiosAndStdErrors(
 grpc::Status RapporAnalyzer::BuildCandidateMap() {
   VLOG(5) << "RapporAnalyzer::BuildCandidateMap()";
   if (!config_->valid()) {
-    return grpc::Status(grpc::FAILED_PRECONDITION,
-                        "Invalid RapporConfig passed to constructor.");
+    return grpc::Status(grpc::FAILED_PRECONDITION, "Invalid RapporConfig passed to constructor.");
   }
 
   if (candidate_map_.candidate_list == nullptr ||
@@ -385,18 +371,14 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
   const uint32_t num_bits = config_->num_bits();
   const uint32_t num_cohorts = config_->num_cohorts();
   const uint32_t num_hashes = config_->num_hashes();
-  const uint32_t num_candidates =
-      candidate_map_.candidate_list->candidates_size();
+  const uint32_t num_candidates = candidate_map_.candidate_list->candidates_size();
 
   if (VLOG_IS_ON(4)) {
-    VLOG(4) << "RapporAnalyzer: Start list of " << num_candidates
-            << " candidates:";
-    for (const std::string& candidate :
-         candidate_map_.candidate_list->candidates()) {
+    VLOG(4) << "RapporAnalyzer: Start list of " << num_candidates << " candidates:";
+    for (const std::string& candidate : candidate_map_.candidate_list->candidates()) {
       VLOG(4) << "RapporAnalyzer: candidate: " << candidate;
     }
-    VLOG(4) << "RapporAnalyzer: End list of " << num_candidates
-            << " candidates.";
+    VLOG(4) << "RapporAnalyzer: End list of " << num_candidates << " candidates.";
   }
 
   candidate_matrix_.resize(num_cohorts * num_bits, num_candidates);
@@ -404,8 +386,7 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
   sparse_matrix_triplets.reserve(num_candidates * num_cohorts * num_hashes);
 
   int column = 0;
-  for (const std::string& candidate :
-       candidate_map_.candidate_list->candidates()) {
+  for (const std::string& candidate : candidate_map_.candidate_list->candidates()) {
     // In rappor_encoder.cc it is not std::strings that are encoded but rather
     // |ValuePart|s. So here we want to take the candidate as a string and
     // convert it into a serialized |ValuePart|.
@@ -428,10 +409,9 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
       // Form one big hashed value of the serialized_candidate. This will be
       // used to obtain multiple bit indices.
       byte hashed_value[crypto::hash::DIGEST_SIZE];
-      if (!RapporEncoder::HashValueAndCohort(serialized_candidate, cohort,
-                                             num_hashes, hashed_value)) {
-        return grpc::Status(grpc::INTERNAL,
-                            "Hash operation failed unexpectedly.");
+      if (!RapporEncoder::HashValueAndCohort(serialized_candidate, cohort, num_hashes,
+                                             hashed_value)) {
+        return grpc::Status(grpc::INTERNAL, "Hash operation failed unexpectedly.");
       }
 
       // bloom_filter is indexed "from the left". That is bloom_filter[0]
@@ -441,8 +421,7 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
 
       // Extract one bit index for each of the hashes in the Bloom filter.
       for (size_t hash_index = 0; hash_index < num_hashes; hash_index++) {
-        uint32_t bit_index =
-            RapporEncoder::ExtractBitIndex(hashed_value, hash_index, num_bits);
+        uint32_t bit_index = RapporEncoder::ExtractBitIndex(hashed_value, hash_index, num_bits);
         hashes.bit_indices.push_back(bit_index);
         // |bit_index| is an index "from the right".
         bloom_filter[num_bits - 1 - bit_index] = true;
@@ -467,8 +446,7 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
     row_block_base = 0;
   }
 
-  candidate_matrix_.setFromTriplets(sparse_matrix_triplets.begin(),
-                                    sparse_matrix_triplets.end());
+  candidate_matrix_.setFromTriplets(sparse_matrix_triplets.begin(), sparse_matrix_triplets.end());
 
   return grpc::Status::OK;
 }

@@ -28,8 +28,7 @@ class LoggerFactory {
   // Creates a new Logger. If a nonzero day index is provided, then the Logger
   // will log events with that day index.
   // NOLINTNEXTLINE google-default-arguments
-  virtual std::unique_ptr<logger::LoggerInterface> NewLogger(
-      uint32_t day_index = 0) = 0;
+  virtual std::unique_ptr<logger::LoggerInterface> NewLogger(uint32_t day_index = 0) = 0;
 
   virtual const logger::ProjectContext* project_context() = 0;
 
@@ -67,9 +66,8 @@ class TestApp {
   };
 
   // Constructor. The |ostream| is used for emitting output in interactive mode.
-  TestApp(std::unique_ptr<LoggerFactory> logger_factory,
-          const std::string& initial_metric_name, Mode mode,
-          std::ostream* ostream);
+  TestApp(std::unique_ptr<LoggerFactory> logger_factory, const std::string& initial_metric_name,
+          Mode mode, std::ostream* ostream);
 
   TestApp(const TestApp& other) = delete;
   TestApp(const TestApp&& other) = delete;
@@ -105,34 +103,24 @@ class TestApp {
 
   void Log(const std::vector<std::string>& command);
   void LogEvent(uint64_t num_clients, const std::vector<std::string>& command);
-  void LogEvent(size_t num_clients, uint32_t event_code,
-                uint32_t day_index = 0u);
-  void LogEventCount(uint64_t num_clients,
-                     const std::vector<std::string>& command);
-  void LogEventCount(size_t num_clients, uint32_t event_code,
-                     const std::string& component, int64_t duration,
-                     int64_t count, uint32_t day_index = 0u);
-  void LogElapsedTime(uint64_t num_clients,
-                      const std::vector<std::string>& command);
-  void LogElapsedTime(uint64_t num_clients, uint32_t event_code,
-                      const std::string& component, int64_t elapsed_micros);
-  void LogFrameRate(uint64_t num_clients,
-                    const std::vector<std::string>& command);
-  void LogFrameRate(uint64_t num_clients, uint32_t event_code,
-                    const std::string& component, float fps);
-  void LogMemoryUsage(uint64_t num_clients,
-                      const std::vector<std::string>& command);
-  void LogMemoryUsage(uint64_t num_clients, uint32_t event_code,
-                      const std::string& component, int64_t bytes);
-  void LogIntHistogram(uint64_t num_clients,
-                       const std::vector<std::string>& command);
-  void LogIntHistogram(uint64_t num_clients, uint32_t event_code,
-                       const std::string& component, int64_t bucket,
-                       int64_t count);
-  void LogCustomEvent(uint64_t num_clients,
-                      const std::vector<std::string>& command);
-  void LogCustomEvent(uint64_t num_clients,
-                      const std::vector<std::string>& metric_parts,
+  void LogEvent(size_t num_clients, uint32_t event_code, uint32_t day_index = 0u);
+  void LogEventCount(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogEventCount(size_t num_clients, uint32_t event_code, const std::string& component,
+                     int64_t duration, int64_t count, uint32_t day_index = 0u);
+  void LogElapsedTime(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogElapsedTime(uint64_t num_clients, uint32_t event_code, const std::string& component,
+                      int64_t elapsed_micros);
+  void LogFrameRate(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogFrameRate(uint64_t num_clients, uint32_t event_code, const std::string& component,
+                    float fps);
+  void LogMemoryUsage(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogMemoryUsage(uint64_t num_clients, uint32_t event_code, const std::string& component,
+                      int64_t bytes);
+  void LogIntHistogram(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogIntHistogram(uint64_t num_clients, uint32_t event_code, const std::string& component,
+                       int64_t bucket, int64_t count);
+  void LogCustomEvent(uint64_t num_clients, const std::vector<std::string>& command);
+  void LogCustomEvent(uint64_t num_clients, const std::vector<std::string>& metric_parts,
                       const std::vector<std::string>& values);
 
   // Generates all aggregated observations for a day index specified by
@@ -177,15 +165,12 @@ class TestApp {
   // Parses a string of the form <part>:<value> and writes <part> into
   // |part_name| and <value> into |value|.
   // Returns true if and only if this succeeds.
-  bool ParsePartValuePair(const std::string& pair, std::string* part_name,
-                          std::string* value);
+  bool ParsePartValuePair(const std::string& pair, std::string* part_name, std::string* value);
 
-  CustomDimensionValue ParseCustomDimensionValue(
-      const std::string& value_string);
+  CustomDimensionValue ParseCustomDimensionValue(const std::string& value_string);
 
-  logger::EventValuesPtr NewCustomEvent(
-      std::vector<std::string> dimension_names,
-      std::vector<std::string> values);
+  logger::EventValuesPtr NewCustomEvent(std::vector<std::string> dimension_names,
+                                        std::vector<std::string> values);
 
   void GenerateAggregatedObservationsAndSend(uint32_t day_index);
 

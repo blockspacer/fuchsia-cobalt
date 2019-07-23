@@ -52,15 +52,15 @@ class EncryptedMessageMaker {
   // Messages will be encrypted using the scheme corresponding to the key
   // that is passed in. |cobalt_encryption_key_bytes| is a serialized
   // cobalt::CobaltEncryptionKey protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeForEnvelopes(const std::string& cobalt_encryption_key_bytes);
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForEnvelopes(
+      const std::string& cobalt_encryption_key_bytes);
 
   // Make an EncryptedMessageMaker to encrypt Observations.
   // Messages will be encrypted using the scheme corresponding to the key
   // that is passed in. |cobalt_encryption_key_bytes| is a serialized
   // cobalt::CobaltEncryptionKey protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
-  MakeForObservations(const std::string& cobalt_encryption_key_bytes);
+  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForObservations(
+      const std::string& cobalt_encryption_key_bytes);
 
   virtual ~EncryptedMessageMaker() = default;
 };
@@ -69,9 +69,8 @@ class EncryptedMessageMaker {
 // EncryptedMessageMaker. See EncryptedMessage::HYBRID_TINK for details.
 class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
  public:
-  HybridTinkEncryptedMessageMaker(
-      std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
-      std::string context_info, uint32_t key_index);
+  HybridTinkEncryptedMessageMaker(std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
+                                  std::string context_info, uint32_t key_index);
 
   bool Encrypt(const google::protobuf::MessageLite& message,
                EncryptedMessage* encrypted_message) const override;

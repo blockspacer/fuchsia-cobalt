@@ -58,8 +58,8 @@ class Registry {
   // This is some template meta-programming magic that has the effect of
   // defining |T| to be the type of the objects contained in a registry
   // of type |RT|.
-  using T = typename std::remove_pointer<decltype(
-      (reinterpret_cast<RT*>(0))->mutable_element(0))>::type;
+  using T =
+      typename std::remove_pointer<decltype((reinterpret_cast<RT*>(0))->mutable_element(0))>::type;
 
  private:
   // The container for the registry.  The keys in this map are strings that
@@ -71,14 +71,11 @@ class Registry {
   // but return only values (without keys).
   class RegistryIterator {
    public:
-    explicit RegistryIterator(const typename Map::iterator& iter)
-        : iter_(iter) {}
+    explicit RegistryIterator(const typename Map::iterator& iter) : iter_(iter) {}
 
     const T& operator*() const { return *iter_->second; }
 
-    bool operator!=(const RegistryIterator& rhs) const {
-      return iter_ != rhs.iter_;
-    }
+    bool operator!=(const RegistryIterator& rhs) const { return iter_ != rhs.iter_; }
 
     const RegistryIterator& operator++() {
       ++iter_;
@@ -100,8 +97,7 @@ class Registry {
   // If |error_collector| is not null then it will be notified of any parsing
   // errors or warnings.
   static std::pair<std::unique_ptr<Registry<RT>>, Status> TakeFrom(
-      RT* registered_configs,
-      google::protobuf::io::ErrorCollector* error_collector);
+      RT* registered_configs, google::protobuf::io::ErrorCollector* error_collector);
 
   // Returns the number of |T| in this registry.
   size_t size();
@@ -109,8 +105,7 @@ class Registry {
   // Returns the |T| with the given ID triple, or nullptr if there is
   // no such |T|. The caller does not take ownership of the returned
   // pointer.
-  [[nodiscard]] const T* Get(uint32_t customer_id, uint32_t project_id,
-                             uint32_t id) const {
+  [[nodiscard]] const T* Get(uint32_t customer_id, uint32_t project_id, uint32_t id) const {
     auto iterator = map_.find(MakeKey(customer_id, project_id, id));
     if (iterator == map_.end()) {
       return nullptr;
@@ -133,12 +128,10 @@ class Registry {
 
  private:
   // Builds a map key that encodes the triple (customer_id, project_id, id)
-  static std::string MakeKey(uint32_t customer_id, uint32_t project_id,
-                             uint32_t id);
+  static std::string MakeKey(uint32_t customer_id, uint32_t project_id, uint32_t id);
 
   // Builds a map key that encodes the triple (customer_id, project_id, name)
-  static std::string MakeKey(uint32_t customer_id, uint32_t project_id,
-                             const std::string& name);
+  static std::string MakeKey(uint32_t customer_id, uint32_t project_id, const std::string& name);
 
   // Builds a map key from the ids in |config_proto|.
   static std::string MakeKeyWithId(const T& config_proto);
@@ -160,13 +153,11 @@ class Registry {
 
 // TODO(zmbush): Find a less clunky way of writing the MakeKey functions.
 template <class RT>
-std::string Registry<RT>::MakeKey(uint32_t customer_id, uint32_t project_id,
-                                  uint32_t id) {
+std::string Registry<RT>::MakeKey(uint32_t customer_id, uint32_t project_id, uint32_t id) {
   // Three 32-bit positive ints (at most 10 digits each) plus 3 colons plus a
   // trailing null is <= 34 bytes.
   char out[34];  // NOLINT readability-magic-numbers
-  int size =
-      snprintf(out, sizeof(out), "%u:%u:%u", customer_id, project_id, id);
+  int size = snprintf(out, sizeof(out), "%u:%u:%u", customer_id, project_id, id);
   if (size <= 0) {
     return "";
   }
@@ -188,20 +179,17 @@ std::string Registry<RT>::MakeKey(uint32_t customer_id, uint32_t project_id,
 
 template <class RT>
 std::string Registry<RT>::MakeKeyWithId(const T& config_proto) {
-  return MakeKey(config_proto.customer_id(), config_proto.project_id(),
-                 config_proto.id());
+  return MakeKey(config_proto.customer_id(), config_proto.project_id(), config_proto.id());
 }
 
 template <class RT>
 std::string Registry<RT>::MakeKeyWithName(const T& config_proto) {
-  return MakeKey(config_proto.customer_id(), config_proto.project_id(),
-                 config_proto.name());
+  return MakeKey(config_proto.customer_id(), config_proto.project_id(), config_proto.name());
 }
 
 template <class RT>
 std::pair<std::unique_ptr<Registry<RT>>, Status> Registry<RT>::TakeFrom(
-    RT* registered_configs,
-    google::protobuf::io::ErrorCollector* /*error_collector*/) {
+    RT* registered_configs, google::protobuf::io::ErrorCollector* /*error_collector*/) {
   // Make an empty registry to return;
   std::unique_ptr<Registry<RT>> registry(new Registry<RT>());
 
@@ -212,16 +200,16 @@ std::pair<std::unique_ptr<Registry<RT>>, Status> Registry<RT>::TakeFrom(
     T* config_proto = registered_configs->mutable_element(i);
     // First build the key and insert an empty Tg into the map
     // at that key.
-    auto pair = registry->map_.insert(std::make_pair(
-        MakeKeyWithId(*config_proto), std::unique_ptr<T>(new T())));
+    auto pair = registry->map_.insert(
+        std::make_pair(MakeKeyWithId(*config_proto), std::unique_ptr<T>(new T())));
     const bool& success = pair.second;
     auto& inserted_pair = pair.first;
     if (!success) {
       return std::make_pair(std::move(registry), kDuplicateRegistration);
     }
     // Then swap in the data from the T and populate the name map;
-    auto name_pair = registry->name_map_.insert(std::make_pair(
-        MakeKeyWithName(*config_proto), std::unique_ptr<T>(new T())));
+    auto name_pair = registry->name_map_.insert(
+        std::make_pair(MakeKeyWithName(*config_proto), std::unique_ptr<T>(new T())));
     name_pair.first->second->CopyFrom(*config_proto);
     inserted_pair->second->Swap(config_proto);
   }

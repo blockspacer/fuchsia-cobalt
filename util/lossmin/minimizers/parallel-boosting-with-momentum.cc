@@ -31,8 +31,7 @@ void ParallelBoostingWithMomentum::compute_and_set_learning_rates() {
   // Lj is upper bound on the loss curvature along coordinate j.
   double sparsity = gradient_evaluator().Sparsity();
   gradient_evaluator().PerCoordinateCurvature(&learning_rates_);
-  learning_rates_ =
-      (learning_rates_.array() + l2()).inverse().matrix() / sparsity;
+  learning_rates_ = (learning_rates_.array() + l2()).inverse().matrix() / sparsity;
 }
 
 double ParallelBoostingWithMomentum::Loss(const Weights &weights) const {

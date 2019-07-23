@@ -37,9 +37,8 @@ Observation MakeDummyObservation(std::string part_name) {
   return observation;
 }
 
-std::string MakeCobaltEncryptionKeyBytes(
-    const std::string& key_bytes, uint32_t key_index,
-    CobaltEncryptionKey::KeyPurpose purpose) {
+std::string MakeCobaltEncryptionKeyBytes(const std::string& key_bytes, uint32_t key_index,
+                                         CobaltEncryptionKey::KeyPurpose purpose) {
   CobaltEncryptionKey key;
   key.set_serialized_key(key_bytes);
   key.set_key_index(key_index);
@@ -73,8 +72,7 @@ class EncryptedMessageMakerTest : public ::testing::Test {
   std::string GetPublicKeysetBytes() const {
     // Get the keyset protobuf message itself.
     const google::crypto::tink::Keyset public_keyset =
-        ::crypto::tink::CleartextKeysetHandle::GetKeyset(
-            *GetPublicKeysetHandle());
+        ::crypto::tink::CleartextKeysetHandle::GetKeyset(*GetPublicKeysetHandle());
     EXPECT_EQ(1, public_keyset.key_size());
 
     // Serialize and encode the public keyset.
@@ -84,11 +82,9 @@ class EncryptedMessageMakerTest : public ::testing::Test {
   }
 
   // Decrypt the specified ciphertext.
-  std::string Decrypt(const std::string& ciphertext,
-                      const std::string& context_info) {
+  std::string Decrypt(const std::string& ciphertext, const std::string& context_info) {
     // Obtain a decrypter to be able to check the encrypted dummy observation.
-    auto decrypter_result =
-        keyset_handle_->GetPrimitive<::crypto::tink::HybridDecrypt>();
+    auto decrypter_result = keyset_handle_->GetPrimitive<::crypto::tink::HybridDecrypt>();
     EXPECT_TRUE(decrypter_result.ok());
     auto decrypter = std::move(decrypter_result.ValueOrDie());
     auto decrypted_result = decrypter->Decrypt(ciphertext, context_info);
@@ -121,10 +117,9 @@ class EncryptedMessageMakerTest : public ::testing::Test {
 // Try to roundtrip an observation through a message encrypter.
 TEST_F(EncryptedMessageMakerTest, EncryptObservation) {
   uint32_t key_index = 1;
-  auto key_bytes = MakeCobaltEncryptionKeyBytes(
-      GetPublicKeysetBytes(), key_index, CobaltEncryptionKey::ANALYZER);
-  auto encrypted_message_maker_or_status =
-      EncryptedMessageMaker::MakeForObservations(key_bytes);
+  auto key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), key_index,
+                                                CobaltEncryptionKey::ANALYZER);
+  auto encrypted_message_maker_or_status = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_TRUE(encrypted_message_maker_or_status.ok());
   auto maker = std::move(encrypted_message_maker_or_status.ValueOrDie());
 
@@ -142,8 +137,7 @@ TEST_F(EncryptedMessageMakerTest, EncryptObservation) {
   EXPECT_EQ(key_index, encrypted_message.key_index());
 
   // Decrypt the observation.
-  std::string decrypted =
-      Decrypt(encrypted_message.ciphertext(), kAnalyzerContextInfo);
+  std::string decrypted = Decrypt(encrypted_message.ciphertext(), kAnalyzerContextInfo);
   observation.Clear();
 
   // Check that the observation was correctly round-tripped.
@@ -155,10 +149,9 @@ TEST_F(EncryptedMessageMakerTest, EncryptObservation) {
 // Try to roundtrip an envelope through a message encrypter.
 TEST_F(EncryptedMessageMakerTest, EncryptEnvelope) {
   uint32_t key_index = 1;
-  auto key_bytes = MakeCobaltEncryptionKeyBytes(
-      GetPublicKeysetBytes(), key_index, CobaltEncryptionKey::SHUFFLER);
-  auto encrypted_message_maker_or_status =
-      EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
+  auto key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), key_index,
+                                                CobaltEncryptionKey::SHUFFLER);
+  auto encrypted_message_maker_or_status = EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   EXPECT_TRUE(encrypted_message_maker_or_status.ok());
   auto maker = std::move(encrypted_message_maker_or_status.ValueOrDie());
 
@@ -175,8 +168,7 @@ TEST_F(EncryptedMessageMakerTest, EncryptEnvelope) {
   EXPECT_EQ(key_index, encrypted_message.key_index());
 
   // Decrypt the envelope.
-  std::string decrypted =
-      Decrypt(encrypted_message.ciphertext(), kShufflerContextInfo);
+  std::string decrypted = Decrypt(encrypted_message.ciphertext(), kShufflerContextInfo);
   envelope.Clear();
   EXPECT_EQ(0, envelope.batch_size());
   EXPECT_TRUE(envelope.ParseFromString(decrypted));
@@ -188,26 +180,25 @@ TEST_F(EncryptedMessageMakerTest, EncryptEnvelope) {
 
 // Expect an error if the key_index field is set to 0 or unset.
 TEST_F(EncryptedMessageMakerTest, ZeroKeyIndex) {
-  auto key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 0,
-                                                CobaltEncryptionKey::SHUFFLER);
+  auto key_bytes =
+      MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 0, CobaltEncryptionKey::SHUFFLER);
   auto result = EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 
-  key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 0,
-                                           CobaltEncryptionKey::ANALYZER);
+  key_bytes =
+      MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 0, CobaltEncryptionKey::ANALYZER);
   result = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 }
 
 // Expect an error if the purpose field is unset.
 TEST_F(EncryptedMessageMakerTest, PurposeUnset) {
-  auto key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1,
-                                                CobaltEncryptionKey::UNSET);
+  auto key_bytes =
+      MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1, CobaltEncryptionKey::UNSET);
   auto result = EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 
-  key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1,
-                                           CobaltEncryptionKey::UNSET);
+  key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1, CobaltEncryptionKey::UNSET);
   result = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 }
@@ -215,13 +206,13 @@ TEST_F(EncryptedMessageMakerTest, PurposeUnset) {
 // Expect an error if trying to use an analyzer key to encrypt envelopes or
 // trying to use a shuffler key to encrypt observations.
 TEST_F(EncryptedMessageMakerTest, WrongPurpose) {
-  auto key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1,
-                                                CobaltEncryptionKey::ANALYZER);
+  auto key_bytes =
+      MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1, CobaltEncryptionKey::ANALYZER);
   auto result = EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 
-  key_bytes = MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1,
-                                           CobaltEncryptionKey::SHUFFLER);
+  key_bytes =
+      MakeCobaltEncryptionKeyBytes(GetPublicKeysetBytes(), 1, CobaltEncryptionKey::SHUFFLER);
   result = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 }
@@ -238,13 +229,11 @@ TEST_F(EncryptedMessageMakerTest, NotASerializedCobaltEncryptionKey) {
 
 // Expect an error if the serialized key is invalid.
 TEST_F(EncryptedMessageMakerTest, NotRealSerializedKey) {
-  auto key_bytes = MakeCobaltEncryptionKeyBytes("not key bytes", 1,
-                                                CobaltEncryptionKey::SHUFFLER);
+  auto key_bytes = MakeCobaltEncryptionKeyBytes("not key bytes", 1, CobaltEncryptionKey::SHUFFLER);
   auto result = EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 
-  key_bytes = MakeCobaltEncryptionKeyBytes("not key bytes", 1,
-                                           CobaltEncryptionKey::ANALYZER);
+  key_bytes = MakeCobaltEncryptionKeyBytes("not key bytes", 1, CobaltEncryptionKey::ANALYZER);
   result = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 }

@@ -49,40 +49,35 @@ class ProtectedFields {
     // Calls the wait_for() method of a condition variable with a reference to
     // the mutex.
     template <class Rep, class Period>
-    std::cv_status wait_for_with(
-        std::condition_variable* cv,
-        const std::chrono::duration<Rep, Period>& rel_time) {
+    std::cv_status wait_for_with(std::condition_variable* cv,
+                                 const std::chrono::duration<Rep, Period>& rel_time) {
       return cv->wait(lock_, rel_time);
     }
 
     template <class Rep, class Period, class Predicate>
     bool wait_for_with(std::condition_variable* cv,
-                       const std::chrono::duration<Rep, Period>& rel_time,
-                       Predicate pred) {
+                       const std::chrono::duration<Rep, Period>& rel_time, Predicate pred) {
       return cv->wait_for(lock_, rel_time, pred);
     }
 
     // Calls the wait_until() method of a condition variable with a reference to
     // the mutex.
     template <class Clock, class Duration>
-    std::cv_status wait_until_with(
-        std::condition_variable* cv,
-        const std::chrono::time_point<Clock, Duration>& timeout_time) {
+    std::cv_status wait_until_with(std::condition_variable* cv,
+                                   const std::chrono::time_point<Clock, Duration>& timeout_time) {
       return cv->wait_until(lock_, timeout_time);
     }
 
     template <class Clock, class Duration, class Predicate>
-    bool wait_until_with(
-        std::condition_variable* cv,
-        const std::chrono::time_point<Clock, Duration>& timeout_time,
-        Predicate pred) {
+    bool wait_until_with(std::condition_variable* cv,
+                         const std::chrono::time_point<Clock, Duration>& timeout_time,
+                         Predicate pred) {
       return cv->wait_until(lock_, timeout_time, pred);
     }
 
    private:
     friend class ProtectedFields;
-    LockedFieldsPtr(std::mutex* mutex, Fields* fields)
-        : lock_(*mutex), fields_(fields) {}
+    LockedFieldsPtr(std::mutex* mutex, Fields* fields) : lock_(*mutex), fields_(fields) {}
 
     std::unique_lock<std::mutex> lock_;
     Fields* fields_;
@@ -116,33 +111,29 @@ class ProtectedFields {
     // Calls the wait_for() method of a condition variable with a reference to
     // the mutex.
     template <class Rep, class Period>
-    std::cv_status wait_for_with(
-        std::condition_variable* cv,
-        const std::chrono::duration<Rep, Period>& rel_time) {
+    std::cv_status wait_for_with(std::condition_variable* cv,
+                                 const std::chrono::duration<Rep, Period>& rel_time) {
       return cv->wait(lock_, rel_time);
     }
 
     template <class Rep, class Period, class Predicate>
     bool wait_for_with(std::condition_variable* cv,
-                       const std::chrono::duration<Rep, Period>& rel_time,
-                       Predicate pred) {
+                       const std::chrono::duration<Rep, Period>& rel_time, Predicate pred) {
       return cv->wait_for(lock_, rel_time, pred);
     }
 
     // Calls the wait_until() method of a condition variable with a reference to
     // the mutex.
     template <class Clock, class Duration>
-    std::cv_status wait_until_with(
-        std::condition_variable* cv,
-        const std::chrono::time_point<Clock, Duration>& timeout_time) {
+    std::cv_status wait_until_with(std::condition_variable* cv,
+                                   const std::chrono::time_point<Clock, Duration>& timeout_time) {
       return cv->wait_until(lock_, timeout_time);
     }
 
     template <class Clock, class Duration, class Predicate>
-    bool wait_until_with(
-        std::condition_variable* cv,
-        const std::chrono::time_point<Clock, Duration>& timeout_time,
-        Predicate pred) {
+    bool wait_until_with(std::condition_variable* cv,
+                         const std::chrono::time_point<Clock, Duration>& timeout_time,
+                         Predicate pred) {
       return cv->wait_until(lock_, timeout_time, pred);
     }
 
@@ -163,9 +154,7 @@ class ProtectedFields {
   };
 
   LockedFieldsPtr lock() { return LockedFieldsPtr(&mutex_, &fields_); }
-  ConstLockedFieldsPtr const_lock() const {
-    return ConstLockedFieldsPtr(&mutex_, &fields_);
-  }
+  ConstLockedFieldsPtr const_lock() const { return ConstLockedFieldsPtr(&mutex_, &fields_); }
 
  private:
   mutable std::mutex mutex_;

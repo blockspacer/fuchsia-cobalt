@@ -34,19 +34,17 @@ constexpr uint32_t kTimestampWidth = 13;
 constexpr uint64_t kMinRandomNumber = 1000000000;
 constexpr uint64_t kMaxRandomNumber = 9999999999;
 
-FileObservationStore::FileObservationStore(
-    size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
-    size_t max_bytes_total, std::unique_ptr<FileSystem> fs,
-    std::string root_directory, std::string name,
-    logger::LoggerInterface *internal_logger)
-    : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope,
-                       max_bytes_total),
+FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
+                                           size_t max_bytes_per_envelope, size_t max_bytes_total,
+                                           std::unique_ptr<FileSystem> fs,
+                                           std::string root_directory, std::string name,
+                                           logger::LoggerInterface *internal_logger)
+    : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope, max_bytes_total),
       fs_(std::move(fs)),
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
       name_(std::move(name)),
-      internal_metrics_(
-          logger::InternalMetrics::NewWithLogger(internal_logger)) {
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)) {
   CHECK(fs_);
 
   // Check if root_directory_ already exists.
@@ -62,8 +60,7 @@ FileObservationStore::FileObservationStore(
     fields->finalized_bytes = 0;
 
     for (const auto &file : ListFinalizedFiles()) {
-      fields->finalized_bytes +=
-          fs_->FileSize(FullPath(file)).ConsumeValueOr(0);
+      fields->finalized_bytes += fs_->FileSize(FullPath(file)).ConsumeValueOr(0);
     }
 
     // If there exists an active file, it likely means that the process
@@ -79,18 +76,14 @@ FileObservationStore::FileObservationStore(
 }
 
 ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
-    std::unique_ptr<EncryptedMessage> message,
-    std::unique_ptr<ObservationMetadata> metadata) {
-  TRACE_DURATION("cobalt_core",
-                 "FileObservationStore::AddEncryptedObservation");
+    std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata) {
+  TRACE_DURATION("cobalt_core", "FileObservationStore::AddEncryptedObservation");
   auto fields = protected_fields_.lock();
 
   // "+1" below is for the |scheme| field of EncryptedMessage.
-  size_t obs_size = message->ciphertext().size() +
-                    message->public_key_fingerprint().size() + 1;
-  internal_metrics_->BytesStored(
-      logger::PerProjectBytesStoredMetricDimensionStatus::Attempted, obs_size,
-      metadata->customer_id(), metadata->project_id());
+  size_t obs_size = message->ciphertext().size() + message->public_key_fingerprint().size() + 1;
+  internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
+                                 obs_size, metadata->customer_id(), metadata->project_id());
 
   auto active_file = GetActiveFile(&fields);
   if (active_file == nullptr) {
@@ -107,28 +100,23 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     return kObservationTooBig;
   }
 
-  VLOG(6) << name_ << ": AddEncryptedObservation() metric=("
-          << metadata->customer_id() << "," << metadata->project_id() << ","
-          << metadata->metric_id() << "), size=" << obs_size << ".";
+  VLOG(6) << name_ << ": AddEncryptedObservation() metric=(" << metadata->customer_id() << ","
+          << metadata->project_id() << "," << metadata->metric_id() << "), size=" << obs_size
+          << ".";
 
-  size_t estimated_new_byte_count =
-      fields->finalized_bytes + active_file->ByteCount() + obs_size;
+  size_t estimated_new_byte_count = fields->finalized_bytes + active_file->ByteCount() + obs_size;
   if (estimated_new_byte_count > max_bytes_total_) {
-    VLOG(4) << name_
-            << ": The observation store is full. estimated_new_byte_count="
+    VLOG(4) << name_ << ": The observation store is full. estimated_new_byte_count="
             << estimated_new_byte_count << " > " << max_bytes_total_ << ".";
     return kStoreFull;
   }
 
-  if (!fields->metadata_written ||
-      metadata_str != fields->last_written_metadata) {
+  if (!fields->metadata_written || metadata_str != fields->last_written_metadata) {
     VLOG(5) << name_ << ": Writing observation metadata.";
     ObservationStoreRecord stored_metadata;
     stored_metadata.mutable_meta_data()->Swap(metadata.get());
-    if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(
-            stored_metadata, active_file)) {
-      LOG(WARNING) << name_ << ": Unable to write metadata to `"
-                   << active_file_name_ << "`";
+    if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_metadata, active_file)) {
+      LOG(WARNING) << name_ << ": Unable to write metadata to `" << active_file_name_ << "`";
       return kWriteFailed;
     }
     fields->metadata_written = true;
@@ -137,17 +125,13 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
 
   ObservationStoreRecord stored_message;
   stored_message.mutable_encrypted_observation()->Swap(message.get());
-  if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(
-          stored_message, active_file)) {
-    LOG(WARNING) << "Unable to write encrypted_observation to `"
-                 << active_file_name_ << "`";
+  if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_message, active_file)) {
+    LOG(WARNING) << "Unable to write encrypted_observation to `" << active_file_name_ << "`";
     return kWriteFailed;
   }
 
-  if (active_file->ByteCount() >=
-      static_cast<int64_t>(max_bytes_per_envelope_)) {
-    VLOG(4) << name_ << ": In-progress file contains "
-            << active_file->ByteCount()
+  if (active_file->ByteCount() >= static_cast<int64_t>(max_bytes_per_envelope_)) {
+    VLOG(4) << name_ << ": In-progress file contains " << active_file->ByteCount()
             << " bytes (>= " << max_bytes_per_envelope_ << "). Finalizing it.";
 
     if (!FinalizeActiveFile(&fields)) {
@@ -157,9 +141,8 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   }
 
   num_obs_per_report_[report_id]++;
-  internal_metrics_->BytesStored(
-      logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded, obs_size,
-      metadata->customer_id(), metadata->project_id());
+  internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded,
+                                 obs_size, metadata->customer_id(), metadata->project_id());
   return kOk;
 }
 
@@ -203,16 +186,14 @@ FileObservationStore::FilenameGenerator::FilenameGenerator()
             .count();
       }) {}
 
-FileObservationStore::FilenameGenerator::FilenameGenerator(
-    std::function<int64_t()> now)
+FileObservationStore::FilenameGenerator::FilenameGenerator(std::function<int64_t()> now)
     : now_(std::move(now)), random_int_(kMinRandomNumber, kMaxRandomNumber) {}
 
 std::string FileObservationStore::FilenameGenerator::GenerateFilename() const {
   std::stringstream date;
   std::stringstream fname;
   date << std::setfill('0') << std::setw(kTimestampWidth) << now_();
-  fname << date.str().substr(0, kTimestampWidth) << "-"
-        << random_int_(random_dev_) << ".data";
+  fname << date.str().substr(0, kTimestampWidth) << "-" << random_int_(random_dev_) << ".data";
   return fname.str();
 }
 
@@ -220,8 +201,7 @@ std::string FileObservationStore::FullPath(const std::string &filename) const {
   return root_directory_ + "/" + filename;
 }
 
-std::string FileObservationStore::FileEnvelopeHolder::FullPath(
-    const std::string &filename) const {
+std::string FileObservationStore::FileEnvelopeHolder::FullPath(const std::string &filename) const {
   return root_directory_ + "/" + filename;
 }
 
@@ -233,15 +213,13 @@ google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
     f->active_fstream.open(active_file_name_);
 
     if (!f->active_fstream.is_open()) {
-      LOG_FIRST_N(ERROR, 10)
-          << "Failed to open file. (Perhaps the disk is full): "
-          << active_file_name_ << " (" << std::strerror(errno) << ")";
+      LOG_FIRST_N(ERROR, 10) << "Failed to open file. (Perhaps the disk is full): "
+                             << active_file_name_ << " (" << std::strerror(errno) << ")";
       return nullptr;
     }
 
     f->active_file =
-        std::make_unique<google::protobuf::io::OstreamOutputStream>(
-            &f->active_fstream);
+        std::make_unique<google::protobuf::io::OstreamOutputStream>(&f->active_fstream);
   }
   return f->active_file.get();
 }
@@ -286,8 +264,7 @@ StatusOr<std::string> FileObservationStore::GetOldestFinalizedFile(
   return found_file_name;
 }
 
-std::unique_ptr<ObservationStore::EnvelopeHolder>
-FileObservationStore::TakeNextEnvelopeHolder() {
+std::unique_ptr<ObservationStore::EnvelopeHolder> FileObservationStore::TakeNextEnvelopeHolder() {
   auto fields = protected_fields_.lock();
 
   auto oldest_file_name_or = GetOldestFinalizedFile(&fields);
@@ -308,23 +285,19 @@ FileObservationStore::TakeNextEnvelopeHolder() {
 
   auto oldest_file_name = oldest_file_name_or.ConsumeValueOrDie();
   fields->files_taken.insert(oldest_file_name);
-  fields->finalized_bytes -=
-      fs_->FileSize(FullPath(oldest_file_name)).ConsumeValueOr(0);
-  return std::make_unique<FileEnvelopeHolder>(fs_.get(), root_directory_,
-                                              oldest_file_name);
+  fields->finalized_bytes -= fs_->FileSize(FullPath(oldest_file_name)).ConsumeValueOr(0);
+  return std::make_unique<FileEnvelopeHolder>(fs_.get(), root_directory_, oldest_file_name);
 }
 
 void FileObservationStore::ReturnEnvelopeHolder(
     std::unique_ptr<ObservationStore::EnvelopeHolder> envelope) {
   std::unique_ptr<FileObservationStore::FileEnvelopeHolder> env(
-      static_cast<FileObservationStore::FileEnvelopeHolder *>(
-          envelope.release()));
+      static_cast<FileObservationStore::FileEnvelopeHolder *>(envelope.release()));
 
   auto fields = protected_fields_.lock();
   for (const auto &file_name : env->file_names()) {
     fields->files_taken.erase(file_name);
-    fields->finalized_bytes +=
-        fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
+    fields->finalized_bytes += fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
   }
   env->clear();
 }
@@ -363,8 +336,7 @@ void FileObservationStore::FileEnvelopeHolder::MergeWith(
   std::unique_ptr<FileEnvelopeHolder> file_container(
       static_cast<FileEnvelopeHolder *>(container.release()));
 
-  file_names_.insert(file_container->file_names_.begin(),
-                     file_container->file_names_.end());
+  file_names_.insert(file_container->file_names_.begin(), file_container->file_names_.end());
 
   file_container->file_names_.clear();
 
@@ -389,11 +361,9 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
     google::protobuf::io::IstreamInputStream iis(&ifs);
 
     bool clean_eof;
-    while (google::protobuf::util::ParseDelimitedFromZeroCopyStream(
-        &stored, &iis, &clean_eof)) {
+    while (google::protobuf::util::ParseDelimitedFromZeroCopyStream(&stored, &iis, &clean_eof)) {
       if (stored.has_meta_data()) {
-        std::unique_ptr<ObservationMetadata> current_metadata(
-            stored.release_meta_data());
+        std::unique_ptr<ObservationMetadata> current_metadata(stored.release_meta_data());
         current_metadata->SerializeToString(&serialized_metadata);
 
         auto iter = batch_map.find(serialized_metadata);
@@ -405,8 +375,7 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
           batch_map[serialized_metadata] = current_batch;
         }
       } else if (stored.has_encrypted_observation()) {
-        current_batch->add_encrypted_observation()->Swap(
-            stored.mutable_encrypted_observation());
+        current_batch->add_encrypted_observation()->Swap(stored.mutable_encrypted_observation());
       } else {
         clean_eof = false;
         break;
@@ -414,10 +383,9 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
     }
 
     if (!clean_eof) {
-      VLOG(1)
-          << "WARNING: Trying to read from `" << file_name
-          << "` encountered a corrupted message. Returning the envelope that "
-             "has been read so far.";
+      VLOG(1) << "WARNING: Trying to read from `" << file_name
+              << "` encountered a corrupted message. Returning the envelope that "
+                 "has been read so far.";
       break;
     }
   }

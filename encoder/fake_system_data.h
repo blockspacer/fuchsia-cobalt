@@ -24,17 +24,11 @@ class FakeSystemData : public SystemDataInterface {
     system_profile_.set_channel("<unset>");
   }
 
-  const SystemProfile& system_profile() const override {
-    return system_profile_;
-  }
+  const SystemProfile& system_profile() const override { return system_profile_; }
 
-  const std::vector<Experiment>& experiments() const override {
-    return experiments_;
-  }
+  const std::vector<Experiment>& experiments() const override { return experiments_; }
 
-  const std::string& channel() const override {
-    return system_profile_.channel();
-  }
+  const std::string& channel() const override { return system_profile_.channel(); }
 
   const ReleaseStage& release_stage() const override { return release_stage_; }
 

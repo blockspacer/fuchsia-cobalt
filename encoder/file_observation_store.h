@@ -111,16 +111,13 @@ class FileObservationStore : public ObservationStore {
   //
   // |name| is used in log messages to distinguish this instance of
   // FileObservationStore.
-  FileObservationStore(size_t max_bytes_per_observation,
-                       size_t max_bytes_per_envelope, size_t max_bytes_total,
-                       std::unique_ptr<util::FileSystem> fs,
-                       std::string root_directory,
-                       std::string name = "FileObservationStore",
+  FileObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
+                       size_t max_bytes_total, std::unique_ptr<util::FileSystem> fs,
+                       std::string root_directory, std::string name = "FileObservationStore",
                        logger::LoggerInterface *internal_logger = nullptr);
 
-  StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata) override;
+  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
+                                      std::unique_ptr<ObservationMetadata> metadata) override;
   std::unique_ptr<EnvelopeHolder> TakeNextEnvelopeHolder() override;
   void ReturnEnvelopeHolder(std::unique_ptr<EnvelopeHolder> envelopes) override;
 
@@ -169,8 +166,7 @@ class FileObservationStore : public ObservationStore {
   // name with the root directory.
   std::string FullPath(const std::string &filename) const;
 
-  bool FinalizeActiveFile(
-      util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
+  bool FinalizeActiveFile(util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
   // GetActiveFile returns a pointer to the current OstreamOutputStream. If the
   // file is not yet opened, it will be opened by this function.

@@ -21,16 +21,12 @@
 
 namespace cobalt::encoder {
 
-EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation,
-                             size_t max_num_bytes)
-    : max_bytes_each_observation_(max_bytes_each_observation),
-      max_num_bytes_(max_num_bytes) {}
+EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation, size_t max_num_bytes)
+    : max_bytes_each_observation_(max_bytes_each_observation), max_num_bytes_(max_num_bytes) {}
 
-ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(
-    const EncryptedMessage& message) {
+ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(const EncryptedMessage& message) {
   // "+1" below is for the |scheme| field of EncryptedMessage.
-  size_t obs_size =
-      message.ciphertext().size() + message.public_key_fingerprint().size() + 1;
+  size_t obs_size = message.ciphertext().size() + message.public_key_fingerprint().size() + 1;
   if (obs_size > max_bytes_each_observation_) {
     VLOG(1) << "WARNING: An Observation that was too big was passed in to "
                "EnvelopeMaker::CanAddObservation(): "
@@ -40,8 +36,7 @@ ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(
 
   size_t new_num_bytes = num_bytes_ + obs_size;
   if (new_num_bytes > max_num_bytes_) {
-    VLOG(6) << "new_num_bytes(" << new_num_bytes << ") > max_num_bytes_("
-            << max_num_bytes_ << ")";
+    VLOG(6) << "new_num_bytes(" << new_num_bytes << ") > max_num_bytes_(" << max_num_bytes_ << ")";
     VLOG(4) << "Envelope full.";
     return ObservationStore::kStoreFull;
   }
@@ -50,25 +45,20 @@ ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(
 }
 
 ObservationStore::StoreStatus EnvelopeMaker::AddEncryptedObservation(
-    std::unique_ptr<EncryptedMessage> message,
-    std::unique_ptr<ObservationMetadata> metadata) {
+    std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata) {
   auto status = CanAddObservation(*message);
   if (status != ObservationStore::kOk) {
     return status;
   }
 
   // "+1" below is for the |scheme| field of EncryptedMessage.
-  num_bytes_ += message->ciphertext().size() +
-                message->public_key_fingerprint().size() + 1;
+  num_bytes_ += message->ciphertext().size() + message->public_key_fingerprint().size() + 1;
   // Put the encrypted observation into the appropriate ObservationBatch.
-  GetBatch(std::move(metadata))
-      ->add_encrypted_observation()
-      ->Swap(message.get());
+  GetBatch(std::move(metadata))->add_encrypted_observation()->Swap(message.get());
   return ObservationStore::kOk;
 }
 
-ObservationBatch* EnvelopeMaker::GetBatch(
-    std::unique_ptr<ObservationMetadata> metadata) {
+ObservationBatch* EnvelopeMaker::GetBatch(std::unique_ptr<ObservationMetadata> metadata) {
   // Serialize metadata.
   std::string serialized_metadata;
   (*metadata).SerializeToString(&serialized_metadata);
@@ -86,11 +76,9 @@ ObservationBatch* EnvelopeMaker::GetBatch(
   return observation_batch;
 }
 
-void EnvelopeMaker::MergeWith(
-    std::unique_ptr<ObservationStore::EnvelopeHolder> other_ref) {
+void EnvelopeMaker::MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> other_ref) {
   CHECK(other_ref);
-  auto other = std::unique_ptr<EnvelopeMaker>(
-      static_cast<EnvelopeMaker*>(other_ref.release()));
+  auto other = std::unique_ptr<EnvelopeMaker>(static_cast<EnvelopeMaker*>(other_ref.release()));
   // Iterate through the other's batch_map_. For each pair...
   for (auto& other_pair : other->batch_map_) {
     // see if we have a pair with the same key.

@@ -81,12 +81,10 @@ void DoChiSquaredTest(float p) {
     double delta_1 = static_cast<double>(counts[j]) - expected_1;
 
     // Difference between actual 0 count and expected 0 count.
-    double delta_0 =
-        static_cast<double>(kNumTrials * size - counts[j]) - expected_0;
+    double delta_0 = static_cast<double>(kNumTrials * size - counts[j]) - expected_0;
 
     // Compute and check the Chi-Squared value.
-    double chi_squared =
-        delta_1 * delta_1 / expected_1 + delta_0 * delta_0 / expected_0;
+    double chi_squared = delta_1 * delta_1 / expected_1 + delta_0 * delta_0 / expected_0;
 
     // The number 5.024 below has the property that
     // P(X < 5.024) = 0.975 where X ~ chi^2(1)

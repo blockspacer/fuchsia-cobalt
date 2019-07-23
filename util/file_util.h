@@ -13,8 +13,7 @@ namespace util {
 
 statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path);
 
-statusor::StatusOr<std::string> ReadNonEmptyTextFile(
-    const std::string& file_path);
+statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path);
 
 }  // namespace util
 }  // namespace cobalt

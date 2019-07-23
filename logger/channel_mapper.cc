@@ -33,8 +33,7 @@ std::unordered_map<std::string, ReleaseStage> ConstructReleaseStageMap(
 
 }  // namespace
 
-ChannelMapper::ChannelMapper(
-    const std::map<ReleaseStage, std::vector<std::string>> &channel_map)
+ChannelMapper::ChannelMapper(const std::map<ReleaseStage, std::vector<std::string>> &channel_map)
     : release_stage_map_(ConstructReleaseStageMap(channel_map)) {}
 
 ChannelMapper::ChannelMapper(std::vector<std::string> debug_channels)

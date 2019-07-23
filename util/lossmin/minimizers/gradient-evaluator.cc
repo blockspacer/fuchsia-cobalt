@@ -9,12 +9,10 @@
 
 namespace cobalt_lossmin {
 
-void GradientEvaluator::PerCoordinateCurvature(
-    VectorXd *per_coordinate_curvature) const {
+void GradientEvaluator::PerCoordinateCurvature(VectorXd *per_coordinate_curvature) const {
   // TODO(bazyli): cwiseProduct can be avoided if the matrix is just binary.
   *per_coordinate_curvature = VectorXd::Ones(NumExamples()).transpose() *
-                              instances_.cwiseProduct(instances_) /
-                              NumExamples();
+                              instances_.cwiseProduct(instances_) / NumExamples();
 }
 
 double GradientEvaluator::Sparsity() const {
@@ -46,8 +44,7 @@ double GradientEvaluator::Loss(const Weights &weights) const {
   return 0.5 * residual.squaredNorm() / NumExamples();
 }
 
-void GradientEvaluator::Gradient(const Weights &weights,
-                                 Weights *gradient) const {
+void GradientEvaluator::Gradient(const Weights &weights, Weights *gradient) const {
   Weights residual = Residual(weights);
   // TODO(azani): Implement multi-threaded version.
   // Note(bazyli): The outer loop can be executed in parallel (assuming thread
@@ -62,8 +59,7 @@ void GradientEvaluator::Gradient(const Weights &weights,
   *gradient /= NumExamples();
 }
 
-void GradientEvaluator::SparseGradient(const Weights &weights,
-                                       Weights *gradient) const {
+void GradientEvaluator::SparseGradient(const Weights &weights, Weights *gradient) const {
   // Note(bazyli): Eigen library recommends computations step-by-step for best
   // performance.
   // Note(bazyli): Eigen supports parallelization of row-major-sparse * dense

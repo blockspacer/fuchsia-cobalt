@@ -37,8 +37,7 @@ TEST(HmacTest, VariousKeyLengths) {
   rand.RandomBytes(data, 100);
   byte tag[hmac::TAG_SIZE];
   for (size_t key_len = 0; key_len <= 100; key_len++) {
-    EXPECT_TRUE(HMAC(key, key_len, data, 100 - key_len, tag))
-        << GetLastErrorMessage();
+    EXPECT_TRUE(HMAC(key, key_len, data, 100 - key_len, tag)) << GetLastErrorMessage();
   }
 }
 
@@ -46,8 +45,8 @@ TEST(HmacTest, VariousKeyLengths) {
 // two keys and two data arrays and invokes HMAC on each of them.
 // Then it compares them for equality or inequality depending on the
 // value of |expect_eq|.
-void checkEqualHmacs(byte key1[32], byte key2[32], byte data1[100],
-                     byte data2[100], bool expect_eq) {
+void checkEqualHmacs(byte key1[32], byte key2[32], byte data1[100], byte data2[100],
+                     bool expect_eq) {
   byte tag1[hmac::TAG_SIZE], tag2[hmac::TAG_SIZE];
 
   EXPECT_TRUE(HMAC(key1, 32, data1, 100, tag1)) << GetLastErrorMessage();

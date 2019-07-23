@@ -18,37 +18,36 @@ TEST_F(RapporAnalyzerTest, CompareAnalyzeToRegression) {
   static const uint32_t kNumHashes = 2;
   static const uint32_t kNumBloomBits = 8;
 
-  std::vector<int> candidate_indices(100, 5);  // NOLINT
-  std::vector<int> true_candidate_counts = {0,   0, 0, 0, 0,
-                                            100, 0, 0, 0, 0};  // NOLINT
-  CompareAnalyzeToSimpleRegression("p=0, q=1, only candidate 5", kNumCandidates,
-                                   kNumBloomBits, kNumCohorts, kNumHashes,
-                                   candidate_indices, true_candidate_counts);
+  std::vector<int> candidate_indices(100, 5);                                 // NOLINT
+  std::vector<int> true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};  // NOLINT
+  CompareAnalyzeToSimpleRegression("p=0, q=1, only candidate 5", kNumCandidates, kNumBloomBits,
+                                   kNumCohorts, kNumHashes, candidate_indices,
+                                   true_candidate_counts);
 
   candidate_indices = std::vector<int>(20, 1);                // NOLINT
   candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
   candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
   true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
-  CompareAnalyzeToSimpleRegression(
-      "p=0, q=1, several candidates", kNumCandidates, kNumBloomBits,
-      kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts);
+  CompareAnalyzeToSimpleRegression("p=0, q=1, several candidates", kNumCandidates, kNumBloomBits,
+                                   kNumCohorts, kNumHashes, candidate_indices,
+                                   true_candidate_counts);
 
   prob_0_becomes_1_ = 0.1;  // NOLINT
   prob_1_stays_1_ = 0.9;    // NOLINT
 
   candidate_indices = std::vector<int>(100, 5);              // NOLINT
   true_candidate_counts = {0, 0, 0, 0, 0, 100, 0, 0, 0, 0};  // NOLINT
-  CompareAnalyzeToSimpleRegression(
-      "p=0.1, q=0.9, only candidate 5", kNumCandidates, kNumBloomBits,
-      kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts);
+  CompareAnalyzeToSimpleRegression("p=0.1, q=0.9, only candidate 5", kNumCandidates, kNumBloomBits,
+                                   kNumCohorts, kNumHashes, candidate_indices,
+                                   true_candidate_counts);
 
   candidate_indices = std::vector<int>(20, 1);                // NOLINT
   candidate_indices.insert(candidate_indices.end(), 20, 4);   // NOLINT
   candidate_indices.insert(candidate_indices.end(), 60, 9);   // NOLINT
   true_candidate_counts = {0, 20, 0, 0, 20, 0, 0, 0, 0, 60};  // NOLINT
-  CompareAnalyzeToSimpleRegression(
-      "p=0.1, q=0.9, several candidates", kNumCandidates, kNumBloomBits,
-      kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts);
+  CompareAnalyzeToSimpleRegression("p=0.1, q=0.9, several candidates", kNumCandidates,
+                                   kNumBloomBits, kNumCohorts, kNumHashes, candidate_indices,
+                                   true_candidate_counts);
 }
 
 // Runs LongExperimentWithAnalyze; the true candidate counts are
@@ -71,19 +70,16 @@ TEST_F(RapporAnalyzerTest, PowerLawExperiment) {
 
   // Create a "map" of shuffled ids to randomize the observed id values
   std::vector<int> candidate_ids_list_shuffled(kNumCandidates);
-  std::iota(candidate_ids_list_shuffled.begin(),
-            candidate_ids_list_shuffled.end(), 0);
+  std::iota(candidate_ids_list_shuffled.begin(), candidate_ids_list_shuffled.end(), 0);
   std::mt19937 g(random_dev_());
-  std::shuffle(candidate_ids_list_shuffled.begin(),
-               candidate_ids_list_shuffled.end(), g);
+  std::shuffle(candidate_ids_list_shuffled.begin(), candidate_ids_list_shuffled.end(), g);
 
   // Generate observations from the power law distribution on
   // [0,kNumCandidates-1]
   const double left = 0.0;
   const auto right = static_cast<const double>(max_id);
   for (uint32_t i = 0; i < kNumObservations; i++) {
-    double random_power_law_number =
-        GenerateNumberFromPowerLaw(left, right, exponent);
+    double random_power_law_number = GenerateNumberFromPowerLaw(left, right, exponent);
     auto observed_candidate_id = static_cast<int>(random_power_law_number);
     observed_candidate_id = std::min(observed_candidate_id, max_id);
     observed_candidate_id = candidate_ids_list_shuffled[observed_candidate_id];
@@ -94,18 +90,16 @@ TEST_F(RapporAnalyzerTest, PowerLawExperiment) {
   prob_0_becomes_1_ = 0.05;  // NOLINT
   prob_1_stays_1_ = 0.95;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.05, q=0.95, power-law distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
-                            true_candidate_counts, print_estimates);
+  LongExperimentWithAnalyze("p=0.05, q=0.95, power-law distribution", kNumCandidates, kNumBloomBits,
+                            kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
+                            print_estimates);
 
   prob_0_becomes_1_ = 0.25;  // NOLINT
   prob_1_stays_1_ = 0.75;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.25, q=0.75, power-law distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
-                            true_candidate_counts, print_estimates);
+  LongExperimentWithAnalyze("p=0.25, q=0.75, power-law distribution", kNumCandidates, kNumBloomBits,
+                            kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
+                            print_estimates);
 }
 
 // This is the same as PowerLawExperiment but the distribution of observations
@@ -118,16 +112,14 @@ TEST_F(RapporAnalyzerTest, ExponentialExperiment) {
   static const uint32_t kNumObservations = 1e+6;
   static const bool print_estimates = true;
   static const double lambda = 1.0;  // the support of pdf for lambda == 1.0 ...
-  static const double approximate_max_generated_num =
-      6.0;  // ... is roughly [0, 6.0]
+  static const double approximate_max_generated_num = 6.0;  // ... is roughly [0, 6.0]
   const auto max_id = static_cast<const int>(kNumCandidates - 1);
 
   std::vector<int> candidate_indices(kNumObservations);
   std::vector<int> true_candidate_counts(kNumCandidates, 0);
 
   // Create a "map" of shuffled ids to randomize the observed id values
-  std::vector<int> candidate_ids_list_shuffled =
-      GenerateRandomMapOfIds(kNumCandidates);
+  std::vector<int> candidate_ids_list_shuffled = GenerateRandomMapOfIds(kNumCandidates);
 
   // Generate observations from the exponential distribution on
   // [0,kNumCandidates-1]
@@ -146,17 +138,15 @@ TEST_F(RapporAnalyzerTest, ExponentialExperiment) {
   prob_0_becomes_1_ = 0.05;  // NOLINT
   prob_1_stays_1_ = 0.95;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.05, q=0.95, exponential distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
+  LongExperimentWithAnalyze("p=0.05, q=0.95, exponential distribution", kNumCandidates,
+                            kNumBloomBits, kNumCohorts, kNumHashes, candidate_indices,
                             true_candidate_counts, print_estimates);
 
   prob_0_becomes_1_ = 0.25;  // NOLINT
   prob_1_stays_1_ = 0.75;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.25, q=0.75, exponential distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
+  LongExperimentWithAnalyze("p=0.25, q=0.75, exponential distribution", kNumCandidates,
+                            kNumBloomBits, kNumCohorts, kNumHashes, candidate_indices,
                             true_candidate_counts, print_estimates);
 }
 
@@ -178,16 +168,14 @@ TEST_F(RapporAnalyzerTest, NormalDistExperiment) {
   std::vector<int> true_candidate_counts(kNumCandidates, 0);
 
   // Create a "map" of shuffled ids to randomize the observed id values.
-  std::vector<int> candidate_ids_list_shuffled =
-      GenerateRandomMapOfIds(kNumCandidates);
+  std::vector<int> candidate_ids_list_shuffled = GenerateRandomMapOfIds(kNumCandidates);
 
   // Generate observations from the normal distribution.
   std::normal_distribution<double> nrm_distribution(mean, sd);
   for (uint32_t i = 0; i < kNumObservations; i++) {
     double random_normal_number = nrm_distribution(random_dev_);
     int observed_candidate_id = static_cast<int>(random_normal_number);
-    observed_candidate_id =
-        std::max(0, std::min(observed_candidate_id, max_id));
+    observed_candidate_id = std::max(0, std::min(observed_candidate_id, max_id));
     observed_candidate_id = candidate_ids_list_shuffled[observed_candidate_id];
     candidate_indices[i] = observed_candidate_id;
     true_candidate_counts[observed_candidate_id]++;
@@ -196,18 +184,16 @@ TEST_F(RapporAnalyzerTest, NormalDistExperiment) {
   prob_0_becomes_1_ = 0.05;  // NOLINT
   prob_1_stays_1_ = 0.95;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.05, q=0.95, normal distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
-                            true_candidate_counts, print_estimates);
+  LongExperimentWithAnalyze("p=0.05, q=0.95, normal distribution", kNumCandidates, kNumBloomBits,
+                            kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
+                            print_estimates);
 
   prob_0_becomes_1_ = 0.25;  // NOLINT
   prob_1_stays_1_ = 0.75;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.25, q=0.75, normal distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
-                            true_candidate_counts, print_estimates);
+  LongExperimentWithAnalyze("p=0.25, q=0.75, normal distribution", kNumCandidates, kNumBloomBits,
+                            kNumCohorts, kNumHashes, candidate_indices, true_candidate_counts,
+                            print_estimates);
 }
 
 // This is the same as PowerLawExperiment but the observations come from a
@@ -228,8 +214,7 @@ TEST_F(RapporAnalyzerTest, KOutOfNExperiment) {
   std::vector<int> true_candidate_counts(kNumCandidates, 0);
 
   // Create a "map" of shuffled ids to randomize the observed id values
-  std::vector<int> candidate_ids_list_shuffled =
-      GenerateRandomMapOfIds(kNumCandidates);
+  std::vector<int> candidate_ids_list_shuffled = GenerateRandomMapOfIds(kNumCandidates);
 
   // Generate observations
   for (uint32_t i = 0; i < kNumObservations; i++) {
@@ -243,17 +228,15 @@ TEST_F(RapporAnalyzerTest, KOutOfNExperiment) {
   prob_0_becomes_1_ = 0.05;  // NOLINT
   prob_1_stays_1_ = 0.95;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.05, q=0.95, k out of N distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
+  LongExperimentWithAnalyze("p=0.05, q=0.95, k out of N distribution", kNumCandidates,
+                            kNumBloomBits, kNumCohorts, kNumHashes, candidate_indices,
                             true_candidate_counts, print_estimates);
 
   prob_0_becomes_1_ = 0.25;  // NOLINT
   prob_1_stays_1_ = 0.75;    // NOLINT
 
-  LongExperimentWithAnalyze("p=0.25, q=0.75, k out of N distribution",
-                            kNumCandidates, kNumBloomBits, kNumCohorts,
-                            kNumHashes, candidate_indices,
+  LongExperimentWithAnalyze("p=0.25, q=0.75, k out of N distribution", kNumCandidates,
+                            kNumBloomBits, kNumCohorts, kNumHashes, candidate_indices,
                             true_candidate_counts, print_estimates);
 }
 

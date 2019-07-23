@@ -89,8 +89,7 @@ class Encoder {
   //     not take ownership of system_data and system_data is allowed to be
   //     NULL, in which case no SystemProfile will be added to the
   //     ObservationMetadata.
-  Encoder(const std::shared_ptr<ProjectContext>& project,
-          ClientSecret client_secret,
+  Encoder(const std::shared_ptr<ProjectContext>& project, ClientSecret client_secret,
           const SystemDataInterface* system_data = nullptr);
 
   enum Status {
@@ -143,37 +142,33 @@ class Encoder {
   // metric's sole part is STRING. On success the result contains kOK and an
   // Observation with its metadata. Otherwise the result contains an error
   // status.
-  Result EncodeString(uint32_t metric_id, uint32_t encoding_config_id,
-                      const std::string& value);
+  Result EncodeString(uint32_t metric_id, uint32_t encoding_config_id, const std::string& value);
 
   // Encodes the integer |value| using the specified encoding for the specified
   // metric. Use this method if the type of the metric's sole part is INT. On
   // success the result contains kOK and an Observation with its metadata.
   // Otherwise the result contains an error status.
-  Result EncodeInt(uint32_t metric_id, uint32_t encoding_config_id,
-                   int64_t value);
+  Result EncodeInt(uint32_t metric_id, uint32_t encoding_config_id, int64_t value);
 
   // Encodes the double |value| using the specified encoding for the specified
   // metric. Use this method if the type of the metric's sole part is DOUBLE. On
   // success the result contains kOK and an Observation with its metadata.
   // Otherwise the result contains an error status.
-  Result EncodeDouble(uint32_t metric_id, uint32_t encoding_config_id,
-                      double value);
+  Result EncodeDouble(uint32_t metric_id, uint32_t encoding_config_id, double value);
 
   // Encodes the given |index| using the specified encoding for the specified
   // metric. Use this method if the type of the metric's sole part is INDEX.
   // On success the result contains kOK and an Observation with its metadata.
   // Otherwise the result contains an error status.
-  Result EncodeIndex(uint32_t metric_id, uint32_t encoding_config_id,
-                     uint32_t index);
+  Result EncodeIndex(uint32_t metric_id, uint32_t encoding_config_id, uint32_t index);
 
   // Encodes |num_bytes| of uninterpreted data from |data| using the specified
   // encoding for the specified metric. Use this method if the type of the
   // metric's sole part is BLOB. On success the result contains kOK and an
   // Observation with its metadata. Otherwise the result contains an error
   // status.
-  Result EncodeBlob(uint32_t metric_id, uint32_t encoding_config_id,
-                    const void* data, size_t num_bytes);
+  Result EncodeBlob(uint32_t metric_id, uint32_t encoding_config_id, const void* data,
+                    size_t num_bytes);
 
   // Encodes the given |distribution| using the specified encoding for the
   // specified metric. Use this method if the type of the metric's sole part
@@ -183,9 +178,8 @@ class Encoder {
   // A bucket distribution is a mapping from bucket indices to element counts in
   // those buckets. The definition of the buckets is given by the IntegerBuckets
   // in the MetricPart definition.
-  Result EncodeIntBucketDistribution(
-      uint32_t metric_id, uint32_t encoding_config_id,
-      const std::map<uint32_t, uint64_t>& distribution);
+  Result EncodeIntBucketDistribution(uint32_t metric_id, uint32_t encoding_config_id,
+                                     const std::map<uint32_t, uint64_t>& distribution);
 
   /////////////////////////////////////////////////////////////////////////////
   //                            The advanced API
@@ -206,36 +200,33 @@ class Encoder {
     // associates it with the metric part named |part_name| and requests that it
     // be encoded using the configuration specified by |encoding_config_id|.
     // Use this method if the type of the MetricPart is STRING.
-    void AddStringPart(uint32_t encoding_config_id,
-                       const std::string& part_name, const std::string& value);
+    void AddStringPart(uint32_t encoding_config_id, const std::string& part_name,
+                       const std::string& value);
 
     // Adds the integer |value| to this multi-part Value, associates
     // it with the metric part named |part_name| and requests that it be
     // encoded using the configuration specified by |encoding_config_id|.
     // Use this method if the type of the MetricPart is INT.
-    void AddIntPart(uint32_t encoding_config_id, const std::string& part_name,
-                    int64_t value);
+    void AddIntPart(uint32_t encoding_config_id, const std::string& part_name, int64_t value);
 
     // Adds the double |value| to this multi-part Value, associates
     // it with the metric part named |part_name| and requests that it be
     // encoded using the configuration specified by |encoding_config_id|.
     // Use this method if the type of the MetricPart is DOUBLE
-    void AddDoublePart(uint32_t encoding_config_id,
-                       const std::string& part_name, double value);
+    void AddDoublePart(uint32_t encoding_config_id, const std::string& part_name, double value);
 
     // Adds the given |index| value to this multi-part Value, associates
     // it with the metric part named |part_name| and requests that it be
     // encoded using the configuration specified by |encoding_config_id|.
     // Use this method if the type of the MetricPart is INDEX.
-    void AddIndexPart(uint32_t encoding_config_id, const std::string& part_name,
-                      uint32_t index);
+    void AddIndexPart(uint32_t encoding_config_id, const std::string& part_name, uint32_t index);
 
     // Adds |num_bytes| of uninterpreted data from |data| to this Value,
     // associates it with the metric part named |part_name| and requests that
     // it be encoded using the configuration specified by |encoding_config_id|.
     // Use this method if the type of the MetricPart is BLOB.
-    void AddBlobPart(uint32_t encoding_config_id, const std::string& part_name,
-                     const void* data, size_t num_bytes);
+    void AddBlobPart(uint32_t encoding_config_id, const std::string& part_name, const void* data,
+                     size_t num_bytes);
 
     // Adds the |distribution| to this multi-part Value, associates
     // it with the metric part named |part_name| and requests that it be
@@ -245,9 +236,8 @@ class Encoder {
     // A bucket distribution is a mapping from bucket indices to element counts
     // in those buckets. The definition of the buckets is given by the
     // IntegerBuckets in the MetricPart definition.
-    void AddIntBucketDistributionPart(
-        uint32_t encoding_config_id, const std::string& part_name,
-        const std::map<uint32_t, uint64_t>& distribution);
+    void AddIntBucketDistributionPart(uint32_t encoding_config_id, const std::string& part_name,
+                                      const std::map<uint32_t, uint64_t>& distribution);
 
    private:
     friend class Encoder;
@@ -264,8 +254,7 @@ class Encoder {
     // Adds an additional ValuePartData to parts_ with the given name, and
     // encoding_config_id. Returns a reference to the ValuePart
     // contained in the newly added ValuePartData.
-    ValuePart& AddPart(uint32_t encoding_config_id,
-                       const std::string& part_name);
+    ValuePart& AddPart(uint32_t encoding_config_id, const std::string& part_name);
 
     // The parts of this value. The keys to the map are the part names.
     std::map<std::string, ValuePartData> parts_;
@@ -281,8 +270,7 @@ class Encoder {
   uint32_t MetricId(const std::string& metric_name);
 
   // Returns a map from MetricPart names to default encoding_ids.
-  const std::unordered_map<std::string, uint32_t>& DefaultEncodingsForMetric(
-      uint32_t metric_id);
+  const std::unordered_map<std::string, uint32_t>& DefaultEncodingsForMetric(uint32_t metric_id);
 
   // Returns a pointer to the metric given by |metric_id|.
   const Metric* GetMetric(uint32_t metric_id);
@@ -297,42 +285,34 @@ class Encoder {
  private:
   // Helper function that performs Forculus encoding on |value| using the
   // given metadata and writes the result into |observation_part|.
-  Status EncodeForculus(uint32_t metric_id, uint32_t encoding_config_id,
-                        const ValuePart& value,
-                        const EncodingConfig* encoding_config,
-                        const std::string& part_name, uint32_t day_index,
-                        ObservationPart* observation_part);
+  Status EncodeForculus(uint32_t metric_id, uint32_t encoding_config_id, const ValuePart& value,
+                        const EncodingConfig* encoding_config, const std::string& part_name,
+                        uint32_t day_index, ObservationPart* observation_part);
 
   // Helper function that performs RAPPOR encoding on |value| using the
   // given metadata and writes the result into |observation_part|.
-  Status EncodeRappor(uint32_t metric_id, uint32_t encoding_config_id,
-                      const ValuePart& value,
-                      const EncodingConfig* encoding_config,
-                      const std::string& part_name,
+  Status EncodeRappor(uint32_t metric_id, uint32_t encoding_config_id, const ValuePart& value,
+                      const EncodingConfig* encoding_config, const std::string& part_name,
                       ObservationPart* observation_part);
 
   // Helper function that performs Basic RAPPOR encoding on |value| using the
   // given metadata and writes the result into |observation_part|.
-  Status EncodeBasicRappor(uint32_t metric_id, uint32_t encoding_config_id,
-                           const ValuePart& value,
-                           const EncodingConfig* encoding_config,
-                           const std::string& part_name,
+  Status EncodeBasicRappor(uint32_t metric_id, uint32_t encoding_config_id, const ValuePart& value,
+                           const EncodingConfig* encoding_config, const std::string& part_name,
                            ObservationPart* observation_part);
 
   // Helper function that performs the NoOp encoding on |value|
   // and writes the result into |observation_part|.
-  Status EncodeNoOp(uint32_t metric_id, const ValuePart& value,
-                    const std::string& part_name,
+  Status EncodeNoOp(uint32_t metric_id, const ValuePart& value, const std::string& part_name,
                     ObservationPart* observation_part);
 
   bool CheckValidValuePart(uint32_t metric_id, const std::string& part_name,
                            const MetricPart& metric_part,
                            const Value::ValuePartData& value_part_data);
 
-  bool CheckIntBucketDistribution(
-      uint32_t metric_id, const std::string& part_name,
-      const MetricPart& metric_part,
-      const google::protobuf::Map<uint32_t, uint64_t>& counts);
+  bool CheckIntBucketDistribution(uint32_t metric_id, const std::string& part_name,
+                                  const MetricPart& metric_part,
+                                  const google::protobuf::Map<uint32_t, uint64_t>& counts);
 
   uint32_t customer_id_, project_id_;
   std::shared_ptr<ProjectContext> project_;

@@ -47,8 +47,7 @@ std::string getBoardName(int signature) {
 void Cpuid(int info_type,
            int cpu_info[4]) {  // NOLINT readability-non-const-parameter
   __asm__ volatile("cpuid\n"
-                   : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]),
-                     "=d"(cpu_info[3])
+                   : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
                    : "a"(info_type), "c"(0));
 }
 
@@ -91,8 +90,7 @@ void PopulateBoardName(SystemProfile* profile) {}
 
 }  // namespace
 
-SystemData::SystemData(const std::string& product_name,
-                       const std::string& board_name_suggestion,
+SystemData::SystemData(const std::string& product_name, const std::string& board_name_suggestion,
                        const std::string& version,
                        std::unique_ptr<logger::ChannelMapper> channel_mapper)
     : channel_mapper_(std::move(channel_mapper)) {
@@ -110,9 +108,7 @@ void SystemData::SetChannel(const std::string& channel) {
   }
 }
 
-void SystemData::OverrideSystemProfile(const SystemProfile& profile) {
-  system_profile_ = profile;
-}
+void SystemData::OverrideSystemProfile(const SystemProfile& profile) { system_profile_ = profile; }
 
 void SystemData::PopulateSystemProfile() {
 #if defined(__linux__)

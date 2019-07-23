@@ -25,8 +25,7 @@ class CurlHTTPClient : public clearcut::HTTPClient {
   CurlHTTPClient();
 
   std::future<StatusOr<clearcut::HTTPResponse>> Post(
-      clearcut::HTTPRequest request,
-      std::chrono::steady_clock::time_point deadline) override;
+      clearcut::HTTPRequest request, std::chrono::steady_clock::time_point deadline) override;
 
   static bool global_init_called_;
 };

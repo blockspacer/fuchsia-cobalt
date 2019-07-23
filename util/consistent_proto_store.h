@@ -24,8 +24,7 @@ class ConsistentProtoStore {
   //
   // |filename| the fully qualified path of the file to store data in.
   // |fs| is used for detecting the presence of, renaming, and deleting files.
-  explicit ConsistentProtoStore(std::string filename,
-                                std::unique_ptr<FileSystem> fs);
+  explicit ConsistentProtoStore(std::string filename, std::unique_ptr<FileSystem> fs);
 
   virtual ~ConsistentProtoStore() = default;
 

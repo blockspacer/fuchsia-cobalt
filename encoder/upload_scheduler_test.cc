@@ -10,8 +10,7 @@ namespace cobalt {
 namespace encoder {
 
 TEST(UploadScheduler, NoBackoff) {
-  auto scheduler =
-      UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0));
+  auto scheduler = UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0));
 
   // Interval stays at 3600 seconds forever
   EXPECT_EQ(scheduler.Interval(), std::chrono::seconds(3600));
@@ -21,8 +20,8 @@ TEST(UploadScheduler, NoBackoff) {
 }
 
 TEST(UploadScheduler, QuickBackoff) {
-  auto scheduler = UploadScheduler(
-      std::chrono::hours(1), std::chrono::seconds(0), std::chrono::minutes(10));
+  auto scheduler =
+      UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0), std::chrono::minutes(10));
 
   auto expected_seconds = {600, 1200, 2400, 3600};
   for (auto seconds : expected_seconds) {
@@ -37,13 +36,12 @@ TEST(UploadScheduler, QuickBackoff) {
 }
 
 TEST(UploadScheduler, LongBackoff) {
-  auto scheduler = UploadScheduler(
-      std::chrono::hours(1), std::chrono::seconds(0), std::chrono::seconds(3));
+  auto scheduler =
+      UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0), std::chrono::seconds(3));
 
   // Backoff should double every call to Interval, until the interval is >= 1
   // hour.
-  auto expected_seconds = {3,   6,   12,  24,   48,   96,
-                           192, 384, 768, 1536, 3072, 3600};
+  auto expected_seconds = {3, 6, 12, 24, 48, 96, 192, 384, 768, 1536, 3072, 3600};
   for (auto seconds : expected_seconds) {
     EXPECT_EQ(scheduler.Interval(), std::chrono::seconds(seconds));
   }

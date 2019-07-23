@@ -42,8 +42,7 @@ bool Base64Encode(const std::string& data, std::string* encoded_out);
 // Base64 decodes |encoded_in| and writes the results into decoded_out.
 //
 // Returns true on success and false if |encoded_in| could not be decoded.
-bool Base64Decode(const std::string& encoded_in,
-                  std::vector<byte>* decoded_out);
+bool Base64Decode(const std::string& encoded_in, std::vector<byte>* decoded_out);
 
 // Base64 decodes |encoded_in| and writes the results into decoded_out.
 //

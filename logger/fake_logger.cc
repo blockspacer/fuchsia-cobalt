@@ -25,8 +25,7 @@ namespace {
 
 template <class EventType>
 void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
-                                const std::string& component,
-                                EventType* event) {
+                                const std::string& component, EventType* event) {
   for (auto event_code : event_codes) {
     event->add_event_code(event_code);
   }
@@ -46,10 +45,8 @@ Status FakeLogger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   return Status::kOK;
 }
 
-Status FakeLogger::LogEventCount(uint32_t metric_id,
-                                 const std::vector<uint32_t>& event_codes,
-                                 const std::string& component,
-                                 int64_t period_duration_micros,
+Status FakeLogger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                                 const std::string& component, int64_t period_duration_micros,
                                  uint32_t count) {
   call_count_ += 1;
 
@@ -64,10 +61,8 @@ Status FakeLogger::LogEventCount(uint32_t metric_id,
   return Status::kOK;
 }
 
-Status FakeLogger::LogElapsedTime(uint32_t metric_id,
-                                  const std::vector<uint32_t>& event_codes,
-                                  const std::string& component,
-                                  int64_t elapsed_micros) {
+Status FakeLogger::LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                                  const std::string& component, int64_t elapsed_micros) {
   call_count_ += 1;
 
   Event event;
@@ -80,8 +75,7 @@ Status FakeLogger::LogElapsedTime(uint32_t metric_id,
   return Status::kOK;
 }
 
-Status FakeLogger::LogFrameRate(uint32_t metric_id,
-                                const std::vector<uint32_t>& event_codes,
+Status FakeLogger::LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                                 const std::string& component, float fps) {
   call_count_ += 1;
 
@@ -96,8 +90,7 @@ Status FakeLogger::LogFrameRate(uint32_t metric_id,
   return Status::kOK;
 }
 
-Status FakeLogger::LogMemoryUsage(uint32_t metric_id,
-                                  const std::vector<uint32_t>& event_codes,
+Status FakeLogger::LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                                   const std::string& component, int64_t bytes) {
   call_count_ += 1;
 
@@ -111,10 +104,8 @@ Status FakeLogger::LogMemoryUsage(uint32_t metric_id,
   return Status::kOK;
 }
 
-Status FakeLogger::LogIntHistogram(uint32_t metric_id,
-                                   const std::vector<uint32_t>& event_codes,
-                                   const std::string& component,
-                                   HistogramPtr histogram) {
+Status FakeLogger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
+                                   const std::string& component, HistogramPtr histogram) {
   call_count_ += 1;
 
   Event event;
@@ -138,8 +129,7 @@ Status FakeLogger::LogString(uint32_t metric_id, const std::string& str) {
   return Status::kOK;
 }
 
-Status FakeLogger::LogCustomEvent(uint32_t metric_id,
-                                  EventValuesPtr event_values) {
+Status FakeLogger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   call_count_ += 1;
 
   Event event;

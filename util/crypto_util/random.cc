@@ -64,13 +64,11 @@ bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
 
   // threshold is the integer n in the range [0, 2^32] such that
   // n/2^32 best approximates p.
-  uint64_t threshold =
-      round(static_cast<double>(p) * (static_cast<double>(UINT32_MAX) + 1));
+  uint64_t threshold = round(static_cast<double>(p) * (static_cast<double>(UINT32_MAX) + 1));
 
   // For every bit in the output, we need a 32 bit number.
   std::vector<uint32_t> random_bytes(kBitsPerByte * size);
-  RandomBytes(reinterpret_cast<byte*>(random_bytes.data()),
-              kBitsPerByte * size * sizeof(uint32_t));
+  RandomBytes(reinterpret_cast<byte*>(random_bytes.data()), kBitsPerByte * size * sizeof(uint32_t));
   for (std::size_t byte_index = 0; byte_index < size; byte_index++) {
     buffer[byte_index] = 0;
     for (size_t i = 0; i < kBitsPerByte; i++) {

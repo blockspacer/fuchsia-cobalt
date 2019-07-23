@@ -79,23 +79,20 @@ bool GcsUtil::InitFromDefaultPaths() {
   return Init(ca_certs_path, service_account_json_path);
 }
 
-bool GcsUtil::Init(const std::string ca_certs_path,
-                   const std::string& service_account_json_path) {
+bool GcsUtil::Init(const std::string ca_certs_path, const std::string& service_account_json_path) {
   // Set up HttpTransportLayer.
   impl_->http_config_.reset(new HttpTransportLayerConfig);
   impl_->http_config_->ResetDefaultTransportFactory(
       new CurlHttpTransportFactory(impl_->http_config_.get()));
-  impl_->http_config_->mutable_default_transport_options()->set_cacerts_path(
-      ca_certs_path);
+  impl_->http_config_->mutable_default_transport_options()->set_cacerts_path(ca_certs_path);
 
   // Set up OAuth 2.0 flow for a service account.
   googleapis::util::Status status;
-  impl_->oauth_flow_.reset(new OAuth2ServiceAccountFlow(
-      impl_->http_config_->NewDefaultTransport(&status)));
+  impl_->oauth_flow_.reset(
+      new OAuth2ServiceAccountFlow(impl_->http_config_->NewDefaultTransport(&status)));
   if (!status.ok()) {
     LOG_STACKDRIVER_COUNT_METRIC(ERROR, kInitFailure)
-        << "GcsUitl::Init(). Error creating new Http transport: "
-        << status.ToString();
+        << "GcsUitl::Init(). Error creating new Http transport: " << status.ToString();
     return false;
   }
 
@@ -110,8 +107,7 @@ bool GcsUtil::Init(const std::string ca_certs_path,
   }
   // Initialize the flow with the contents of the service account json.
   impl_->oauth_flow_->InitFromJson(json);
-  impl_->oauth_flow_->set_default_scopes(
-      StorageService::SCOPES::DEVSTORAGE_READ_WRITE);
+  impl_->oauth_flow_->set_default_scopes(StorageService::SCOPES::DEVSTORAGE_READ_WRITE);
   // Connect the credential with the AuthFlow.
   impl_->oauth_credential_.set_flow(impl_->oauth_flow_.get());
 
@@ -120,8 +116,7 @@ bool GcsUtil::Init(const std::string ca_certs_path,
       new StorageService(impl_->http_config_->NewDefaultTransport(&status)));
   if (!status.ok()) {
     LOG_STACKDRIVER_COUNT_METRIC(ERROR, kInitFailure)
-        << "GcsUitl::Init(). Error creating new Http transport: "
-        << status.ToString();
+        << "GcsUitl::Init(). Error creating new Http transport: " << status.ToString();
     return false;
   }
 
@@ -129,24 +124,20 @@ bool GcsUtil::Init(const std::string ca_certs_path,
 }
 
 bool GcsUtil::Upload(const std::string& bucket, const std::string& path,
-                     const std::string mime_type, const char* data,
-                     size_t num_bytes, uint32_t timeout_seconds) {
+                     const std::string mime_type, const char* data, size_t num_bytes,
+                     uint32_t timeout_seconds) {
   googleapis::StringPiece str;
   str.set(data, num_bytes);
-  return Upload(bucket, path, mime_type, NewUnmanagedInMemoryDataReader(str),
-                timeout_seconds);
+  return Upload(bucket, path, mime_type, NewUnmanagedInMemoryDataReader(str), timeout_seconds);
 }
 
 bool GcsUtil::Upload(const std::string& bucket, const std::string& path,
-                     const std::string mime_type, std::istream* stream,
-                     uint32_t timeout_seconds) {
-  return Upload(bucket, path, mime_type, NewUnmanagedIstreamDataReader(stream),
-                timeout_seconds);
+                     const std::string mime_type, std::istream* stream, uint32_t timeout_seconds) {
+  return Upload(bucket, path, mime_type, NewUnmanagedIstreamDataReader(stream), timeout_seconds);
 }
 
 bool GcsUtil::Upload(const std::string& bucket, const std::string& path,
-                     const std::string mime_type, void* data_reader,
-                     uint32_t timeout_seconds) {
+                     const std::string mime_type, void* data_reader, uint32_t timeout_seconds) {
   // Build the request.
   // Note that according to the comments on the method
   // MediaUploader::set_media_content_reader() in //third_party/ \
@@ -158,8 +149,7 @@ bool GcsUtil::Upload(const std::string& bucket, const std::string& path,
           reinterpret_cast<DataReader*>(data_reader)));
   request->set_name(path);
 
-  request->mutable_http_request()->mutable_options()->set_timeout_ms(
-      1000 * timeout_seconds);
+  request->mutable_http_request()->mutable_options()->set_timeout_ms(1000 * timeout_seconds);
 
   // Execute the request.
   Json::Value value;
@@ -176,8 +166,7 @@ bool GcsUtil::Upload(const std::string& bucket, const std::string& path,
 bool GcsUtil::Ping(const std::string& bucket) {
   // Construct the request.
   std::unique_ptr<BucketsResource_GetMethod> request(
-      impl_->storage_service_->get_buckets().NewGetMethod(
-          &(impl_->oauth_credential_), bucket));
+      impl_->storage_service_->get_buckets().NewGetMethod(&(impl_->oauth_credential_), bucket));
 
   // Execute the request.
   auto status = request->Execute();

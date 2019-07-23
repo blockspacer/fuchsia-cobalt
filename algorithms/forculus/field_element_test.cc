@@ -32,9 +32,7 @@ namespace {
 // Make the FieldElement with the given vector of bytes. This wrapper around the
 // constructor is necessary because the compiler can't tell which constructor
 // to use with an expression like FieldElement({2}).
-FieldElement FromBytes(std::vector<byte>&& bytes) {
-  return FieldElement(std::move(bytes));
-}
+FieldElement FromBytes(std::vector<byte>&& bytes) { return FieldElement(std::move(bytes)); }
 FieldElement FromString(const std::string& data) { return FieldElement(data); }
 
 FieldElement FromInt(uint32_t x) {
@@ -119,8 +117,8 @@ TEST(FieldElementTest, TestCopyBytesToString) {
   std::string s;
   el.CopyBytesToString(&s);
   EXPECT_EQ(FieldElement::kDataSize, s.size());
-  std::string expected_string = std::string("\0\x1\x2\x3", 4) +
-                                std::string(FieldElement::kDataSize - 4, 0);
+  std::string expected_string =
+      std::string("\0\x1\x2\x3", 4) + std::string(FieldElement::kDataSize - 4, 0);
   EXPECT_EQ(expected_string, s);
 }
 

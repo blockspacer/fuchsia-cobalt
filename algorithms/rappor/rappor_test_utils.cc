@@ -32,8 +32,7 @@ std::string DataToBinaryString(const std::string& data) {
   // Initialize output to a string of all zeroes.
   std::string output(num_bits, '0');
   size_t output_index = 0;
-  for (int bit_index = static_cast<int>(num_bits) - 1; bit_index >= 0;
-       bit_index--) {
+  for (int bit_index = static_cast<int>(num_bits) - 1; bit_index >= 0; bit_index--) {
     if (IsSet(data, bit_index)) {
       output[output_index] = '1';
     }
@@ -42,8 +41,7 @@ std::string DataToBinaryString(const std::string& data) {
   return output;
 }
 
-std::string BuildBinaryString(size_t num_bits,
-                              const std::vector<uint16_t>& index_of_1s) {
+std::string BuildBinaryString(size_t num_bits, const std::vector<uint16_t>& index_of_1s) {
   // Initialize output to a string of all zeroes.
   std::string output(num_bits, '0');
   for (auto bit_index : index_of_1s) {
@@ -78,19 +76,15 @@ std::string CategoryName(uint32_t index) {
   return std::string(buffer, 12);  // NOLINT readability-magic-numbers
 }
 
-std::string BuildBitPatternString(int num_bits, int index, char index_char,
-                                  char other_char) {
+std::string BuildBitPatternString(int num_bits, int index, char index_char, char other_char) {
   return std::string(num_bits - 1 - index, other_char) + index_char +
          std::string(index, other_char);
 }
 
-std::string CandidateString(int i) {
-  return std::string("candidate string") + std::to_string(i);
-}
+std::string CandidateString(int i) { return std::string("candidate string") + std::to_string(i); }
 
 // Populates |candidate_list| with |num_candidates| candidates;
-void PopulateRapporCandidateList(uint32_t num_candidates,
-                                 RapporCandidateList* candidate_list) {
+void PopulateRapporCandidateList(uint32_t num_candidates, RapporCandidateList* candidate_list) {
   candidate_list->Clear();
   for (size_t i = 0; i < num_candidates; i++) {
     candidate_list->add_candidates(CandidateString(i));
@@ -98,8 +92,8 @@ void PopulateRapporCandidateList(uint32_t num_candidates,
 }
 
 // Makes a RapporConfig with the given data.
-RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts,
-                    uint32_t num_hashes, float p, float q) {
+RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes, float p,
+                    float q) {
   RapporConfig config;
   config.set_num_bloom_bits(num_bloom_bits);
   config.set_num_hashes(num_hashes);
@@ -112,8 +106,7 @@ RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts,
 // Given a string of "0"s and "1"s of length a multiple of 8, and a cohort,
 // returns a RapporObservation for the given cohort whose data is equal to the
 // bytes whose binary representation is given by the string.
-RapporObservation RapporObservationFromString(
-    uint32_t cohort, const std::string& binary_string) {
+RapporObservation RapporObservationFromString(uint32_t cohort, const std::string& binary_string) {
   RapporObservation obs;
   obs.set_cohort(cohort);
   obs.set_data(BinaryStringToData(binary_string));

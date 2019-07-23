@@ -62,9 +62,7 @@ class BloomBitCounter {
   // was discarded due to an error. If this number is not zero it indicates
   // that the Analyzer received data that was not created by a legitimate
   // Cobalt client. See the error logs for details of the errors.
-  [[nodiscard]] size_t observation_errors() const {
-    return observation_errors_;
-  }
+  [[nodiscard]] size_t observation_errors() const { return observation_errors_; }
 
   // Computes estimates for the number of times each bloom bit in each cohort
   // was set. The returned vector of CohortCounts will be in order of

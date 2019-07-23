@@ -58,8 +58,7 @@ class LossMinimizer {
  public:
   // Constructor sets the l1 and l2 regularization parameters and
   // 'gradient_evalutor_'.
-  LossMinimizer(double l1, double l2,
-                const GradientEvaluator &gradient_evaluator)
+  LossMinimizer(double l1, double l2, const GradientEvaluator &gradient_evaluator)
       : l1_(l1), l2_(l2), gradient_evaluator_(gradient_evaluator) {}
 
   virtual ~LossMinimizer() = default;
@@ -76,8 +75,8 @@ class LossMinimizer {
   // will contain the parameters produced at the last epoch. 'loss' is filled
   // with loss values produced every 'loss_epochs' epochs. Convergence is
   // checked every 'convergence_epochs'.
-  bool Run(int max_epochs, int loss_epochs, int convergence_epochs,
-           Weights *weights, std::vector<double> *loss);
+  bool Run(int max_epochs, int loss_epochs, int convergence_epochs, Weights *weights,
+           std::vector<double> *loss);
 
   // Convenience Run method that evaluates the loss and checks for convergence
   // at every iteration.
@@ -87,8 +86,7 @@ class LossMinimizer {
 
   // Abstract method that updates the weights in the current iteration, i.e.
   // it implements a single iteration in Run.
-  virtual void EpochUpdate(Weights *weights, int epoch,
-                           bool check_convergence) = 0;
+  virtual void EpochUpdate(Weights *weights, int epoch, bool check_convergence) = 0;
 
   // Returns the total loss for given parameters 'weights', including l1 and l2
   // regularization.
@@ -106,8 +104,7 @@ class LossMinimizer {
   // Checks convergence by checking the sufficient and necessary conditions for
   // minimizer directly. If converged, the flags 'converged_' and
   // 'reached_solution_' are set to true.
-  virtual void ConvergenceCheck(const Weights &weights,
-                                const Weights &gradient);
+  virtual void ConvergenceCheck(const Weights &weights, const Weights &gradient);
 
   // Checks convergence based on the decrease in loss over the last
   // 'num_convergence_epochs_' epochs. If converged, the flag 'converged_' is
@@ -123,12 +120,8 @@ class LossMinimizer {
   [[nodiscard]] bool converged() const { return converged_; }
   void set_converged(bool converged) { converged_ = converged; }
   [[nodiscard]] bool reached_solution() const { return reached_solution_; }
-  void set_reached_solution(bool reached_solution) {
-    reached_solution_ = reached_solution;
-  }
-  [[nodiscard]] double convergence_threshold() const {
-    return convergence_threshold_;
-  }
+  void set_reached_solution(bool reached_solution) { reached_solution_ = reached_solution; }
+  [[nodiscard]] double convergence_threshold() const { return convergence_threshold_; }
   void set_convergence_threshold(double convergence_threshold) {
     convergence_threshold_ = convergence_threshold;
   }
@@ -142,14 +135,10 @@ class LossMinimizer {
     num_convergence_epochs_ = num_convergence_epochs;
   }
   [[nodiscard]] double zero_threshold() const { return zero_threshold_; }
-  void set_zero_threshold(double zero_threshold) {
-    zero_threshold_ = zero_threshold;
-  }
+  void set_zero_threshold(double zero_threshold) { zero_threshold_ = zero_threshold; }
 
   // Returns a reference to 'gradient_evaluator_'.
-  [[nodiscard]] const GradientEvaluator &gradient_evaluator() const {
-    return gradient_evaluator_;
-  }
+  [[nodiscard]] const GradientEvaluator &gradient_evaluator() const { return gradient_evaluator_; }
 
   // Getter/setter of the l1 regularization parameter.
   [[nodiscard]] double l1() const { return l1_; }

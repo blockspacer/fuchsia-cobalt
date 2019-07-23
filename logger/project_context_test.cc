@@ -46,8 +46,7 @@ class ProjectContextTest : public ::testing::Test {
     // the ASCII proto above.
     auto cobalt_config = std::make_unique<CobaltRegistry>();
     ASSERT_TRUE(PopulateCobaltRegistry(cobalt_config.get()));
-    auto project_configs =
-        ProjectConfigs::CreateFromCobaltRegistryProto(std::move(cobalt_config));
+    auto project_configs = ProjectConfigs::CreateFromCobaltRegistryProto(std::move(cobalt_config));
     project_configs_.reset(project_configs.release());
   }
 
@@ -72,8 +71,7 @@ class ProjectContextTest : public ::testing::Test {
     EXPECT_TRUE(fully_qualified_name.find(kProjectA1) != std::string::npos);
     CheckMetricA1a(*project_context.GetMetric(kMetricA1a));
     CheckMetricA1a(*project_context.GetMetric(kMetricA1aId));
-    MetricRef metric_ref(&project_context.project(),
-                         project_context.GetMetric(kMetricA1a));
+    MetricRef metric_ref(&project_context.project(), project_context.GetMetric(kMetricA1a));
     EXPECT_EQ(kMetricA1aId, metric_ref.metric_id());
     fully_qualified_name = metric_ref.FullyQualifiedName();
     EXPECT_TRUE(fully_qualified_name.find(kCustomerA) != std::string::npos);
@@ -90,10 +88,10 @@ class ProjectContextTest : public ::testing::Test {
 // Test ProjectContext starting with constructing one that owns its
 // ProjectConfig.
 TEST_F(ProjectContextTest, ConstructWithOwnedProjectConfig) {
-  auto project_config = std::make_unique<ProjectConfig>(
-      *project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
-  auto project_context = std::make_unique<ProjectContext>(
-      kCustomerAId, kCustomerA, std::move(project_config));
+  auto project_config =
+      std::make_unique<ProjectConfig>(*project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+  auto project_context =
+      std::make_unique<ProjectContext>(kCustomerAId, kCustomerA, std::move(project_config));
   CheckProjectContextA1(*project_context);
 }
 
@@ -101,8 +99,7 @@ TEST_F(ProjectContextTest, ConstructWithOwnedProjectConfig) {
 // ProjectConfig.
 TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
   auto project_context = std::make_unique<ProjectContext>(
-      kCustomerAId, kCustomerA,
-      project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+      kCustomerAId, kCustomerA, project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
   CheckProjectContextA1(*project_context);
 }
 

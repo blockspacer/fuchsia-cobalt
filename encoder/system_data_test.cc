@@ -67,9 +67,9 @@ TEST(SystemDataTest, SetExperimentTest) {
 }
 
 TEST(SystemDataTest, SetChannelTest) {
-  SystemData system_data("test_product", "", "test_version",
-                         std::make_unique<logger::ChannelMapper>(
-                             std::vector<std::string>({"Channel"})));
+  SystemData system_data(
+      "test_product", "", "test_version",
+      std::make_unique<logger::ChannelMapper>(std::vector<std::string>({"Channel"})));
   EXPECT_EQ(system_data.channel(), "<unset>");
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::GA);
   system_data.SetChannel("Channel");

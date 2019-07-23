@@ -114,9 +114,8 @@ float RapporConfigHelper::ProbBitFlip(const ReportDefinition& report_definition,
       return kLocalPrivacyLargeProbBitFlip;
 
     default:
-      LOG(ERROR) << "Invalid Cobalt config: Report "
-                 << report_definition.report_name() << " from metric "
-                 << metric_debug_name
+      LOG(ERROR) << "Invalid Cobalt config: Report " << report_definition.report_name()
+                 << " from metric " << metric_debug_name
                  << " does not have local_privacy_noise_level set to a "
                     "recognized value.";
       return kInvalidProbability;
@@ -129,21 +128,18 @@ float RapporConfigHelper::ProbBitFlip(const ReportDefinition& report_definition,
 //   metric_dimensions[0].max_event_code() + 1 (this is the new registry).
 //
 // - Otherwise, return 0 and report an error (this is not a supported registry).
-size_t RapporConfigHelper::BasicRapporNumCategories(
-    const MetricDefinition& metric_definition) {
+size_t RapporConfigHelper::BasicRapporNumCategories(const MetricDefinition& metric_definition) {
   if (metric_definition.metric_dimensions_size() == 1) {
     return metric_definition.metric_dimensions(0).max_event_code() + 1;
   }
 
-  LOG(ERROR) << "Invalid Cobalt registry: Metric "
-             << metric_definition.metric_name() << " has "
+  LOG(ERROR) << "Invalid Cobalt registry: Metric " << metric_definition.metric_name() << " has "
              << metric_definition.metric_dimensions_size()
              << " metric_dimensions. (expected exactly 1)";
   return 0;
 }
 
-size_t RapporConfigHelper::StringRapporNumCohorts(
-    const ReportDefinition& report_definition) {
+size_t RapporConfigHelper::StringRapporNumCohorts(const ReportDefinition& report_definition) {
   if (report_definition.expected_population_size() == 0) {
     return kDefaultNumCohorts;
   }
@@ -163,8 +159,7 @@ size_t RapporConfigHelper::StringRapporNumCohorts(
   return kLargeNumCohorts;
 }
 
-size_t RapporConfigHelper::StringRapporNumBloomBits(
-    const ReportDefinition& report_definition) {
+size_t RapporConfigHelper::StringRapporNumBloomBits(const ReportDefinition& report_definition) {
   if (report_definition.expected_string_set_size() == 0) {
     return kDefaultNumBits;
   }

@@ -131,11 +131,9 @@ TEST(DatetimeUtilTest, CalendarDateToDayIndex) {
 }
 
 void doDayIndexToCalendarDateTest(uint32_t day_index, uint32_t expected_month,
-                                  uint32_t expected_day_of_month,
-                                  uint32_t expected_year) {
+                                  uint32_t expected_day_of_month, uint32_t expected_year) {
   auto calendar_date = DayIndexToCalendarDate(day_index);
-  EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month)
-      << "day_index=" << day_index;
+  EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month) << "day_index=" << day_index;
   EXPECT_EQ(expected_month, calendar_date.month) << "day_index=" << day_index;
   EXPECT_EQ(expected_year, calendar_date.year) << "day_index=" << day_index;
 }
@@ -248,11 +246,9 @@ TEST(DatetimeUtilTest, CalendarDateToWeekIndex) {
 }
 
 void doWeekIndexToCalendarDateTest(uint32_t week_index, uint32_t expected_month,
-                                   uint32_t expected_day_of_month,
-                                   uint32_t expected_year) {
+                                   uint32_t expected_day_of_month, uint32_t expected_year) {
   auto calendar_date = WeekIndexToCalendarDate(week_index);
-  EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month)
-      << "week_index=" << week_index;
+  EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month) << "week_index=" << week_index;
   EXPECT_EQ(expected_month, calendar_date.month) << "week_index=" << week_index;
   EXPECT_EQ(expected_year, calendar_date.year) << "week_index=" << week_index;
 }
@@ -331,13 +327,11 @@ TEST(DatetimeUtilTest, DayIndexToMonthIndex) {
   EXPECT_EQ(kSomeMonthIndex, DayIndexToMonthIndex(kSomeDayIndex));
 }
 
-void doMonthIndexToCalendarDateTest(uint32_t month_index,
-                                    uint32_t expected_month,
+void doMonthIndexToCalendarDateTest(uint32_t month_index, uint32_t expected_month,
                                     uint32_t expected_year) {
   auto calendar_date = MonthIndexToCalendarDate(month_index);
   EXPECT_EQ(1u, calendar_date.day_of_month) << "month_index=" << month_index;
-  EXPECT_EQ(expected_month, calendar_date.month)
-      << "month_index=" << month_index;
+  EXPECT_EQ(expected_month, calendar_date.month) << "month_index=" << month_index;
   EXPECT_EQ(expected_year, calendar_date.year) << "month_index=" << month_index;
 }
 

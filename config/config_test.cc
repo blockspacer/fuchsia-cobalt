@@ -32,13 +32,11 @@ class TestErrorCollector : public ErrorCollector {
  public:
   virtual ~TestErrorCollector() {}
 
-  void AddError(int line, ColumnNumber column,
-                const std::string& message) override {
+  void AddError(int line, ColumnNumber column, const std::string& message) override {
     line_numbers_.push_back(line);
   }
 
-  void AddWarning(int line, ColumnNumber column,
-                  const std::string& message) override {
+  void AddWarning(int line, ColumnNumber column, const std::string& message) override {
     line_numbers_.push_back(line);
   }
 
@@ -79,8 +77,7 @@ TEST(ReportRegistryFromFile, BadFilePath) {
 TEST(EncodingRegistryFromFile, NotValidAsciiProtoFile) {
   TestErrorCollector collector;
   EXPECT_EQ(0u, collector.line_numbers().size());
-  auto result =
-      FromFile<RegisteredEncodings>("config/config_test.cc", &collector);
+  auto result = FromFile<RegisteredEncodings>("config/config_test.cc", &collector);
   EXPECT_EQ(kParsingError, result.second);
   EXPECT_EQ(1u, collector.line_numbers().size());
   EXPECT_EQ(0, collector.line_numbers()[0]);
@@ -91,8 +88,7 @@ TEST(EncodingRegistryFromFile, NotValidAsciiProtoFile) {
 TEST(MetricRegistryFromFile, NotValidAsciiProtoFile) {
   TestErrorCollector collector;
   EXPECT_EQ(0u, collector.line_numbers().size());
-  auto result =
-      FromFile<RegisteredMetrics>("config/config_test.cc", &collector);
+  auto result = FromFile<RegisteredMetrics>("config/config_test.cc", &collector);
   EXPECT_EQ(kParsingError, result.second);
   EXPECT_EQ(1u, collector.line_numbers().size());
   EXPECT_EQ(0, collector.line_numbers()[0]);
@@ -103,8 +99,7 @@ TEST(MetricRegistryFromFile, NotValidAsciiProtoFile) {
 TEST(ReportRegistryFromFile, NotValidAsciiProtoFile) {
   TestErrorCollector collector;
   EXPECT_EQ(0u, collector.line_numbers().size());
-  auto result =
-      FromFile<RegisteredReports>("config/config_test.cc", &collector);
+  auto result = FromFile<RegisteredReports>("config/config_test.cc", &collector);
   EXPECT_EQ(kParsingError, result.second);
   EXPECT_EQ(1u, collector.line_numbers().size());
   EXPECT_EQ(0, collector.line_numbers()[0]);
@@ -136,8 +131,8 @@ TEST(ReportRegistryFromFile, DuplicateRegistration) {
 
 // Tests EncodingRegistryFromFile<RegisteredEncodings>() on a fully valid file.
 TEST(EncodingRegistryFromFile, ValidFile) {
-  auto result = FromFile<RegisteredEncodings>(
-      "config/test_files/registered_encodings_valid.txt", nullptr);
+  auto result =
+      FromFile<RegisteredEncodings>("config/test_files/registered_encodings_valid.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
   auto& registry = result.first;
   EXPECT_EQ(6u, registry->size());
@@ -152,15 +147,13 @@ TEST(EncodingRegistryFromFile, ValidFile) {
 
   // (1, 1, 3) Should be Basic RAPPOR with integer categories
   encoding_config = registry->Get(1, 1, 3);
-  int64_t num_categories =
-      encoding_config->basic_rappor().int_range_categories().last() -
-      encoding_config->basic_rappor().int_range_categories().first() + 1;
+  int64_t num_categories = encoding_config->basic_rappor().int_range_categories().last() -
+                           encoding_config->basic_rappor().int_range_categories().first() + 1;
   EXPECT_EQ(3, num_categories);
 
   // (1, 1, 4) Should be Basic RAPPOR with indexed categories
   encoding_config = registry->Get(1, 1, 4);
-  num_categories =
-      encoding_config->basic_rappor().indexed_categories().num_categories();
+  num_categories = encoding_config->basic_rappor().indexed_categories().num_categories();
   EXPECT_EQ(100, num_categories);
 
   // (1, 1, 5) Should be not present
@@ -168,14 +161,13 @@ TEST(EncodingRegistryFromFile, ValidFile) {
 
   // (2, 1, 1) Should be Basic RAPPOR with string categories
   encoding_config = registry->Get(2, 1, 1);
-  EXPECT_EQ(
-      3, encoding_config->basic_rappor().string_categories().category_size());
+  EXPECT_EQ(3, encoding_config->basic_rappor().string_categories().category_size());
 }
 
 // Tests FromFile<RegisteredMetrics>() on a fully valid file.
 TEST(MetricRegistryFromFile, ValidFile) {
-  auto result = FromFile<RegisteredMetrics>(
-      "config/test_files/registered_metrics_valid.txt", nullptr);
+  auto result =
+      FromFile<RegisteredMetrics>("config/test_files/registered_metrics_valid.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
   auto& registry = result.first;
   EXPECT_EQ(5u, registry->size());
@@ -200,8 +192,8 @@ TEST(MetricRegistryFromFile, ValidFile) {
 
 // Tests FromFile<RegisteredReports>() on a fully valid file.
 TEST(ReportRegistryFromFile, ValidFile) {
-  auto result = FromFile<RegisteredReports>(
-      "config/test_files/registered_reports_valid.txt", nullptr);
+  auto result =
+      FromFile<RegisteredReports>("config/test_files/registered_reports_valid.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
   auto& registry = result.first;
   EXPECT_EQ(6u, registry->size());
@@ -239,8 +231,7 @@ TEST(ReportRegistryFromFile, ValidFile) {
 // This test runs EncodingRegistryFromFile<RegisteredEncodings>() on our demo
 // file, registered_encodings.txt. The purpose is to validate that file.
 TEST(EncodingRegistryFromFile, CheckDemoEncodings) {
-  auto result = FromFile<RegisteredEncodings>(
-      "config/demo/registered_encodings.txt", nullptr);
+  auto result = FromFile<RegisteredEncodings>("config/demo/registered_encodings.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
@@ -248,40 +239,36 @@ TEST(EncodingRegistryFromFile, CheckDemoEncodings) {
 // official registration file, registered_encodings.txt. The purpose is to
 // validate that file.
 TEST(EncodingRegistryFromFile, CheckProductionEncodings) {
-  auto result = FromFile<RegisteredEncodings>(
-      "config/production/registered_encodings.txt", nullptr);
+  auto result =
+      FromFile<RegisteredEncodings>("config/production/registered_encodings.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
 // This test runs FromFile<RegisteredMetrics>() on our demo
 // file, registered_metrics.txt. The purpose is to validate that file.
 TEST(MetricRegistryFromFile, CheckDemoMetrics) {
-  auto result = FromFile<RegisteredMetrics>(
-      "config/demo/registered_metrics.txt", nullptr);
+  auto result = FromFile<RegisteredMetrics>("config/demo/registered_metrics.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
 // This test runs FromFile<RegisteredMetrics>() on our official registration
 // file, registered_metrics.txt. The purpose is to validate that file.
 TEST(MetricRegistryFromFile, CheckProductionMetrics) {
-  auto result = FromFile<RegisteredMetrics>(
-      "config/production/registered_metrics.txt", nullptr);
+  auto result = FromFile<RegisteredMetrics>("config/production/registered_metrics.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
 // This test runs FromFile<RegisteredReports>() on our demo
 // file, registered_reports.txt. The purpose is to validate that file.
 TEST(ReportRegistryFromFile, CheckDemodReports) {
-  auto result = FromFile<RegisteredReports>(
-      "config/demo/registered_reports.txt", nullptr);
+  auto result = FromFile<RegisteredReports>("config/demo/registered_reports.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
 // This test runs FromFile<RegisteredReports>() on our official registration
 // file, registered_reports.txt. The purpose is to validate that file.
 TEST(ReportRegistryFromFile, CheckProductionReports) {
-  auto result = FromFile<RegisteredReports>(
-      "config/production/registered_reports.txt", nullptr);
+  auto result = FromFile<RegisteredReports>("config/production/registered_reports.txt", nullptr);
   EXPECT_EQ(kOK, result.second);
 }
 
@@ -377,8 +364,7 @@ TEST(MetricRegistryFromString, ValidString) {
 TEST(EncodingRegistryFromProto, ValidProto) {
   RegisteredEncodings registered_encodings;
   google::protobuf::TextFormat::Parser parser;
-  EXPECT_TRUE(
-      parser.ParseFromString(kEncodingConfigText, &registered_encodings));
+  EXPECT_TRUE(parser.ParseFromString(kEncodingConfigText, &registered_encodings));
 
   auto result = EncodingRegistry::TakeFrom(&registered_encodings, nullptr);
   EXPECT_EQ(kOK, result.second);

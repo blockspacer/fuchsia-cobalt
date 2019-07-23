@@ -66,35 +66,34 @@ class ProjectConfigs {
 
   // Returns the CustomerConfig for the customer with the given name, or
   // nullptr if there is no such customer.
-  [[nodiscard]] const CustomerConfig* GetCustomerConfig(
-      const std::string& customer_name) const;
+  [[nodiscard]] const CustomerConfig* GetCustomerConfig(const std::string& customer_name) const;
 
   // Returns the CustomerConfig for the customer with the given ID, or
   // nullptr if there is no such customer.
-  [[nodiscard]] const CustomerConfig* GetCustomerConfig(
-      uint32_t customer_id) const;
+  [[nodiscard]] const CustomerConfig* GetCustomerConfig(uint32_t customer_id) const;
 
   // Returns the ProjectConfig for the project with the given
   // (customer_name, project_name), or nullptr if there is no such project.
-  [[nodiscard]] const ProjectConfig* GetProjectConfig(
-      const std::string& customer_name, const std::string& project_name) const;
+  [[nodiscard]] const ProjectConfig* GetProjectConfig(const std::string& customer_name,
+                                                      const std::string& project_name) const;
 
   // Returns the ProjectConfig for the project with the given
   // (customer_id, project_id), or nullptr if there is no such project.
-  [[nodiscard]] const ProjectConfig* GetProjectConfig(
-      uint32_t customer_id, uint32_t project_id) const;
+  [[nodiscard]] const ProjectConfig* GetProjectConfig(uint32_t customer_id,
+                                                      uint32_t project_id) const;
 
   // Returns the MetricDefinition for the metric with the given
   // (customer_id, project_id, metric_id), or nullptr if no such metric exists.
-  [[nodiscard]] const MetricDefinition* GetMetricDefinition(
-      uint32_t customer_id, uint32_t project_id, uint32_t metric_id) const;
+  [[nodiscard]] const MetricDefinition* GetMetricDefinition(uint32_t customer_id,
+                                                            uint32_t project_id,
+                                                            uint32_t metric_id) const;
 
   // Returns the ReportDefinition for the metric with the given
   // (customer_id, project_id, metric_id, report_id), or nullptr if no such
   // report exists.
-  [[nodiscard]] const ReportDefinition* GetReportDefinition(
-      uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
-      uint32_t report_id) const;
+  [[nodiscard]] const ReportDefinition* GetReportDefinition(uint32_t customer_id,
+                                                            uint32_t project_id, uint32_t metric_id,
+                                                            uint32_t report_id) const;
 
   // Returns whether or not this instance of ProjectConfigs contains data for
   // exactly one project.
@@ -132,17 +131,13 @@ class ProjectConfigs {
 
   std::map<uint32_t, const CustomerConfig*> customers_by_id_;
 
-  std::map<std::tuple<std::string, std::string>, const ProjectConfig*>
-      projects_by_name_;
+  std::map<std::tuple<std::string, std::string>, const ProjectConfig*> projects_by_name_;
 
-  std::map<std::tuple<uint32_t, uint32_t>, const ProjectConfig*>
-      projects_by_id_;
+  std::map<std::tuple<uint32_t, uint32_t>, const ProjectConfig*> projects_by_id_;
 
-  std::map<std::tuple<uint32_t, uint32_t, uint32_t>, const MetricDefinition*>
-      metrics_by_id_;
+  std::map<std::tuple<uint32_t, uint32_t, uint32_t>, const MetricDefinition*> metrics_by_id_;
 
-  std::map<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>,
-           const ReportDefinition*>
+  std::map<std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>, const ReportDefinition*>
       reports_by_id_;
 
   bool is_single_project_;

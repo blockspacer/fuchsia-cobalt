@@ -61,8 +61,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   //
   // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
   // Envelopes to the shuffler.
-  ShippingManager(const UploadScheduler& upload_scheduler,
-                  ObservationStore* observation_store,
+  ShippingManager(const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
                   util::EncryptedMessageMaker* encrypt_to_shuffler);
 
   // The destructor will stop the worker thread and wait for it to stop
@@ -133,8 +132,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   void SendAllEnvelopes();
 
   // Invoked by SendAllEnvelopes() to actually perform the send..
-  virtual std::unique_ptr<ObservationStore::EnvelopeHolder>
-  SendEnvelopeToBackend(
+  virtual std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
       std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) = 0;
 
   // Returns a name for this ShippingManager. Useful for log messages in cases
@@ -203,8 +201,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   // Constructing a LockedFields object constructs a std::unique_lock and
   // therefore locks the mutex in |fields|.
   struct LockedFields {
-    explicit LockedFields(MutexProtectedFields* fields)
-        : lock(fields->mutex), fields(fields) {}
+    explicit LockedFields(MutexProtectedFields* fields) : lock(fields->mutex), fields(fields) {}
     std::unique_lock<std::mutex> lock;
     MutexProtectedFields* fields;  // not owned.
   };
@@ -243,32 +240,27 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
 // is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
-  ClearcutV1ShippingManager(
-      const UploadScheduler& upload_scheduler,
-      ObservationStore* observation_store,
-      util::EncryptedMessageMaker* encrypt_to_shuffler,
-      std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
-      logger::LoggerInterface* internal_logger = nullptr,
-      size_t max_attempts_per_upload = clearcut::kMaxRetries);
+  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
+                            ObservationStore* observation_store,
+                            util::EncryptedMessageMaker* encrypt_to_shuffler,
+                            std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+                            logger::LoggerInterface* internal_logger = nullptr,
+                            size_t max_attempts_per_upload = clearcut::kMaxRetries);
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
   ~ClearcutV1ShippingManager() override = default;
 
   // Resets the internal metrics to use the provided logger.
-  void ResetInternalMetrics(
-      logger::LoggerInterface* internal_logger = nullptr) {
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr) {
     internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
 
  private:
   std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send)
-      override;
+      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) override;
 
-  [[nodiscard]] std::string name() const override {
-    return "ClearcutV1ShippingManager";
-  }
+  [[nodiscard]] std::string name() const override { return "ClearcutV1ShippingManager"; }
 
   const size_t max_attempts_per_upload_;
 

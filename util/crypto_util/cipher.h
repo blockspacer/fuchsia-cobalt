@@ -65,8 +65,8 @@ class SymmetricCipher {
   //
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
-  bool Encrypt(const byte nonce[NONCE_SIZE], const byte* ptext,
-               size_t ptext_len, std::vector<byte>* ctext);
+  bool Encrypt(const byte nonce[NONCE_SIZE], const byte* ptext, size_t ptext_len,
+               std::vector<byte>* ctext);
 
   // Performs AEAD decryption.
   //
@@ -81,8 +81,8 @@ class SymmetricCipher {
   //
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
-  bool Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext,
-               size_t ctext_len, std::vector<byte>* ptext);
+  bool Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext, size_t ctext_len,
+               std::vector<byte>* ptext);
 
  private:
   std::unique_ptr<CipherContext> context_;
@@ -145,8 +145,7 @@ class HybridCipher {
   static bool GenerateKeyPair(byte public_key[HybridCipher::PUBLIC_KEY_SIZE],
                               byte private_key[HybridCipher::PRIVATE_KEY_SIZE]);
 
-  static bool GenerateKeyPairPEM(std::string* public_key_pem_out,
-                                 std::string* private_key_pem_out);
+  static bool GenerateKeyPairPEM(std::string* public_key_pem_out, std::string* private_key_pem_out);
 
   HybridCipher();
   ~HybridCipher();
@@ -194,8 +193,7 @@ class HybridCipher {
   //
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
-  bool Encrypt(const byte* ptext, size_t ptext_len,
-               std::vector<byte>* hybrid_ctext);
+  bool Encrypt(const byte* ptext, size_t ptext_len, std::vector<byte>* hybrid_ctext);
 
   // Performs ECDH-based hybrid decryption.
   //
@@ -208,8 +206,7 @@ class HybridCipher {
   //
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
-  bool Decrypt(const byte* hybrid_ctext, size_t hybrid_ctext_len,
-               std::vector<byte>* ptext);
+  bool Decrypt(const byte* hybrid_ctext, size_t hybrid_ctext_len, std::vector<byte>* ptext);
 
  private:
   // Performs ECDH-based hybrid encryption
@@ -233,8 +230,7 @@ class HybridCipher {
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
   bool EncryptInternal(const byte* ptext, size_t ptext_len,
-                       byte public_key_part_out[PUBLIC_KEY_SIZE],
-                       byte salt_out[SALT_SIZE],
+                       byte public_key_part_out[PUBLIC_KEY_SIZE], byte salt_out[SALT_SIZE],
                        std::vector<byte>* symmetric_ctext_out);
 
   // Performs ECDH-based hybrid decryption.
@@ -256,9 +252,9 @@ class HybridCipher {
   //
   // Returns true for success or false for failure. Use the functions
   // in errors.h to obtain error information upon failure.
-  bool DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
-                       const byte salt[SALT_SIZE], const byte* symmetric_ctext,
-                       size_t symmetric_ctext_len, std::vector<byte>* ptext);
+  bool DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE], const byte salt[SALT_SIZE],
+                       const byte* symmetric_ctext, size_t symmetric_ctext_len,
+                       std::vector<byte>* ptext);
 
   std::unique_ptr<HybridCipherContext> context_;
   std::unique_ptr<SymmetricCipher> symm_cipher_;

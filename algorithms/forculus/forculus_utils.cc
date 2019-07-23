@@ -18,8 +18,7 @@ namespace cobalt::forculus {
 
 // Compute the Forculus epoch index for the given |day_index| based on
 // the given |epoch_type|.
-uint32_t EpochIndexFromDayIndex(uint32_t day_index,
-                                const EpochType& epoch_type) {
+uint32_t EpochIndexFromDayIndex(uint32_t day_index, const EpochType& epoch_type) {
   switch (epoch_type) {
     case DAY:
       return day_index;

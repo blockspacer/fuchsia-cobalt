@@ -100,14 +100,12 @@ class EventAggregator {
   // Observation generation and garbage collection will be done at the smallest
   // multiple of |aggregate_backup_interval| which is greater than or equal to
   // its specified interval.
-  EventAggregator(
-      const Encoder* encoder, const ObservationWriter* observation_writer,
-      util::ConsistentProtoStore* local_aggregate_proto_store,
-      util::ConsistentProtoStore* obs_history_proto_store,
-      size_t backfill_days = 0,
-      std::chrono::seconds aggregate_backup_interval = std::chrono::minutes(1),
-      std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
-      std::chrono::seconds gc_interval = kOneDay);
+  EventAggregator(const Encoder* encoder, const ObservationWriter* observation_writer,
+                  util::ConsistentProtoStore* local_aggregate_proto_store,
+                  util::ConsistentProtoStore* obs_history_proto_store, size_t backfill_days = 0,
+                  std::chrono::seconds aggregate_backup_interval = std::chrono::minutes(1),
+                  std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
+                  std::chrono::seconds gc_interval = kOneDay);
 
   // Shut down the worker thread before destructing the EventAggregator.
   ~EventAggregator() { ShutDown(); }
@@ -258,23 +256,20 @@ class EventAggregator {
   //
   // Observations are not generated for aggregation windows larger than
   // |kMaxAllowedAggregationWindowSize|.
-  Status GenerateObservations(uint32_t final_day_index_utc,
-                              uint32_t final_day_index_local = 0u);
+  Status GenerateObservations(uint32_t final_day_index_utc, uint32_t final_day_index_local = 0u);
 
   // Logs a numeric value to the LocalAggregateStore by adding |value| to the
   // current daily aggregate in the bucket indexed by |report_key|, |day_index|,
   // |component|, and |event_code|. This is a helper method called by
   // LogCountEvent and LogElapsedTimeEvent.
   Status LogNumericEvent(const std::string& report_key, uint32_t day_index,
-                         const std::string& component, uint64_t event_code,
-                         int64_t value);
+                         const std::string& component, uint64_t event_code, int64_t value);
 
   // Returns the most recent day index for which an Observation was generated
   // for a given UNIQUE_N_DAY_ACTIVES report, event code, and window size,
   // according to |obs_history_|. Returns 0 if no Observation has been generated
   // for the given arguments.
-  uint32_t UniqueActivesLastGeneratedDayIndex(const std::string& report_key,
-                                              uint32_t event_code,
+  uint32_t UniqueActivesLastGeneratedDayIndex(const std::string& report_key, uint32_t event_code,
                                               uint32_t window_size) const;
 
   // Returns the most recent day index for which an Observation was generated
@@ -282,16 +277,14 @@ class EventAggregator {
   // and window size, according to |obs_history_|. Returns 0 if no Observation
   // has been generated for the given arguments.
   uint32_t PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
-                                                 const std::string& component,
-                                                 uint32_t event_code,
+                                                 const std::string& component, uint32_t event_code,
                                                  uint32_t window_size) const;
 
   // Returns the most recent day index for which a
   // ReportParticipationObservation was generated for a given report, according
   // to |obs_history_|. Returns 0 if no Observation has been generated for the
   // given arguments.
-  uint32_t ReportParticipationLastGeneratedDayIndex(
-      const std::string& report_key) const;
+  uint32_t ReportParticipationLastGeneratedDayIndex(const std::string& report_key) const;
 
   // For a fixed report of type UNIQUE_N_DAY_ACTIVES, generates an Observation
   // for each event code of the parent metric, for each window size of the
@@ -303,19 +296,16 @@ class EventAggregator {
   //
   // Observations are not generated for aggregation windows larger than
   // |kMaxAllowedAggregationWindowSize|.
-  Status GenerateUniqueActivesObservations(
-      MetricRef metric_ref, const std::string& report_key,
-      const ReportAggregates& report_aggregates, uint32_t num_event_codes,
-      uint32_t final_day_index);
+  Status GenerateUniqueActivesObservations(MetricRef metric_ref, const std::string& report_key,
+                                           const ReportAggregates& report_aggregates,
+                                           uint32_t num_event_codes, uint32_t final_day_index);
 
   // Helper method called by GenerateUniqueActivesObservations() to generate
   // and write a single Observation.
   Status GenerateSingleUniqueActivesObservation(MetricRef metric_ref,
                                                 const ReportDefinition* report,
-                                                uint32_t obs_day_index,
-                                                uint32_t event_code,
-                                                uint32_t window_size,
-                                                bool was_active) const;
+                                                uint32_t obs_day_index, uint32_t event_code,
+                                                uint32_t window_size, bool was_active) const;
 
   // For a fixed report of type PER_DEVICE_NUMERIC_STATS, generates a
   // PerDeviceNumericObservation for each tuple (component, event code, window
@@ -336,26 +326,24 @@ class EventAggregator {
   //
   // Observations are not generated for aggregation windows larger than
   // |kMaxAllowedAggregationWindowSize|.
-  Status GeneratePerDeviceNumericObservations(
-      MetricRef metric_ref, const std::string& report_key,
-      const ReportAggregates& report_aggregates, uint32_t final_day_index);
+  Status GeneratePerDeviceNumericObservations(MetricRef metric_ref, const std::string& report_key,
+                                              const ReportAggregates& report_aggregates,
+                                              uint32_t final_day_index);
 
   // Helper method called by GeneratePerDeviceNumericObservations() to generate
   // and write a single Observation with value |value|.
   Status GenerateSinglePerDeviceNumericObservation(
-      MetricRef metric_ref, const ReportDefinition* report,
-      uint32_t obs_day_index, const std::string& component, uint32_t event_code,
-      uint32_t window_size, int64_t value) const;
+      MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
+      const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const;
 
   // Helper method called by GeneratePerDeviceNumericObservations() to generate
   // and write a single ReportParticipationObservation.
-  Status GenerateSingleReportParticipationObservation(
-      MetricRef metric_ref, const ReportDefinition* report,
-      uint32_t obs_day_index) const;
+  Status GenerateSingleReportParticipationObservation(MetricRef metric_ref,
+                                                      const ReportDefinition* report,
+                                                      uint32_t obs_day_index) const;
 
   LocalAggregateStore CopyLocalAggregateStore() {
-    auto local_aggregate_store =
-        protected_aggregate_store_.lock()->local_aggregate_store;
+    auto local_aggregate_store = protected_aggregate_store_.lock()->local_aggregate_store;
     return local_aggregate_store;
   }
 

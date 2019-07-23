@@ -64,27 +64,20 @@ class FieldElement {
   // Move assignment operator
   FieldElement& operator=(FieldElement&& other) = default;
 
-  bool operator==(const FieldElement& other) const {
-    return bytes_ == other.bytes_;
-  }
+  bool operator==(const FieldElement& other) const { return bytes_ == other.bytes_; }
 
-  bool operator!=(const FieldElement& other) const {
-    return bytes_ != other.bytes_;
-  }
+  bool operator!=(const FieldElement& other) const { return bytes_ != other.bytes_; }
 
   // FieldElements are ordered lexicographically by their byte representation.
   // There is nothing mathematically natural about this ordering but having
   // some ordering is necessary in order to use FieldElements as the keys
   // of a map.
-  bool operator<(const FieldElement& other) const {
-    return bytes_ < other.bytes_;
-  }
+  bool operator<(const FieldElement& other) const { return bytes_ < other.bytes_; }
 
   // Convenience function that copies the underlying bytes of this element
   // into *target_string.
   void CopyBytesToString(std::string* target_string) const {
-    target_string->assign(reinterpret_cast<const char*>(bytes_.data()),
-                          bytes_.size());
+    target_string->assign(reinterpret_cast<const char*>(bytes_.data()), bytes_.size());
   }
 
   // Returns a pointer to a buffer of bytes of length

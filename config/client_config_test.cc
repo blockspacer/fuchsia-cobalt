@@ -24,20 +24,16 @@ constexpr uint32_t kNonexistentId = 41;
 constexpr uint32_t kAnId = 42;
 constexpr uint32_t kAnotherId = 43;
 
-void AddMetric(int customer_id, int project_id, int id,
-               CobaltRegistry* cobalt_registry) {
+void AddMetric(int customer_id, int project_id, int id, CobaltRegistry* cobalt_registry) {
   Metric* metric = cobalt_registry->add_metric_configs();
   metric->set_customer_id(customer_id);
   metric->set_project_id(project_id);
   metric->set_id(id);
 }
 
-void AddMetric(int id, CobaltRegistry* cobalt_registry) {
-  AddMetric(id, id, id, cobalt_registry);
-}
+void AddMetric(int id, CobaltRegistry* cobalt_registry) { AddMetric(id, id, id, cobalt_registry); }
 
-void AddEncodingConfig(int customer_id, int project_id, int id,
-                       CobaltRegistry* cobalt_registry) {
+void AddEncodingConfig(int customer_id, int project_id, int id, CobaltRegistry* cobalt_registry) {
   EncodingConfig* encoding_config = cobalt_registry->add_encoding_configs();
   encoding_config->set_customer_id(customer_id);
   encoding_config->set_project_id(project_id);
@@ -48,8 +44,7 @@ void AddEncodingConfig(int id, CobaltRegistry* cobalt_registry) {
   AddEncodingConfig(id, id, id, cobalt_registry);
 }
 
-std::unique_ptr<ClientConfig> CreateFromCopyOfRegistry(
-    const CobaltRegistry& registry) {
+std::unique_ptr<ClientConfig> CreateFromCopyOfRegistry(const CobaltRegistry& registry) {
   std::string cobalt_registry_bytes;
   EXPECT_TRUE(registry.SerializeToString(&cobalt_registry_bytes));
   return ClientConfig::CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
@@ -65,16 +60,12 @@ TEST(ClientConfigTest, CreateFromCobaltRegistryBytes) {
   AddEncodingConfig(kAnId, &cobalt_registry);
   AddEncodingConfig(kAnotherId, &cobalt_registry);
   ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
-  auto client_config =
-      ClientConfig::CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
+  auto client_config = ClientConfig::CreateFromCobaltRegistryBytes(cobalt_registry_bytes);
   ASSERT_NE(nullptr, client_config);
-  EXPECT_EQ(nullptr, client_config->EncodingConfig(
-                         kNonexistentId, kNonexistentId, kNonexistentId));
+  EXPECT_EQ(nullptr, client_config->EncodingConfig(kNonexistentId, kNonexistentId, kNonexistentId));
   EXPECT_NE(nullptr, client_config->EncodingConfig(kAnId, kAnId, kAnId));
-  EXPECT_NE(nullptr,
-            client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
-  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId,
-                                           kNonexistentId));
+  EXPECT_NE(nullptr, client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
+  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId, kNonexistentId));
   EXPECT_NE(nullptr, client_config->Metric(kAnId, kAnId, kAnId));
   EXPECT_NE(nullptr, client_config->Metric(kAnotherId, kAnotherId, kAnotherId));
 }
@@ -89,16 +80,12 @@ TEST(ClientConfigTest, CreateFromCobaltRegistryBase64) {
   ASSERT_TRUE(cobalt_registry.SerializeToString(&cobalt_registry_bytes));
   std::string cobalt_registry_base64;
   crypto::Base64Encode(cobalt_registry_bytes, &cobalt_registry_base64);
-  auto client_config =
-      ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
+  auto client_config = ClientConfig::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   ASSERT_NE(nullptr, client_config);
-  EXPECT_EQ(nullptr, client_config->EncodingConfig(
-                         kNonexistentId, kNonexistentId, kNonexistentId));
+  EXPECT_EQ(nullptr, client_config->EncodingConfig(kNonexistentId, kNonexistentId, kNonexistentId));
   EXPECT_NE(nullptr, client_config->EncodingConfig(kAnId, kAnId, kAnId));
-  EXPECT_NE(nullptr,
-            client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
-  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId,
-                                           kNonexistentId));
+  EXPECT_NE(nullptr, client_config->EncodingConfig(kAnotherId, kAnotherId, kAnotherId));
+  EXPECT_EQ(nullptr, client_config->Metric(kNonexistentId, kNonexistentId, kNonexistentId));
   EXPECT_NE(nullptr, client_config->Metric(kAnId, kAnId, kAnId));
   EXPECT_NE(nullptr, client_config->Metric(kAnotherId, kAnotherId, kAnotherId));
 }

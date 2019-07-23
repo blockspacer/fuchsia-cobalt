@@ -50,8 +50,8 @@ class AnalyzerConfigManager {
                         std::string config_parser_bin_path);
 
   // Reads the configuration from a file containing a serialized CobaltRegistry.
-  static std::unique_ptr<AnalyzerConfig>
-  ReadConfigFromSerializedCobaltRegistryFile(std::string config_path);
+  static std::unique_ptr<AnalyzerConfig> ReadConfigFromSerializedCobaltRegistryFile(
+      std::string config_path);
 
   std::shared_ptr<AnalyzerConfig> ptr_;
   // This mutex protects ptr_. A thread dereferencing or updating ptr_ should

@@ -74,8 +74,7 @@ class ProjectContext {
   // use this ProjectContext. Used to determine which metrics from the
   // given |ProjectConfig| are allowed to be used. Optional.
   ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                 std::unique_ptr<ProjectConfig> project_config,
-                 ReleaseStage release_stage = GA);
+                 std::unique_ptr<ProjectConfig> project_config, ReleaseStage release_stage = GA);
 
   // Constructs an instance of ProjectContext that does not own the
   // underlying |ProjectConfig|.
@@ -90,8 +89,7 @@ class ProjectContext {
   // use this ProjectContext. Used to determine which metrics from the
   // given |ProjectConfig| are allowed to be used. Optional.
   ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                 const ProjectConfig* project_config,
-                 ReleaseStage release_stage = GA);
+                 const ProjectConfig* project_config, ReleaseStage release_stage = GA);
 
   // Returns the MetricDefinition for the metric with the given name, or
   // nullptr if there is no such metric.
@@ -122,8 +120,7 @@ class ProjectContext {
 
   // Returns the string
   // <customer_name>(<id>).<project_name>(<id>).<metric_name>(<id>)
-  std::string static FullMetricName(const Project& project,
-                                    const MetricDefinition& metric);
+  std::string static FullMetricName(const Project& project, const MetricDefinition& metric);
 
   // Returns the string <customer_name>(<id>).<project_name>(<id>)
   std::string FullyQualifiedName() const;

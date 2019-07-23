@@ -38,9 +38,8 @@ class ForculusEncrypter {
   //
   // The |client_secret| is the entropy used while deriving a point on
   // the Forculus polynomial.
-  ForculusEncrypter(const ForculusConfig& config, uint32_t customer_id,
-                    uint32_t project_id, uint32_t metric_id,
-                    std::string metric_part_name,
+  ForculusEncrypter(const ForculusConfig& config, uint32_t customer_id, uint32_t project_id,
+                    uint32_t metric_id, std::string metric_part_name,
                     encoder::ClientSecret client_secret);
 
   ~ForculusEncrypter();

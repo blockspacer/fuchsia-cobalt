@@ -16,8 +16,7 @@ constexpr float kAlmostFullThreshold = 0.6;
 
 }
 
-ObservationStore::ObservationStore(size_t max_bytes_per_observation,
-                                   size_t max_bytes_per_envelope,
+ObservationStore::ObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
                                    size_t max_bytes_total)
     : max_bytes_per_observation_(max_bytes_per_observation),
       max_bytes_per_envelope_(max_bytes_per_envelope),
@@ -28,9 +27,7 @@ ObservationStore::ObservationStore(size_t max_bytes_per_observation,
   CHECK_LE(0, max_bytes_per_envelope_);
 }
 
-bool ObservationStore::IsAlmostFull() const {
-  return Size() > almost_full_threshold_;
-}
+bool ObservationStore::IsAlmostFull() const { return Size() > almost_full_threshold_; }
 
 std::string ObservationStore::StatusDebugString(StoreStatus status) {
   switch (status) {
@@ -70,8 +67,6 @@ std::vector<uint64_t> ObservationStore::num_observations_added_for_reports(
   return num_obs;
 }
 
-void ObservationStore::ResetObservationCounter() {
-  num_obs_per_report_.clear();
-}
+void ObservationStore::ResetObservationCounter() { num_obs_per_report_.clear(); }
 
 }  // namespace cobalt::encoder

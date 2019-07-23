@@ -24,8 +24,7 @@ class InternalMetrics {
   //
   // |logger| the logger used to log internal metrics. If the pointer is null,
   // NoOpInternalMetrics will be used.
-  static std::unique_ptr<InternalMetrics> NewWithLogger(
-      LoggerInterface* logger);
+  static std::unique_ptr<InternalMetrics> NewWithLogger(LoggerInterface* logger);
 
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
@@ -37,15 +36,13 @@ class InternalMetrics {
   // cobalt_internal::metrics::per_device_bytes_uploaded is logged when the
   // Shipping Manager attempts or succeeds to upload observations from the
   // device.
-  virtual void BytesUploaded(
-      PerDeviceBytesUploadedMetricDimensionStatus upload_status,
-      int64_t byte_count) = 0;
+  virtual void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
+                             int64_t byte_count) = 0;
 
   // cobalt_internal::metrics::per_project_bytes_stored is logged when the
   // Observation Store attempts or succeeds to store observations on the device.
-  virtual void BytesStored(
-      PerProjectBytesStoredMetricDimensionStatus upload_status,
-      int64_t byte_count, uint32_t customer_id, uint32_t project_id) = 0;
+  virtual void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status,
+                           int64_t byte_count, uint32_t customer_id, uint32_t project_id) = 0;
 
   // After PauseLogging is called, all calls to log internal metrics will be
   // ignored.
@@ -70,9 +67,8 @@ class NoOpInternalMetrics : public InternalMetrics {
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
                      int64_t byte_count) override {}
 
-  void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status,
-                   int64_t byte_count, uint32_t customer_id,
-                   uint32_t project_id) override {}
+  void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
+                   uint32_t customer_id, uint32_t project_id) override {}
 
   void PauseLogging() override {}
   void ResumeLogging() override {}
@@ -93,9 +89,8 @@ class InternalMetricsImpl : public InternalMetrics {
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
                      int64_t byte_count) override;
 
-  void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status,
-                   int64_t byte_count, uint32_t customer_id,
-                   uint32_t project_id) override;
+  void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
+                   uint32_t customer_id, uint32_t project_id) override;
 
   void PauseLogging() override { paused_ = true; }
   void ResumeLogging() override { paused_ = false; }

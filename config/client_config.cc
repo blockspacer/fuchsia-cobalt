@@ -62,39 +62,32 @@ std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryBytes(
 std::unique_ptr<ClientConfig> ClientConfig::CreateFromCobaltRegistryProto(
     std::unique_ptr<CobaltRegistry> cobalt_registry) {
   RegisteredEncodings registered_encodings;
-  registered_encodings.mutable_element()->Swap(
-      cobalt_registry->mutable_encoding_configs());
-  auto encoding_registry_and_status =
-      EncodingRegistry::TakeFrom(&registered_encodings, nullptr);
+  registered_encodings.mutable_element()->Swap(cobalt_registry->mutable_encoding_configs());
+  auto encoding_registry_and_status = EncodingRegistry::TakeFrom(&registered_encodings, nullptr);
   if (encoding_registry_and_status.second != config::kOK) {
-    LOG(ERROR) << "Invalid EncodingConfigs. "
-               << ErrorMessage(encoding_registry_and_status.second);
+    LOG(ERROR) << "Invalid EncodingConfigs. " << ErrorMessage(encoding_registry_and_status.second);
     return std::unique_ptr<ClientConfig>(nullptr);
   }
 
   RegisteredMetrics registered_metrics;
-  registered_metrics.mutable_element()->Swap(
-      cobalt_registry->mutable_metric_configs());
-  auto metrics_registry_and_status =
-      MetricRegistry::TakeFrom(&registered_metrics, nullptr);
+  registered_metrics.mutable_element()->Swap(cobalt_registry->mutable_metric_configs());
+  auto metrics_registry_and_status = MetricRegistry::TakeFrom(&registered_metrics, nullptr);
   if (metrics_registry_and_status.second != config::kOK) {
     LOG(ERROR) << "Error getting Metrics from registry. "
                << ErrorMessage(metrics_registry_and_status.second);
     return std::unique_ptr<ClientConfig>(nullptr);
   }
 
-  return std::make_unique<ClientConfig>(
-      std::move(encoding_registry_and_status.first),
-      std::move(metrics_registry_and_status.first));
+  return std::make_unique<ClientConfig>(std::move(encoding_registry_and_status.first),
+                                        std::move(metrics_registry_and_status.first));
 }
 
-const EncodingConfig* ClientConfig::EncodingConfig(
-    uint32_t customer_id, uint32_t project_id, uint32_t encoding_config_id) {
+const EncodingConfig* ClientConfig::EncodingConfig(uint32_t customer_id, uint32_t project_id,
+                                                   uint32_t encoding_config_id) {
   return encoding_configs_->Get(customer_id, project_id, encoding_config_id);
 }
 
-const Metric* ClientConfig::Metric(uint32_t customer_id, uint32_t project_id,
-                                   uint32_t metric_id) {
+const Metric* ClientConfig::Metric(uint32_t customer_id, uint32_t project_id, uint32_t metric_id) {
   return metrics_->Get(customer_id, project_id, metric_id);
 }
 
@@ -103,11 +96,9 @@ const Metric* ClientConfig::Metric(uint32_t customer_id, uint32_t project_id,
   return metrics_->Get(customer_id, project_id, metric_name);
 }
 
-ClientConfig::ClientConfig(
-    std::shared_ptr<config::EncodingRegistry> encoding_configs,
-    std::shared_ptr<config::MetricRegistry> metrics)
-    : encoding_configs_(std::move(encoding_configs)),
-      metrics_(std::move(metrics)) {
+ClientConfig::ClientConfig(std::shared_ptr<config::EncodingRegistry> encoding_configs,
+                           std::shared_ptr<config::MetricRegistry> metrics)
+    : encoding_configs_(std::move(encoding_configs)), metrics_(std::move(metrics)) {
   CHECK(metrics_);
   CHECK(encoding_configs_);
   is_empty_ = encoding_configs_->size() == 0 && metrics_->size() == 0;

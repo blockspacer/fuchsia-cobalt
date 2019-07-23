@@ -39,8 +39,7 @@ class RapporEncoder {
  public:
   // Constructor.
   // The |client_secret| is used to determine the cohort and the PRR.
-  RapporEncoder(const RapporConfig& config,
-                encoder::ClientSecret client_secret);
+  RapporEncoder(const RapporConfig& config, encoder::ClientSecret client_secret);
   virtual ~RapporEncoder() = default;
 
   // Encodes |value| using RAPPOR encoding. Returns kOK on success, or
@@ -54,9 +53,7 @@ class RapporEncoder {
   friend class RapporAnalyzer;
 
   // Allows Friend classess to set a special RNG for use in tests.
-  void SetRandomForTesting(std::unique_ptr<crypto::Random> random) {
-    random_ = std::move(random);
-  }
+  void SetRandomForTesting(std::unique_ptr<crypto::Random> random) { random_ = std::move(random); }
 
   // Computes a hash of the given |serialized value| and |cohort_num| and writes
   // the result to |hashed_value|. This plus ExtractBitIndex() are used by
@@ -68,10 +65,9 @@ class RapporEncoder {
   //
   // Returns true for success or false if the hash operation fails for any
   // reason.
-  static bool HashValueAndCohort(
-      const std::string& serialized_value, uint32_t cohort_num,
-      uint32_t num_hashes,
-      crypto::byte hashed_value[crypto::hash::DIGEST_SIZE]);
+  static bool HashValueAndCohort(const std::string& serialized_value, uint32_t cohort_num,
+                                 uint32_t num_hashes,
+                                 crypto::byte hashed_value[crypto::hash::DIGEST_SIZE]);
 
   // Extracts a bit index from the given |hashed_value| for the given
   // |hash_index|. This plus HashValueAndCohort are used by MakeBloomBits()
@@ -80,9 +76,8 @@ class RapporEncoder {
   //
   // IMPORTANT: We index bits "from the right." This means that bit number zero
   // is the least significant bit of the last byte of the Bloom filter.
-  static uint32_t ExtractBitIndex(
-      crypto::byte const hashed_value[crypto::hash::DIGEST_SIZE],
-      size_t hash_index, uint32_t num_bits);
+  static uint32_t ExtractBitIndex(crypto::byte const hashed_value[crypto::hash::DIGEST_SIZE],
+                                  size_t hash_index, uint32_t num_bits);
 
   // Generates the array of bloom bits derived from |value|. Returns the
   // empty string on error.
@@ -119,8 +114,7 @@ class RapporEncoder {
 // The |client_secret| is used to determine the PRR.
 class BasicRapporEncoder {
  public:
-  BasicRapporEncoder(const BasicRapporConfig& config,
-                     encoder::ClientSecret client_secret);
+  BasicRapporEncoder(const BasicRapporConfig& config, encoder::ClientSecret client_secret);
   ~BasicRapporEncoder() = default;
 
   // Encodes |value| using Basic RAPPOR encoding. |value| must be one
@@ -128,8 +122,7 @@ class BasicRapporEncoder {
   // that was passed to the constructor. Returns kOK on success, kInvalidConfig
   // if the |config| passed to the constructor is not valid, and kInvalidInput
   // if |value| is not one of the |categories|.
-  Status Encode(const ValuePart& value,
-                BasicRapporObservation* observation_out);
+  Status Encode(const ValuePart& value, BasicRapporObservation* observation_out);
 
   // Applies Basic RAPPOR encoding to a sequence of 0-bits whose length is equal
   // to the number of categories in the config which was passed to the
@@ -147,9 +140,7 @@ class BasicRapporEncoder {
   Status InitializeObservationData(std::string* data);
 
   // Allows Friend classess to set a special RNG for use in tests.
-  void SetRandomForTesting(std::unique_ptr<crypto::Random> random) {
-    random_ = std::move(random);
-  }
+  void SetRandomForTesting(std::unique_ptr<crypto::Random> random) { random_ = std::move(random); }
 
   std::unique_ptr<RapporConfigValidator> config_;
   std::unique_ptr<crypto::Random> random_;

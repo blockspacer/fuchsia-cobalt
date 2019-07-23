@@ -26,15 +26,13 @@ class CloseDir {
   void operator()(DIR *dir) { closedir(dir); }
 };
 
-StatusOr<std::vector<std::string>> PosixFileSystem::ListFiles(
-    const std::string &directory) {
+StatusOr<std::vector<std::string>> PosixFileSystem::ListFiles(const std::string &directory) {
   std::vector<std::string> files;
   std::unique_ptr<DIR, CloseDir> dir(opendir(directory.c_str()), CloseDir());
   struct dirent *ent;
   if (dir != nullptr) {
     while ((ent = readdir(dir.get())) != nullptr) {
-      if (ent->d_name[0] == '.' &&
-          (ent->d_name[1] == '.' || ent->d_name[1] == '\0')) {
+      if (ent->d_name[0] == '.' && (ent->d_name[1] == '.' || ent->d_name[1] == '\0')) {
         continue;
       }
       files.emplace_back(ent->d_name);
@@ -48,16 +46,13 @@ StatusOr<std::vector<std::string>> PosixFileSystem::ListFiles(
   return files;
 }
 
-bool PosixFileSystem::Delete(const std::string &file) {
-  return std::remove(file.c_str()) == 0;
-}
+bool PosixFileSystem::Delete(const std::string &file) { return std::remove(file.c_str()) == 0; }
 
 StatusOr<size_t> PosixFileSystem::FileSize(const std::string &file) {
   struct stat st;
   if (stat(file.c_str(), &st) != 0) {
     std::stringstream ss;
-    ss << "Unable to stat file [" << file << "]: " << std::strerror(errno)
-       << "[" << errno << "]";
+    ss << "Unable to stat file [" << file << "]: " << std::strerror(errno) << "[" << errno << "]";
     return Status(StatusCode::INTERNAL, ss.str());
   }
   return st.st_size;

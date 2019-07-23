@@ -12,8 +12,7 @@ using crypto::Base64Encode;
 
 namespace util {
 
-bool SerializeToBase64(const MessageLite& message,
-                       std::string* encoded_message) {
+bool SerializeToBase64(const MessageLite& message, std::string* encoded_message) {
   std::string serialized_message;
   if (!message.SerializeToString(&serialized_message)) {
     LOG(ERROR) << "Failed to serialize proto message.";

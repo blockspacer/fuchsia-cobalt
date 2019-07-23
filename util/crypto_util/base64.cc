@@ -29,8 +29,7 @@ bool Base64Encode(const byte* data, int num_bytes, std::string* encoded_out) {
     return false;
   }
   encoded_out->resize(required_length);
-  bool success = EVP_EncodeBlock(reinterpret_cast<byte*>(&(*encoded_out)[0]),
-                                 data, num_bytes);
+  bool success = EVP_EncodeBlock(reinterpret_cast<byte*>(&(*encoded_out)[0]), data, num_bytes);
   if (!success) {
     return false;
   }
@@ -45,12 +44,10 @@ bool Base64Encode(const std::vector<byte>& data, std::string* encoded_out) {
 }
 
 bool Base64Encode(const std::string& data, std::string* encoded_out) {
-  return Base64Encode(reinterpret_cast<const byte*>(data.data()), data.size(),
-                      encoded_out);
+  return Base64Encode(reinterpret_cast<const byte*>(data.data()), data.size(), encoded_out);
 }
 
-bool Base64Decode(const std::string& encoded_in,
-                  std::vector<byte>* decoded_out) {
+bool Base64Decode(const std::string& encoded_in, std::vector<byte>* decoded_out) {
   size_t required_length;
   if (!EVP_DecodedLength(&required_length, encoded_in.size())) {
     return false;
@@ -58,8 +55,7 @@ bool Base64Decode(const std::string& encoded_in,
   decoded_out->resize(required_length);
   size_t actual_size;
   if (!EVP_DecodeBase64(decoded_out->data(), &actual_size, decoded_out->size(),
-                        reinterpret_cast<const byte*>(encoded_in.data()),
-                        encoded_in.size())) {
+                        reinterpret_cast<const byte*>(encoded_in.data()), encoded_in.size())) {
     return false;
   }
   decoded_out->resize(actual_size);
@@ -76,9 +72,8 @@ bool Base64Decode(const std::string& encoded_in, std::string* decoded_out) {
   }
   decoded_out->resize(required_length);
   size_t actual_size;
-  if (!EVP_DecodeBase64(reinterpret_cast<byte*>(&(*decoded_out)[0]),
-                        &actual_size, decoded_out->size(),
-                        reinterpret_cast<const byte*>(encoded_in.data()),
+  if (!EVP_DecodeBase64(reinterpret_cast<byte*>(&(*decoded_out)[0]), &actual_size,
+                        decoded_out->size(), reinterpret_cast<const byte*>(encoded_in.data()),
                         encoded_in.size())) {
     return false;
   }

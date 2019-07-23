@@ -30,18 +30,15 @@ StatusOr<std::unique_ptr<CurlHandle>> CurlHandle::Init() {
     std::unique_ptr<CurlHandle> handle(new CurlHandle());
     RETURN_IF_ERROR(handle->Setopt(CURLOPT_ERRORBUFFER, handle->errbuf_));
     RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEDATA, &handle->response_body_));
-    RETURN_IF_ERROR(
-        handle->Setopt(CURLOPT_WRITEFUNCTION, CurlHandle::WriteResponseData));
+    RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEFUNCTION, CurlHandle::WriteResponseData));
     return handle;
   } catch (const Status &s) {
     return s;
   }
 }
 
-size_t CurlHandle::WriteResponseData(char *ptr, size_t size, size_t nmemb,
-                                     void *userdata) {
-  (reinterpret_cast<std::string *>(userdata))
-      ->append(reinterpret_cast<char *>(ptr), size * nmemb);
+size_t CurlHandle::WriteResponseData(char *ptr, size_t size, size_t nmemb, void *userdata) {
+  (reinterpret_cast<std::string *>(userdata))->append(reinterpret_cast<char *>(ptr), size * nmemb);
   return size * nmemb;
 }
 
@@ -54,8 +51,7 @@ Status CurlHandle::Setopt(CURLoption option, Param parameter) {
   return Status::OK;
 }
 
-Status CurlHandle::SetHeaders(
-    const std::map<std::string, std::string> &headers) {
+Status CurlHandle::SetHeaders(const std::map<std::string, std::string> &headers) {
   if (!headers.empty()) {
     struct curl_slist *header_list = nullptr;
     for (const auto &header : headers) {
@@ -85,8 +81,7 @@ Status CurlHandle::CURLCodeToStatus(CURLcode code) {
   return Status(StatusCode::INTERNAL, curl_easy_strerror(code), details);
 }
 
-StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url,
-                                        std::string body) {
+StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url, std::string body) {
   RETURN_IF_ERROR(Setopt(CURLOPT_URL, url.c_str()));
   RETURN_IF_ERROR(Setopt(CURLOPT_POSTFIELDSIZE, body.size()));
   RETURN_IF_ERROR(Setopt(CURLOPT_POSTFIELDS, body.data()));

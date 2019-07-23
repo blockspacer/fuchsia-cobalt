@@ -14,22 +14,19 @@ namespace cobalt::logger {
 
 using ::cobalt::encoder::ObservationStoreWriterInterface;
 
-Status ObservationWriter::WriteObservation(
-    const Observation2 &observation,
-    std::unique_ptr<ObservationMetadata> metadata) const {
+Status ObservationWriter::WriteObservation(const Observation2 &observation,
+                                           std::unique_ptr<ObservationMetadata> metadata) const {
   TRACE_DURATION("cobalt_core", "ObservationWriter::WriteObservation");
   auto encrypted_observation = std::make_unique<EncryptedMessage>();
-  if (!observation_encrypter_->Encrypt(observation,
-                                       encrypted_observation.get())) {
+  if (!observation_encrypter_->Encrypt(observation, encrypted_observation.get())) {
     LOG(ERROR) << "Encryption of an Observation failed.";
     return kOther;
   }
-  auto store_status = observation_store_->AddEncryptedObservation(
-      std::move(encrypted_observation), std::move(metadata));
+  auto store_status = observation_store_->AddEncryptedObservation(std::move(encrypted_observation),
+                                                                  std::move(metadata));
   if (store_status != ObservationStoreWriterInterface::kOk) {
-    LOG_FIRST_N(ERROR, 10)
-        << "ObservationStore::AddEncryptedObservation() failed with status "
-        << store_status;
+    LOG_FIRST_N(ERROR, 10) << "ObservationStore::AddEncryptedObservation() failed with status "
+                           << store_status;
     return kOther;
   }
   update_recipient_->NotifyObservationsAdded();

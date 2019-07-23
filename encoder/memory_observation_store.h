@@ -18,13 +18,12 @@ namespace encoder {
 // MemoryObservationStore is an ObservationStore that stores its data in memory.
 class MemoryObservationStore : public ObservationStore {
  public:
-  MemoryObservationStore(size_t max_bytes_per_observation,
-                         size_t max_bytes_per_envelope, size_t max_bytes_total,
+  MemoryObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
+                         size_t max_bytes_total,
                          logger::LoggerInterface* internal_logger = nullptr);
 
-  StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message,
-      std::unique_ptr<ObservationMetadata> metadata) override;
+  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
+                                      std::unique_ptr<ObservationMetadata> metadata) override;
   std::unique_ptr<EnvelopeHolder> TakeNextEnvelopeHolder() override;
   void ReturnEnvelopeHolder(std::unique_ptr<EnvelopeHolder> envelopes) override;
 
@@ -41,8 +40,7 @@ class MemoryObservationStore : public ObservationStore {
   void ReturnEnvelopeHolderLocked(std::unique_ptr<EnvelopeHolder> envelope);
 
   std::unique_ptr<EnvelopeHolder> TakeOldestEnvelopeHolderLocked();
-  void AddEnvelopeToSend(std::unique_ptr<EnvelopeHolder> holder,
-                         bool back = true);
+  void AddEnvelopeToSend(std::unique_ptr<EnvelopeHolder> holder, bool back = true);
 
   const size_t envelope_send_threshold_size_;
 

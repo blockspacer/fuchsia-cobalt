@@ -27,8 +27,7 @@ using crypto::SymmetricCipher;
 ForculusDecrypter::ForculusDecrypter(uint32_t threshold, std::string ciphertext)
     : threshold_(threshold), num_seen_(0), ciphertext_(std::move(ciphertext)) {}
 
-ForculusDecrypter::Status ForculusDecrypter::AddObservation(
-    const ForculusObservation& obs) {
+ForculusDecrypter::Status ForculusDecrypter::AddObservation(const ForculusObservation& obs) {
   if (obs.ciphertext() != ciphertext_) {
     return kWrongCiphertext;
   }
@@ -49,8 +48,7 @@ ForculusDecrypter::Status ForculusDecrypter::AddObservation(
 
 uint32_t ForculusDecrypter::size() { return points_.size(); }
 
-ForculusDecrypter::Status ForculusDecrypter::Decrypt(
-    std::string* plain_text_out) {
+ForculusDecrypter::Status ForculusDecrypter::Decrypt(std::string* plain_text_out) {
   if (size() < threshold_) {
     return kNotEnoughPoints;
   }
@@ -79,8 +77,7 @@ ForculusDecrypter::Status ForculusDecrypter::Decrypt(
   // Our encryption scheme uses a zero nonce. (Note that C++11 initializes
   // the entire array to 0 with this syntax.)
   static const byte kZeroNonce[SymmetricCipher::NONCE_SIZE] = {0};
-  if (!cipher.Decrypt(kZeroNonce,
-                      reinterpret_cast<const byte*>(ciphertext_.data()),
+  if (!cipher.Decrypt(kZeroNonce, reinterpret_cast<const byte*>(ciphertext_.data()),
                       ciphertext_.size(), &recoverd_text)) {
     // TODO(pseudorandom, rudominer) One reason that decryption might fail
     // is a ballot suppression attack. An adversary may intentionally flood

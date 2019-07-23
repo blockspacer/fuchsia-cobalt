@@ -47,9 +47,8 @@ class ObservationWriter {
   // writes an encryption of the Observation together with the unencrypted
   // metadata to the Observation Store, and notifies the UpdateRecipient that an
   // Observation has been added to the store.
-  [[nodiscard]] Status WriteObservation(
-      const Observation2& observation,
-      std::unique_ptr<ObservationMetadata> metadata) const;
+  [[nodiscard]] Status WriteObservation(const Observation2& observation,
+                                        std::unique_ptr<ObservationMetadata> metadata) const;
 
  private:
   encoder::ObservationStoreWriterInterface* observation_store_;

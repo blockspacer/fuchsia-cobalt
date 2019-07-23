@@ -27,8 +27,7 @@ namespace cobalt::rappor {
 namespace {
 constexpr char kBasicRapporAnalyzerConstructorFailure[] =
     "basic-rappor-analyzer-constructor-failure";
-constexpr char kAddObservationFailure[] =
-    "basic-rappor-analyzer-add-observation-failure";
+constexpr char kAddObservationFailure[] = "basic-rappor-analyzer-add-observation-failure";
 constexpr uint32_t kBitsPerByte = 8;
 }  // namespace
 
@@ -45,15 +44,14 @@ BasicRapporAnalyzer::BasicRapporAnalyzer(const BasicRapporConfig& config)
 
 bool BasicRapporAnalyzer::AddObservation(const BasicRapporObservation& obs) {
   if (!config_->valid()) {
-    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure)
-        << "BasicRapporConfig is invalid";
+    LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure) << "BasicRapporConfig is invalid";
     observation_errors_++;
     return false;
   }
   if (obs.data().size() != num_encoding_bytes_) {
     LOG_STACKDRIVER_COUNT_METRIC(ERROR, kAddObservationFailure)
-        << "BasicRapporObservation has the wrong number of bytes: "
-        << obs.data().size() << ". Expecting " << num_encoding_bytes_;
+        << "BasicRapporObservation has the wrong number of bytes: " << obs.data().size()
+        << ". Expecting " << num_encoding_bytes_;
     observation_errors_++;
     return false;
   }
@@ -85,8 +83,7 @@ bool BasicRapporAnalyzer::AddObservation(const BasicRapporObservation& obs) {
   return true;
 }
 
-std::vector<BasicRapporAnalyzer::CategoryResult>
-BasicRapporAnalyzer::Analyze() {
+std::vector<BasicRapporAnalyzer::CategoryResult> BasicRapporAnalyzer::Analyze() {
   double q = config_->prob_1_stays_1();
   double p = config_->prob_0_becomes_1();
   double N = num_observations_;

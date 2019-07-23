@@ -41,16 +41,12 @@ class UploadScheduler {
   //
   // REQUIRED:
   // 0 <= min_interval <= target_interval <= kMaxSeconds
-  UploadScheduler(std::chrono::seconds target_interval,
-                  std::chrono::seconds min_interval,
+  UploadScheduler(std::chrono::seconds target_interval, std::chrono::seconds min_interval,
                   std::chrono::seconds initial_interval);
 
-  UploadScheduler(std::chrono::seconds target_interval,
-                  std::chrono::seconds min_interval);
+  UploadScheduler(std::chrono::seconds target_interval, std::chrono::seconds min_interval);
 
-  [[nodiscard]] std::chrono::seconds MinInterval() const {
-    return min_interval_;
-  }
+  [[nodiscard]] std::chrono::seconds MinInterval() const { return min_interval_; }
   std::chrono::seconds Interval();
 
  private:

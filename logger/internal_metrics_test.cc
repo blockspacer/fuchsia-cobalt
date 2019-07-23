@@ -32,14 +32,12 @@ TEST_F(InternalMetricsImplTest, LoggerCalled) {
   testing::FakeLogger logger;
   InternalMetricsImpl metrics(&logger);
 
-  metrics.LoggerCalled(
-      LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
-      GetTestProject());
+  metrics.LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+                       GetTestProject());
 
   ASSERT_EQ(logger.call_count(), 2);
   ASSERT_TRUE(logger.last_event_logged().has_count_event());
-  ASSERT_EQ(logger.last_event_logged().count_event().component(),
-            "test/project");
+  ASSERT_EQ(logger.last_event_logged().count_event().component(), "test/project");
 }
 
 TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
@@ -48,9 +46,8 @@ TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
 
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
-    metrics.LoggerCalled(
-        LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
-        GetTestProject());
+    metrics.LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+                         GetTestProject());
   }
   metrics.ResumeLogging();
 
@@ -62,8 +59,7 @@ TEST_F(InternalMetricsImplTest, BytesUploaded) {
   InternalMetricsImpl metrics(&logger);
 
   ASSERT_EQ(logger.call_count(), 0);
-  metrics.BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
-                        kNumBytes);
+  metrics.BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
 
   ASSERT_EQ(logger.call_count(), 1);
   ASSERT_TRUE(logger.last_event_logged().has_count_event());
@@ -76,8 +72,7 @@ TEST_F(InternalMetricsImplTest, BytesUploadedPauseWorks) {
 
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
-    metrics.BytesUploaded(
-        PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
+    metrics.BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
   }
   metrics.ResumeLogging();
   ASSERT_EQ(logger.call_count(), 0);
@@ -88,8 +83,8 @@ TEST_F(InternalMetricsImplTest, BytesStored) {
   InternalMetricsImpl metrics(&logger);
 
   ASSERT_EQ(logger.call_count(), 0);
-  metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted,
-                      kNumBytes, kCustomerId, kProjectId);
+  metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted, kNumBytes, kCustomerId,
+                      kProjectId);
 
   ASSERT_EQ(logger.call_count(), 1);
   ASSERT_TRUE(logger.last_event_logged().has_memory_usage_event());
@@ -102,8 +97,8 @@ TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
 
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
-    metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted,
-                        kNumBytes, kCustomerId, kProjectId);
+    metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted, kNumBytes,
+                        kCustomerId, kProjectId);
   }
   metrics.ResumeLogging();
   ASSERT_EQ(logger.call_count(), 0);

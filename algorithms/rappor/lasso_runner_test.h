@@ -46,9 +46,8 @@ class LassoRunnerTest : public ::testing::Test {
   // where l1 = lasso_runner_->minimizer_data_.l1.
   // The function checks whether the norm of the violations of the
   // KKT condition is within a certain bound.
-  void CheckFirstRapporStepCorrectness(
-      const cobalt_lossmin::LabelSet& right_hand_side,
-      const cobalt_lossmin::Weights& results);
+  void CheckFirstRapporStepCorrectness(const cobalt_lossmin::LabelSet& right_hand_side,
+                                       const cobalt_lossmin::Weights& results);
 
   // Ensures that the last penalty in the lasso path is very small.
   // Logarithmic path is more appropriate in this case.
@@ -69,8 +68,7 @@ class LassoRunnerTest : public ::testing::Test {
   // Creates a random sparse |m| x |n| matrix with positive entries.
   // The number of nonzero entries will approximately equal
   // |num_nonzero_entries|.
-  cobalt_lossmin::InstanceSet RandomMatrix(int m, int n,
-                                           int num_nonzero_entries);
+  cobalt_lossmin::InstanceSet RandomMatrix(int m, int n, int num_nonzero_entries);
 
   std::unique_ptr<LassoRunner> lasso_runner_;  // NOLINT
 

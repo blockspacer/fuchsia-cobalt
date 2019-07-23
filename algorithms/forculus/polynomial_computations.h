@@ -26,16 +26,14 @@ namespace cobalt::forculus {
 
 // Computes f(x) where f is the polynomial c0 + c1*x + c2*x^2 + ... cn*x^n
 // where n = coefficients.size() and ci = coefficients[i].
-FieldElement Evaluate(const std::vector<FieldElement>& coefficients,
-                      const FieldElement& x);
+FieldElement Evaluate(const std::vector<FieldElement>& coefficients, const FieldElement& x);
 
 // Computes the constant term c0 of the unique polynomial of degree d that
 // passes through the points (x0, y0), (x1, y1), ... (x_{d}, y_{d})
 // xi = x_values[i], yi = y_values[i] and d = x_values.size() - 1.
 // REQUIRES: x_values.size() == y_value.size() and the x_values are distinct.
-FieldElement InterpolateConstant(
-    const std::vector<const FieldElement*>& x_values,
-    const std::vector<const FieldElement*>& y_values);
+FieldElement InterpolateConstant(const std::vector<const FieldElement*>& x_values,
+                                 const std::vector<const FieldElement*>& y_values);
 
 }  // namespace cobalt::forculus
 

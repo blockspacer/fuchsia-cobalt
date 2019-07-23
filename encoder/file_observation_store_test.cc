@@ -61,8 +61,7 @@ std::shared_ptr<ProjectContext> GetTestProject() {
   EXPECT_NE(nullptr, client_config);
 
   return std::shared_ptr<ProjectContext>(new ProjectContext(
-      kCustomerId, kProjectId,
-      std::shared_ptr<ClientConfig>(client_config.release())));
+      kCustomerId, kProjectId, std::shared_ptr<ClientConfig>(client_config.release())));
 }
 
 class FileObservationStoreTest : public ::testing::Test {
@@ -83,16 +82,14 @@ class FileObservationStoreTest : public ::testing::Test {
 
   void TearDown() override { store_->Delete(); }
 
-  ObservationStore::StoreStatus AddObservation(
-      size_t num_bytes, uint32_t metric_id = kDefaultMetricId) {
+  ObservationStore::StoreStatus AddObservation(size_t num_bytes,
+                                               uint32_t metric_id = kDefaultMetricId) {
     CHECK(num_bytes > kNoOpEncodingByteOverhead) << " num_bytes=" << num_bytes;
     Encoder::Result result = encoder_.EncodeString(
-        metric_id, kNoOpEncodingId,
-        std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
+        metric_id, kNoOpEncodingId, std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
     auto message = std::make_unique<EncryptedMessage>();
     encrypt_to_analyzer_->Encrypt(*result.observation, message.get());
-    return store_->AddEncryptedObservation(std::move(message),
-                                           std::move(result.metadata));
+    return store_->AddEncryptedObservation(std::move(message), std::move(result.metadata));
   }
 
  private:
@@ -124,9 +121,8 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
   EXPECT_EQ(store_->num_observations_added(), 2u);
   store_->ResetObservationCounter();
   EXPECT_EQ(store_->num_observations_added(), 0u);
-  EXPECT_EQ(
-      ObservationStore::kObservationTooBig,
-      AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+  EXPECT_EQ(ObservationStore::kObservationTooBig,
+            AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
@@ -134,9 +130,8 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
 // returned and that the count of received Observations is not incremented.
 TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
   ASSERT_EQ(store_->num_observations_added(), 0u);
-  EXPECT_EQ(
-      ObservationStore::kObservationTooBig,
-      AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+  EXPECT_EQ(ObservationStore::kObservationTooBig,
+            AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
@@ -206,14 +201,12 @@ TEST_F(FileObservationStoreTest, StoreFull) {
 
   // Fill the store until its full.
   for (int i = 0; i < kNumObservationsThatWillFit; i++) {
-    EXPECT_EQ(ObservationStore::kOk, AddObservation(kObservationSize))
-        << "i=" << i;
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(kObservationSize)) << "i=" << i;
   }
 
   // Check that kStoreFull is returned repeatedly.
   for (int i = 0; i < 100; i++) {  // NOLINT
-    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
-        << "i=" << i;
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
   }
 
   // Now let's empty the store
@@ -254,8 +247,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
 
   // Check that kStoreFull is returned repeatedly.
   for (int i = 0; i < 100; i++) {  // NOLINT
-    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize))
-        << "i=" << i;
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
   }
 }
 
@@ -299,10 +291,7 @@ TEST_F(FileObservationStoreTest, IgnoresUnexpectedFiles) {
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 0u);
   EXPECT_EQ(store_->TakeNextEnvelopeHolder(), nullptr);
 
-  {
-    std::ofstream empty_valid(test_dir_name_ +
-                              "/1234567890123-1234567890.data");
-  }
+  { std::ofstream empty_valid(test_dir_name_ + "/1234567890123-1234567890.data"); }
   EXPECT_EQ(store_->ListFinalizedFiles().size(), 1u);
   EXPECT_NE(store_->TakeNextEnvelopeHolder(), nullptr);
 }
@@ -351,22 +340,16 @@ TEST_F(FileObservationStoreTest, StressTest) {
 }
 
 TEST(FilenameGenerator, PadsTimestamp) {
-  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
-                return 1234;
-              }).GenerateFilename(),
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] { return 1234; }).GenerateFilename(),
               MatchesRegex(R"(0000000001234-[0-9]{10}.data)"));
-  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
-                return 1234567;
-              }).GenerateFilename(),
+  EXPECT_THAT(FileObservationStore::FilenameGenerator([] { return 1234567; }).GenerateFilename(),
               MatchesRegex(R"(0000001234567-[0-9]{10}.data)"));
-  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
-                return 1234567890123;
-              }).GenerateFilename(),
-              MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
-  EXPECT_THAT(FileObservationStore::FilenameGenerator([] {
-                return 12345678901239;
-              }).GenerateFilename(),
-              MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
+  EXPECT_THAT(
+      FileObservationStore::FilenameGenerator([] { return 1234567890123; }).GenerateFilename(),
+      MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
+  EXPECT_THAT(
+      FileObservationStore::FilenameGenerator([] { return 12345678901239; }).GenerateFilename(),
+      MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
 }
 
 }  // namespace cobalt::encoder

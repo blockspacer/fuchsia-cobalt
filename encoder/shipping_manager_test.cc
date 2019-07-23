@@ -44,8 +44,7 @@ constexpr int kHttpInternalServerError = 500;
 class FakeHTTPClient : public clearcut::HTTPClient {
  public:
   std::future<StatusOr<clearcut::HTTPResponse>> Post(
-      clearcut::HTTPRequest request,
-      std::chrono::steady_clock::time_point /*ignored*/) override {
+      clearcut::HTTPRequest request, std::chrono::steady_clock::time_point /*ignored*/) override {
     std::unique_lock<std::mutex> lock(mutex);
     util::MessageDecrypter decrypter("");
 
@@ -56,12 +55,11 @@ class FakeHTTPClient : public clearcut::HTTPClient {
       EXPECT_TRUE(event.HasExtension(LogEventExtension::ext));
       auto log_event = event.GetExtension(LogEventExtension::ext);
       Envelope recovered_envelope;
-      EXPECT_TRUE(decrypter.DecryptMessage(
-          log_event.cobalt_encrypted_envelope(), &recovered_envelope));
+      EXPECT_TRUE(
+          decrypter.DecryptMessage(log_event.cobalt_encrypted_envelope(), &recovered_envelope));
       EXPECT_EQ(1, recovered_envelope.batch_size());
       EXPECT_EQ(kMetricId, recovered_envelope.batch(0).meta_data().metric_id());
-      observation_count +=
-          recovered_envelope.batch(0).encrypted_observation_size();
+      observation_count += recovered_envelope.batch(0).encrypted_observation_size();
     }
     send_call_count++;
 
@@ -87,19 +85,16 @@ class ShippingManagerTest : public ::testing::Test {
  public:
   ShippingManagerTest()
       : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
-        observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope,
-                           kMaxBytesTotal) {}
+        observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal) {}
 
  protected:
-  void Init(std::chrono::seconds schedule_interval,
-            std::chrono::seconds min_interval) {
+  void Init(std::chrono::seconds schedule_interval, std::chrono::seconds min_interval) {
     UploadScheduler upload_scheduler(schedule_interval, min_interval);
     auto http_client = std::make_unique<FakeHTTPClient>();
     http_client_ = http_client.get();
     shipping_manager_ = std::make_unique<ClearcutV1ShippingManager>(
         upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
-        std::make_unique<clearcut::ClearcutUploader>("https://test.com",
-                                                     std::move(http_client)),
+        std::make_unique<clearcut::ClearcutUploader>("https://test.com", std::move(http_client)),
         nullptr /* internal_logger */, 1 /*max_attempts_per_upload*/);
     shipping_manager_->Start();
   }
@@ -116,8 +111,8 @@ class ShippingManagerTest : public ::testing::Test {
     metadata->set_project_id(kProjectId);
     metadata->set_metric_id(kMetricId);
 
-    auto retval = observation_store_.AddEncryptedObservation(
-        std::move(message), std::move(metadata));
+    auto retval =
+        observation_store_.AddEncryptedObservation(std::move(message), std::move(metadata));
     shipping_manager_->NotifyObservationsAdded();
     return retval;
   }
@@ -147,9 +142,7 @@ class ShippingManagerTest : public ::testing::Test {
 // We construct a ShippingManager and destruct it without calling any methods.
 // This tests that the destructor requests that the worker thread terminate
 // and then waits for it to terminate.
-TEST_F(ShippingManagerTest, ConstructAndDestruct) {
-  Init(kMaxSeconds, kMaxSeconds);
-}
+TEST_F(ShippingManagerTest, ConstructAndDestruct) { Init(kMaxSeconds, kMaxSeconds); }
 
 // We construct a ShippingManager and add one small Observation to it.
 // Before the ShippingManager has a chance to send the Observation we
@@ -421,9 +414,8 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
   // Invoke RequestSendSoon() with a callback before any Observations are
   // added.
   bool captured_success_arg = false;
-  shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
-    captured_success_arg = success;
-  });
+  shipping_manager_->RequestSendSoon(
+      [&captured_success_arg](bool success) { captured_success_arg = success; });
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
 
   // Check that the callback was invoked synchronously with success = true.
@@ -441,9 +433,8 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
   // Add an Observation, invoke RequestSendSoon() with a callback.
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
   EXPECT_EQ(ObservationStore::kOk, AddObservation(31));
-  shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
-    captured_success_arg = success;
-  });
+  shipping_manager_->RequestSendSoon(
+      [&captured_success_arg](bool success) { captured_success_arg = success; });
   shipping_manager_->WaitUntilWorkerWaiting(kMaxSeconds);
 
   // Check that the callback was invoked with success = false.
@@ -460,9 +451,8 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Don't add another Observation but invoke RequestSendSoon() with a
   // callback.
-  shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
-    captured_success_arg = success;
-  });
+  shipping_manager_->RequestSendSoon(
+      [&captured_success_arg](bool success) { captured_success_arg = success; });
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
 
   // Check that the callback was invoked with success = true.
@@ -494,9 +484,8 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
 
   // Add an Observation, invoke RequestSendSoon() with a callback.
   EXPECT_EQ(ObservationStore::kOk, AddObservation(31));
-  shipping_manager_->RequestSendSoon([&captured_success_arg](bool success) {
-    captured_success_arg = success;
-  });
+  shipping_manager_->RequestSendSoon(
+      [&captured_success_arg](bool success) { captured_success_arg = success; });
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
 
   // Check that the callback was invoked with success = true.

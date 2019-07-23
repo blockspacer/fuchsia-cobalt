@@ -33,8 +33,7 @@ class FileSystem {
   //
   // Note: On unix like systems, the directories "." and ".." should not be
   // returned.
-  virtual statusor::StatusOr<std::vector<std::string>> ListFiles(
-      const std::string &directory) = 0;
+  virtual statusor::StatusOr<std::vector<std::string>> ListFiles(const std::string &directory) = 0;
 
   // Delete deletes a file or an empty directory.
   //
