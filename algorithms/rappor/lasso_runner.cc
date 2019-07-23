@@ -4,9 +4,9 @@
 
 #include "algorithms/rappor/lasso_runner.h"
 
-#include <glog/logging.h>
-
 #include <algorithm>
+
+#include <glog/logging.h>
 
 using cobalt_lossmin::GradientEvaluator;
 using cobalt_lossmin::InstanceSet;

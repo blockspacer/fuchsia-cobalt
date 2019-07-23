@@ -7,8 +7,9 @@
 
 #include <vector>
 
-#include "third_party/eigen/Eigen/SparseCore"
 #include "util/lossmin/eigen-types.h"
+
+#include "third_party/eigen/Eigen/SparseCore"
 
 namespace cobalt::rappor {
 

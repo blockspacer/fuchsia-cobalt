@@ -14,14 +14,15 @@
 
 #include "util/crypto_util/cipher.h"
 
-#include <gtest/gtest.h>
 #include <limits.h>
-#include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
 
 #include <string>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
 
 #include "util/crypto_util/errors.h"
 #include "util/crypto_util/random.h"

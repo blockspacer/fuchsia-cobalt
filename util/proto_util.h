@@ -5,9 +5,9 @@
 #ifndef COBALT_UTIL_PROTO_UTIL_H_
 #define COBALT_UTIL_PROTO_UTIL_H_
 
-#include <google/protobuf/message_lite.h>
-
 #include <string>
+
+#include <google/protobuf/message_lite.h>
 
 #include "./logging.h"
 #include "util/crypto_util/base64.h"

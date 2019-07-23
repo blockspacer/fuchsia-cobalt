@@ -5,15 +5,16 @@
 #ifndef COBALT_ALGORITHMS_RAPPOR_LASSO_RUNNER_TEST_H_
 #define COBALT_ALGORITHMS_RAPPOR_LASSO_RUNNER_TEST_H_
 
-#include <glog/logging.h>
-
 #include <memory>
 #include <vector>
 
+#include <glog/logging.h>
+
 #include "algorithms/rappor/lasso_runner.h"
-#include "third_party/eigen/Eigen/SparseCore"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/lossmin/eigen-types.h"
+
+#include "third_party/eigen/Eigen/SparseCore"
 
 namespace cobalt {
 namespace rappor {

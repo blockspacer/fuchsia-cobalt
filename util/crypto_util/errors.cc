@@ -14,9 +14,9 @@
 
 #include "util/crypto_util/errors.h"
 
-#include <openssl/err.h>
-
 #include <string>
+
+#include <openssl/err.h>
 
 namespace cobalt::crypto {
 

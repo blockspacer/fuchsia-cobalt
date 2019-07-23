@@ -22,9 +22,9 @@
 // file to add additional messages in order to see what their text format
 // looks like.
 
-#include <google/protobuf/text_format.h>
-
 #include <iostream>
+
+#include <google/protobuf/text_format.h>
 
 #include "config/encodings.pb.h"
 #include "config/metrics.pb.h"

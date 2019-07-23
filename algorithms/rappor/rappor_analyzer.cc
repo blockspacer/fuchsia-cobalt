@@ -14,11 +14,11 @@
 
 #include "algorithms/rappor/rappor_analyzer.h"
 
-#include <glog/logging.h>
-
 #include <algorithm>
 #include <cmath>
 #include <random>
+
+#include <glog/logging.h>
 
 #include "algorithms/rappor/rappor_encoder.h"
 #include "util/crypto_util/hash.h"

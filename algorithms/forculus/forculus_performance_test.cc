@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-
 #include <chrono>
 #include <ctime>
 #include <fstream>
 #include <streambuf>
+
+#include <gflags/gflags.h>
 
 #include "./logging.h"
 #include "algorithms/forculus/forculus_analyzer.h"

@@ -5,9 +5,6 @@
 #ifndef COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
 #define COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
 
-#include <gflags/gflags.h>
-#include <glog/logging.h>
-
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -16,12 +13,16 @@
 #include <utility>
 #include <vector>
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+
 #include "algorithms/rappor/rappor_analyzer.h"
 #include "algorithms/rappor/rappor_encoder.h"
 #include "algorithms/rappor/rappor_test_utils.h"
 #include "encoder/client_secret.h"
-#include "third_party/eigen/Eigen/SparseQR"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
+
+#include "third_party/eigen/Eigen/SparseQR"
 
 namespace cobalt {
 namespace rappor {

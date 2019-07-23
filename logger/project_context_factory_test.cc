@@ -4,10 +4,10 @@
 
 #include "logger/project_context_factory.h"
 
-#include <google/protobuf/text_format.h>
-
 #include <memory>
 #include <string>
+
+#include <google/protobuf/text_format.h>
 
 #include "./gtest.h"
 #include "./logging.h"

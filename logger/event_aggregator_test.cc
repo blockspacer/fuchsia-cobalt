@@ -4,14 +4,14 @@
 
 #include "logger/event_aggregator.h"
 
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-
 #include <map>
 #include <memory>
 #include <set>
 #include <utility>
 #include <vector>
+
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
 #include "./event.pb.h"
 #include "./gtest.h"

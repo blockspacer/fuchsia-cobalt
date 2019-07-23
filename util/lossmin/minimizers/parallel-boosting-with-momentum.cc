@@ -10,8 +10,9 @@
 #include <algorithm>
 #include <functional>
 
-#include "third_party/eigen/Eigen/Core"
 #include "util/lossmin/minimizers/gradient-evaluator.h"
+
+#include "third_party/eigen/Eigen/Core"
 
 namespace cobalt_lossmin {
 
@@ -36,9 +37,13 @@ void ParallelBoostingWithMomentum::compute_and_set_learning_rates() {
 
 double ParallelBoostingWithMomentum::Loss(const Weights &weights) const {
   double loss = gradient_evaluator().SparseLoss(weights);
-  // NOLINTNEXTLINE readability-magic-numbers
-  if (l2() > 0.0) loss += 0.5 * l2() * weights.squaredNorm();
-  if (l1() > 0.0) loss += l1() * weights.cwiseAbs().sum();
+  if (l2() > 0.0) {
+    // NOLINTNEXTLINE readability-magic-numbers
+    loss += 0.5 * l2() * weights.squaredNorm();
+  }
+  if (l1() > 0.0) {
+    loss += l1() * weights.cwiseAbs().sum();
+  }
   return loss;
 }
 
@@ -73,7 +78,9 @@ void ParallelBoostingWithMomentum::EpochUpdate(Weights *weights, int /*epoch*/,
   // Compute the gradient at y (except l1 penalty).
   Weights gradient_wrt_y = Weights::Zero(y.size());
   gradient_evaluator().SparseGradient(y, &gradient_wrt_y);
-  if (l2() > 0.0) gradient_wrt_y += l2() * y;
+  if (l2() > 0.0) {
+    gradient_wrt_y += l2() * y;
+  }
 
   // Take the gradient descent step.
   *weights -= gradient_wrt_y.cwiseProduct(learning_rates_);

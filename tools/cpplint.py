@@ -68,7 +68,10 @@ def main(only_directories=[]):
           continue
 
         print('%s --root %s %s' % (CPP_LINT, SRC_ROOT_DIR, full_path))
-        cmd = subprocess.Popen([CPP_LINT, '--root', SRC_ROOT_DIR, full_path],
+        cmd = subprocess.Popen([
+            CPP_LINT, '--filter', '-build/include_order', '--root',
+            SRC_ROOT_DIR, full_path
+        ],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
         out, err = cmd.communicate()

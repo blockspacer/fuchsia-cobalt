@@ -5,10 +5,10 @@
 #ifndef COBALT_UTIL_CONSISTENT_PROTO_STORE_H_
 #define COBALT_UTIL_CONSISTENT_PROTO_STORE_H_
 
-#include <google/protobuf/message_lite.h>
-
 #include <memory>
 #include <string>
+
+#include <google/protobuf/message_lite.h>
 
 #include "util/file_system.h"
 #include "util/status.h"

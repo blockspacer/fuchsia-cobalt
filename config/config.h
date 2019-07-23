@@ -16,13 +16,14 @@
 #define COBALT_CONFIG_CONFIG_H_
 
 #include <fcntl.h>
-#include <google/protobuf/io/tokenizer.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
+
+#include <google/protobuf/io/tokenizer.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 namespace cobalt {
 namespace config {

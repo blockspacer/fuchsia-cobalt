@@ -80,7 +80,8 @@ void LossMinimizer::SimpleConvergenceCheck(const std::vector<double> &loss) {
         set_converged(true);
       }
     }
-    if (loss_difference < simple_convergence_threshold_) set_converged(true);
+    if (loss_difference < simple_convergence_threshold_)
+      set_converged(true);
   }
 }
 

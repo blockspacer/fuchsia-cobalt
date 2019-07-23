@@ -14,11 +14,11 @@
 
 #include "util/crypto_util/random.h"
 
-#include <openssl/rand.h>
-
 #include <cmath>
 #include <memory>
 #include <vector>
+
+#include <openssl/rand.h>
 
 namespace cobalt::crypto {
 

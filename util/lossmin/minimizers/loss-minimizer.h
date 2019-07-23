@@ -43,9 +43,10 @@
 #include <string>
 #include <vector>
 
-#include "third_party/eigen/Eigen/Core"
 #include "util/lossmin/eigen-types.h"
 #include "util/lossmin/minimizers/gradient-evaluator.h"
+
+#include "third_party/eigen/Eigen/Core"
 
 namespace cobalt_lossmin {
 
@@ -97,7 +98,8 @@ class LossMinimizer {
       loss += 0.5 * l2_ *  // NOLINT readability-magic-numbers
               weights.squaredNorm();
     }
-    if (l1_ > 0.0) loss += l1_ * weights.cwiseAbs().sum();
+    if (l1_ > 0.0)
+      loss += l1_ * weights.cwiseAbs().sum();
     return loss;
   }
 
@@ -183,8 +185,10 @@ class LossMinimizer {
 
   // Returns sign('x').
   static inline double Sign(double x) {
-    if (x > 0.0) return 1.0;
-    if (x < 0.0) return -1.0;
+    if (x > 0.0)
+      return 1.0;
+    if (x < 0.0)
+      return -1.0;
     return 0.0;
   }
 

@@ -4,12 +4,12 @@
 
 #include "logger/project_context.h"
 
-#include <google/protobuf/text_format.h>
-
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <google/protobuf/text_format.h>
 
 #include "./gtest.h"
 #include "./logging.h"

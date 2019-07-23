@@ -5,11 +5,11 @@
 #ifndef COBALT_CONFIG_CONFIG_TEXT_PARSER_H_
 #define COBALT_CONFIG_CONFIG_TEXT_PARSER_H_
 
-#include <google/protobuf/text_format.h>
-
 #include <memory>
 #include <string>
 #include <utility>
+
+#include <google/protobuf/text_format.h>
 
 #include "config/config.h"
 

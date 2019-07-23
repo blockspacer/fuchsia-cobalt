@@ -4,12 +4,12 @@
 
 #import "tools/test_app2/test_app.h"
 
-#include <google/protobuf/text_format.h>
-
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <google/protobuf/text_format.h>
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"

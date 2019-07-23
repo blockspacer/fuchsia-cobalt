@@ -20,9 +20,10 @@
 #include "encoder/observation_store.h"
 #include "encoder/observation_store_update_recipient.h"
 #include "encoder/upload_scheduler.h"
-#include "grpc++/grpc++.h"
 #include "logger/internal_metrics.h"
 #include "third_party/clearcut/uploader.h"
+
+#include "grpc++/grpc++.h"
 
 namespace cobalt {
 namespace encoder {

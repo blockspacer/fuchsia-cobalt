@@ -4,11 +4,11 @@
 
 #include "util/consistent_proto_store.h"
 
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-
 #include <fstream>
 #include <iostream>
 #include <utility>
+
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "third_party/statusor/status_macros.h"
 

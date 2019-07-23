@@ -14,11 +14,11 @@
 
 #include "algorithms/rappor/bloom_bit_counter.h"
 
-#include <glog/logging.h>
-
 #include <cmath>
 #include <utility>
 #include <vector>
+
+#include <glog/logging.h>
 
 #include "util/log_based_metrics.h"
 

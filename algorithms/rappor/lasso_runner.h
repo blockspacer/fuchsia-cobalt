@@ -9,10 +9,11 @@
 
 #include <vector>
 
-#include "third_party/eigen/Eigen/SparseCore"
 #include "util/lossmin/eigen-types.h"
 #include "util/lossmin/minimizers/gradient-evaluator.h"
 #include "util/lossmin/minimizers/parallel-boosting-with-momentum.h"
+
+#include "third_party/eigen/Eigen/SparseCore"
 
 namespace cobalt {
 namespace rappor {

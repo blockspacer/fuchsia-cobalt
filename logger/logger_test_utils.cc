@@ -4,11 +4,11 @@
 
 #include "logger/logger_test_utils.h"
 
-#include <google/protobuf/text_format.h>
-#include <google/protobuf/util/message_differencer.h>
-
 #include <algorithm>
 #include <utility>
+
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/util/message_differencer.h>
 
 #include "./observation.pb.h"
 #include "./observation2.pb.h"

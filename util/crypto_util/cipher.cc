@@ -14,6 +14,11 @@
 
 #include "util/crypto_util/cipher.h"
 
+#include <cstring>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <openssl/aead.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -24,11 +29,6 @@
 #include <openssl/hkdf.h>
 #include <openssl/pem.h>
 #include <openssl/sha.h>
-
-#include <cstring>
-#include <memory>
-#include <string>
-#include <vector>
 
 #include "util/crypto_util/errors.h"
 #include "util/crypto_util/random.h"

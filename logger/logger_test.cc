@@ -4,12 +4,12 @@
 
 #include "logger/logger.h"
 
-#include <google/protobuf/text_format.h>
-#include <google/protobuf/util/message_differencer.h>
-
 #include <chrono>
 #include <memory>
 #include <string>
+
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/util/message_differencer.h>
 
 #include "./gtest.h"
 #include "./observation.pb.h"

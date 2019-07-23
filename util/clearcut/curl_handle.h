@@ -5,11 +5,11 @@
 #ifndef COBALT_UTIL_CLEARCUT_CURL_HANDLE_H_
 #define COBALT_UTIL_CLEARCUT_CURL_HANDLE_H_
 
-#include <curl/curl.h>
-
 #include <map>
 #include <memory>
 #include <string>
+
+#include <curl/curl.h>
 
 #include "third_party/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"

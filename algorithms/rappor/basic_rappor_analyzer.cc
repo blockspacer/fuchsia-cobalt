@@ -14,10 +14,10 @@
 
 #include "algorithms/rappor/basic_rappor_analyzer.h"
 
-#include <glog/logging.h>
-
 #include <cmath>
 #include <vector>
+
+#include <glog/logging.h>
 
 #include "util/log_based_metrics.h"
 

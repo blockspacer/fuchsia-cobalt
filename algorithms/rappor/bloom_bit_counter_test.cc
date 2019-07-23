@@ -13,13 +13,13 @@
 // limitations under the License.
 #include "algorithms/rappor/bloom_bit_counter.h"
 
-#include <gflags/gflags.h>
-
 #include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <gflags/gflags.h>
 
 #include "./logging.h"
 #include "algorithms/rappor/rappor_encoder.h"
