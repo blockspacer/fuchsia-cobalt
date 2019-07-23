@@ -23,29 +23,9 @@ CLANG_TIDY = os.path.join(SRC_ROOT_DIR, 'sysroot', 'share', 'clang',
 # tree looking for C++ files to be linted. We also skip directories starting
 # with a "." such as ".git"
 SKIP_LINT_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'config', 'config_parser', 'src',
-                 'source_generator', 'source_generator_test_files'),
-    os.path.join(SRC_ROOT_DIR, 'kubernetes'),
-    os.path.join(SRC_ROOT_DIR, 'logger', 'test_registries'),
     os.path.join(SRC_ROOT_DIR, 'out'),
-    os.path.join(SRC_ROOT_DIR, 'prototype'),
-    os.path.join(SRC_ROOT_DIR, 'shuffler'),
     os.path.join(SRC_ROOT_DIR, 'sysroot'),
     os.path.join(SRC_ROOT_DIR, 'third_party'),
-    os.path.join(SRC_ROOT_DIR, 'analyzer'),
-]
-
-CLANG_TIDY_WHITELIST = [
-    os.path.join(SRC_ROOT_DIR, 'algorithms'),
-    os.path.join(SRC_ROOT_DIR, 'build'),
-    os.path.join(SRC_ROOT_DIR, 'config'),
-    os.path.join(SRC_ROOT_DIR, 'encoder'),
-    os.path.join(SRC_ROOT_DIR, 'keys'),
-    os.path.join(SRC_ROOT_DIR, 'logger'),
-    os.path.join(SRC_ROOT_DIR, 'manifest'),
-    os.path.join(SRC_ROOT_DIR, 'meta'),
-    os.path.join(SRC_ROOT_DIR, 'tools'),
-    os.path.join(SRC_ROOT_DIR, 'util'),
 ]
 
 CLANG_TIDY_BLACKLIST = [
@@ -53,13 +33,6 @@ CLANG_TIDY_BLACKLIST = [
     os.path.join(SRC_ROOT_DIR, 'logger', 'event_aggregator_test.cc'),
     os.path.join(SRC_ROOT_DIR, 'logger', 'logger_test.cc'),
 ]
-
-
-def clang_tidy_whitelisted(path):
-  for whitelist in CLANG_TIDY_WHITELIST:
-    if path.startswith(whitelist):
-      return True
-  return False
 
 
 def clang_tidy_blacklisted(path):
@@ -70,7 +43,7 @@ def clang_tidy_blacklisted(path):
 
 
 def use_clang_tidy(path):
-  return clang_tidy_whitelisted(path) and not clang_tidy_blacklisted(path)
+  return not clang_tidy_blacklisted(path)
 
 
 def main(only_directories=[]):
@@ -80,6 +53,7 @@ def main(only_directories=[]):
 
   only_directories = [os.path.join(SRC_ROOT_DIR, d) for d in only_directories]
 
+  print('Running cpplint.py on non-blacklisted files')
   for root, dirs, files in os.walk(SRC_ROOT_DIR):
     for f in files:
       if f.endswith('.h') or f.endswith('.cc'):
@@ -93,7 +67,7 @@ def main(only_directories=[]):
           clang_tidy_files.append(full_path)
           continue
 
-        print('cpplint.py %s' % os.path.relpath(full_path, SRC_ROOT_DIR))
+        print('%s --root %s %s' % (CPP_LINT, SRC_ROOT_DIR, full_path))
         cmd = subprocess.Popen([CPP_LINT, '--root', SRC_ROOT_DIR, full_path],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
