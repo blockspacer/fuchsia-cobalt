@@ -41,7 +41,7 @@ class EncryptedMessageMaker {
                        EncryptedMessage* encrypted_message) const = 0;
 
   // Returns the EncryptionScheme used by the EncryptedMessageMaker.
-  virtual EncryptedMessage::EncryptionScheme scheme() const = 0;
+  [[nodiscard]] virtual EncryptedMessage::EncryptionScheme scheme() const = 0;
 
   // Make an UnencryptedMessageMaker.
   // Message will be serialized, but not encrypted: they will be sent in plain
@@ -71,12 +71,12 @@ class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
  public:
   HybridTinkEncryptedMessageMaker(
       std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
-      const std::string& context_info, uint32_t key_index);
+      std::string context_info, uint32_t key_index);
 
   bool Encrypt(const google::protobuf::MessageLite& message,
-               EncryptedMessage* encrypted_message) const;
+               EncryptedMessage* encrypted_message) const override;
 
-  EncryptedMessage::EncryptionScheme scheme() const {
+  [[nodiscard]] EncryptedMessage::EncryptionScheme scheme() const override {
     return EncryptedMessage::HYBRID_TINK;
   }
 
@@ -91,9 +91,9 @@ class HybridTinkEncryptedMessageMaker : public EncryptedMessageMaker {
 class UnencryptedMessageMaker : public EncryptedMessageMaker {
  public:
   bool Encrypt(const google::protobuf::MessageLite& message,
-               EncryptedMessage* encrypted_message) const;
+               EncryptedMessage* encrypted_message) const override;
 
-  EncryptedMessage::EncryptionScheme scheme() const {
+  [[nodiscard]] EncryptedMessage::EncryptionScheme scheme() const override {
     return EncryptedMessage::NONE;
   }
 };

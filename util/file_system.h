@@ -50,8 +50,7 @@ class FileSystem {
   // Returns: A StatusOr containing the size of the file in bytes. An OK
   // status indicates that the FileSize operation succeeded, even if the
   // size_t is 0.
-  virtual statusor::StatusOr<size_t> FileSize(
-      const std::string &file) = 0;
+  virtual statusor::StatusOr<size_t> FileSize(const std::string &file) = 0;
 
   // FileExists returns true if the |file| exists.
   virtual bool FileExists(const std::string &file) = 0;
@@ -64,7 +63,7 @@ class FileSystem {
   // Returns: True if the file was renamed successfully.
   virtual bool Rename(const std::string &from, const std::string &to) = 0;
 
-  virtual ~FileSystem() {}
+  virtual ~FileSystem() = default;
 };
 
 }  // namespace util

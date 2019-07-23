@@ -6,11 +6,12 @@
 #include "util/lossmin/minimizers/parallel-boosting-with-momentum.h"
 
 #include <math.h>
+
 #include <algorithm>
 #include <functional>
 
-#include "util/lossmin/minimizers/gradient-evaluator.h"
 #include "third_party/eigen/Eigen/Core"
+#include "util/lossmin/minimizers/gradient-evaluator.h"
 
 namespace cobalt_lossmin {
 
@@ -18,7 +19,7 @@ void ParallelBoostingWithMomentum::Setup() {
   compute_and_set_learning_rates();
   set_converged(false);
   set_reached_solution(false);
-  alpha_ = 0.5;
+  alpha_ = 0.5;  // NOLINT readability-magic-numbers
   beta_ = 1.0 - alpha_;
   phi_center_ = Weights::Zero(gradient_evaluator().NumWeights());
 }
@@ -35,6 +36,7 @@ void ParallelBoostingWithMomentum::compute_and_set_learning_rates() {
 
 double ParallelBoostingWithMomentum::Loss(const Weights &weights) const {
   double loss = gradient_evaluator().SparseLoss(weights);
+  // NOLINTNEXTLINE readability-magic-numbers
   if (l2() > 0.0) loss += 0.5 * l2() * weights.squaredNorm();
   if (l1() > 0.0) loss += l1() * weights.cwiseAbs().sum();
   return loss;
@@ -63,7 +65,7 @@ void ParallelBoostingWithMomentum::ConvergenceCheck(const Weights &weights,
   }
 }
 
-void ParallelBoostingWithMomentum::EpochUpdate(Weights *weights, int epoch,
+void ParallelBoostingWithMomentum::EpochUpdate(Weights *weights, int /*epoch*/,
                                                bool check_convergence) {
   // Compute the intermediate weight vector y.
   Weights y = (1.0 - alpha_) * *weights + alpha_ * phi_center_;
@@ -83,6 +85,7 @@ void ParallelBoostingWithMomentum::EpochUpdate(Weights *weights, int epoch,
 
   // Update the approximation function.
   phi_center_ -= (1.0 - alpha_) / alpha_ * (y - *weights);
+  // NOLINTNEXTLINE readability-magic-numbers
   alpha_ = -beta_ / 2.0 + pow(beta_ + beta_ * beta_ / 4.0, 0.5);
   beta_ *= (1.0 - alpha_);
 

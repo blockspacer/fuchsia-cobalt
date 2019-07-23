@@ -43,9 +43,9 @@
 #include <string>
 #include <vector>
 
+#include "third_party/eigen/Eigen/Core"
 #include "util/lossmin/eigen-types.h"
 #include "util/lossmin/minimizers/gradient-evaluator.h"
-#include "third_party/eigen/Eigen/Core"
 
 namespace cobalt_lossmin {
 
@@ -59,12 +59,9 @@ class LossMinimizer {
   // 'gradient_evalutor_'.
   LossMinimizer(double l1, double l2,
                 const GradientEvaluator &gradient_evaluator)
-      : l1_(l1),
-        l2_(l2),
-        gradient_evaluator_(gradient_evaluator),
-        converged_(false),
-        reached_solution_(false) {}
-  virtual ~LossMinimizer() {}
+      : l1_(l1), l2_(l2), gradient_evaluator_(gradient_evaluator) {}
+
+  virtual ~LossMinimizer() = default;
 
   // Initializes algorithm-specific parameters such as learning rates, based
   // on the loss function and the dataset. Called in the constructor of the
@@ -94,9 +91,12 @@ class LossMinimizer {
 
   // Returns the total loss for given parameters 'weights', including l1 and l2
   // regularization.
-  virtual double Loss(const Weights &weights) const {
+  [[nodiscard]] virtual double Loss(const Weights &weights) const {
     double loss = gradient_evaluator_.Loss(weights);
-    if (l2_ > 0.0) loss += 0.5 * l2_ * weights.squaredNorm();
+    if (l2_ > 0.0) {
+      loss += 0.5 * l2_ *  // NOLINT readability-magic-numbers
+              weights.squaredNorm();
+    }
     if (l1_ > 0.0) loss += l1_ * weights.cwiseAbs().sum();
     return loss;
   }
@@ -118,17 +118,19 @@ class LossMinimizer {
   void SimpleConvergenceCheck(const std::vector<double> &loss);
 
   // Setters and getters for convergence criteria parameters.
-  bool converged() const { return converged_; }
+  [[nodiscard]] bool converged() const { return converged_; }
   void set_converged(bool converged) { converged_ = converged; }
-  bool reached_solution() const { return reached_solution_; }
+  [[nodiscard]] bool reached_solution() const { return reached_solution_; }
   void set_reached_solution(bool reached_solution) {
     reached_solution_ = reached_solution;
   }
-  double convergence_threshold() const { return convergence_threshold_; }
+  [[nodiscard]] double convergence_threshold() const {
+    return convergence_threshold_;
+  }
   void set_convergence_threshold(double convergence_threshold) {
     convergence_threshold_ = convergence_threshold;
   }
-  double simple_convergence_threshold() const {
+  [[nodiscard]] double simple_convergence_threshold() const {
     return simple_convergence_threshold_;
   }
   void set_simple_convergence_threshold(double simple_convergence_threshold) {
@@ -137,26 +139,26 @@ class LossMinimizer {
   void set_num_convergence_epochs(int num_convergence_epochs) {
     num_convergence_epochs_ = num_convergence_epochs;
   }
-  double zero_threshold() const { return zero_threshold_; }
+  [[nodiscard]] double zero_threshold() const { return zero_threshold_; }
   void set_zero_threshold(double zero_threshold) {
     zero_threshold_ = zero_threshold;
   }
 
   // Returns a reference to 'gradient_evaluator_'.
-  const GradientEvaluator &gradient_evaluator() const {
+  [[nodiscard]] const GradientEvaluator &gradient_evaluator() const {
     return gradient_evaluator_;
   }
 
   // Getter/setter of the l1 regularization parameter.
-  double l1() const { return l1_; }
+  [[nodiscard]] double l1() const { return l1_; }
   void set_l1(double l1) { l1_ = l1; }
 
   // Getter/setter of the l2 regularization parameter.
-  double l2() const { return l2_; }
+  [[nodiscard]] double l2() const { return l2_; }
   void set_l2(double l2) { l2_ = l2; }
 
   // Returns the number of iterations the last time Run() was executed.
-  int num_epochs_run() const { return num_epochs_run_; }
+  [[nodiscard]] int num_epochs_run() const { return num_epochs_run_; }
 
   // Applies L1Prox coefficientwise to 'weights' and 'threshold'.
   static void L1Prox(double threshold, Weights *weights) {
@@ -211,14 +213,17 @@ class LossMinimizer {
       false;  // flag indicating whether the algorithm
               // actually reached the solution as determined by ConvergenceCheck
   double convergence_threshold_ =
+      // NOLINTNEXTLINE
       1e-5;  // threshold for assessing convergence by ConvergenceCheck
   double simple_convergence_threshold_ =
+      // NOLINTNEXTLINE
       1e-5;  // threshold for assessing convergence by SimpleConvergenceCheck
-  int num_convergence_epochs_ = 5;  // used in SimpleConvergenceCheck
+  // NOLINTNEXTLINE
+  size_t num_convergence_epochs_ = 5;  // used in SimpleConvergenceCheck
 
   // zero_threshold_ is the threshold below which we treat the coordinate value
   // as zero (in absolute terms). This is used in ConvergenceCheck.
-  double zero_threshold_ = 1e-6;
+  double zero_threshold_ = 1e-6;  // NOLINT
 
   // The number of epochs (iterations) when Run() was executed.
   // In other words, each epoch is a step towards minimum during minimization.

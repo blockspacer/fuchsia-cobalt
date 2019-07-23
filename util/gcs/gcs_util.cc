@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "util/gcs/gcs_util.h"
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "util/gcs/gcs_util.h"
-
 #include "glog/logging.h"
-
 #include "third_party/google-api-cpp-client/service_apis/storage/google/storage_api/storage_api.h"
 #include "third_party/google-api-cpp-client/src/googleapis/client/auth/oauth2_authorization.h"
 #include "third_party/google-api-cpp-client/src/googleapis/client/auth/oauth2_service_authorization.h"
@@ -17,7 +16,6 @@
 #include "third_party/google-api-cpp-client/src/googleapis/client/transport/curl_http_transport.h"
 #include "third_party/google-api-cpp-client/src/googleapis/client/transport/http_transport.h"
 #include "third_party/google-api-cpp-client/src/googleapis/strings/stringpiece.h"
-
 #include "util/log_based_metrics.h"
 #include "util/pem_util.h"
 
@@ -38,9 +36,9 @@ namespace gcs {
 
 // Stackdriver metric constants
 namespace {
-const char kInitFailure[] = "gcs-util-init-failure";
-const char kUploadFailure[] = "gcs-util-upload-failure";
-const char kPingFailure[] = "gcs-util-ping-failure";
+constexpr char kInitFailure[] = "gcs-util-init-failure";
+constexpr char kUploadFailure[] = "gcs-util-upload-failure";
+constexpr char kPingFailure[] = "gcs-util-ping-failure";
 }  // namespace
 
 struct GcsUtil::Impl {

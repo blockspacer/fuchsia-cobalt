@@ -35,7 +35,7 @@ class CurlHandle {
 
   static StatusOr<std::unique_ptr<CurlHandle>> Init();
 
-  StatusOr<HTTPResponse> Post(std::string url, std::string body);
+  StatusOr<HTTPResponse> Post(const std::string &url, std::string body);
 
  private:
   CurlHandle();

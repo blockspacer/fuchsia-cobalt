@@ -26,8 +26,8 @@
 namespace cobalt {
 namespace util {
 
-const char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
-const char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
+constexpr char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
+constexpr char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
 
 using crypto::HybridCipher;
 

@@ -34,7 +34,7 @@ class SystemClock : public ClockInterface {
 // clock ticks.
 class IncrementingClock : public ClockInterface {
  public:
-  IncrementingClock() {}
+  IncrementingClock() = default;
   // Constructs an IncrementingClock which increments by |increment| seconds
   // each time it is called.
   explicit IncrementingClock(std::chrono::system_clock::duration increment)
@@ -68,7 +68,7 @@ class IncrementingClock : public ClockInterface {
 
   void set_callback(
       std::function<void(std::chrono::system_clock::time_point)> c) {
-    callback_ = c;
+    callback_ = std::move(c);
   }
 
   std::string DebugString() {

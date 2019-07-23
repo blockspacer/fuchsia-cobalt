@@ -89,8 +89,8 @@ class ProtectedFields {
 
    public:
     // Disable copy/assign. Only allow move.
-    LockedFieldsPtr(LockedFieldsPtr&&);
-    LockedFieldsPtr& operator=(LockedFieldsPtr&&);
+    LockedFieldsPtr(LockedFieldsPtr&&) noexcept;
+    LockedFieldsPtr& operator=(LockedFieldsPtr&&) noexcept;
     LockedFieldsPtr& operator=(const LockedFieldsPtr&) = delete;
     LockedFieldsPtr(const LockedFieldsPtr&) = delete;
   };
@@ -156,8 +156,8 @@ class ProtectedFields {
 
    public:
     // Disable copy/assign. Only allow move.
-    ConstLockedFieldsPtr(ConstLockedFieldsPtr&&);
-    ConstLockedFieldsPtr& operator=(ConstLockedFieldsPtr&&);
+    ConstLockedFieldsPtr(ConstLockedFieldsPtr&&) noexcept;
+    ConstLockedFieldsPtr& operator=(ConstLockedFieldsPtr&&) noexcept;
     ConstLockedFieldsPtr& operator=(const ConstLockedFieldsPtr&) = delete;
     ConstLockedFieldsPtr(const ConstLockedFieldsPtr&) = delete;
   };
@@ -174,7 +174,7 @@ class ProtectedFields {
  public:
   ProtectedFields& operator=(const ProtectedFields&) = delete;
   ProtectedFields(const ProtectedFields&) = delete;
-  ProtectedFields() {}
+  ProtectedFields() = default;
 };
 
 }  // namespace util

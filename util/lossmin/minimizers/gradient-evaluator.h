@@ -35,7 +35,7 @@ class GradientEvaluator {
         instances_transposed_(instances.transpose()),
         labels_(labels) {}
 
-  virtual ~GradientEvaluator() {}
+  virtual ~GradientEvaluator() = default;
 
   // Returns the residual between the predicted labels at 'weights', and
   // labels_. The default implementation returns A * x - b, where A ==
@@ -46,18 +46,18 @@ class GradientEvaluator {
   // Eigen's matrix-vector multiply directly but can potentially be easily
   // parallelized (when parallel implementation is desired but open mp is not
   // available).
-  virtual Weights Residual(const Weights &weights) const;
+  [[nodiscard]] virtual Weights Residual(const Weights &weights) const;
 
   // Returns the loss for given parameters 'weights'.
   // The default implementation computes the normalized norm of vector returned
   // by Residual(weights): 0.5 / N * || A * x - y ||_2^2, where A == instances_
   // y == labels_, x == 'weights', N = instances_.rows().
-  virtual double Loss(const Weights &weights) const;
+  [[nodiscard]] virtual double Loss(const Weights &weights) const;
 
   // This is the same as Loss except (by default) instead of calling Residual,
   // it uses Eigen's efficient matrix-vector multiplication directly.
   // Note: It can be parallelized using open mp, if it is supported.
-  virtual double SparseLoss(const Weights &weights) const;
+  [[nodiscard]] virtual double SparseLoss(const Weights &weights) const;
 
   // Computes the gradient wrt the given parameters 'weights'. 'gradient' is
   // owned by the caller and should be initialized to zero.
@@ -78,13 +78,13 @@ class GradientEvaluator {
   virtual void SparseGradient(const Weights &weights, Weights *gradient) const;
 
   // Returns the number of examples in the dataset.
-  int NumExamples() const { return instances_.rows(); }
+  [[nodiscard]] int NumExamples() const { return instances_.rows(); }
 
   // Returns the number of features.
-  int NumFeatures() const { return instances_.cols(); }
+  [[nodiscard]] int NumFeatures() const { return instances_.cols(); }
 
   // Alias for the number of features (these are often used interchangeably).
-  int NumWeights() const { return NumFeatures(); }
+  [[nodiscard]] int NumWeights() const { return NumFeatures(); }
 
   // Returns the per-coordinate curvature of the data. Used to set the learning
   // rates of ParallelBoostingWithMomentum.
@@ -93,18 +93,18 @@ class GradientEvaluator {
   // Returns sparsity, defined as the maximum instance l0 norm. Used to help
   // set learning rates in ParallelBoostingWithMomentum.
   // TODO(bazyli): exploit sparsity in the implementation.
-  double Sparsity() const;
+  [[nodiscard]] double Sparsity() const;
 
   // Returns the instances.
-  const InstanceSet &instances() const { return instances_; }
+  [[nodiscard]] const InstanceSet &instances() const { return instances_; }
 
   // Returns the transpose pf instances.
-  const InstanceSet &instances_transposed() const {
+  [[nodiscard]] const InstanceSet &instances_transposed() const {
     return instances_transposed_;
   }
 
   // Returns the labels.
-  const LabelSet &labels() const { return labels_; }
+  [[nodiscard]] const LabelSet &labels() const { return labels_; }
 
  private:
   // Training instances.

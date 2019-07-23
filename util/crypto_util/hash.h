@@ -35,7 +35,7 @@ static const size_t DIGEST_SIZE = 32;  // SHA-256 outputs 32 bytes.
 // result to |out| which must have length |DIGEST_SIZE|.
 //
 // Returns true for success or false for failure.
-bool Hash(const byte *data, const size_t data_len, byte out[DIGEST_SIZE]);
+bool Hash(const byte *data, size_t data_len, byte out[DIGEST_SIZE]);
 
 }  // namespace hash
 

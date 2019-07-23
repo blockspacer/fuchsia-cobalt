@@ -6,6 +6,7 @@
 #define COBALT_UTIL_CONSISTENT_PROTO_STORE_H_
 
 #include <google/protobuf/message_lite.h>
+
 #include <memory>
 #include <string>
 
@@ -26,7 +27,7 @@ class ConsistentProtoStore {
   explicit ConsistentProtoStore(std::string filename,
                                 std::unique_ptr<FileSystem> fs);
 
-  virtual ~ConsistentProtoStore() {}
+  virtual ~ConsistentProtoStore() = default;
 
   // Writes |proto| to the store, overwriting any previously written proto.
   // Consistency is guaranteed in that if the operation fails, the previously
@@ -40,7 +41,7 @@ class ConsistentProtoStore {
   // data is corrupt (does not represent a valid protocol buffer).
   virtual Status Read(google::protobuf::MessageLite *proto);
 
- protected:
+ private:
   virtual Status WriteToTmp(const google::protobuf::MessageLite &proto);
   virtual Status MoveTmpToOverride();
   virtual Status DeletePrimary();

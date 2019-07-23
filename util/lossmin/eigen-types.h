@@ -11,51 +11,39 @@
 namespace cobalt_lossmin {
 
 // Arrays.
-typedef Eigen::Array<bool, Eigen::Dynamic, 1> ArrayXb;
-typedef Eigen::ArrayXf ArrayXf;
-typedef Eigen::ArrayXd ArrayXd;
-typedef Eigen::ArrayXi ArrayXi;
+using ArrayXb = Eigen::Array<bool, Eigen::Dynamic, 1>;
+using ArrayXf = Eigen::ArrayXf;
+using ArrayXd = Eigen::ArrayXd;
+using ArrayXi = Eigen::ArrayXi;
 
 // Vectors.
-typedef Eigen::VectorXf VectorXf;
-typedef Eigen::VectorXd VectorXd;
-typedef Eigen::VectorXi VectorXi;
+using VectorXf = Eigen::VectorXf;
+using VectorXd = Eigen::VectorXd;
+using VectorXi = Eigen::VectorXi;
 
 // Sparse Vectors.
-typedef Eigen::SparseVector<float> SparseVectorXf;
-typedef Eigen::SparseVector<double> SparseVectorXd;
+using SparseVectorXf = Eigen::SparseVector<float>;
+using SparseVectorXd = Eigen::SparseVector<double>;
 
 // Matrix.
-typedef Eigen::Matrix<
-    float,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::ColMajor> MatrixXf;
-typedef Eigen::Matrix<
-    float,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::RowMajor> RowMatrixXf;
-typedef Eigen::Matrix<
-    double,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::ColMajor> MatrixXd;
-typedef Eigen::Matrix<
-    double,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::RowMajor> RowMatrixXd;
+using MatrixXf =
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+using RowMatrixXf =
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using MatrixXd =
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>;
+using RowMatrixXd =
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 // Instances and parameters.
-typedef VectorXd Weights;
+using Weights = VectorXd;
 
-typedef VectorXd Label;
-typedef RowMatrixXd LabelSet;
+using Label = VectorXd;
+using LabelSet = RowMatrixXd;
 
-typedef Eigen::SparseVector<double> Instance;
-typedef Eigen::SparseMatrix<double, Eigen::RowMajor> InstanceSet;
-typedef Eigen::SparseMatrix<double, Eigen::ColMajor> SparseMatrixXd;
+using Instance = Eigen::SparseVector<double>;
+using InstanceSet = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+using SparseMatrixXd = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
 }  // namespace cobalt_lossmin
 

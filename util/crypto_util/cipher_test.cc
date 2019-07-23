@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "util/crypto_util/cipher.h"
+
 #include <gtest/gtest.h>
+#include <limits.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
 
-#include <limits.h>
 #include <string>
 #include <vector>
 
-#include "util/crypto_util/cipher.h"
 #include "util/crypto_util/errors.h"
 #include "util/crypto_util/random.h"
 #include "util/crypto_util/types.h"
@@ -29,12 +30,12 @@
 namespace cobalt {
 namespace crypto {
 
-const char* kLine1 = "The woods are lovely, dark and deep,\n";
-const char* kLine2 = "But I have promises to keep,\n";
-const char* kLine3 = "And miles to go before I sleep,\n";
-const char* kLine4 = "And miles to go before I sleep.";
-const char* kLines[] = {kLine1, kLine2, kLine3, kLine4};
-const int kNumLines = 4;
+constexpr char* kLine1 = "The woods are lovely, dark and deep,\n";
+constexpr char* kLine2 = "But I have promises to keep,\n";
+constexpr char* kLine3 = "And miles to go before I sleep,\n";
+constexpr char* kLine4 = "And miles to go before I sleep.";
+constexpr char* kLines[] = {kLine1, kLine2, kLine3, kLine4};
+constexpr int kNumLines = 4;
 
 // Tests SymmetricCipher().
 

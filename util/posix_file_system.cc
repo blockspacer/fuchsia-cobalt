@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "util/posix_file_system.h"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -9,10 +11,7 @@
 #include <memory>
 #include <sstream>
 
-#include "util/posix_file_system.h"
-
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 using statusor::StatusOr;
 using util::Status;
@@ -38,7 +37,7 @@ StatusOr<std::vector<std::string>> PosixFileSystem::ListFiles(
           (ent->d_name[1] == '.' || ent->d_name[1] == '\0')) {
         continue;
       }
-      files.push_back(ent->d_name);
+      files.emplace_back(ent->d_name);
     }
   } else {
     std::stringstream ss;
@@ -73,5 +72,4 @@ bool PosixFileSystem::Rename(const std::string &from, const std::string &to) {
   return std::rename(from.c_str(), to.c_str()) == 0;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

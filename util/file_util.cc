@@ -11,10 +11,10 @@
 #include "util/status.h"
 #include "util/status_codes.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
+
 namespace {
-static const int kMaxFileSize = 100000;
+constexpr int kMaxFileSize = 100000;
 }
 
 statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
@@ -67,5 +67,4 @@ statusor::StatusOr<std::string> ReadNonEmptyTextFile(
   return read_file_result;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

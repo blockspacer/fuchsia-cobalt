@@ -12,13 +12,12 @@
 
 #include "third_party/statusor/status_macros.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 using google::protobuf::MessageLite;
 
-const char kTmpSuffix[] = ".tmp";
-const char kOverrideSuffix[] = ".override";
+constexpr char kTmpSuffix[] = ".tmp";
+constexpr char kOverrideSuffix[] = ".override";
 
 ConsistentProtoStore::ConsistentProtoStore(std::string filename,
                                            std::unique_ptr<FileSystem> fs)
@@ -175,5 +174,4 @@ Status ConsistentProtoStore::MoveOverrideToPrimary() {
   return Status::OK;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

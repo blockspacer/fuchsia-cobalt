@@ -32,10 +32,12 @@ SKIP_LINT_DIRS = [
     os.path.join(SRC_ROOT_DIR, 'shuffler'),
     os.path.join(SRC_ROOT_DIR, 'sysroot'),
     os.path.join(SRC_ROOT_DIR, 'third_party'),
+    os.path.join(SRC_ROOT_DIR, 'analyzer'),
 ]
 
 CLANG_TIDY_WHITELIST = [
     os.path.join(SRC_ROOT_DIR, 'algorithms'),
+    os.path.join(SRC_ROOT_DIR, 'build'),
     os.path.join(SRC_ROOT_DIR, 'config'),
     os.path.join(SRC_ROOT_DIR, 'encoder'),
     os.path.join(SRC_ROOT_DIR, 'keys'),
@@ -43,6 +45,7 @@ CLANG_TIDY_WHITELIST = [
     os.path.join(SRC_ROOT_DIR, 'manifest'),
     os.path.join(SRC_ROOT_DIR, 'meta'),
     os.path.join(SRC_ROOT_DIR, 'tools'),
+    os.path.join(SRC_ROOT_DIR, 'util'),
 ]
 
 CLANG_TIDY_BLACKLIST = [
@@ -78,7 +81,6 @@ def main(only_directories=[]):
   only_directories = [os.path.join(SRC_ROOT_DIR, d) for d in only_directories]
 
   for root, dirs, files in os.walk(SRC_ROOT_DIR):
-    print('Linting c++ files in %s' % root)
     for f in files:
       if f.endswith('.h') or f.endswith('.cc'):
         full_path = os.path.join(root, f)
@@ -91,6 +93,7 @@ def main(only_directories=[]):
           clang_tidy_files.append(full_path)
           continue
 
+        print('cpplint.py %s' % os.path.relpath(full_path, SRC_ROOT_DIR))
         cmd = subprocess.Popen([CPP_LINT, '--root', SRC_ROOT_DIR, full_path],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)

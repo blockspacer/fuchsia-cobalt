@@ -15,22 +15,22 @@
 #include "util/crypto_util/base64.h"
 
 #include <openssl/base64.h>
+
 #include <algorithm>
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
 
-bool Base64Encode(const byte* data, int len, std::string* encoded_out) {
+bool Base64Encode(const byte* data, int num_bytes, std::string* encoded_out) {
   if (!data || !encoded_out) {
     return false;
   }
   size_t required_length;
-  if (!EVP_EncodedLength(&required_length, len)) {
+  if (!EVP_EncodedLength(&required_length, num_bytes)) {
     return false;
   }
   encoded_out->resize(required_length);
-  bool success =
-      EVP_EncodeBlock(reinterpret_cast<byte*>(&(*encoded_out)[0]), data, len);
+  bool success = EVP_EncodeBlock(reinterpret_cast<byte*>(&(*encoded_out)[0]),
+                                 data, num_bytes);
   if (!success) {
     return false;
   }
@@ -102,5 +102,4 @@ bool RegexDecode(std::string encoded_in, std::string* decoded_out) {
   return Base64Decode(encoded_in, decoded_out);
 }
 
-}  // namespace crypto
-}  // namespace cobalt
+}  // namespace cobalt::crypto

@@ -52,7 +52,7 @@ class ParallelBoostingWithMomentum : public LossMinimizer {
   // regularization. Uses sparse matrix multiply from Eigen.
   // This is more efficient in terms of performed operations than calling
   // gradient_evaluator().Loss(weights).
-  double Loss(const Weights &weights) const override;
+  [[nodiscard]] double Loss(const Weights &weights) const override;
 
   // Set phi_center_ (this is the same as v_0 in the paper).
   // Note: Following the paper exactly, phi_center_ should be equal to the

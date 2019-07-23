@@ -42,6 +42,7 @@ Weights GradientEvaluator::Residual(const Weights &weights) const {
 
 double GradientEvaluator::Loss(const Weights &weights) const {
   Weights residual = Residual(weights);
+  // NOLINTNEXTLINE readability-magic-numbers
   return 0.5 * residual.squaredNorm() / NumExamples();
 }
 
@@ -77,6 +78,7 @@ void GradientEvaluator::SparseGradient(const Weights &weights,
 double GradientEvaluator::SparseLoss(const Weights &weights) const {
   Weights residual = instances() * weights;
   residual -= labels();
+  // NOLINTNEXTLINE readability-magic-numbers
   return 0.5 * residual.squaredNorm() / NumExamples();
 }
 

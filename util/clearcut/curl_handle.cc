@@ -2,16 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "util/clearcut/curl_handle.h"
+
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 
-#include "util/clearcut/curl_handle.h"
-
-namespace cobalt {
-namespace util {
-namespace clearcut {
+namespace cobalt::util::clearcut {
 
 CurlHandle::CurlHandle() {
   handle_ = curl_easy_init();
@@ -35,7 +33,7 @@ StatusOr<std::unique_ptr<CurlHandle>> CurlHandle::Init() {
     RETURN_IF_ERROR(
         handle->Setopt(CURLOPT_WRITEFUNCTION, CurlHandle::WriteResponseData));
     return handle;
-  } catch (Status s) {
+  } catch (const Status &s) {
     return s;
   }
 }
@@ -62,7 +60,7 @@ Status CurlHandle::SetHeaders(
     struct curl_slist *header_list = nullptr;
     for (const auto &header : headers) {
       std::string header_str = header.first + ": " + header.second;
-      if (header.second == "") {
+      if (header.second.empty()) {
         header_str = header.first + ";";
       }
       header_list = curl_slist_append(header_list, header_str.c_str());
@@ -80,14 +78,15 @@ Status CurlHandle::SetTimeout(int64_t timeout_ms) {
 }
 
 Status CurlHandle::CURLCodeToStatus(CURLcode code) {
-  std::string details = "";
+  std::string details;
   if (strlen(errbuf_) != 0) {
     details = errbuf_;
   }
   return Status(StatusCode::INTERNAL, curl_easy_strerror(code), details);
 }
 
-StatusOr<HTTPResponse> CurlHandle::Post(std::string url, std::string body) {
+StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url,
+                                        std::string body) {
   RETURN_IF_ERROR(Setopt(CURLOPT_URL, url.c_str()));
   RETURN_IF_ERROR(Setopt(CURLOPT_POSTFIELDSIZE, body.size()));
   RETURN_IF_ERROR(Setopt(CURLOPT_POSTFIELDS, body.data()));
@@ -104,6 +103,5 @@ StatusOr<HTTPResponse> CurlHandle::Post(std::string url, std::string body) {
       return CURLCodeToStatus(result);
   }
 }
-}  // namespace clearcut
-}  // namespace util
-}  // namespace cobalt
+
+}  // namespace cobalt::util::clearcut

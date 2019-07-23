@@ -32,8 +32,8 @@ static const size_t TAG_SIZE = 32;  // SHA-256 outputs 32 bytes.
 //
 // |key_len| may be any non-negative integer.
 // |tag| must have length |TAG_SIZE|.
-bool HMAC(const byte *key , const size_t key_len, const byte *data,
-    const size_t data_len, byte tag[TAG_SIZE]);
+bool HMAC(const byte *key, size_t key_len, const byte *data, size_t data_len,
+          byte tag[TAG_SIZE]);
 
 }  // namespace hmac
 

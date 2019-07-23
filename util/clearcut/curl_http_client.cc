@@ -2,25 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "util/clearcut/curl_http_client.h"
+
 #include <iostream>
 #include <utility>
 
 #include "util/clearcut/curl_handle.h"
-#include "util/clearcut/curl_http_client.h"
 
-namespace cobalt {
-namespace util {
-namespace clearcut {
+namespace cobalt::util::clearcut {
 
 using clearcut::HTTPClient;
 using clearcut::HTTPRequest;
 using clearcut::HTTPResponse;
-using util::Status;
-using util::StatusCode;
 
 bool CurlHTTPClient::global_init_called_ = false;
 
-CurlHTTPClient::CurlHTTPClient() : HTTPClient() {
+CurlHTTPClient::CurlHTTPClient() {
   if (!CurlHTTPClient::global_init_called_) {
     CurlHTTPClient::global_init_called_ = true;
     curl_global_init(CURL_GLOBAL_ALL);
@@ -47,6 +44,4 @@ std::future<StatusOr<HTTPResponse>> CurlHTTPClient::Post(
                     });
 }
 
-}  // namespace clearcut
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util::clearcut

@@ -71,6 +71,8 @@ static const uint32_t kNumUnixSecondsPerDay = 60L * 60L * 24L;
 
 static const uint32_t kInvalidIndex = UINT32_MAX;
 
+static const uint32_t kDefaultCalendarYear = 1970;
+
 // A CalendarDate represents a day on the calendar using normal human-readable
 // indexing. Just as with day-index there is no well-defined mapping from an
 // instant of time to a CalendarDate because this depends on the timezone.
@@ -82,7 +84,7 @@ struct CalendarDate {
   uint32_t month = 1;
 
   // Calendar year e.g. 2016.
-  uint32_t year = 1970;
+  uint32_t year = kDefaultCalendarYear;
 
   bool operator==(const CalendarDate& other) const {
     return (other.day_of_month == day_of_month && other.month == month &&

@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ctime>
-
 #include "util/datetime_util.h"
 
-namespace cobalt {
-namespace util {
+#include <ctime>
+
+namespace cobalt::util {
 
 namespace {
 
@@ -33,7 +32,7 @@ namespace {
 // 146097 = 365 * 400 + 100 - 3. Of the integers in the range [0, 399]
 // there are 100 multiples of 4 but 3 of those are multiples of 100
 // and not multiples of 400, namely 100, 200 and 300.
-static const uint32_t kNumDaysPerEra = 146097;
+constexpr uint32_t kNumDaysPerEra = 146097;
 
 // The algorithm below uses an epoch of March 1, year 0
 // whereas our API uses an epoch of January 1, 1970.
@@ -43,16 +42,22 @@ static const uint32_t kNumDaysPerEra = 146097;
 // The number of days from 1970-3-1 to 2000-3-1 is 30*365 + 8
 // because the following years were leap years: '72 '76 '80 '84 '88 '92 '96 2000
 // The number of days from 1970-1-1 to 1970-3-1 is 59.
-static const uint32_t kEpochOffset =
-    kNumDaysPerEra * 5L - 30L * 365L - 8L - 59L;
+constexpr uint32_t kEpochOffset = kNumDaysPerEra * 5L - 30L * 365L - 8L - 59L;
 
-typedef struct tm TimeInfo;
+using TimeInfo = struct tm;
+
+constexpr uint32_t kEpochYearZero = 1970;
+constexpr uint32_t kTimeInfoYearZero = 1900;
+constexpr uint32_t kMonthsPerYear = 12;
+constexpr uint32_t kDaysPerWeek = 7;
+constexpr uint32_t kMaxDaysPerMonth = 31;
+constexpr uint32_t kMaxCalendarYear = 10000;
 
 CalendarDate TimeInfoToCalendarDate(const TimeInfo& time_info) {
   CalendarDate calendar_date;
   calendar_date.day_of_month = time_info.tm_mday;
   calendar_date.month = time_info.tm_mon + 1;
-  calendar_date.year = time_info.tm_year + 1900;
+  calendar_date.year = time_info.tm_year + kTimeInfoYearZero;
   return calendar_date;
 }
 
@@ -94,9 +99,10 @@ uint32_t CalendarDateToDayIndex(const CalendarDate& calendar_date) {
   // problem presented in CalendarDateToDayIndexAltImpl() in
   // datetime_util_test.cc.
 
-  if (calendar_date.year < 1970 || calendar_date.year >= 10000 ||
-      calendar_date.month < 1 || calendar_date.month > 12 ||
-      calendar_date.day_of_month < 1 || calendar_date.day_of_month > 31) {
+  if (calendar_date.year < kEpochYearZero ||
+      calendar_date.year >= kMaxCalendarYear || calendar_date.month < 1 ||
+      calendar_date.month > kMonthsPerYear || calendar_date.day_of_month < 1 ||
+      calendar_date.day_of_month > kMaxDaysPerMonth) {
     return kInvalidIndex;
   }
 
@@ -133,7 +139,7 @@ uint32_t CalendarDateToDayIndex(const CalendarDate& calendar_date) {
 
   // Now we compute the day of the era. This is relatively easy using
   // the formula for leap years described at the top of this file.
-  const int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  const uint32_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
 
   // shift epoch from 0-03-01 to 1970-01-01
   return era * kNumDaysPerEra + doe - kEpochOffset;
@@ -155,7 +161,7 @@ CalendarDate DayIndexToCalendarDate(uint32_t day_index) {
 
 uint32_t DayIndexToWeekIndex(uint32_t day_index) {
   // Day zero was a Thursday which is 4 days after Sunday.
-  return (day_index + 4) / 7;
+  return (day_index + 4) / kDaysPerWeek;
 }
 
 uint32_t CalendarDateToWeekIndex(const CalendarDate& calendar_date) {
@@ -164,7 +170,8 @@ uint32_t CalendarDateToWeekIndex(const CalendarDate& calendar_date) {
 
 CalendarDate WeekIndexToCalendarDate(uint32_t week_index) {
   // Day zero was a Thursday which is 4 days after Sunday.
-  return DayIndexToCalendarDate(week_index * 7 - (week_index > 0 ? 4 : 0));
+  return DayIndexToCalendarDate(week_index * kDaysPerWeek -
+                                (week_index > 0 ? 4 : 0));
 }
 
 uint32_t DayIndexToMonthIndex(uint32_t day_index) {
@@ -172,18 +179,19 @@ uint32_t DayIndexToMonthIndex(uint32_t day_index) {
 }
 
 uint32_t CalendarDateToMonthIndex(const CalendarDate& calendar_date) {
-  if (calendar_date.year < 1970 || calendar_date.month < 1 ||
-      calendar_date.month > 12) {
+  if (calendar_date.year < kEpochYearZero || calendar_date.month < 1 ||
+      calendar_date.month > kMonthsPerYear) {
     return UINT32_MAX;
   }
-  return 12 * (calendar_date.year - 1970) + calendar_date.month - 1;
+  return kMonthsPerYear * (calendar_date.year - kEpochYearZero) +
+         calendar_date.month - 1;
 }
 
 CalendarDate MonthIndexToCalendarDate(uint32_t month_index) {
   CalendarDate calendar_date;
   calendar_date.day_of_month = 1;
-  calendar_date.month = (month_index % 12) + 1;
-  calendar_date.year = month_index / 12 + 1970;
+  calendar_date.month = (month_index % kMonthsPerYear) + 1;
+  calendar_date.year = month_index / kMonthsPerYear + kEpochYearZero;
   return calendar_date;
 }
 
@@ -200,5 +208,4 @@ std::chrono::system_clock::time_point FromUnixSeconds(int64_t seconds) {
       std::chrono::system_clock::duration(std::chrono::seconds(seconds)));
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

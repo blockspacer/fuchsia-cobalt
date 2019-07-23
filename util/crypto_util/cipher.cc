@@ -33,9 +33,7 @@
 #include "util/crypto_util/errors.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt {
-
-namespace crypto {
+namespace cobalt::crypto {
 
 namespace {
 // Note(pseudorandom) Curve constants are defined in
@@ -47,7 +45,7 @@ namespace {
 // The size in bytes of the representation of the shared key g^xy. This
 // is just the maximum number of bytes needed to store an element of the
 // underlying field.
-static const size_t ECDH_SHARED_KEY_SIZE = 256 / 8;
+constexpr size_t ECDH_SHARED_KEY_SIZE = 256 / 8;
 
 const EVP_AEAD* GetAEAD() {
   // Note(rudominer) The constants KEY_SIZE and NONCE_SIZE are set based
@@ -58,7 +56,7 @@ const EVP_AEAD* GetAEAD() {
 
 // For hybrid mode, we can fix the nonce to all zeroes without losing
 // security. See: https://goto.google.com/aes-gcm-zero-nonce-security
-const byte kAllZeroNonce[SymmetricCipher::NONCE_SIZE] = {0x00};
+constexpr byte kAllZeroNonce[SymmetricCipher::NONCE_SIZE] = {0x00};
 
 // Serializes the public key in |eckey| into |buffer|. Returns true on success.
 bool SerializeECPublicKey(EC_KEY* eckey,
@@ -150,7 +148,7 @@ class CipherContext {
   bool SetKey(const byte key[SymmetricCipher::KEY_SIZE]) {
     EVP_AEAD_CTX_cleanup(&impl_);
     return EVP_AEAD_CTX_init(&impl_, GetAEAD(), key, SymmetricCipher::KEY_SIZE,
-                             EVP_AEAD_DEFAULT_TAG_LENGTH, NULL);
+                             EVP_AEAD_DEFAULT_TAG_LENGTH, nullptr);
   }
 
   EVP_AEAD_CTX* get() { return &impl_; }
@@ -178,7 +176,7 @@ class HybridCipherContext {
 
 SymmetricCipher::SymmetricCipher() : context_(new CipherContext()) {}
 
-SymmetricCipher::~SymmetricCipher() {}
+SymmetricCipher::~SymmetricCipher() = default;
 
 bool SymmetricCipher::set_key(const byte key[KEY_SIZE]) {
   return context_->SetKey(key);
@@ -186,12 +184,12 @@ bool SymmetricCipher::set_key(const byte key[KEY_SIZE]) {
 
 bool SymmetricCipher::Encrypt(const byte nonce[NONCE_SIZE], const byte* ptext,
                               size_t ptext_len, std::vector<byte>* ctext) {
-  int max_out_len = EVP_AEAD_max_overhead(GetAEAD()) + ptext_len;
+  size_t max_out_len = EVP_AEAD_max_overhead(GetAEAD()) + ptext_len;
   ctext->resize(max_out_len);
   size_t out_len;
   int rc =
       EVP_AEAD_CTX_seal(context_->get(), ctext->data(), &out_len, max_out_len,
-                        nonce, NONCE_SIZE, ptext, ptext_len, NULL, 0);
+                        nonce, NONCE_SIZE, ptext, ptext_len, nullptr, 0);
   ctext->resize(out_len);
   return rc;
 }
@@ -202,7 +200,7 @@ bool SymmetricCipher::Decrypt(const byte nonce[NONCE_SIZE], const byte* ctext,
   size_t out_len;
   int rc =
       EVP_AEAD_CTX_open(context_->get(), ptext->data(), &out_len, ptext->size(),
-                        nonce, NONCE_SIZE, ctext, ctext_len, NULL, 0);
+                        nonce, NONCE_SIZE, ctext, ctext_len, nullptr, 0);
   ptext->resize(out_len);
   return rc;
 }
@@ -265,7 +263,7 @@ bool HybridCipher::GenerateKeyPairPEM(std::string* public_key_pem_out,
 HybridCipher::HybridCipher()
     : context_(new HybridCipherContext()), symm_cipher_(new SymmetricCipher) {}
 
-HybridCipher::~HybridCipher() {}
+HybridCipher::~HybridCipher() = default;
 
 bool HybridCipher::set_public_key(const byte public_key[PUBLIC_KEY_SIZE]) {
   auto eckey = BuildECKeyPublic(public_key);
@@ -275,19 +273,14 @@ bool HybridCipher::set_public_key(const byte public_key[PUBLIC_KEY_SIZE]) {
 
   // Setup pkey with EC public key eckey
   context_->ResetKey();
-  if (!EVP_PKEY_set1_EC_KEY(context_->GetKey(), eckey.get())) {
-    return false;
-  }
-
-  // Success
-  return true;
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(), eckey.get());
 }
 
 bool HybridCipher::set_public_key_pem(const std::string& key_pem) {
   // Construct a memory BIO to wrap the string.
   std::unique_ptr<BIO, decltype(&::BIO_free)> mem_bio(
       BIO_new_mem_buf(key_pem.data(), key_pem.size()), ::BIO_free);
-  if (!mem_bio.get()) {
+  if (!mem_bio) {
     return false;
   }
 
@@ -295,19 +288,14 @@ bool HybridCipher::set_public_key_pem(const std::string& key_pem) {
   std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(
       PEM_read_bio_PUBKEY(mem_bio.get(), nullptr, nullptr, nullptr),
       ::EVP_PKEY_free);
-  if (!evpkey.get()) {
+  if (!evpkey) {
     return false;
   }
 
   context_->ResetKey();
 
-  if (!EVP_PKEY_set1_EC_KEY(context_->GetKey(),
-                            EVP_PKEY_get0_EC_KEY(evpkey.get()))) {
-    return false;
-  }
-
-  // Success
-  return true;
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(),
+                              EVP_PKEY_get0_EC_KEY(evpkey.get()));
 }
 
 bool HybridCipher::set_private_key(const byte private_key[PRIVATE_KEY_SIZE]) {
@@ -330,19 +318,14 @@ bool HybridCipher::set_private_key(const byte private_key[PRIVATE_KEY_SIZE]) {
 
   // Setup pkey with EC private key eckey
   context_->ResetKey();
-  if (!EVP_PKEY_set1_EC_KEY(context_->GetKey(), eckey.get())) {
-    return false;
-  }
-
-  // Success
-  return true;
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(), eckey.get());
 }
 
 bool HybridCipher::set_private_key_pem(const std::string& key_pem) {
   // Construct a memory BIO to wrap the string.
   std::unique_ptr<BIO, decltype(&::BIO_free)> mem_bio(
       BIO_new_mem_buf(key_pem.data(), key_pem.size()), ::BIO_free);
-  if (!mem_bio.get()) {
+  if (!mem_bio) {
     return false;
   }
 
@@ -350,18 +333,13 @@ bool HybridCipher::set_private_key_pem(const std::string& key_pem) {
   std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> evpkey(
       PEM_read_bio_PrivateKey(mem_bio.get(), nullptr, nullptr, nullptr),
       ::EVP_PKEY_free);
-  if (!evpkey.get()) {
+  if (!evpkey) {
     return false;
   }
 
   context_->ResetKey();
-  if (!EVP_PKEY_set1_EC_KEY(context_->GetKey(),
-                            EVP_PKEY_get0_EC_KEY(evpkey.get()))) {
-    return false;
-  }
-
-  // Success
-  return true;
+  return EVP_PKEY_set1_EC_KEY(context_->GetKey(),
+                              EVP_PKEY_get0_EC_KEY(evpkey.get()));
 }
 
 bool HybridCipher::Encrypt(const byte* ptext, size_t ptext_len,
@@ -499,6 +477,4 @@ bool HybridCipher::DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
   return true;
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto

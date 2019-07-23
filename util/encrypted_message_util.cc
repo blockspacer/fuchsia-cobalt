@@ -19,17 +19,16 @@
 #include "util/status.h"
 #include "util/status_codes.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::HybridCipher;
 
 namespace {
-const char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
-const char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
+constexpr char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
+constexpr char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
 
-Status StatusFromTinkStatus(::crypto::tink::util::Status tink_status) {
+Status StatusFromTinkStatus(const ::crypto::tink::util::Status& tink_status) {
   return Status(StatusCode(tink_status.error_code()),
                 tink_status.error_message());
 }
@@ -141,9 +140,9 @@ EncryptedMessageMaker::MakeForObservations(
 
 HybridTinkEncryptedMessageMaker::HybridTinkEncryptedMessageMaker(
     std::unique_ptr<::crypto::tink::HybridEncrypt> encrypter,
-    const std::string& context_info, uint32_t key_index)
+    std::string context_info, uint32_t key_index)
     : encrypter_(std::move(encrypter)),
-      context_info_(context_info),
+      context_info_(std::move(context_info)),
       key_index_(key_index) {}
 
 bool HybridTinkEncryptedMessageMaker::Encrypt(
@@ -224,11 +223,13 @@ bool MessageDecrypter::DecryptMessage(
   }
 
   std::vector<byte> ptext;
-  if (!cipher_->Decrypt((const byte*)encrypted_message.ciphertext().data(),
-                        encrypted_message.ciphertext().size(), &ptext)) {
+  if (!cipher_->Decrypt(
+          reinterpret_cast<const byte*>(encrypted_message.ciphertext().data()),
+          encrypted_message.ciphertext().size(), &ptext)) {
     return false;
   }
-  std::string serialized_observation((const char*)ptext.data(), ptext.size());
+  std::string serialized_observation(
+      reinterpret_cast<const char*>(ptext.data()), ptext.size());
   if (!recovered_message->ParseFromString(serialized_observation)) {
     return false;
   }
@@ -236,5 +237,4 @@ bool MessageDecrypter::DecryptMessage(
   return true;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

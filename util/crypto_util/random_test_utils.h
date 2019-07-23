@@ -26,9 +26,9 @@ namespace crypto {
 // to use a deterministic PRNG.
 class DeterministicRandom : public Random {
  public:
-  DeterministicRandom() : num_calls_(0) {}
+  DeterministicRandom() = default;
 
-  virtual ~DeterministicRandom() {}
+  ~DeterministicRandom() override = default;
 
   // Implementes a deterministic PRNG by using chacha20 with a zero key and a
   // counter for the nonce. This code was copied from
@@ -39,7 +39,7 @@ class DeterministicRandom : public Random {
   // randomness.
   void RandomBytes(byte *buf, std::size_t num) override {
     static const uint8_t kZeroKey[32] = {};
-    uint8_t nonce[12];
+    uint8_t nonce[12];  // NOLINT readability-magic-numbers
     memset(nonce, 0, sizeof(nonce));
     memcpy(nonce, &num_calls_, sizeof(num_calls_));
 
@@ -49,7 +49,7 @@ class DeterministicRandom : public Random {
   }
 
  private:
-  uint64_t num_calls_;
+  uint64_t num_calls_ = 0;
 };
 
 }  // namespace crypto

@@ -18,15 +18,16 @@
 
 #include <string>
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
+
+namespace {
+constexpr size_t kOpenSSLErrorLen = 256;
+}
 
 std::string GetLastErrorMessage() {
-  char buf[256];
-  ERR_error_string_n(ERR_peek_last_error(), &buf[0], 256);
+  char buf[kOpenSSLErrorLen];
+  ERR_error_string_n(ERR_peek_last_error(), &buf[0], kOpenSSLErrorLen);
   return std::string(buf);
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto

@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "util/crypto_util/random.h"
+
 #include <openssl/rand.h>
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
-#include "util/crypto_util/random.h"
+namespace cobalt::crypto {
 
-namespace cobalt {
-namespace crypto {
+namespace {
+constexpr size_t kMaxRandomBits = 256;
+constexpr size_t kBitsPerByte = 8;
+constexpr size_t kBytesPerU32 = 4;
+constexpr size_t kBytesPerU64 = 8;
+}  // namespace
 
 void Random::RandomBytes(byte* buf, std::size_t num) { RAND_bytes(buf, num); }
 
@@ -30,13 +37,13 @@ void Random::RandomString(std::string* buf) {
 
 uint32_t Random::RandomUint32() {
   uint32_t x;
-  RandomBytes(reinterpret_cast<byte*>(&x), 4);
+  RandomBytes(reinterpret_cast<byte*>(&x), kBytesPerU32);
   return x;
 }
 
 uint64_t Random::RandomUint64() {
   uint64_t x;
-  RandomBytes(reinterpret_cast<byte*>(&x), 8);
+  RandomBytes(reinterpret_cast<byte*>(&x), kBytesPerU64);
   return x;
 }
 
@@ -44,7 +51,7 @@ bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
   // For every byte, returned by this function we need to allocate 32 bytes.
   // In order to prevent excessive allocations, this function will only
   // return up to 256 bytes.
-  if (size > 256) {
+  if (size > kMaxRandomBits) {
     return false;
   }
 
@@ -61,12 +68,12 @@ bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
       round(static_cast<double>(p) * (static_cast<double>(UINT32_MAX) + 1));
 
   // For every bit in the output, we need a 32 bit number.
-  auto random_bytes = std::make_unique<uint32_t[]>(8 * size);
-  RandomBytes(reinterpret_cast<byte*>(random_bytes.get()),
-              8 * size * sizeof(uint32_t));
+  std::vector<uint32_t> random_bytes(kBitsPerByte * size);
+  RandomBytes(reinterpret_cast<byte*>(random_bytes.data()),
+              kBitsPerByte * size * sizeof(uint32_t));
   for (std::size_t byte_index = 0; byte_index < size; byte_index++) {
     buffer[byte_index] = 0;
-    for (int i = 0; i < 8; i++) {
+    for (size_t i = 0; i < kBitsPerByte; i++) {
       uint8_t random_bit = (random_bytes[byte_index + i] < threshold);
       buffer[byte_index] |= random_bit << i;
     }
@@ -75,6 +82,4 @@ bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
   return true;
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto

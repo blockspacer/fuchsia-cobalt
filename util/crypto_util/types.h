@@ -19,7 +19,7 @@ namespace cobalt {
 
 namespace crypto {
 
-typedef unsigned char byte;
+using byte = unsigned char;
 
 }  // namespace crypto
 

@@ -29,7 +29,7 @@ namespace crypto {
 // randomness.
 class Random {
  public:
-  virtual ~Random() {}
+  virtual ~Random() = default;
 
   // Writes |num| bytes of random data from a uniform distribution to buf.
   // The caller must ensure that |buf| has enough space.

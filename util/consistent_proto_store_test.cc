@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "util/consistent_proto_store.h"
+
 #include <fstream>
 
-#include "util/consistent_proto_store.h"
+#include "./gtest.h"
 #include "util/consistent_proto_store_test.pb.h"
 #include "util/posix_file_system.h"
-
-#include "./gtest.h"
 
 namespace cobalt {
 namespace util {
 
 int path_suffix = 0;
-const std::string &test_dir_base = "/tmp/cps_test";
+constexpr char test_dir_base[] = "/tmp/cps_test";
 
 const Status fake_fail(StatusCode::INTERNAL, "BAD", "BAD");
 
