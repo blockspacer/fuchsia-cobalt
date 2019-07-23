@@ -20,8 +20,7 @@ class PosixFileSystem : public FileSystem {
   statusor::StatusOr<std::vector<std::string>> ListFiles(
       const std::string &directory) override;
   bool Delete(const std::string &file) override;
-  statusor::StatusOr<size_t> FileSize(
-      const std::string &file) override;
+  statusor::StatusOr<size_t> FileSize(const std::string &file) override;
   bool FileExists(const std::string &file) override;
   bool Rename(const std::string &from, const std::string &to) override;
 };

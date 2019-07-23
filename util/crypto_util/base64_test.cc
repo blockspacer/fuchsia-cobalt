@@ -63,4 +63,3 @@ TEST(Base64Test, RegexEncode) {
 }  // namespace crypto
 
 }  // namespace cobalt
-

@@ -17,7 +17,7 @@ uint32_t IntegerBucketConfig::BucketIndex(int64_t val) const {
 
   // TODO(azani): Maybe switch to binary search?
   for (uint32_t i = 1; i < floors_.size(); i++) {
-    if (val >= floors_[i-1] && val < floors_[i]) {
+    if (val >= floors_[i - 1] && val < floors_[i]) {
       return i;
     }
   }
@@ -59,7 +59,7 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateLinear(
   }
 
   std::vector<int64_t> floors(num_buckets + 1);
-  for (uint32_t i = 0; i < num_buckets+1; i++) {
+  for (uint32_t i = 0; i < num_buckets + 1; i++) {
     floors[i] = floor + i * step_size;
   }
 
@@ -70,8 +70,7 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateExponential(
     int64_t floor, uint32_t num_buckets, uint32_t initial_step,
     uint32_t step_multiplier) {
   if (num_buckets == 0) {
-    LOG(ERROR)
-        << "ExponentialIntegerBucket with 0 buckets.";
+    LOG(ERROR) << "ExponentialIntegerBucket with 0 buckets.";
     return std::unique_ptr<IntegerBucketConfig>();
   }
 
@@ -89,7 +88,7 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateExponential(
 
   floors[0] = floor;
   uint32_t offset = initial_step;
-  for (uint32_t i = 1; i < num_buckets+1; i++) {
+  for (uint32_t i = 1; i < num_buckets + 1; i++) {
     floors[i] = floor + offset;
     offset *= step_multiplier;
   }

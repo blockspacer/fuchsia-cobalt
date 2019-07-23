@@ -41,7 +41,7 @@ uint32_t CalendarDateToDayIndexAltImpl(const CalendarDate& calendar_date) {
   time_info.tm_mon = calendar_date.month - 1;
   time_info.tm_year = calendar_date.year - 1900;
   time_t unix_time = timegm(&time_info);
-  return unix_time/kNumUnixSecondsPerDay;
+  return unix_time / kNumUnixSecondsPerDay;
 }
 
 TEST(DatetimeUtilTest, CalendarDateToDayIndex) {
@@ -76,43 +76,43 @@ TEST(DatetimeUtilTest, CalendarDateToDayIndex) {
   calendar_date.day_of_month = 1;
   calendar_date.month = 1;
   calendar_date.year = 1972;
-  EXPECT_EQ(365*2u, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // February 1, 1972
   calendar_date.day_of_month = 1;
   calendar_date.month = 2;
   calendar_date.year = 1972;
-  EXPECT_EQ(365*2u + 31, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u + 31, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u + 31, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u + 31, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // February 28, 1972
   calendar_date.day_of_month = 28;
   calendar_date.month = 2;
   calendar_date.year = 1972;
-  EXPECT_EQ(365*2u + 31 + 27, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u + 31 + 27, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 27, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 27, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // February 29, 1972
   calendar_date.day_of_month = 29;
   calendar_date.month = 2;
   calendar_date.year = 1972;
-  EXPECT_EQ(365*2u + 31 + 28, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u + 31 + 28, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 28, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 28, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // March 1, 1972
   calendar_date.day_of_month = 1;
   calendar_date.month = 3;
   calendar_date.year = 1972;
-  EXPECT_EQ(365*2u + 31 + 29, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u + 31 + 29, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 29, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u + 31 + 29, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // January 1, 1973
   calendar_date.day_of_month = 1;
   calendar_date.month = 1;
   calendar_date.year = 1973;
-  EXPECT_EQ(365*2u + 366, CalendarDateToDayIndex(calendar_date));
-  EXPECT_EQ(365*2u + 366, CalendarDateToDayIndexAltImpl(calendar_date));
+  EXPECT_EQ(365 * 2u + 366, CalendarDateToDayIndex(calendar_date));
+  EXPECT_EQ(365 * 2u + 366, CalendarDateToDayIndexAltImpl(calendar_date));
 
   // March 1, 2000 (2000 years after March 1, year 0)
   calendar_date.day_of_month = 1;
@@ -131,14 +131,13 @@ TEST(DatetimeUtilTest, CalendarDateToDayIndex) {
 }
 
 void doDayIndexToCalendarDateTest(uint32_t day_index, uint32_t expected_month,
-    uint32_t expected_day_of_month, uint32_t expected_year) {
+                                  uint32_t expected_day_of_month,
+                                  uint32_t expected_year) {
   auto calendar_date = DayIndexToCalendarDate(day_index);
   EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month)
       << "day_index=" << day_index;
-  EXPECT_EQ(expected_month, calendar_date.month)
-      << "day_index=" << day_index;
-  EXPECT_EQ(expected_year, calendar_date.year)
-      << "day_index=" << day_index;
+  EXPECT_EQ(expected_month, calendar_date.month) << "day_index=" << day_index;
+  EXPECT_EQ(expected_year, calendar_date.year) << "day_index=" << day_index;
 }
 
 TEST(DatetimeUtilTest, DayIndexToCalendarDate) {
@@ -157,22 +156,22 @@ TEST(DatetimeUtilTest, DayIndexToCalendarDate) {
   // 1972 Was a leap year...
 
   // January 1, 1972
-  doDayIndexToCalendarDateTest(365*2, 1, 1, 1972);
+  doDayIndexToCalendarDateTest(365 * 2, 1, 1, 1972);
 
   // February 1, 1972
-  doDayIndexToCalendarDateTest(365*2 + 31, 2, 1, 1972);
+  doDayIndexToCalendarDateTest(365 * 2 + 31, 2, 1, 1972);
 
   // February 28, 1972
-  doDayIndexToCalendarDateTest(365*2 + 31 + 27, 2, 28, 1972);
+  doDayIndexToCalendarDateTest(365 * 2 + 31 + 27, 2, 28, 1972);
 
   // February 29, 1972
-  doDayIndexToCalendarDateTest(365*2 + 31 + 28, 2, 29, 1972);
+  doDayIndexToCalendarDateTest(365 * 2 + 31 + 28, 2, 29, 1972);
 
   // March 1, 1972
-  doDayIndexToCalendarDateTest(365*2 + 31 + 29, 3, 1, 1972);
+  doDayIndexToCalendarDateTest(365 * 2 + 31 + 29, 3, 1, 1972);
 
   // January 1, 1973
-  doDayIndexToCalendarDateTest(365*2 + 366, 1, 1, 1973);
+  doDayIndexToCalendarDateTest(365 * 2 + 366, 1, 1, 1973);
 
   // March 1, 2000
   doDayIndexToCalendarDateTest(11017, 3, 1, 2000);
@@ -249,14 +248,13 @@ TEST(DatetimeUtilTest, CalendarDateToWeekIndex) {
 }
 
 void doWeekIndexToCalendarDateTest(uint32_t week_index, uint32_t expected_month,
-    uint32_t expected_day_of_month, uint32_t expected_year) {
+                                   uint32_t expected_day_of_month,
+                                   uint32_t expected_year) {
   auto calendar_date = WeekIndexToCalendarDate(week_index);
   EXPECT_EQ(expected_day_of_month, calendar_date.day_of_month)
       << "week_index=" << week_index;
-  EXPECT_EQ(expected_month, calendar_date.month)
-      << "week_index=" << week_index;
-  EXPECT_EQ(expected_year, calendar_date.year)
-      << "week_index=" << week_index;
+  EXPECT_EQ(expected_month, calendar_date.month) << "week_index=" << week_index;
+  EXPECT_EQ(expected_year, calendar_date.year) << "week_index=" << week_index;
 }
 
 TEST(DatetimeUtilTest, WeekIndexToCalendarDate) {
@@ -334,14 +332,13 @@ TEST(DatetimeUtilTest, DayIndexToMonthIndex) {
 }
 
 void doMonthIndexToCalendarDateTest(uint32_t month_index,
-    uint32_t expected_month,  uint32_t expected_year) {
+                                    uint32_t expected_month,
+                                    uint32_t expected_year) {
   auto calendar_date = MonthIndexToCalendarDate(month_index);
-  EXPECT_EQ(1u, calendar_date.day_of_month)
-      << "month_index=" << month_index;
+  EXPECT_EQ(1u, calendar_date.day_of_month) << "month_index=" << month_index;
   EXPECT_EQ(expected_month, calendar_date.month)
       << "month_index=" << month_index;
-  EXPECT_EQ(expected_year, calendar_date.year)
-      << "month_index=" << month_index;
+  EXPECT_EQ(expected_year, calendar_date.year) << "month_index=" << month_index;
 }
 
 TEST(DatetimeUtilTest, MonthIndexToCalendarDate) {
@@ -383,11 +380,10 @@ TEST(DatetimeUtilTest, TimeToDayIndexTest) {
   // seconds west of UTC. This value is not adjusted for daylight saving.
   // See https://www.gnu.org/software/libc/manual/html_node/ \
   //                              Time-Zone-Functions.html#Time-Zone-Functions
-  if (timezone/3600 == 8) {
-     EXPECT_EQ(kPacificDayIndex, TimeToDayIndex(kSomeTimestamp, Metric::LOCAL));
+  if (timezone / 3600 == 8) {
+    EXPECT_EQ(kPacificDayIndex, TimeToDayIndex(kSomeTimestamp, Metric::LOCAL));
   }
 }
 
 }  // namespace util
 }  // namespace cobalt
-

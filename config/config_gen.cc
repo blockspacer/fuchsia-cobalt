@@ -23,6 +23,7 @@
 // looks like.
 
 #include <google/protobuf/text_format.h>
+
 #include <iostream>
 
 #include "config/encodings.pb.h"
@@ -35,7 +36,7 @@ using cobalt::RegisteredEncodings;
 using cobalt::RegisteredMetrics;
 using google::protobuf::TextFormat;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   std::string out;
   RegisteredEncodings registered_encodings;
   RegisteredMetrics registered_metrics;

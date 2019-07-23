@@ -34,7 +34,7 @@ message OtherNestedTestMessage {
 
 message TestMessage {
   uint32 uint32_v = 1;
-  float  float_v = 2;
+  float float_v = 2;
   string string_v = 3;
   bool bool_v = 4;
   TestEnum enum_v = 5;

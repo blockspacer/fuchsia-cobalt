@@ -6,6 +6,7 @@
 #define COBALT_UTIL_PROTO_UTIL_H_
 
 #include <google/protobuf/message_lite.h>
+
 #include <string>
 
 #include "./logging.h"

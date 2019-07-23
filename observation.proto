@@ -114,7 +114,6 @@ message RapporObservation {
   bytes data = 2;
 }
 
-
 // Observations of this type contain an encoding of an element of an
 // an indexed set. The encoding uses Basic RAPPOR to provide local differential
 // privacy.

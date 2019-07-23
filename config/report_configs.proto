@@ -136,8 +136,7 @@ message ReportExportConfig {
 }
 
 // A specification of how to export a report as a CSV file.
-message CSVSerializationConfig {
-}
+message CSVSerializationConfig {}
 
 // A specification of a location within Google Cloud Storage where a report
 // should be exported.
