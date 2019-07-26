@@ -225,7 +225,6 @@ void RapporAnalyzerTest::AssessUtility(const std::vector<CandidateResult>& resul
   LOG(ERROR) << "Identified " << how_many_nonzeros << " nonzero estimates.";
   LOG(ERROR) << "The measure of false positives for identified top n hitters:";
   const std::vector<int> top_hitters_analyzed = {10, 20, 50, 100, 200, 300, 500, 1000, 2000, 5000};
-  int num_hitters = 0;
   for (auto num_hitters : top_hitters_analyzed) {
     if (num_hitters > num_candidates) {
       break;

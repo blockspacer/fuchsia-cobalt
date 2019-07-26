@@ -6,17 +6,23 @@ source_set("curl_http_client") {
   sources = [
     "curl_http_client.cc",
   ]
+
   deps = [
     ":curl_handle",
     "//third_party/curl:libcurl",
   ]
+
+  configs += ["$cobalt_root:cobalt_config"]
 }
 
 source_set("curl_handle") {
   sources = [
     "curl_handle.cc",
   ]
+
   deps = [
     "//third_party/curl:libcurl",
   ]
+
+  configs += ["$cobalt_root:cobalt_config"]
 }

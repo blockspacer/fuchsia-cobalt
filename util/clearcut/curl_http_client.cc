@@ -9,6 +9,9 @@
 
 #include "util/clearcut/curl_handle.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-compat"
+
 namespace cobalt {
 namespace util {
 namespace clearcut {
@@ -47,3 +50,5 @@ std::future<StatusOr<HTTPResponse>> CurlHTTPClient::Post(
 }  // namespace clearcut
 }  // namespace util
 }  // namespace cobalt
+
+#pragma clang diagnostic pop

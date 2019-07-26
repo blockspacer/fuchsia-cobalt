@@ -14,7 +14,10 @@
 #include "google/protobuf/message_lite.h"
 #include "third_party/tink/cc/hybrid/hybrid_config.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-compat"
 #include "third_party/tink/cc/keyset_handle.h"
+#pragma clang diagnostic pop
 #include "util/crypto_util/cipher.h"
 #include "util/status.h"
 #include "util/status_codes.h"

@@ -96,3 +96,16 @@ config("executable_ldconfig") {
     "-Wl,-rpath-link=",
   ]
 }
+
+config("default_warnings") {
+  cflags = [
+    "-Wall",
+    "-Wextra",
+    "-Wnewline-eof",
+    "-Wno-unused-parameter",
+  ]
+}
+
+config("c++11-compat") {
+  cflags_cc = [ "-Wc++11-compat" ]
+}

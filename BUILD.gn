@@ -22,6 +22,8 @@ config("cobalt_config") {
       "//zircon/system/ulib/syslog/include",
     ]
   }
+
+  cflags = [ "-Werror" ]
 }
 
 proto_library("cobalt_proto") {
