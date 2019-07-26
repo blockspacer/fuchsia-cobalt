@@ -152,8 +152,7 @@ class EnvelopeMakerTest : public ::testing::Test {
     for (int i = first; i < limit; i++) {
       std::ostringstream stream;
       stream << "value " << i;
-      size_t expected_observation_num_bytes =
-          kNoOpEncodingByteOverhead + (i >= 10 ? 8 : 7);  // NOLINT
+      size_t expected_observation_num_bytes = kNoOpEncodingByteOverhead + (i >= 10 ? 8 : 7);
       expected_this_batch_size++;
       AddStringObservation(stream.str(), metric_id, kNoOpEncodingId, expected_num_batches,
                            expected_this_batch_index, expected_this_batch_size,
@@ -274,15 +273,15 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   int expected_num_batches = 1;
   size_t expected_this_batch_index = 0;
   int expected_this_batch_size = 0;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches,  // NOLINT
-                     expected_this_batch_index, expected_this_batch_size);
+  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
+                     expected_this_batch_size);
 
   // Add metric 2 batch to EnvelopeMaker 1 with strings 0..9
   metric_id = kSecondMetricId;
   expected_num_batches = 2;
   expected_this_batch_index = 1;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches,  // NOLINT
-                     expected_this_batch_index, expected_this_batch_size);
+  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
+                     expected_this_batch_size);
 
   // Take EnvelopeMaker 1 and create EnvelopeMaker 2.
   auto envelope_maker1 = ResetEnvelopeMaker();
@@ -291,15 +290,16 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   metric_id = kSecondMetricId;
   expected_num_batches = 1;
   expected_this_batch_index = 0;
-  AddManyStringsNoOp(10, 20, metric_id, expected_num_batches,  // NOLINT
-                     expected_this_batch_index, expected_this_batch_size);
+  // NOLINTNEXTLINE readability-magic-numbers
+  AddManyStringsNoOp(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                     expected_this_batch_size);
 
   // Add metric 3 to EnvelopeMaker 2 with strings 0..9
   metric_id = kThirdMetricId;
   expected_num_batches = 2;
   expected_this_batch_index = 1;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches,  // NOLINT
-                     expected_this_batch_index, expected_this_batch_size);
+  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
+                     expected_this_batch_size);
 
   // Take EnvelopeMaker 2,
   auto envelope_maker2 = ResetEnvelopeMaker();
@@ -321,7 +321,8 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
     // into batch 1 of EnvelopeMaker 1.
     auto& batch = envelope_maker1->GetEnvelope().batch(index);
     EXPECT_EQ(index + 1, batch.meta_data().metric_id());
-    auto expected_num_observations = (index == 1 ? 20 : 10);  // NOLINT
+    // NOLINTNEXTLINE readability-magic-numbers
+    auto expected_num_observations = (index == 1 ? 20 : 10);
     ASSERT_EQ(expected_num_observations, batch.encrypted_observation_size());
 
     // Check each one of the observations.
@@ -352,7 +353,7 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
       // Ennvelope 2.
       std::ostringstream stream;
       int expected_value_index = i;
-      if (index == 1 && i >= 10) {      // NOLINT
+      if (index == 1 && i >= 10) {
         expected_value_index = 29 - i;  // NOLINT
       }
       stream << "value " << expected_value_index;
@@ -369,9 +370,11 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   for (int metric_id = 1; metric_id <= 3; metric_id++) {
     expected_num_batches = 3;
     expected_this_batch_index = metric_id - 1;
-    expected_this_batch_size = (metric_id == 2 ? 20 : 10);       // NOLINT
-    AddManyStringsNoOp(10, 20, metric_id, expected_num_batches,  // NOLINT
-                       expected_this_batch_index, expected_this_batch_size);
+    // NOLINTNEXTLINE readability-magic-numbers
+    expected_this_batch_size = (metric_id == 2 ? 20 : 10);
+    // NOLINTNEXTLINE readability-magic-numbers
+    AddManyStringsNoOp(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                       expected_this_batch_size);
   }
 }
 

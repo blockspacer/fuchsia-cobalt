@@ -411,7 +411,7 @@ TEST(EncoderEncoderTest, EncodeIndex) {
 
   // Index 5 should yield kInalidArgs.
   expect_ok = false;
-  index = 5;  // NOLINT
+  index = 5;
   DoEncodeIndexTest(expect_ok, index, kIndexPartMetricId, kBasicRappor5CategoriesEncodingId,
                     expect_utc, ObservationPart::kBasicRappor);
 
@@ -435,7 +435,6 @@ TEST(EncoderEncoderTest, EncodeIndex) {
                     expect_utc, ObservationPart::kBasicRappor);
 
   // Now we switch to metric 7 which has one double part. That should fail.
-  // NOLINTNEXTLINE
   DoEncodeIndexTest(expect_ok, index, 7, kBasicRappor5CategoriesEncodingId, expect_utc,
                     ObservationPart::kBasicRappor);
 

@@ -94,12 +94,10 @@ TEST(UnpackEventCodes, ReturnsZeroesOnUnknownVersion) {
 TEST(BackAndForth, PackUnpackIsStable) {
   // TODO(zmbush): Look into clearing up this test.
   std::vector<std::vector<uint32_t>> tests = {
-      {0, 0, 0, 0, 0},          {100, 0, 0, 0, 0},          // NOLINT
-      {100, 200, 0, 0, 0},      {100, 200, 300, 0, 0},      // NOLINT
-      {100, 200, 300, 400, 0},  {100, 200, 300, 400, 500},  // NOLINT
-      {1023, 0, 0, 0, 0},       {1024, 0, 0, 0},            // NOLINT
-      {1024, 3005, 0, 0},       {1024, 3005, 4010, 0},      // NOLINT
-      {1024, 3005, 4010, 30000}};                           // NOLINT
+      {0, 0, 0, 0, 0},        {100, 0, 0, 0, 0},        {100, 200, 0, 0, 0},
+      {100, 200, 300, 0, 0},  {100, 200, 300, 400, 0},  {100, 200, 300, 400, 500},
+      {1024 - 1, 0, 0, 0, 0}, {1024, 0, 0, 0},          {1024, 3005, 0, 0},
+      {1024, 3005, 4010, 0},  {1024, 3005, 4010, 30000}};
 
   for (const auto &test : tests) {
     ASSERT_EQ(UnpackEventCodes(PackEventCodes(test)), test);

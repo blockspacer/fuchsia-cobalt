@@ -176,12 +176,12 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   }
 
   // Check that kStoreFull is returned repeatedly.
-  for (int i = 0; i < 100; i++) {  // NOLINT
+  for (int i = 0; i < 100; i++) {
     EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
   }
 
   // Now let's empty the store
-  for (int i = 0; i < 100; i++) {  // NOLINT
+  for (int i = 0; i < 100; i++) {
     if (store_->TakeNextEnvelopeHolder() == nullptr) {
       break;
     }
@@ -217,7 +217,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   }
 
   // Check that kStoreFull is returned repeatedly.
-  for (int i = 0; i < 100; i++) {  // NOLINT
+  for (int i = 0; i < 100; i++) {
     EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
   }
 }
@@ -284,7 +284,7 @@ TEST_F(FileObservationStoreTest, StressTest) {
   std::random_device rd;
   for (int i = 0; i < 5000; i++) {  // NOLINT
     // Between 5-15 observations.
-    auto observations = (rd() % 10) + 5;  // NOLINT
+    auto observations = (rd() % 10) + 5;
     // Between 50-100 bytes per observation.
     auto size = (rd() % 50) + 50;  // NOLINT
     for (auto j = 0u; j < observations; j++) {

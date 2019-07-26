@@ -129,7 +129,7 @@ TEST(FieldElementTest, TestArithmetic) {
   // Test that 2 + 3 = 5 with +=
   FieldElement x = FromInt(2);
   FieldElement y = FromInt(3);
-  FieldElement z = FromInt(5);  // NOLINT readability-magic-number
+  FieldElement z = FromInt(5);
   x += y;
   EXPECT_EQ(z, x);
 
@@ -147,7 +147,7 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(FromInt(3), FromInt(5) - FromInt(2));
 
   // Test that 5 - 2 = 3 using -=.
-  x = FromInt(5);  // NOLINT readability-magic-numbers
+  x = FromInt(5);
   y = FromInt(2);
   x -= y;
   EXPECT_EQ(FromInt(3), x);
@@ -173,7 +173,7 @@ TEST(FieldElementTest, TestArithmetic) {
 
   // Test that 3 * 5 = 15 using *=
   x = FromInt(3);
-  x *= FromInt(5);  // NOLINT readability-magic-numbers
+  x *= FromInt(5);
   EXPECT_EQ(FromInt(15), x);
 
   // Test that -1 * 2 = -2.
@@ -190,15 +190,15 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(x, x / x);
 
   // Check that 5/5 = 1
-  x = FromInt(5);  // NOLINT readability-magic-numbers
+  x = FromInt(5);
   EXPECT_EQ(FieldElement(true), x / x);
 
   // Check that 10/5 = 2
-  y = FromInt(10);  // NOLINT readability-magic-numbers
+  y = FromInt(10);
   EXPECT_EQ(FromInt(2), y / x);
 
   // Check that 10/5 = 2 using /=
-  y = FromInt(10);  // NOLINT readability-magic-numbers
+  y = FromInt(10);
   y /= x;
   EXPECT_EQ(FromInt(2), y);
 
@@ -224,7 +224,7 @@ TEST(FieldElementTest, TestArithmetic) {
   // Check that 1999*1000/(1000 - 999) + 2001*999/(999 - 1000) = 1.
   FieldElement x0 = FromInt(999);   // NOLINT readability-magic-numbers
   FieldElement y0 = FromInt(1999);  // NOLINT readability-magic-numbers
-  FieldElement x1 = FromInt(1000);  // NOLINT readability-magic-numbers
+  FieldElement x1 = FromInt(1000);
   FieldElement y1 = FromInt(2001);  // NOLINT readability-magic-numbers
   EXPECT_EQ(FieldElement(true), y0 * x1 / (x1 - x0) + y1 * x0 / (x0 - x1));
 }

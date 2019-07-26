@@ -282,7 +282,7 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
 
   // We can add 10 more Observations bringing the total to 26,
   // without the ObservationStore being full.
-  for (int i = 0; i < 10; i++) {  // NOLINT readability-magic-numbers
+  for (int i = 0; i < 10; i++) {
     EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
   }
   shipping_manager_->WaitUntilWorkerWaiting(kMaxSeconds);

@@ -53,23 +53,23 @@ TEST(RapporConfigValidatorTest, TestConstructor) {
   config.set_num_bloom_bits(64);     // NOLINT
   config.set_num_hashes(5);          // NOLINT
 
-  config.set_num_cohorts(100);  // NOLINT
+  config.set_num_cohorts(100);
   auto validator = RapporConfigValidator(config);
   EXPECT_EQ(128u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(200);  // NOLINT
+  config.set_num_cohorts(200);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(256u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(300);  // NOLINT
+  config.set_num_cohorts(300);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(400);  // NOLINT
+  config.set_num_cohorts(400);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(500);  // NOLINT
+  config.set_num_cohorts(500);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(512u, validator.num_cohorts_2_power());
 
@@ -77,11 +77,11 @@ TEST(RapporConfigValidatorTest, TestConstructor) {
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(1023);  // NOLINT
+  config.set_num_cohorts(1024 - 1);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 
-  config.set_num_cohorts(1024);  // NOLINT
+  config.set_num_cohorts(1024);
   validator = RapporConfigValidator(config);
   EXPECT_EQ(1024u, validator.num_cohorts_2_power());
 }
@@ -117,7 +117,7 @@ TEST(RapporEncoderTest, StringRapporConfigValidation) {
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_bloom_bits, still Invalid
-  config.set_num_bloom_bits(8);  // NOLINT
+  config.set_num_bloom_bits(8);
   TEST_RAPPOR_CONFIG(config, kInvalidConfig);
 
   // Set num_hashes, still Invalid

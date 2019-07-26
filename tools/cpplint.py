@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import sys
+import re
 
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
@@ -34,6 +35,9 @@ CLANG_TIDY_BLACKLIST = [
     os.path.join(SRC_ROOT_DIR, 'logger', 'logger_test.cc'),
 ]
 
+TEST_FILE_REGEX = re.compile('.*_(unit)?tests?.cc$')
+TEST_FILE_CLANG_TIDY_CHECKS = ['-readability-magic-numbers']
+
 
 def clang_tidy_blacklisted(path):
   for blacklist in CLANG_TIDY_BLACKLIST:
@@ -50,6 +54,7 @@ def main(only_directories=[]):
   status = 0
 
   clang_tidy_files = []
+  clang_tidy_test_files = []
 
   only_directories = [os.path.join(SRC_ROOT_DIR, d) for d in only_directories]
 
@@ -64,7 +69,10 @@ def main(only_directories=[]):
           continue
 
         if use_clang_tidy(full_path):
-          clang_tidy_files.append(full_path)
+          if TEST_FILE_REGEX.match(full_path):
+            clang_tidy_test_files.append(full_path)
+          else:
+            clang_tidy_files.append(full_path)
           continue
 
         print('%s --root %s %s' % (CPP_LINT, SRC_ROOT_DIR, full_path))
@@ -88,13 +96,23 @@ def main(only_directories=[]):
     for d in dirs_to_skip:
       dirs.remove(d)
 
+  clang_tidy_command = [CLANG_TIDY, '-quiet', '-p', OUT_DIR]
   print('Running clang-tidy on %d source files' % len(clang_tidy_files))
   try:
-    subprocess.check_call([CLANG_TIDY, '-quiet', '-p', OUT_DIR] +
-                          clang_tidy_files)
-    return status
+    subprocess.check_call(clang_tidy_command + clang_tidy_files)
   except:
-    return status + 1
+    status += 1
+
+  print('Running clang-tidy on %d test files' % len(clang_tidy_test_files))
+  try:
+    subprocess.check_call(
+        clang_tidy_command +
+        ['-checks=%s' % ','.join(TEST_FILE_CLANG_TIDY_CHECKS)] +
+        clang_tidy_test_files)
+  except:
+    status += 1
+
+  return status
 
 
 if __name__ == '__main__':
