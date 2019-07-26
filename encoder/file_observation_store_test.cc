@@ -10,32 +10,23 @@
 #include "./gtest.h"
 #include "./logging.h"
 #include "encoder/client_secret.h"
-#include "encoder/encoder.h"
-#include "encoder/fake_system_data.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "util/posix_file_system.h"
-// Generated from file_observation_store_test_config.yaml
-#include "encoder/file_observation_store_test_config.h"
 
 namespace cobalt::encoder {
 
-using config::ClientConfig;
 using ::testing::MatchesRegex;
-using util::EncryptedMessageMaker;
 using util::PosixFileSystem;
 
 namespace {
 
-// These values must match the values specified in the invocation of
-// generate_test_config_h() in CMakeLists.txt. and in the invocation of
-// cobalt_config_header("generate_shipping_manager_test_config") in BUILD.gn.
-constexpr uint32_t kCustomerId = 1;
-constexpr uint32_t kProjectId = 1;
+const uint32_t kCustomerId = 11;
+const uint32_t kProjectId = 12;
+const uint32_t kMetricId = 13;
 
-constexpr size_t kNoOpEncodingByteOverhead = 34;
-constexpr size_t kMaxBytesPerObservation = 100;
-constexpr size_t kMaxBytesPerEnvelope = 400;
-constexpr size_t kMaxBytesTotal = 10000;
+const size_t kMaxBytesPerObservation = 100;
+const size_t kMaxBytesPerEnvelope = 400;
+const size_t kMaxBytesTotal = 10000;
 
 constexpr char test_dir_base[] = "/tmp/fos_test";
 
@@ -48,29 +39,9 @@ std::string GetTestDirName(const std::string &base) {
   return fname.str();
 }
 
-// Returns a ProjectContext obtained by parsing the configuration specified
-// in shipping_manager_test_config.yaml
-std::shared_ptr<ProjectContext> GetTestProject() {
-  // Parse the base64-encoded, serialized CobaltRegistry in
-  // shipping_manager_test_config.h. This is generated from
-  // shipping_manager_test_config.yaml. Edit that yaml file to make changes. The
-  // variable name below, |kCobaltRegistryBase64|, must match what is
-  // specified in the build files.
-  std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltRegistryBase64(kCobaltRegistryBase64);
-  EXPECT_NE(nullptr, client_config);
-
-  return std::shared_ptr<ProjectContext>(new ProjectContext(
-      kCustomerId, kProjectId, std::shared_ptr<ClientConfig>(client_config.release())));
-}
-
 class FileObservationStoreTest : public ::testing::Test {
  public:
-  FileObservationStoreTest()
-      : encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
-        test_dir_name_(GetTestDirName(test_dir_base)),
-        project_(GetTestProject()),
-        encoder_(project_, ClientSecret::GenerateNewSecret(), &system_data_) {
+  FileObservationStoreTest() : test_dir_name_(GetTestDirName(test_dir_base)) {
     MakeStore();
   }
 
@@ -82,30 +53,29 @@ class FileObservationStoreTest : public ::testing::Test {
 
   void TearDown() override { store_->Delete(); }
 
+  // Adds an Observation to the FileObservationStore with the given |metric_id|
+  // and such that FileObservationStore will consider the size of the
+  // Observation to be equal to  |num_bytes|.
   ObservationStore::StoreStatus AddObservation(size_t num_bytes,
-                                               uint32_t metric_id = kDefaultMetricId) {
-    CHECK(num_bytes > kNoOpEncodingByteOverhead) << " num_bytes=" << num_bytes;
-    Encoder::Result result = encoder_.EncodeString(
-        metric_id, kNoOpEncodingId, std::string(num_bytes - kNoOpEncodingByteOverhead, 'x'));
+                                               uint32_t metric_id = kMetricId) {
     auto message = std::make_unique<EncryptedMessage>();
-    encrypt_to_analyzer_->Encrypt(*result.observation, message.get());
-    return store_->AddEncryptedObservation(std::move(message), std::move(result.metadata));
+    // We subtract 1 from |num_bytes| because FileObservationStore adds one
+    // to its definition of size.
+    CHECK(num_bytes > 1);
+    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+    auto metadata = std::make_unique<ObservationMetadata>();
+    metadata->set_customer_id(kCustomerId);
+    metadata->set_project_id(kProjectId);
+    metadata->set_metric_id(metric_id);
+    return store_->AddEncryptedObservation(std::move(message),
+                                           std::move(metadata));
   }
-
- private:
-  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
 
  protected:
   // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::string test_dir_name_;
   // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<FileObservationStore> store_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
-  FakeSystemData system_data_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
-  std::shared_ptr<ProjectContext> project_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
-  Encoder encoder_;
 };
 
 }  // namespace
@@ -122,7 +92,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
   store_->ResetObservationCounter();
   EXPECT_EQ(store_->num_observations_added(), 0u);
   EXPECT_EQ(ObservationStore::kObservationTooBig,
-            AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+            AddObservation(kMaxBytesPerObservation + 1));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
@@ -131,7 +101,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
 TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
   ASSERT_EQ(store_->num_observations_added(), 0u);
   EXPECT_EQ(ObservationStore::kObservationTooBig,
-            AddObservation(kMaxBytesPerObservation + kNoOpEncodingByteOverhead));
+            AddObservation(kMaxBytesPerObservation + 1));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
@@ -144,8 +114,9 @@ TEST_F(FileObservationStoreTest, AddRetrieveSingleObservation) {
 }
 
 TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
+  // Note that kMaxBytesPerObservation = 100 and kMaxBytesPerEnvelope = 400.
   for (int i = 0; i < 4; i++) {
-    EXPECT_EQ(ObservationStore::kOk, AddObservation(100));
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(kMaxBytesPerObservation));
   }
 
   auto envelope = store_->TakeNextEnvelopeHolder();
@@ -196,8 +167,8 @@ TEST_F(FileObservationStoreTest, StoreFull) {
 
   // Note that kNumObservationsThatWillFit is discovered by experiment
   // since the precise size of an observation is awkward to arrange since
-  // it depends on protobuf serialization and details of encryption.
-  constexpr int kNumObservationsThatWillFit = 96;
+  // it depends on protobuf serialization.
+  constexpr int kNumObservationsThatWillFit = 94;
 
   // Fill the store until its full.
   for (int i = 0; i < kNumObservationsThatWillFit; i++) {
@@ -227,7 +198,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   // store to become full. Again these constants are determined by
   // experimentation.
   constexpr int kExpectedFullIteration = 18;
-  constexpr int kExpectedFullStep = 6;
+  constexpr int kExpectedFullStep = 4;
   constexpr int kNumStepsPerIteration = 10;
 
   int iteration = 0;
