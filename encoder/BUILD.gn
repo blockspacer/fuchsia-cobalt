@@ -108,12 +108,6 @@ cobalt_config_header("generate_encoder_test_config") {
   output_file = "encoder_test_config.h"
 }
 
-# Generate envelope_maker_test_config.h from envelope_maker_test_config.yaml.
-cobalt_config_header("generate_envelope_maker_test_config") {
-  input_yaml = "envelope_maker_test_config.yaml"
-  output_file = "envelope_maker_test_config.h"
-}
-
 source_set("unittests") {
   testonly = true
 
@@ -122,7 +116,6 @@ source_set("unittests") {
     "encoder_test.cc",
     "encoder_test_config.h",
     "envelope_maker_test.cc",
-    "envelope_maker_test_config.h",
     "file_observation_store_test.cc",
     "shipping_manager_test.cc",
     "system_data_test.cc",
@@ -131,7 +124,6 @@ source_set("unittests") {
   deps = [
     ":encoder",
     ":generate_encoder_test_config",
-    ":generate_envelope_maker_test_config",
     ":legacy_project_context",
     "$cobalt_root:logging",
     "//third_party/abseil-cpp",

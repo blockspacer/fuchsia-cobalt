@@ -8,67 +8,26 @@
 
 #include "./gtest.h"
 #include "./logging.h"
-#include "config/client_config.h"
-#include "encoder/client_secret.h"
-#include "encoder/encoder.h"
-#include "encoder/fake_system_data.h"
-#include "encoder/project_context.h"
-#include "encoder/system_data.h"
-// Generated from envelope_maker_test_config.yaml
-#include "encoder/envelope_maker_test_config.h"
 #include "third_party/gflags/include/gflags/gflags.h"
-#include "util/encrypted_message_util.h"
 
 namespace cobalt {
 namespace encoder {
 
-using config::ClientConfig;
-using util::EncryptedMessageMaker;
-
 namespace {
 
-// These values must match the values specified in the invocation of
-// generate_test_config_h() in CMakeLists.txt. and in the invocation of
-// cobalt_config_header("generate_envelope_maker_test_config") in BUILD.gn.
 constexpr uint32_t kCustomerId = 1;
 constexpr uint32_t kProjectId = 1;
+constexpr uint32_t kFirstMetricId = 1;
+constexpr uint32_t kSecondMetricId = 2;
+constexpr uint32_t kThirdMetricId = 3;
 
-// This unix timestamp corresponds to Friday Dec 2, 2016 in UTC
-// and Thursday Dec 1, 2016 in Pacific time.
-constexpr time_t kSomeTimestamp = 1480647356;
 // This is the day index for Friday Dec 2, 2016
-constexpr uint32_t kUtcDayIndex = 17137;
-constexpr size_t kNoOpEncodingByteOverhead = 30;
-
-// Returns a ProjectContext obtained by parsing the configuration specified
-// in envelope_maker_test_config.yaml
-std::shared_ptr<ProjectContext> GetTestProject() {
-  // Parse the base64-encoded, serialized CobaltRegistry in
-  // envelope_maker_test_config.h. This is generated from
-  // envelope_maker_test_config.yaml. Edit that yaml file to make changes. The
-  // variable name below, |kCobaltRegistryBase64|, must match what is
-  // specified in the build files.
-  std::unique_ptr<ClientConfig> client_config =
-      ClientConfig::CreateFromCobaltRegistryBase64(kCobaltRegistryBase64);
-  EXPECT_NE(nullptr, client_config);
-
-  return std::shared_ptr<ProjectContext>(new ProjectContext(
-      kCustomerId, kProjectId, std::shared_ptr<ClientConfig>(client_config.release())));
-}
-
+const uint32_t kUtcDayIndex = 17137;
 }  // namespace
 
 class EnvelopeMakerTest : public ::testing::Test {
  public:
-  EnvelopeMakerTest()
-      : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
-        encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
-        envelope_maker_(new EnvelopeMaker()),
-        project_(GetTestProject()),
-        encoder_(project_, ClientSecret::GenerateNewSecret(), &fake_system_data_) {
-    // Set a static current time so we can test the day_index computation.
-    encoder_.set_current_time(kSomeTimestamp);
-  }
+  EnvelopeMakerTest() : envelope_maker_(new EnvelopeMaker()) {}
 
   // Returns the current value of envelope_maker_ and resets envelope_maker_
   // to a new EnvelopeMaker constructed using the given optional arguments.
@@ -79,30 +38,41 @@ class EnvelopeMakerTest : public ::testing::Test {
     return return_val;
   }
 
-  // The metric is expected to have a single string part named "Part1" and
-  // to use the UTC timezone.
-  // expected_size_change: What is the expected change in the size of the
-  // envelope in bytes due to the AddObservation()?
-  void AddStringObservation(const std::string& value, uint32_t metric_id,
-                            uint32_t encoding_config_id, int expected_num_batches,
-                            size_t expected_this_batch_index, int expected_this_batch_size,
-                            size_t expected_size_change,
-                            ObservationStore::StoreStatus expected_status) {
-    // Encode an Observation
-    Encoder::Result result = encoder_.EncodeString(metric_id, encoding_config_id, value);
-    ASSERT_EQ(Encoder::kOK, result.status);
-    ASSERT_NE(nullptr, result.observation);
-    ASSERT_NE(nullptr, result.metadata);
+  // Adds an Observation
+  // (as represented by an EncryptedMessage and an ObservationMetadata) of size
+  // |num_bytes|, with the specified |metric_id|, to the EnvelopeMaker.
+  //
+  // |expected_num_batches|is the expected number of batches in the
+  // EnvelopeMaker after the new Observation has been added.
+  //
+  // |expected_this_batch_index| The expected index of the batch that the
+  // new Observation should have been put into.
+  //
+  // |expected_this_batch_size| The expected number of Observations in the
+  // batch, including the new Observation.
+  void AddObservation(size_t num_bytes, uint32_t metric_id, int expected_num_batches,
+                      size_t expected_this_batch_index, int expected_this_batch_size,
+                      ObservationStore::StoreStatus expected_status) {
+    // Create an EncryptedMessage and an ObservationMetadata
+    auto message = std::make_unique<EncryptedMessage>();
+    // We subtract 1 from |num_bytes| because EnvelopeMaker adds one
+    // to its definition of size.
+    CHECK(num_bytes > 1);
+    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+    auto metadata = std::make_unique<ObservationMetadata>();
+    metadata->set_customer_id(kCustomerId);
+    metadata->set_project_id(kProjectId);
+    metadata->set_metric_id(metric_id);
+    metadata->set_day_index(kUtcDayIndex);
 
     ASSERT_NE(nullptr, envelope_maker_);
     // Add the Observation to the EnvelopeMaker
     size_t size_before_add = envelope_maker_->Size();
-    auto encrypted_message = std::make_unique<EncryptedMessage>();
-    ASSERT_TRUE(encrypt_to_analyzer_->Encrypt(*result.observation, encrypted_message.get()));
-    ASSERT_EQ(expected_status, envelope_maker_->AddEncryptedObservation(
-                                   std::move(encrypted_message), std::move(result.metadata)));
+    ASSERT_EQ(expected_status,
+              envelope_maker_->AddEncryptedObservation(std::move(message), std::move(metadata)));
     size_t size_after_add = envelope_maker_->Size();
-    EXPECT_EQ(expected_size_change, size_after_add - size_before_add) << value;
+    size_t expected_size_change = (expected_status == ObservationStore::kOk ? num_bytes : 0);
+    EXPECT_EQ(expected_size_change, size_after_add - size_before_add);
 
     // Check the number of batches currently in the envelope.
     ASSERT_EQ(expected_num_batches, envelope_maker_->GetEnvelope().batch_size());
@@ -113,148 +83,102 @@ class EnvelopeMakerTest : public ::testing::Test {
 
     // Check the ObservationMetadata of the expected batch.
     const auto& batch = envelope_maker_->GetEnvelope().batch(expected_this_batch_index);
-    const auto& metadata = batch.meta_data();
-    EXPECT_EQ(kCustomerId, metadata.customer_id());
-    EXPECT_EQ(kProjectId, metadata.project_id());
-    EXPECT_EQ(metric_id, metadata.metric_id());
-    EXPECT_EQ(kUtcDayIndex, metadata.day_index());
+    EXPECT_EQ(kCustomerId, batch.meta_data().customer_id());
+    EXPECT_EQ(kProjectId, batch.meta_data().project_id());
+    EXPECT_EQ(metric_id, batch.meta_data().metric_id());
+    EXPECT_EQ(kUtcDayIndex, batch.meta_data().day_index());
 
     // Check the size of the expected batch.
     ASSERT_EQ(expected_this_batch_size, batch.encrypted_observation_size())
         << "batch_index=" << expected_this_batch_index << "; metric_id=" << metric_id;
 
-    // Deserialize the most recently added observation from the
-    // expected batch.
-    EXPECT_EQ(EncryptedMessage::NONE,
-              batch.encrypted_observation(expected_this_batch_size - 1).scheme());
-    std::string serialized_observation =
-        batch.encrypted_observation(expected_this_batch_size - 1).ciphertext();
-    Observation recovered_observation;
-    ASSERT_TRUE(recovered_observation.ParseFromString(serialized_observation));
-    // Check that it looks right.
-    ASSERT_EQ(1u, recovered_observation.parts().size());
-    auto iter = recovered_observation.parts().find("Part1");
-    ASSERT_TRUE(iter != recovered_observation.parts().cend());
-    const auto& part = iter->second;
-    ASSERT_EQ(encoding_config_id, part.encoding_config_id());
+    // The Observation we just added should be the last one in the batch.
+    EXPECT_EQ(num_bytes - 1,
+              batch.encrypted_observation(expected_this_batch_size - 1).ciphertext().size());
   }
 
-  // Adds multiple string observations to the EnvelopeMaker for the given
-  // metric_id and for encoding_config_id=3, the NoOp encoding. The string
-  // values will be "value<i>" for i in [first, limit).
+  // Adds multiple observations to the EnvelopeMaker for the given
+  // metric_id. The Observations will have sizes 10 + i for i in [first, limit).
+  //
   // expected_num_batches: How many batches do we expecte the EnvelopeMaker to
   // contain after the first add.
+  //
   // expected_this_batch_index: Which batch index do we expect this add to
   // have gone into.
-  // expected_this_batch_size: What is the expected size of the current batch
-  // *before* the first add.
-  void AddManyStringsNoOp(int first, int limit, uint32_t metric_id, int expected_num_batches,
-                          size_t expected_this_batch_index, int expected_this_batch_size) {
+  //
+  // expected_this_batch_size: What is the expected number of Observations in
+  //  the current batch *before* the first add.
+  void AddManyObservations(int first, int limit, uint32_t metric_id, int expected_num_batches,
+                           size_t expected_this_batch_index, int expected_this_batch_size) {
     for (int i = first; i < limit; i++) {
-      std::ostringstream stream;
-      stream << "value " << i;
-      size_t expected_observation_num_bytes = kNoOpEncodingByteOverhead + (i >= 10 ? 8 : 7);
-      expected_this_batch_size++;
-      AddStringObservation(stream.str(), metric_id, kNoOpEncodingId, expected_num_batches,
-                           expected_this_batch_index, expected_this_batch_size,
-                           expected_observation_num_bytes, ObservationStore::kOk);
+      AddObservation(10 + i, metric_id, expected_num_batches, expected_this_batch_index,
+                     ++expected_this_batch_size, ObservationStore::kOk);
     }
   }
 
   // Adds multiple encoded Observations to two different metrics. Test that
   // the EnvelopeMaker behaves correctly.
   void DoTest() {
-    // Add two observations for metric 1
+    // Add 10 observations for metric 1
     size_t expected_num_batches = 1;
     size_t expected_this_batch_index = 0;
-    size_t expected_this_batch_size = 1;
-    // NOTE(rudominer) The values of expected_observation_num_bytes for
-    // the Forculus and Basic RAPPOR encodings in this test are obtained from
-    // experimentation rather than calculation. We are therefore not testing
-    // that the values are correct but rather testing that there is no
-    // regression in the size() functionality. Also just eybealling the numbers
-    // serves as a sanity test. Notice that the Forculus Observations are
-    // rather large compared to the Basic RAPPOR observations with 3 categories.
-    size_t expected_observation_num_bytes = 121;  // NOLINT
-    AddStringObservation("a value", kFirstMetricId, kForculusEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
-    expected_this_batch_size = 2;
-    expected_observation_num_bytes = 29;  // NOLINT
-    AddStringObservation("Apple", kFirstMetricId, kBasicRapporEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
+    size_t expected_batch0_size = 0;
+    AddManyObservations(10, 20, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch0_size);
+    expected_batch0_size += 10;
+    // Add 5 more.
+    AddManyObservations(15, 20, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch0_size);
+    expected_batch0_size += 5;
 
-    // Add two observations for metric 2
+    // Add 5 observations for metric 2
     expected_num_batches = 2;
     expected_this_batch_index = 1;
-    expected_this_batch_size = 1;
-    expected_observation_num_bytes = 122;  // NOLINT
-    AddStringObservation("a value2", kSecondMetricId, kForculusEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
-    expected_this_batch_size = 2;
-    expected_observation_num_bytes = 29;  // NOLINT
-    AddStringObservation("Banana", kSecondMetricId, kBasicRapporEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
+    size_t expected_batch1_size = 0;
+    AddManyObservations(15, 20, kSecondMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch1_size);
+    expected_batch1_size += 5;
+    // Add 5 more observations for metric 2
+    AddManyObservations(20, 25, kSecondMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch1_size);
+    expected_batch1_size += 5;
 
-    // Add two more observations for metric 1
+    // Add 12 more observations for metric 1
     expected_this_batch_index = 0;
-    expected_this_batch_size = 3;
-    expected_observation_num_bytes = 122;  // NOLINT
-    AddStringObservation("a value3", kFirstMetricId, kForculusEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
-    expected_this_batch_size = 4;
-    expected_observation_num_bytes = 29;  // NOLINT
-    AddStringObservation("Banana", kFirstMetricId, kBasicRapporEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
+    AddManyObservations(11, 23, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch0_size);
+    expected_batch0_size += 12;
+    // Add 13 more observations for metric 1
+    AddManyObservations(11, 24, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch0_size);
+    expected_batch0_size += 13;
 
-    // Add two more observations for metric 2
+    // Add 10 more observations for metric 2
     expected_this_batch_index = 1;
-    expected_this_batch_size = 3;
-    expected_observation_num_bytes = 123;  // NOLINT
-    AddStringObservation("a value40", kSecondMetricId, kForculusEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
-    expected_this_batch_size = 4;
-    expected_observation_num_bytes = 29;  // NOLINT
-    AddStringObservation("Cantaloupe", kSecondMetricId, kBasicRapporEncodingId,
-                         expected_num_batches, expected_this_batch_index, expected_this_batch_size,
-                         expected_observation_num_bytes, ObservationStore::kOk);
+    AddManyObservations(10, 20, kSecondMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch1_size);
+    expected_batch1_size += 10;
+    // Add 10 more.
+    AddManyObservations(10, 20, kSecondMetricId, expected_num_batches, expected_this_batch_index,
+                        expected_batch1_size);
+    expected_batch1_size += 10;
 
-    // Make the encrypted Envelope.
-    EncryptedMessage encrypted_message;
-    EXPECT_TRUE(encrypt_to_shuffler_->Encrypt(envelope_maker_->GetEnvelope(), &encrypted_message));
-
-    // Decrypt encrypted_message. (No actual decryption is involved since
-    // we used the NONE encryption scheme.)
-    util::MessageDecrypter decrypter("");
-    Envelope recovered_envelope;
-    EXPECT_TRUE(decrypter.DecryptMessage(encrypted_message, &recovered_envelope));
-
-    // Check that it looks right.
-    EXPECT_EQ(2, recovered_envelope.batch_size());
+    const Envelope& envelope = envelope_maker_->GetEnvelope();
+    EXPECT_EQ(2, envelope.batch_size());
     for (size_t i = 0; i < 2; i++) {
-      EXPECT_EQ(i + 1, recovered_envelope.batch(i).meta_data().metric_id());
-      EXPECT_EQ(4, recovered_envelope.batch(i).encrypted_observation_size());
+      EXPECT_EQ(i + 1, envelope.batch(i).meta_data().metric_id());
+      auto expected_batch_size = (i == 0 ? expected_batch0_size : expected_batch1_size);
+      EXPECT_EQ(expected_batch_size, envelope.batch(i).encrypted_observation_size());
     }
   }
 
  protected:
-  std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
-  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
-  FakeSystemData fake_system_data_;
   std::unique_ptr<EnvelopeMaker> envelope_maker_;
-  std::shared_ptr<ProjectContext> project_;
-  Encoder encoder_;
 };
 
 // We perform DoTest() three times with a Clear() between each turn.
 // This last tests that Clear() works correctly.
-TEST_F(EnvelopeMakerTest, TestAll) {
+TEST_F(EnvelopeMakerTest, TestThrice) {
   for (int i = 0; i < 3; i++) {
     DoTest();
     envelope_maker_->Clear();
@@ -268,15 +192,15 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   int expected_num_batches = 1;
   size_t expected_this_batch_index = 0;
   int expected_this_batch_size = 0;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
-                     expected_this_batch_size);
+  AddManyObservations(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                      expected_this_batch_size);
 
   // Add metric 2 batch to EnvelopeMaker 1 with strings 0..9
   metric_id = kSecondMetricId;
   expected_num_batches = 2;
   expected_this_batch_index = 1;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
-                     expected_this_batch_size);
+  AddManyObservations(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                      expected_this_batch_size);
 
   // Take EnvelopeMaker 1 and create EnvelopeMaker 2.
   auto envelope_maker1 = ResetEnvelopeMaker();
@@ -285,17 +209,15 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   metric_id = kSecondMetricId;
   expected_num_batches = 1;
   expected_this_batch_index = 0;
-  // NOLINTNEXTLINE readability-magic-numbers
-  AddManyStringsNoOp(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
-                     expected_this_batch_size);
+  AddManyObservations(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                      expected_this_batch_size);
 
   // Add metric 3 to EnvelopeMaker 2 with strings 0..9
   metric_id = kThirdMetricId;
   expected_num_batches = 2;
   expected_this_batch_index = 1;
-  AddManyStringsNoOp(0, 10, metric_id, expected_num_batches, expected_this_batch_index,
-                     expected_this_batch_size);
-
+  AddManyObservations(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                      expected_this_batch_size);
   // Take EnvelopeMaker 2,
   auto envelope_maker2 = ResetEnvelopeMaker();
 
@@ -316,44 +238,13 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
     // into batch 1 of EnvelopeMaker 1.
     auto& batch = envelope_maker1->GetEnvelope().batch(index);
     EXPECT_EQ(index + 1, batch.meta_data().metric_id());
-    // NOLINTNEXTLINE readability-magic-numbers
     auto expected_num_observations = (index == 1 ? 20 : 10);
     ASSERT_EQ(expected_num_observations, batch.encrypted_observation_size());
 
     // Check each one of the observations.
     for (int i = 0; i < expected_num_observations; i++) {
       // Extract the serialized observation.
-      auto& encrypted_message = batch.encrypted_observation(i);
-      EXPECT_EQ(EncryptedMessage::NONE, encrypted_message.scheme());
-      const std::string& serialized_observation = encrypted_message.ciphertext();
-      Observation recovered_observation;
-      ASSERT_TRUE(recovered_observation.ParseFromString(serialized_observation));
-
-      // Check that it looks right.
-      ASSERT_EQ(1u, recovered_observation.parts().size());
-      auto iter = recovered_observation.parts().find("Part1");
-      ASSERT_TRUE(iter != recovered_observation.parts().cend());
-      const auto& part = iter->second;
-      ASSERT_EQ(3u, part.encoding_config_id());
-      ASSERT_TRUE(part.has_unencoded());
-
-      // Check the string values. Batches 0 and 2 are straightforward. The
-      // values should be {"value 0", "value 1", .. "value 9"}. But
-      // batch 1 is more complicated. Because of the way merge is implemented
-      // we expect to see:
-      // {"value 0", "value 1", .. "value 9", "value 19",
-      //                                           "value 18", ... "value 10"}
-      // This is because when we merged batch 1 of Envelope 2 into batch
-      // 1 of Envelope 1 we reversed the order of the observations in
-      // Ennvelope 2.
-      std::ostringstream stream;
-      int expected_value_index = i;
-      if (index == 1 && i >= 10) {
-        expected_value_index = 29 - i;  // NOLINT
-      }
-      stream << "value " << expected_value_index;
-      auto expected_string_value = stream.str();
-      EXPECT_EQ(expected_string_value, part.unencoded().unencoded_value().string_value());
+      // TODO(rudominer)
     }
   }
 
@@ -365,97 +256,76 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
   for (int metric_id = 1; metric_id <= 3; metric_id++) {
     expected_num_batches = 3;
     expected_this_batch_index = metric_id - 1;
-    // NOLINTNEXTLINE readability-magic-numbers
     expected_this_batch_size = (metric_id == 2 ? 20 : 10);
-    // NOLINTNEXTLINE readability-magic-numbers
-    AddManyStringsNoOp(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
-                       expected_this_batch_size);
+    AddManyObservations(10, 20, metric_id, expected_num_batches, expected_this_batch_index,
+                        expected_this_batch_size);
   }
 }
 
 // Tests that EnvelopeMaker returns kObservationTooBig when it is supposed to.
 TEST_F(EnvelopeMakerTest, ObservationTooBig) {
   // Set max_bytes_each_observation = 105.
-  const uint32_t kMaxBytesEachObservation = 105;
-  const uint32_t kValidObservationSize = 75;
-  const uint32_t kTooLargeObservationSize = 101;
-  ResetEnvelopeMaker(kMaxBytesEachObservation);
+  ResetEnvelopeMaker(105);
 
-  // Build an input string of length 75 bytes.
-  std::string value(kValidObservationSize, 'x');
-
-  size_t expected_observation_num_bytes = kValidObservationSize + kNoOpEncodingByteOverhead;
-
-  // Invoke AddStringObservation() and expect kOk
-  int expected_num_batches = 1;
+  size_t expected_num_batches = 1;
   size_t expected_this_batch_index = 0;
-  int expected_this_batch_size = 1;
-  AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                       expected_this_batch_index, expected_this_batch_size,
-                       expected_observation_num_bytes, ObservationStore::kOk);
+  size_t expected_this_batch_size = 1;
 
-  // Build an input string of length 101 bytes.
-  value = std::string(kTooLargeObservationSize, 'x');
+  // Add an observation that is not too big.
+  AddObservation(105, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kOk);
+
+  // Try to add an observation that is too big.
   // We expect the Observation to not be added to the Envelope and so for
   // the Envelope size to not change.
-  expected_observation_num_bytes = 0;
+  AddObservation(106, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kObservationTooBig);
 
-  // Invoke AddStringObservation() and expect kObservationTooBig
-  AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                       expected_this_batch_index, expected_this_batch_size,
-                       expected_observation_num_bytes, ObservationStore::kObservationTooBig);
-
-  // Build an input string of length 75 bytes again.
-  value = std::string(kValidObservationSize, 'x');
-  expected_observation_num_bytes = kValidObservationSize + kNoOpEncodingByteOverhead;
+  // Add another observation that is not too big.
   expected_this_batch_size = 2;
-  // Invoke AddStringObservation() and expect kOk.
-  AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                       expected_this_batch_index, expected_this_batch_size,
-                       expected_observation_num_bytes, ObservationStore::kOk);
+  AddObservation(104, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kOk);
+
+  // Try to add another observation that is too big.
+  // We expect the Observation to not be added to the Envelope and so for
+  // the Envelope size to not change.
+  AddObservation(107, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kObservationTooBig);
 }
 
 // Tests that EnvelopeMaker returns kStoreFull when it is supposed to.
 TEST_F(EnvelopeMakerTest, EnvelopeFull) {
-  const uint32_t kMaxBytesEachObservation = 100;
-  const uint32_t kMaxNumBytes = 1000;
-  const uint32_t kBytesPerObservation = 20;
-  const uint32_t kNumObservations = 19;
-  ResetEnvelopeMaker(kMaxBytesEachObservation, kMaxNumBytes);
+  // Set max_bytes_each_observation = 100, max_num_bytes=1000.
+  ResetEnvelopeMaker(100, 1000);
 
   int expected_this_batch_size = 1;
   int expected_num_batches = 1;
   size_t expected_this_batch_index = 0;
-  for (int i = 0; i < kNumObservations; i++) {
-    // Build an input string of length 20 bytes.
-    std::string value(kBytesPerObservation, 'x');
-    size_t expected_observation_num_bytes = kBytesPerObservation + kNoOpEncodingByteOverhead;
-
-    // Invoke AddStringObservation() and expect kOk
-    AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                         expected_this_batch_index, expected_this_batch_size++,
-                         expected_observation_num_bytes, ObservationStore::kOk);
+  for (int i = 0; i < 19; i++) {
+    // Add 19 observations of size 50 for a total of 950 bytes
+    AddObservation(50, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                   expected_this_batch_size++, ObservationStore::kOk);
   }
   EXPECT_EQ(950u, envelope_maker_->Size());
 
   // If we try to add an observation of more than 100 bytes we should
   // get kObservationTooBig.
-  std::string value(kMaxBytesEachObservation + 1, 'x');
+
   // We expect the Observation to not be added to the Envelope and so for
   // the Envelope size to not change.
-  size_t expected_observation_num_bytes = 0;
-  AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                       expected_this_batch_index, expected_this_batch_size++,
-                       expected_observation_num_bytes, ObservationStore::kObservationTooBig);
 
-  // If we try to add an observation of size equal to the number of remaining
-  // allowed bytes +1, we should get kStoreFull
-  value = std::string(
-      kMaxNumBytes - ((kBytesPerObservation + kNoOpEncodingByteOverhead) * kNumObservations) + 1,
-      'x');
-  AddStringObservation(value, kFirstMetricId, kNoOpEncodingId, expected_num_batches,
-                       expected_this_batch_index, expected_this_batch_size++,
-                       expected_observation_num_bytes, ObservationStore::kStoreFull);
+  AddObservation(101, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kObservationTooBig);
+
+  // If we try to add an observation of 65 bytes we should
+  // get kStoreFull
+
+  AddObservation(65, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kStoreFull);
+
+  // We can add one more observation of size 50.
+  AddObservation(50, kFirstMetricId, expected_num_batches, expected_this_batch_index,
+                 expected_this_batch_size, ObservationStore::kOk);
 }
 
 }  // namespace encoder

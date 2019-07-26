@@ -1,16 +1,6 @@
-// Copyright 2017 The Fuchsia Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef COBALT_ENCODER_ENVELOPE_MAKER_H_
 #define COBALT_ENCODER_ENVELOPE_MAKER_H_
@@ -28,28 +18,13 @@
 namespace cobalt {
 namespace encoder {
 
-// An Encoder client uses an EnvelopeMaker in conjunction with an Encoder in
-// order to build the encrypted Envelopes that are sent to the shuffler.  An
-// EnvelopeMaker collects the EncryptedMessage produced by encrypting the
-// Observations produced by the Encoder Encode*() methods into an Envelope.
+// EnvelopeMaker is an implementation of ObservationStore::EnvelopeHolder that
+// holds its Envelope in memory. This implementation is used by
+// MemoryObservationStore.
 //
-// Usage:
-//
-// - Construct a new EnvelopeMaker passing in the max_bytes_each_observation and
-// max_num_bytes.
-//
-// - Invoke AddEncryptedObservation() multiple times passing in encrypted
-// observations and their corresponding ObservationMetadata.
-//
-// - When enough Observations have been added, the EnvelopeMaker will return
-// ObservationStore::kStoreFull to specify that no more observations can be
-// added.
-//
-// - In order to access the underlying Envelope, a user should call
-// GetEnvelope().
-//
-// - In order to merge two EnvelopeMakers together, a user should use
-// MergeWith().
+// In addition to the interface for EnvelopeHolder, EnvelopeMaker also
+// includes methods for building up an in-memory Envelope by incrementally
+// adding additional EncryptedMessages to it.
 class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
  public:
   // Constructor
