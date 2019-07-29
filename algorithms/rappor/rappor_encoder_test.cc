@@ -21,7 +21,8 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/random_test_utils.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 using encoder::ClientSecret;
 
@@ -1005,4 +1006,5 @@ TEST_F(StringRapporEncoderTest, ChiSquaredTest) {
   }
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

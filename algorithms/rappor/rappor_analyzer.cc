@@ -31,7 +31,8 @@ using cobalt_lossmin::InstanceSet;
 using cobalt_lossmin::LabelSet;
 using cobalt_lossmin::Weights;
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 // Stackdriver metric contants
 namespace {
@@ -451,7 +452,8 @@ grpc::Status RapporAnalyzer::BuildCandidateMap() {
   return grpc::Status::OK;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt
 
 /*
 

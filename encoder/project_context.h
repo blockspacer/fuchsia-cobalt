@@ -14,7 +14,8 @@
 #include "config/encoding_config.h"
 #include "config/metric_config.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 // A ProjectContext represents a particular Cobalt project and contains
 // a registry of the Metrics and EncodingConfigs contained in the project.
@@ -58,6 +59,7 @@ class ProjectContext {
   std::shared_ptr<config::ClientConfig> client_config_;
 };
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt
 
 #endif  // COBALT_ENCODER_PROJECT_CONTEXT_H_

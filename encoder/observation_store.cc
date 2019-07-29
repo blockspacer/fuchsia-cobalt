@@ -8,7 +8,8 @@
 
 #include "./logging.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 namespace {
 
@@ -69,4 +70,5 @@ std::vector<uint64_t> ObservationStore::num_observations_added_for_reports(
 
 void ObservationStore::ResetObservationCounter() { num_obs_per_report_.clear(); }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

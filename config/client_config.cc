@@ -16,7 +16,8 @@
 #include "config/metrics.pb.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 namespace {
 std::string ErrorMessage(Status status) {
@@ -138,4 +139,5 @@ void ClientConfig::DetermineIfSingleProject() {
   }
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

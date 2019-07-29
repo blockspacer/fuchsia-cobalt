@@ -9,7 +9,8 @@
 #include "config/report_definition.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 TEST(RapporConfigHelperTest, ProbBitFlip) {
   ReportDefinition report_definition;
@@ -119,4 +120,5 @@ TEST(RapporConfigHelperTest, StringRapporNumBloomBits) {
   EXPECT_EQ(128u, RapporConfigHelper::StringRapporNumBloomBits(report_definition));
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

@@ -25,7 +25,8 @@
 #include "util/crypto_util/mac.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 using crypto::byte;
 using crypto::hmac::HMAC;
@@ -289,4 +290,5 @@ Status BasicRapporEncoder::InitializeObservationData(std::string* data) {
   return kOK;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

@@ -19,7 +19,8 @@
 
 #include "algorithms/forculus/field_element.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 // Some utility functions for computing with polynomials over the Forculus
 // field.
@@ -35,6 +36,7 @@ FieldElement Evaluate(const std::vector<FieldElement>& coefficients, const Field
 FieldElement InterpolateConstant(const std::vector<const FieldElement*>& x_values,
                                  const std::vector<const FieldElement*>& y_values);
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt
 
 #endif  // COBALT_ALGORITHMS_FORCULUS_POLYNOMIAL_COMPUTATIONS_H_

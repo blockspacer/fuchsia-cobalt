@@ -8,11 +8,13 @@
 #include "glog/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 TEST(IdFromName, Known) {
   const uint32_t expected = 0x8b85b08d;
   EXPECT_EQ(expected, IdFromName("test_name"));
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

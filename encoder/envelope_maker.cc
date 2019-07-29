@@ -19,7 +19,8 @@
 
 #include "./logging.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation, size_t max_num_bytes)
     : max_bytes_each_observation_(max_bytes_each_observation), max_num_bytes_(max_num_bytes) {}
@@ -105,4 +106,5 @@ void EnvelopeMaker::MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> 
   other->Clear();
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

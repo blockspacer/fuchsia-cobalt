@@ -8,7 +8,8 @@
 
 using cobalt_lossmin::InstanceSet;
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
                                    const std::vector<int>& second_step_cols,
@@ -39,4 +40,5 @@ void PrepareSecondRapporStepMatrix(InstanceSet* second_step_matrix,
                                       second_step_matrix_triplets.end());
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

@@ -20,7 +20,8 @@
 #include "encoder/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 using encoder::ClientSecret;
 
@@ -195,4 +196,5 @@ TEST(ForculusDecrypterTest, TestErrors) {
   EXPECT_EQ(ForculusDecrypter::kDecryptionFailed, decrypter.Decrypt(&plaintext));
 }
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt

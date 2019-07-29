@@ -19,7 +19,8 @@
 #include "third_party/gflags/include/gflags/gflags.h"
 #include "util/encrypted_message_util.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 using config::ClientConfig;
 using util::EncryptedMessageMaker;
@@ -463,4 +464,5 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
                        expected_observation_num_bytes, ObservationStore::kStoreFull);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

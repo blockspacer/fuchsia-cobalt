@@ -26,7 +26,8 @@
 #include "util/crypto_util/random.h"
 #include "util/datetime_util.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 using forculus::ForculusEncrypter;
 using rappor::BasicRapporEncoder;
@@ -543,4 +544,5 @@ void Encoder::Value::AddIntBucketDistributionPart(
   }
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

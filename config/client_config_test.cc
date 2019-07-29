@@ -17,7 +17,8 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 namespace {
 constexpr uint32_t kNonexistentId = 41;
@@ -125,4 +126,5 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   EXPECT_FALSE(client_config->is_single_project());
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

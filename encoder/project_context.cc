@@ -11,7 +11,8 @@
 #include "config/encoding_config.h"
 #include "config/metric_config.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 ProjectContext::ProjectContext(uint32_t customer_id, uint32_t project_id,
                                const std::shared_ptr<config::ClientConfig>& client_config)
@@ -48,4 +49,5 @@ const EncodingConfig* ProjectContext::EncodingConfig(uint32_t id) const {
   return client_config_->EncodingConfig(customer_id_, project_id_, id);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

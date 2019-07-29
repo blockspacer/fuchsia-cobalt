@@ -13,7 +13,8 @@
 #include "./gtest.h"
 #include "./logging.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 TEST(SystemDataTest, BasicTest) {
   SystemData system_data("test_product", "", "test_version");
@@ -77,4 +78,5 @@ TEST(SystemDataTest, SetChannelTest) {
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

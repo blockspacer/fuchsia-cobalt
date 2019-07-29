@@ -13,7 +13,8 @@
 // limitations under the License.
 #include "algorithms/rappor/rappor_analyzer_test.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 using encoder::ClientSecret;
 
@@ -419,4 +420,5 @@ double prob_1_stays_1_ = 1.0;
 // Random device
 std::random_device random_dev_;
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

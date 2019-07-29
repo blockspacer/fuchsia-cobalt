@@ -19,7 +19,9 @@
 #include "logger/logger_interface.h"
 #include "util/status.h"
 
-namespace cobalt::logger::testing {
+namespace cobalt {
+namespace logger {
+namespace testing {
 
 namespace {
 
@@ -140,4 +142,6 @@ Status FakeLogger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_value
   return Status::kOK;
 }
 
-}  // namespace cobalt::logger::testing
+}  // namespace testing
+}  // namespace logger
+}  // namespace cobalt

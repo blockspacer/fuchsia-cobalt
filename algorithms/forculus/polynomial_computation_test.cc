@@ -15,7 +15,8 @@
 #include "algorithms/forculus/polynomial_computations.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 namespace {
 FieldElement FromBytes(std::vector<byte>&& bytes) { return FieldElement(std::move(bytes)); }
@@ -177,4 +178,5 @@ TEST(PolynomialComputationsTest, TestInterpolate) {
   }
 }
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt

@@ -10,7 +10,8 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 namespace {
 
@@ -362,4 +363,5 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

@@ -25,7 +25,8 @@
 #include "algorithms/forculus/forculus_decrypter.h"
 #include "config/encodings.pb.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 // A ForculusAnalyzer is constructed for the purpose of performing a single
 // Forculus analysis.
@@ -171,6 +172,7 @@ class ForculusAnalyzer {
   std::unordered_map<DecrypterGroupKey, DecrypterResult, KeyHasher> decryption_map_;
 };
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt
 
 #endif  // COBALT_ALGORITHMS_FORCULUS_FORCULUS_ANALYZER_H_

@@ -20,7 +20,8 @@
 
 #include <openssl/rand.h>
 
-namespace cobalt::crypto {
+namespace cobalt {
+namespace crypto {
 
 namespace {
 constexpr size_t kMaxRandomBits = 256;
@@ -80,4 +81,5 @@ bool Random::RandomBits(float p, byte* buffer, std::size_t size) {
   return true;
 }
 
-}  // namespace cobalt::crypto
+}  // namespace crypto
+}  // namespace cobalt

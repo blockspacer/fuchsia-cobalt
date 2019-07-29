@@ -9,7 +9,9 @@
 
 #include "util/clearcut/curl_handle.h"
 
-namespace cobalt::util::clearcut {
+namespace cobalt {
+namespace util {
+namespace clearcut {
 
 using clearcut::HTTPClient;
 using clearcut::HTTPRequest;
@@ -42,4 +44,6 @@ std::future<StatusOr<HTTPResponse>> CurlHTTPClient::Post(
                     });
 }
 
-}  // namespace cobalt::util::clearcut
+}  // namespace clearcut
+}  // namespace util
+}  // namespace cobalt

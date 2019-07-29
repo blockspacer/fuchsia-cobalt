@@ -26,7 +26,8 @@
 #include "util/crypto_util/hash.h"
 #include "util/crypto_util/random.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 enum Status {
   kOK = 0,
@@ -147,6 +148,7 @@ class BasicRapporEncoder {
   encoder::ClientSecret client_secret_;
 };
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt
 
 #endif  // COBALT_ALGORITHMS_RAPPOR_RAPPOR_ENCODER_H_

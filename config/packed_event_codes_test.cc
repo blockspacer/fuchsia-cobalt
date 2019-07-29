@@ -6,7 +6,8 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 TEST(PackEventCodes, AllowsEmptyIterator) {
   ASSERT_EQ(PackEventCodes((std::vector<uint32_t>){}), 0u);
@@ -104,4 +105,5 @@ TEST(BackAndForth, PackUnpackIsStable) {
   }
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

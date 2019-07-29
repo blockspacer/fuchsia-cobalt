@@ -12,7 +12,8 @@
 #include "config/project_configs.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 namespace {
 
@@ -111,4 +112,5 @@ std::unique_ptr<encoder::ProjectContext> ProjectContextFactory::NewSingleLegacyP
                                  client_config_->single_project_id());
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+}  // namespace cobalt

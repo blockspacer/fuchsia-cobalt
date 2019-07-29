@@ -10,7 +10,8 @@
 
 #include "./logging.h"
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 std::unique_ptr<InternalMetrics> InternalMetrics::NewWithLogger(LoggerInterface* logger) {
   if (logger) {
@@ -79,4 +80,5 @@ void InternalMetricsImpl::BytesStored(PerProjectBytesStoredMetricDimensionStatus
   }
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+}  // namespace cobalt

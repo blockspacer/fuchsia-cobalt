@@ -8,7 +8,8 @@
 
 #include "./logging.h"
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 namespace {
 
@@ -47,4 +48,5 @@ ReleaseStage ChannelMapper::ToReleaseStage(const std::string &channel) {
   return ReleaseStage::GA;
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+}  // namespace cobalt

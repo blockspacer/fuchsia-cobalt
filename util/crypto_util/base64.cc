@@ -18,7 +18,8 @@
 
 #include <openssl/base64.h>
 
-namespace cobalt::crypto {
+namespace cobalt {
+namespace crypto {
 
 bool Base64Encode(const byte* data, int num_bytes, std::string* encoded_out) {
   if (!data || !encoded_out) {
@@ -97,4 +98,5 @@ bool RegexDecode(std::string encoded_in, std::string* decoded_out) {
   return Base64Decode(encoded_in, decoded_out);
 }
 
-}  // namespace cobalt::crypto
+}  // namespace crypto
+}  // namespace cobalt

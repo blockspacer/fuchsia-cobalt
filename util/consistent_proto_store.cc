@@ -12,7 +12,8 @@
 
 #include "third_party/statusor/status_macros.h"
 
-namespace cobalt::util {
+namespace cobalt {
+namespace util {
 
 using google::protobuf::MessageLite;
 
@@ -164,4 +165,5 @@ Status ConsistentProtoStore::MoveOverrideToPrimary() {
   return Status::OK;
 }
 
-}  // namespace cobalt::util
+}  // namespace util
+}  // namespace cobalt

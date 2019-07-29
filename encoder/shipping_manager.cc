@@ -11,7 +11,8 @@
 #include "./logging.h"
 #include "logger/logger_interface.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 using EnvelopeHolder = ObservationStore::EnvelopeHolder;
 using cobalt::clearcut_extensions::LogEventExtension;
@@ -345,4 +346,5 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
   });
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

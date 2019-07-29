@@ -18,7 +18,8 @@
 
 #include <openssl/err.h>
 
-namespace cobalt::crypto {
+namespace cobalt {
+namespace crypto {
 
 namespace {
 constexpr size_t kOpenSSLErrorLen = 256;
@@ -30,4 +31,5 @@ std::string GetLastErrorMessage() {
   return std::string(buf);
 }
 
-}  // namespace cobalt::crypto
+}  // namespace crypto
+}  // namespace cobalt

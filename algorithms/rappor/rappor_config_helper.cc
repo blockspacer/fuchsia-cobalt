@@ -8,7 +8,8 @@
 
 #include "./logging.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 // Sentinel value returned by ProbBitFlip() when the ReportDefinition
 // does not contain the necessary settings to determine a value
@@ -179,4 +180,5 @@ size_t RapporConfigHelper::StringRapporNumBloomBits(const ReportDefinition& repo
   return kLargeNumBits;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

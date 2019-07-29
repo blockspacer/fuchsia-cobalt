@@ -7,7 +7,8 @@
 #include "./logging.h"
 #include "util/crypto_util/base64.h"
 
-namespace cobalt::config {
+namespace cobalt {
+namespace config {
 
 std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBase64(
     const std::string& cobalt_registry_base64) {
@@ -138,4 +139,5 @@ const ReportDefinition* ProjectConfigs::GetReportDefinition(uint32_t customer_id
   return iter->second;
 }
 
-}  // namespace cobalt::config
+}  // namespace config
+}  // namespace cobalt

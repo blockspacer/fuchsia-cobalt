@@ -16,7 +16,8 @@
 #include "encoder/project_context.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 using config::ClientConfig;
 
@@ -744,7 +745,9 @@ TEST(EncoderEncoderTest, AdvancedApiWithErrors) {
   EXPECT_EQ(Encoder::kInvalidConfig, encoder.Encode(kNoTimeZoneMetricId, *value).status);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+
+}  // namespace cobalt
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

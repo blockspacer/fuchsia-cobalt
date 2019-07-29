@@ -20,7 +20,8 @@
 
 using cobalt::config::ProjectConfigs;
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 namespace {
 constexpr char kCustomerA[] = "CustomerA";
@@ -103,4 +104,5 @@ TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
   CheckProjectContextA1(*project_context);
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+}  // namespace cobalt

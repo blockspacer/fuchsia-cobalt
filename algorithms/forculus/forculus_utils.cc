@@ -14,7 +14,8 @@
 
 #include "algorithms/forculus/forculus_utils.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 // Compute the Forculus epoch index for the given |day_index| based on
 // the given |epoch_type|.
@@ -31,4 +32,5 @@ uint32_t EpochIndexFromDayIndex(uint32_t day_index, const EpochType& epoch_type)
   }
 }
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt

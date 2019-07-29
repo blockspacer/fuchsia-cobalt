@@ -9,7 +9,8 @@
 #include "./logging.h"
 #include "logger/logger_interface.h"
 
-namespace cobalt::encoder {
+namespace cobalt {
+namespace encoder {
 
 namespace {
 
@@ -133,4 +134,5 @@ bool MemoryObservationStore::Empty() const {
   return current_envelope_->Empty() && finalized_envelopes_.empty();
 }
 
-}  // namespace cobalt::encoder
+}  // namespace encoder
+}  // namespace cobalt

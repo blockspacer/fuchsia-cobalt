@@ -19,7 +19,8 @@
 #include "util/status.h"
 #include "util/status_codes.h"
 
-namespace cobalt::util {
+namespace cobalt {
+namespace util {
 
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::HybridCipher;
@@ -211,4 +212,5 @@ bool MessageDecrypter::DecryptMessage(const EncryptedMessage& encrypted_message,
   return true;
 }
 
-}  // namespace cobalt::util
+}  // namespace util
+}  // namespace cobalt

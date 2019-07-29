@@ -22,7 +22,8 @@
 
 #include "util/crypto_util/types.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 /****************************** WARNING *************************************
  *
@@ -217,4 +218,5 @@ std::ostream& operator<<(std::ostream& os, const FieldElement& el) {
   return os;
 }
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt

@@ -14,7 +14,8 @@ using cobalt_lossmin::LabelSet;
 using cobalt_lossmin::ParallelBoostingWithMomentum;
 using cobalt_lossmin::Weights;
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 namespace {
 // ***************************************************************************
@@ -407,4 +408,5 @@ void LassoRunner::GetExactValuesAndStdErrs(const double l1, const Weights& est_c
   *exact_est_candidate_weights = mean_est_weights;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

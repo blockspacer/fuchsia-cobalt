@@ -21,7 +21,8 @@
 #include "./observation.pb.h"
 #include "util/crypto_util/hash.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 using crypto::hash::DIGEST_SIZE;
 
@@ -200,4 +201,5 @@ int RapporConfigValidator::bit_index(const ValuePart& category) {
   return iterator->second;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

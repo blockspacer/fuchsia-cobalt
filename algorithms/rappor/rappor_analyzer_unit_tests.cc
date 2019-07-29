@@ -4,7 +4,8 @@
 
 #include "algorithms/rappor/rappor_analyzer_test.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 using encoder::ClientSecret;
 
@@ -467,4 +468,5 @@ TEST_F(RapporAnalyzerTest, StandardErrorTest) {
   EXPECT_GT(results[40].std_error, 0);
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt

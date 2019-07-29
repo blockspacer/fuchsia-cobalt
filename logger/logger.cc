@@ -19,7 +19,8 @@
 #include "logger/event_record.h"
 #include "util/datetime_util.h"
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::util::SystemClock;
@@ -1106,4 +1107,6 @@ Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(const ReportD
   }
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+
+}  // namespace cobalt

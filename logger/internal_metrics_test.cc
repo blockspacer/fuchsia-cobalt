@@ -9,7 +9,8 @@
 #include "./gtest.h"
 #include "logger/fake_logger.h"
 
-namespace cobalt::logger {
+namespace cobalt {
+namespace logger {
 
 constexpr int64_t kNumBytes = 123;
 constexpr uint32_t kCustomerId = 1;
@@ -104,4 +105,5 @@ TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
   ASSERT_EQ(logger.call_count(), 0);
 }
 
-}  // namespace cobalt::logger
+}  // namespace logger
+}  // namespace cobalt

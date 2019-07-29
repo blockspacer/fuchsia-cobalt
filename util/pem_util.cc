@@ -17,7 +17,8 @@
 #include "./logging.h"
 #include "util/file_util.h"
 
-namespace cobalt::util {
+namespace cobalt {
+namespace util {
 
 bool PemUtil::ReadTextFile(const std::string& file_path, std::string* file_contents) {
   if (!file_contents) {
@@ -36,4 +37,5 @@ bool PemUtil::ReadTextFile(const std::string& file_path, std::string* file_conte
   return true;
 }
 
-}  // namespace cobalt::util
+}  // namespace util
+}  // namespace cobalt

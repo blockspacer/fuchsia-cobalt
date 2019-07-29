@@ -16,7 +16,8 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::forculus {
+namespace cobalt {
+namespace forculus {
 
 using encoder::ClientSecret;
 
@@ -247,4 +248,5 @@ TEST(ForculusEncrypterTest, EncryptValue) {
   EXPECT_NE(obs2.ciphertext(), obs3.ciphertext());
 }
 
-}  // namespace cobalt::forculus
+}  // namespace forculus
+}  // namespace cobalt

@@ -11,7 +11,8 @@
 #include "util/status.h"
 #include "util/status_codes.h"
 
-namespace cobalt::util {
+namespace cobalt {
+namespace util {
 
 namespace {
 constexpr int kMaxFileSize = 100000;
@@ -65,4 +66,5 @@ statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_pat
   return read_file_result;
 }
 
-}  // namespace cobalt::util
+}  // namespace util
+}  // namespace cobalt

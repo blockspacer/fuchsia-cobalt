@@ -21,7 +21,8 @@
 
 #include "util/log_based_metrics.h"
 
-namespace cobalt::rappor {
+namespace cobalt {
+namespace rappor {
 
 // Stackdriver metric constants
 namespace {
@@ -117,4 +118,5 @@ std::vector<BasicRapporAnalyzer::CategoryResult> BasicRapporAnalyzer::Analyze() 
   return results;
 }
 
-}  // namespace cobalt::rappor
+}  // namespace rappor
+}  // namespace cobalt
