@@ -120,9 +120,7 @@ class EncoderTest : public ::testing::Test {
     return {metric, report};
   }
 
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<Encoder> encoder_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<ProjectContext> project_context_;
 
  private:

@@ -36,7 +36,10 @@ CLANG_TIDY_BLACKLIST = [
 ]
 
 TEST_FILE_REGEX = re.compile('.*_(unit)?tests?.cc$')
-TEST_FILE_CLANG_TIDY_CHECKS = ['-readability-magic-numbers']
+TEST_FILE_CLANG_TIDY_CHECKS = [
+    '-readability-magic-numbers',
+    '-misc-non-private-member-variables-in-classes'
+]
 
 
 def clang_tidy_blacklisted(path):

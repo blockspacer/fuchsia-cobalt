@@ -82,7 +82,6 @@ class ProjectContextTest : public ::testing::Test {
     EXPECT_EQ(nullptr, project_context.GetMetric(42));
   }
 
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::shared_ptr<ProjectConfigs> project_configs_;
 };
 

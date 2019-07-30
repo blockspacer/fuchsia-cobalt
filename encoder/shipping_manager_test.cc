@@ -131,9 +131,7 @@ class ShippingManagerTest : public ::testing::Test {
   FakeSystemData system_data_;
 
  protected:
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<ShippingManager> shipping_manager_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   FakeHTTPClient* http_client_ = nullptr;
 
  private:

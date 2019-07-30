@@ -244,17 +244,11 @@ class EnvelopeMakerTest : public ::testing::Test {
   }
 
  protected:
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   FakeSystemData fake_system_data_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<EnvelopeMaker> envelope_maker_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::shared_ptr<ProjectContext> project_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   Encoder encoder_;
 };
 

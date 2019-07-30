@@ -42,9 +42,7 @@ std::string GetTestDirName(const std::string &base) {
 
 class FileObservationStoreTest : public ::testing::Test {
  public:
-  FileObservationStoreTest() : test_dir_name_(GetTestDirName(test_dir_base)) {
-    MakeStore();
-  }
+  FileObservationStoreTest() : test_dir_name_(GetTestDirName(test_dir_base)) { MakeStore(); }
 
   void MakeStore() {
     store_ = std::make_unique<FileObservationStore>(
@@ -57,8 +55,7 @@ class FileObservationStoreTest : public ::testing::Test {
   // Adds an Observation to the FileObservationStore with the given |metric_id|
   // and such that FileObservationStore will consider the size of the
   // Observation to be equal to  |num_bytes|.
-  ObservationStore::StoreStatus AddObservation(size_t num_bytes,
-                                               uint32_t metric_id = kMetricId) {
+  ObservationStore::StoreStatus AddObservation(size_t num_bytes, uint32_t metric_id = kMetricId) {
     auto message = std::make_unique<EncryptedMessage>();
     // We subtract 1 from |num_bytes| because FileObservationStore adds one
     // to its definition of size.
@@ -68,14 +65,11 @@ class FileObservationStoreTest : public ::testing::Test {
     metadata->set_customer_id(kCustomerId);
     metadata->set_project_id(kProjectId);
     metadata->set_metric_id(metric_id);
-    return store_->AddEncryptedObservation(std::move(message),
-                                           std::move(metadata));
+    return store_->AddEncryptedObservation(std::move(message), std::move(metadata));
   }
 
  protected:
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::string test_dir_name_;
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::unique_ptr<FileObservationStore> store_;
 };
 
@@ -92,8 +86,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
   EXPECT_EQ(store_->num_observations_added(), 2u);
   store_->ResetObservationCounter();
   EXPECT_EQ(store_->num_observations_added(), 0u);
-  EXPECT_EQ(ObservationStore::kObservationTooBig,
-            AddObservation(kMaxBytesPerObservation + 1));
+  EXPECT_EQ(ObservationStore::kObservationTooBig, AddObservation(kMaxBytesPerObservation + 1));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
@@ -101,8 +94,7 @@ TEST_F(FileObservationStoreTest, UpdateObservationCount) {
 // returned and that the count of received Observations is not incremented.
 TEST_F(FileObservationStoreTest, UpdateObservationCountTooBig) {
   ASSERT_EQ(store_->num_observations_added(), 0u);
-  EXPECT_EQ(ObservationStore::kObservationTooBig,
-            AddObservation(kMaxBytesPerObservation + 1));
+  EXPECT_EQ(ObservationStore::kObservationTooBig, AddObservation(kMaxBytesPerObservation + 1));
   EXPECT_EQ(store_->num_observations_added(), 0u);
 }
 
