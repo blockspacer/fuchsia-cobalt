@@ -18,7 +18,6 @@
 #include "config/encodings.pb.h"
 #include "config/packed_event_codes.h"
 #include "encoder/client_secret.h"
-#include "encoder/encoder.h"
 #include "logger/encoder.h"
 #include "logger/event_aggregator.h"
 #include "logger/fake_logger.h"

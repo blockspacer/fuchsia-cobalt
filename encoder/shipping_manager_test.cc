@@ -14,7 +14,6 @@
 #include "./clearcut_extensions.pb.h"
 #include "./gtest.h"
 #include "./logging.h"
-#include "encoder/encoder.h"
 #include "encoder/fake_system_data.h"
 #include "encoder/memory_observation_store.h"
 #include "encoder/observation_store.h"
@@ -133,9 +132,6 @@ class ShippingManagerTest : public ::testing::Test {
  protected:
   std::unique_ptr<ShippingManager> shipping_manager_;
   FakeHTTPClient* http_client_ = nullptr;
-
- private:
-  std::shared_ptr<ProjectContext> project_;
 };
 
 // We construct a ShippingManager and destruct it without calling any methods.

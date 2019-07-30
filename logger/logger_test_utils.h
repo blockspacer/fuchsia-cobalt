@@ -15,8 +15,8 @@
 
 #include "./gtest.h"
 #include "config/project_configs.h"
-#include "encoder/shipping_manager.h"
-#include "logger/encoder.h"
+#include "encoder/observation_store.h"
+#include "encoder/observation_store_update_recipient.h"
 #include "logger/fake_logger.h"
 #include "logger/local_aggregation.pb.h"
 #include "logger/logger_interface.h"

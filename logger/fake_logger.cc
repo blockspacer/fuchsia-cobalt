@@ -13,9 +13,6 @@
 #include <vector>
 
 #include "config/project_configs.h"
-#include "encoder/shipping_manager.h"
-#include "logger/encoder.h"
-#include "logger/local_aggregation.pb.h"
 #include "logger/logger_interface.h"
 #include "util/status.h"
 
