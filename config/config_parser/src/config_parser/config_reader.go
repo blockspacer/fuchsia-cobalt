@@ -363,6 +363,7 @@ func v1ProjectConfig(c ProjectConfig) *config.ProjectConfig {
 	p := config.ProjectConfig{}
 	p.ProjectName = c.ProjectName
 	p.ProjectId = c.ProjectId
+	p.ProjectContact = c.Contact
 	p.Metrics = c.ProjectConfig.MetricDefinitions
 
 	// In order to ensure that we output a stable order in the binary protobuf, we

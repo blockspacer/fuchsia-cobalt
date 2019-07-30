@@ -220,6 +220,7 @@ func TestAppendV1Config(t *testing.T) {
 			CustomerId:    5,
 			ProjectName:   "project3",
 			ProjectId:     3,
+			Contact:       "project3@customer5.com",
 			CobaltVersion: CobaltVersion1,
 		},
 		ProjectConfig{
@@ -227,6 +228,7 @@ func TestAppendV1Config(t *testing.T) {
 			CustomerId:    2,
 			ProjectName:   "project1",
 			ProjectId:     1,
+			Contact:       "project1@customer2.com",
 			CobaltVersion: CobaltVersion1,
 		},
 		ProjectConfig{
@@ -234,6 +236,7 @@ func TestAppendV1Config(t *testing.T) {
 			CustomerId:    5,
 			ProjectName:   "project2",
 			ProjectId:     2,
+			Contact:       "project2@customer5.com",
 			CobaltVersion: CobaltVersion1,
 		},
 	}
@@ -248,8 +251,9 @@ func TestAppendV1Config(t *testing.T) {
 				CustomerId:   2,
 				Projects: []*config.ProjectConfig{
 					&config.ProjectConfig{
-						ProjectName: "project1",
-						ProjectId:   1,
+						ProjectName:    "project1",
+						ProjectId:      1,
+						ProjectContact: "project1@customer2.com",
 					},
 				},
 			},
@@ -258,12 +262,14 @@ func TestAppendV1Config(t *testing.T) {
 				CustomerId:   5,
 				Projects: []*config.ProjectConfig{
 					&config.ProjectConfig{
-						ProjectName: "project2",
-						ProjectId:   2,
+						ProjectName:    "project2",
+						ProjectId:      2,
+						ProjectContact: "project2@customer5.com",
 					},
 					&config.ProjectConfig{
-						ProjectName: "project3",
-						ProjectId:   3,
+						ProjectName:    "project3",
+						ProjectId:      3,
+						ProjectContact: "project3@customer5.com",
 					},
 				},
 			},
