@@ -27,10 +27,7 @@
 namespace cobalt {
 
 using config::PackEventCodes;
-using config::ProjectConfigs;
 using encoder::ClientSecret;
-using encoder::ObservationStoreUpdateRecipient;
-using encoder::ObservationStoreWriterInterface;
 using encoder::SystemDataInterface;
 using util::EncryptedMessageMaker;
 using util::IncrementingClock;
@@ -74,24 +71,23 @@ std::string SerializeAsStringDeterministic(const T& message) {
 }
 
 // Filenames for constructors of ConsistentProtoStores
-static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-static const char kObsHistoryFilename[] = "obs_history_backup";
+constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
+constexpr char kObsHistoryFilename[] = "obs_history_backup";
 
 // A map keyed by base64-encoded, serialized ReportAggregationKeys. The value at
 // a key is a map of event codes to sets of day indices. Used in tests as
 // a record, external to the LocalAggregateStore, of the activity logged for
 // UNIQUE_N_DAY_ACTIVES reports.
-typedef std::map<std::string, std::map<uint32_t, std::set<uint32_t>>> LoggedActivity;
+using LoggedActivity = std::map<std::string, std::map<uint32_t, std::set<uint32_t>>>;
 
 // A map used in tests as a record, external to the LocalAggregateStore, of the
 // activity logged for PER_DEVICE_NUMERIC_STATS reports. The keys are, in
 // descending order, serialized ReportAggregationKeys, components, event codes,
 // and day indices. Each day index maps to a vector of numeric values that were
 // logged for that day index..
-typedef std::map<
-    std::string,
-    std::map<std::string, std::map<uint32_t, std::map<uint32_t, std::vector<int64_t>>>>>
-    LoggedValues;
+using LoggedValues =
+    std::map<std::string,
+             std::map<std::string, std::map<uint32_t, std::map<uint32_t, std::vector<int64_t>>>>>;
 
 }  // namespace
 
@@ -100,22 +96,23 @@ typedef std::map<
 // aggregation configurations.
 class EventAggregatorTest : public ::testing::Test {
  protected:
-  void SetUp() {
-    observation_store_.reset(new FakeObservationStore);
-    update_recipient_.reset(new TestUpdateRecipient);
+  void SetUp() override {
+    observation_store_ = std::make_unique<FakeObservationStore>();
+    update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
-    observation_writer_.reset(new ObservationWriter(
-        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get()));
-    encoder_.reset(new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
-    local_aggregate_proto_store_.reset(new MockConsistentProtoStore(kAggregateStoreFilename));
-    obs_history_proto_store_.reset(new MockConsistentProtoStore(kObsHistoryFilename));
+    observation_writer_ = std::make_unique<ObservationWriter>(
+        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
+    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
+    local_aggregate_proto_store_ =
+        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
+    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
     ResetEventAggregator();
   }
 
   void ResetEventAggregator() {
-    event_aggregator_.reset(new EventAggregator(encoder_.get(), observation_writer_.get(),
-                                                local_aggregate_proto_store_.get(),
-                                                obs_history_proto_store_.get()));
+    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
+                                                          local_aggregate_proto_store_.get(),
+                                                          obs_history_proto_store_.get());
     // Provide the EventAggregator with a mock clock starting at 10 years after
     // the beginning of time.
     mock_clock_ = new IncrementingClock(std::chrono::system_clock::duration(0));
@@ -127,7 +124,7 @@ class EventAggregatorTest : public ::testing::Test {
   // Destruct the EventAggregator (thus calling EventAggregator::ShutDown())
   // before destructing the objects which the EventAggregator points to but does
   // not own.
-  void TearDown() { event_aggregator_.reset(); }
+  void TearDown() override { event_aggregator_.reset(); }
 
   // Advances |mock_clock_| by |num_seconds| seconds.
   void AdvanceClock(int num_seconds) {
@@ -303,7 +300,7 @@ class EventAggregatorTest : public ::testing::Test {
   Status LogPerDeviceMemoryUsageEvent(const ProjectContext& project_context,
                                       const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component,
-                                      const std::vector<uint32_t> event_codes, int64_t bytes,
+                                      const std::vector<uint32_t>& event_codes, int64_t bytes,
                                       LoggedValues* logged_values = nullptr) {
     EventRecord event_record;
     event_record.metric = project_context.GetMetric(metric_report_id.first);
@@ -339,7 +336,7 @@ class EventAggregatorTest : public ::testing::Test {
   // current_day_index: The day index of the current day in the test's frame
   // of reference.
   bool CheckUniqueActivesAggregates(const LoggedActivity& logged_activity,
-                                    uint32_t current_day_index) {
+                                    uint32_t /*current_day_index*/) {
     auto local_aggregate_store = event_aggregator_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more UniqueActives
     // aggregates than |logged_activity| and |day_last_garbage_collected_|
@@ -454,7 +451,7 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   bool CheckPerDeviceNumericAggregates(const LoggedValues& logged_values,
-                                       uint32_t current_day_index) {
+                                       uint32_t /*current_day_index*/) {
     auto local_aggregate_store = event_aggregator_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more PerDeviceNumeric
     // aggregates than |logged_values| and |day_last_garbage_collected_| should
@@ -614,7 +611,7 @@ class EventAggregatorTest : public ::testing::Test {
             }
           }
           if (!component_found | !event_code_found) {
-            for (auto logged_day_pair : logged_day_map) {
+            for (const auto& logged_day_pair : logged_day_map) {
               auto logged_day_index = logged_day_pair.first;
               EXPECT_LT(logged_day_index, earliest_allowed);
               if (logged_day_index >= earliest_allowed) {
@@ -644,29 +641,29 @@ class EventAggregatorTest : public ::testing::Test {
            "of backfill days.";
     if (day_last_garbage_collected_ == 0u) {
       return day_store_created_ - backfill_days;
-    } else {
-      // Otherwise, it is the later of:
-      // (a) The day index on which the store was created minus the number
-      // of backfill days.
-      // (b) The day index for which the store was last garbage-collected
-      // minus the number of backfill days, minus the largest window size in
-      // the report associated to |config|, plus 1.
-      EXPECT_GE(day_last_garbage_collected_, backfill_days)
-          << "The day index of last garbage collection must be larger than "
-             "the number of backfill days.";
-      uint32_t max_window_size = 1;
-      for (uint32_t window_size : config.report().window_size()) {
-        if (window_size > max_window_size) {
-          max_window_size = window_size;
-        }
-      }
-      if (day_last_garbage_collected_ - backfill_days < (max_window_size + 1)) {
-        return day_store_created_ - backfill_days;
-      }
-      return (day_store_created_ < (day_last_garbage_collected_ - max_window_size + 1))
-                 ? (day_last_garbage_collected_ - backfill_days - max_window_size + 1)
-                 : day_store_created_ - backfill_days;
     }
+
+    // Otherwise, it is the later of:
+    // (a) The day index on which the store was created minus the number
+    // of backfill days.
+    // (b) The day index for which the store was last garbage-collected
+    // minus the number of backfill days, minus the largest window size in
+    // the report associated to |config|, plus 1.
+    EXPECT_GE(day_last_garbage_collected_, backfill_days)
+        << "The day index of last garbage collection must be larger than "
+           "the number of backfill days.";
+    uint32_t max_window_size = 1;
+    for (uint32_t window_size : config.report().window_size()) {
+      if (window_size > max_window_size) {
+        max_window_size = window_size;
+      }
+    }
+    if (day_last_garbage_collected_ - backfill_days < (max_window_size + 1)) {
+      return day_store_created_ - backfill_days;
+    }
+    return (day_store_created_ < (day_last_garbage_collected_ - max_window_size + 1))
+               ? (day_last_garbage_collected_ - backfill_days - max_window_size + 1)
+               : day_store_created_ - backfill_days;
   }
 
   std::unique_ptr<EventAggregator> event_aggregator_;
@@ -697,7 +694,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
     project_context_ = GetTestProject(registry_var_name);
   }
 
-  void SetUp() {
+  void SetUp() override {
     EventAggregatorTest::SetUp();
     event_aggregator_->UpdateAggregationConfigs(*project_context_);
   }
@@ -748,7 +745,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   // EventAggregatorTest::LogPerDeviceMemoryUsageEvent.
   Status LogPerDeviceMemoryUsageEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component,
-                                      std::vector<uint32_t> event_codes, int64_t bytes,
+                                      const std::vector<uint32_t>& event_codes, int64_t bytes,
                                       LoggedValues* logged_values = nullptr) {
     return EventAggregatorTest::LogPerDeviceMemoryUsageEvent(*project_context_, metric_report_id,
                                                              day_index, component, event_codes,
@@ -803,7 +800,7 @@ class NoiseFreeMixedTimeZoneEventAggregatorTest : public EventAggregatorTestWith
 
 class EventAggregatorWorkerTest : public EventAggregatorTest {
  protected:
-  void SetUp() { EventAggregatorTest::SetUp(); }
+  void SetUp() override { EventAggregatorTest::SetUp(); }
 
   void ShutDownWorkerThread() { event_aggregator_->ShutDown(); }
 

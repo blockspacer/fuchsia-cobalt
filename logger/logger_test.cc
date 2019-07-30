@@ -70,8 +70,8 @@ constexpr int kDay = 60 * 60 * 24;
 constexpr int kYear = kDay * 365;
 
 // Filenames for constructors of ConsistentProtoStores
-static const char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-static const char kObsHistoryFilename[] = "obs_history_backup";
+constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
+constexpr char kObsHistoryFilename[] = "obs_history_backup";
 
 HistogramPtr NewHistogram(std::vector<uint32_t> indices, std::vector<uint32_t> counts) {
   CHECK(indices.size() == counts.size());
@@ -108,21 +108,22 @@ class LoggerTest : public ::testing::Test {
   void SetUpFromMetrics(const std::string& registry_base64,
                         const ExpectedAggregationParams& expected_aggregation_params) {
     expected_aggregation_params_ = expected_aggregation_params;
-    observation_store_.reset(new FakeObservationStore);
-    update_recipient_.reset(new TestUpdateRecipient);
+    observation_store_ = std::make_unique<FakeObservationStore>();
+    update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
-    observation_writer_.reset(new ObservationWriter(
-        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get()));
-    encoder_.reset(new Encoder(ClientSecret::GenerateNewSecret(), system_data_.get()));
-    local_aggregate_proto_store_.reset(new MockConsistentProtoStore(kAggregateStoreFilename));
-    obs_history_proto_store_.reset(new MockConsistentProtoStore(kObsHistoryFilename));
-    event_aggregator_.reset(new EventAggregator(encoder_.get(), observation_writer_.get(),
-                                                local_aggregate_proto_store_.get(),
-                                                obs_history_proto_store_.get()));
-    internal_logger_.reset(new testing::FakeLogger());
-    logger_.reset(new Logger(GetTestProject(registry_base64), encoder_.get(),
-                             event_aggregator_.get(), observation_writer_.get(), system_data_.get(),
-                             internal_logger_.get()));
+    observation_writer_ = std::make_unique<ObservationWriter>(
+        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
+    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
+    local_aggregate_proto_store_ =
+        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
+    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
+    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
+                                                          local_aggregate_proto_store_.get(),
+                                                          obs_history_proto_store_.get());
+    internal_logger_ = std::make_unique<testing::FakeLogger>();
+    logger_ = std::make_unique<Logger>(GetTestProject(registry_base64), encoder_.get(),
+                                       event_aggregator_.get(), observation_writer_.get(),
+                                       system_data_.get(), internal_logger_.get());
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
