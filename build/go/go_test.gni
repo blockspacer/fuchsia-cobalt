@@ -8,6 +8,10 @@ import("//build/go/go_build.gni")
 
 # Parameters: same as go_build, along with
 #
+#  gopackages
+#     Required: The go packages containing the tests to be run.
+#     Type: list of strings.
+#
 #   args
 #     Optional: additional arguments needed when invoking the test.
 #     Type: list of strings.
