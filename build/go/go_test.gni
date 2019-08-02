@@ -8,10 +8,9 @@ import("//build/go/go_build.gni")
 
 # Parameters: same as go_build, along with
 #
-#   gopackages
-#     Required: exactly one of {gopackage, gopackages} must be specified.
+#  gopackages
+#     Required: The go packages containing the tests to be run.
 #     Type: list of strings.
-#     The go packages containing the tests to be run.
 #
 #   args
 #     Optional: additional arguments needed when invoking the test.
@@ -36,13 +35,6 @@ template("go_test") {
     output_name = "tests/go/${invoker.output_name}"
   }
   _output_path = "${root_out_dir}/${output_name}"
-
-  if (defined(invoker.gopackage)) {
-    # TODO(FIDL-766) Migrate from gopackage to gopackages in all callers.
-    assert(!defined(invoker.gopackages),
-           "gopackage and gopackages cannot both be defined")
-    gopackages = [ invoker.gopackage ]
-  }
 
   go_build(_main_target_name) {
     test = true
