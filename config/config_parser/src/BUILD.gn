@@ -73,7 +73,7 @@ go_binary("bin") {
 
 foreach(pkg, _source_packages) {
   go_test("${pkg}_test") {
-    gopackages = [ pkg ]
+    gopackage = pkg
 
     deps = [
       ":$pkg",
