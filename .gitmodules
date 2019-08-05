@@ -1,6 +1,10 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://fuchsia.googlesource.com/third_party/boringssl
+	# third_party/boringssl-src is symlinked to third_party/boringssl/src which
+	# causes git to report this repository as dirty. We ignore the dirty status
+	# for this submodule so it doesn't always show up as modified.
+	ignore = dirty
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://fuchsia.googlesource.com/third_party/googletest/
