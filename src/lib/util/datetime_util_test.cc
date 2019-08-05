@@ -27,7 +27,7 @@ namespace util {
 // (a) It uses the function timegm which is nonstandard and may not be supported
 // on all platforms we want to support. See:
 // http://man7.org/linux/man-pages/man3/timegm.3.html#CONFORMING_TO
-// (b) In order to imlement timegm ourselves using standard library functions
+// (b) In order to implement timegm ourselves using standard library functions
 // it is necessary to invoke functions that make use of the local timezone
 // and that are not thread-safe because they use global state. Both of these
 // things are unnecessary. It seemed like a better idea to use a pure
@@ -353,6 +353,44 @@ TEST(DatetimeUtilTest, MonthIndexCalendarDateInversesTest) {
   for (uint32_t month_index = 500; month_index < 1000; month_index++) {
     CalendarDate calendar_date = MonthIndexToCalendarDate(month_index);
     EXPECT_EQ(month_index, CalendarDateToMonthIndex(calendar_date));
+  }
+}
+
+TEST(DatetimeUtilTest, TimeToHourIndexTest) {
+  // This unix timestamp corresponds to:
+  // UTC:  00:00:00 on August 6, 2019
+  // PDT:  17:00:00 on August 5, 2019
+  static const time_t kSummerExactHourTimestamp = 1565049600;
+  // This unix timestamp corresponds to:
+  // UTC:  13:42:07 on August 6, 2019
+  // PDT:  06:42:07 on August 5, 2019
+  static const time_t kSummerOffHourTimestamp = 1565098927;
+  // This unix timestamp corresponds to:
+  // UTC:  00:00:00 on January 6, 2019
+  // PST:  16:00:00 on January 5, 2019
+  static const time_t kWinterTimestamp = 1546732800;
+
+  static const uint32_t kUtcSummerExactHourIndex = 0;
+  static const uint32_t kUtcSummerOffHourIndex = 13;
+  static const uint32_t kUtcWinterHourIndex = 0;
+  static const uint32_t kPacificSummerExactHourIndex = 17;
+  static const uint32_t kPacificSummerOffHourIndex = 6;
+  static const uint32_t kPacificWinterHourIndex = 16;
+
+  EXPECT_EQ(kUtcSummerExactHourIndex, TimeToHourIndex(kSummerExactHourTimestamp, Metric::UTC));
+  EXPECT_EQ(kUtcSummerOffHourIndex, TimeToHourIndex(kSummerOffHourTimestamp, Metric::UTC));
+  EXPECT_EQ(kUtcWinterHourIndex, TimeToHourIndex(kWinterTimestamp, Metric::UTC));
+  // Only perform the following check when running this test in the Pacific
+  // timezone. Note that |timezone| is a global variable defined in <ctime>
+  // that stores difference between UTC and the latest local standard time, in
+  // seconds west of UTC. This value is not adjusted for daylight saving.
+  // See https://www.gnu.org/software/libc/manual/html_node/ \
+  //                              Time-Zone-Functions.html#Time-Zone-Functions
+  if (timezone / 3600 == 8) {
+    EXPECT_EQ(kPacificSummerExactHourIndex,
+              TimeToHourIndex(kSummerExactHourTimestamp, Metric::LOCAL));
+    EXPECT_EQ(kPacificSummerOffHourIndex, TimeToHourIndex(kSummerOffHourTimestamp, Metric::LOCAL));
+    EXPECT_EQ(kPacificWinterHourIndex, TimeToHourIndex(kWinterTimestamp, Metric::LOCAL));
   }
 }
 

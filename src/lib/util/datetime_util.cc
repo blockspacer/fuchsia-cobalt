@@ -65,6 +65,30 @@ CalendarDate TimeInfoToCalendarDate(const TimeInfo& time_info) {
 }  // namespace
 
 template <typename T>
+inline uint32_t TimeToHourIndex(time_t time, typename T::TimeZonePolicy time_zone) {
+  TimeInfo time_info;
+  switch (time_zone) {
+    case T::LOCAL:
+      localtime_r(&time, &time_info);
+      break;
+    case T::UTC:
+      gmtime_r(&time, &time_info);
+      break;
+    default:
+      return UINT32_MAX;
+  }
+  return time_info.tm_hour;
+}
+
+uint32_t TimeToHourIndex(time_t time, Metric::TimeZonePolicy time_zone) {
+  return TimeToHourIndex<Metric>(time, time_zone);
+}
+
+uint32_t TimeToHourIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone) {
+  return TimeToHourIndex<MetricDefinition>(time, time_zone);
+}
+
+template <typename T>
 inline uint32_t TimeToDayIndex(time_t time, typename T::TimeZonePolicy time_zone) {
   TimeInfo time_info;
   switch (time_zone) {

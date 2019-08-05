@@ -35,6 +35,8 @@ message Event {
 
   // The index of the day on which this Event occurred.
   uint32 day_index = 1003;
+  // The hour index (between 0 and 23 inclusive) within the day on which this Event occurred.
+  uint32 hour_index = 1004;
 }
 
 // Records that an event has occurred.

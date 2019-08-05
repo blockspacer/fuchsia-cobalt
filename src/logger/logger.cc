@@ -25,6 +25,7 @@ namespace logger {
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::util::SystemClock;
 using ::cobalt::util::TimeToDayIndex;
+using ::cobalt::util::TimeToHourIndex;
 using ::google::protobuf::RepeatedField;
 using ::google::protobuf::RepeatedPtrField;
 
@@ -583,10 +584,11 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricTy
     return kInvalidArguments;
   }
 
-  // Compute the day_index.
-  event_record->event->set_day_index(
-      TimeToDayIndex(std::chrono::system_clock::to_time_t(logger_->clock_->now()),
-                     event_record->metric->time_zone_policy()));
+  // Compute the day_index and hour index.
+  auto now = std::chrono::system_clock::to_time_t(logger_->clock_->now());
+  event_record->event->set_day_index(TimeToDayIndex(now, event_record->metric->time_zone_policy()));
+  event_record->event->set_hour_index(
+      TimeToHourIndex(now, event_record->metric->time_zone_policy()));
 
   return ValidateEvent(*event_record);
 }
