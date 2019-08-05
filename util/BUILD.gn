@@ -8,6 +8,19 @@ source_set("clock") {
   ]
 }
 
+source_set("proto_serialization") {
+  sources = [
+    # Sources from protobuf that are not included in protobuf lite
+    "//third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc",
+    "//third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h",
+    "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.cc",
+    "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.h",
+  ]
+  public_deps = [
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
 source_set("encrypted_message_util") {
   sources = [
     "encrypted_message_util.cc",
@@ -16,6 +29,10 @@ source_set("encrypted_message_util") {
   configs -= [ "//build/config:no_rtti" ]
 
   public_configs = [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    "//third_party/abseil-cpp",
+  ]
 
   public_deps = [
     ":status",
@@ -90,6 +107,7 @@ static_library("consistent_proto_store") {
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
+    ":proto_serialization",
     ":status",
     "//third_party/protobuf:protobuf_lite",
   ]

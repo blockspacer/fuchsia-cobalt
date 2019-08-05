@@ -16,12 +16,12 @@
 #include <vector>
 
 #include "./logging.h"
-#include "encoder/envelope_maker.h"
 #include "encoder/observation_store.h"
 #include "encoder/observation_store_update_recipient.h"
 #include "encoder/upload_scheduler.h"
 #include "logger/internal_metrics.h"
 #include "third_party/clearcut/uploader.h"
+#include "util/encrypted_message_util.h"
 
 #include "grpc++/grpc++.h"
 
