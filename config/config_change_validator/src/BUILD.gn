@@ -20,7 +20,7 @@ foreach(pkg, _source_packages) {
   }
 
   go_test("${pkg}_test") {
-    gopackage = pkg
+    gopackages = [ pkg ]
     deps = [
       ":$pkg",
       ":config",
