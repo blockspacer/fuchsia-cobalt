@@ -11,7 +11,7 @@
 
 #include "./logging.h"
 #include "./tracing.h"
-#include "logger/logger_interface.h"
+#include "src/logger/logger_interface.h"
 #include "src/observation_store/file_observation_store_internal.pb.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 

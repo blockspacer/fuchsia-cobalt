@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/logger.h"
+#include "src/logger/logger.h"
 
 #include <memory>
 #include <string>
@@ -11,8 +11,8 @@
 #include "./logging.h"
 #include "./observation2.pb.h"
 #include "./tracing.h"
-#include "logger/event_record.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
+#include "src/logger/event_record.h"
 #include "src/registry/encodings.pb.h"
 #include "src/registry/id.h"
 #include "src/registry/metric_definition.pb.h"

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/event_aggregator.h"
+#include "src/logger/event_aggregator.h"
 
 #include <algorithm>
 #include <map>
@@ -10,8 +10,8 @@
 #include <utility>
 #include <vector>
 
-#include "logger/project_context.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
+#include "src/logger/project_context.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "util/datetime_util.h"

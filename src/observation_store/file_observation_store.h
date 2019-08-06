@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "logger/internal_metrics.h"
+#include "src/logger/internal_metrics.h"
 #include "src/observation_store/envelope_maker.h"
 #include "src/observation_store/observation_store.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"

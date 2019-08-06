@@ -9,7 +9,7 @@
 
 #include "./clearcut_extensions.pb.h"
 #include "./logging.h"
-#include "logger/logger_interface.h"
+#include "src/logger/logger_interface.h"
 
 namespace cobalt {
 namespace encoder {

@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "./logging.h"
-#include "logger/internal_metrics.h"
+#include "src/logger/internal_metrics.h"
 #include "src/observation_store/observation_store.h"
 #include "src/observation_store/observation_store_update_recipient.h"
 #include "src/uploader/upload_scheduler.h"

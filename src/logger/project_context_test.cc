@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/project_context.h"
+#include "src/logger/project_context.h"
 
 #include <memory>
 #include <string>
@@ -14,7 +14,7 @@
 #include "./gtest.h"
 #include "./logging.h"
 #include "./observation2.pb.h"
-#include "logger/test_registries/project_context_test_registry.cb.h"
+#include "src/logger/test_registries/project_context_test_registry.cb.h"
 #include "src/registry/project_configs.h"
 #include "util/crypto_util/base64.h"
 

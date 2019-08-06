@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/encoder.h"
+#include "src/logger/encoder.h"
 
 #include <memory>
 #include <string>
@@ -13,10 +13,10 @@
 #include "./logging.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
-#include "logger/project_context.h"
-#include "logger/project_context_factory.h"
-#include "logger/status.h"
-#include "logger/test_registries/encoder_test_registry.cb.h"
+#include "src/logger/project_context.h"
+#include "src/logger/project_context_factory.h"
+#include "src/logger/status.h"
+#include "src/logger/test_registries/encoder_test_registry.cb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/fake_system_data.h"
 #include "util/crypto_util/base64.h"

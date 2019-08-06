@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_FAKE_LOGGER_H_
-#define COBALT_LOGGER_FAKE_LOGGER_H_
+#ifndef COBALT_SRC_LOGGER_FAKE_LOGGER_H_
+#define COBALT_SRC_LOGGER_FAKE_LOGGER_H_
 
 #include <map>
 #include <memory>
@@ -14,9 +14,9 @@
 #include <vector>
 
 #include "./gtest.h"
-#include "logger/local_aggregation.pb.h"
-#include "logger/logger_interface.h"
-#include "logger/project_context.h"
+#include "src/logger/local_aggregation.pb.h"
+#include "src/logger/logger_interface.h"
+#include "src/logger/project_context.h"
 #include "src/registry/project_configs.h"
 #include "util/consistent_proto_store.h"
 #include "util/posix_file_system.h"
@@ -65,4 +65,4 @@ class FakeLogger : public LoggerInterface {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  //  COBALT_LOGGER_FAKE_LOGGER_H_
+#endif  //  COBALT_SRC_LOGGER_FAKE_LOGGER_H_

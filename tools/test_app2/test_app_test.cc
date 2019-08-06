@@ -13,9 +13,9 @@
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "logger/logger_test_utils.h"
-#include "logger/project_context.h"
-#include "logger/project_context_factory.h"
+#include "src/logger/logger_test_utils.h"
+#include "src/logger/project_context.h"
+#include "src/logger/project_context_factory.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {

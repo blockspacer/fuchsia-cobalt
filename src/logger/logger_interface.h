@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_LOGGER_INTERFACE_H_
-#define COBALT_LOGGER_LOGGER_INTERFACE_H_
+#ifndef COBALT_SRC_LOGGER_LOGGER_INTERFACE_H_
+#define COBALT_SRC_LOGGER_LOGGER_INTERFACE_H_
 
 #include <memory>
 #include <string>
@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "./observation2.pb.h"
-#include "logger/status.h"
-#include "logger/types.h"
+#include "src/logger/status.h"
+#include "src/logger/types.h"
 
 namespace cobalt {
 namespace logger {
@@ -205,4 +205,4 @@ class LoggerInterface {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_LOGGER_INTERFACE_H_
+#endif  // COBALT_SRC_LOGGER_LOGGER_INTERFACE_H_

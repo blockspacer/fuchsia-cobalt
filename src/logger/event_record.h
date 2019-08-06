@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_EVENT_RECORD_H_
-#define COBALT_LOGGER_EVENT_RECORD_H_
+#ifndef COBALT_SRC_LOGGER_EVENT_RECORD_H_
+#define COBALT_SRC_LOGGER_EVENT_RECORD_H_
 
 #include <memory>
 
@@ -23,4 +23,4 @@ struct EventRecord {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_EVENT_RECORD_H_
+#endif  // COBALT_SRC_LOGGER_EVENT_RECORD_H_

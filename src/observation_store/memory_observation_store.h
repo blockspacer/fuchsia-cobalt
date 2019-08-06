@@ -8,7 +8,7 @@
 #include <deque>
 #include <memory>
 
-#include "logger/internal_metrics.h"
+#include "src/logger/internal_metrics.h"
 #include "src/observation_store/envelope_maker.h"
 #include "src/observation_store/observation_store.h"
 

@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "./observation2.pb.h"
-#include "logger/logger.h"
-#include "logger/project_context.h"
+#include "src/logger/logger.h"
+#include "src/logger/project_context.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "util/clock.h"
 

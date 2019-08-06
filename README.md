@@ -105,11 +105,6 @@ repository [here](https://fuchsia.googlesource.com/fuchsia/+/master/build).
 This directory contains development keys for encrypting observations/envelopes
 to the backend.
 
-### logger
-This directory contains the code for Cobalt 1.0's Logger, which is a client
-library whose job is to encode Observation2s using one of several
-privacy-preserving encodings, and send Envelopes to the shuffler.
-
 ### manifest
 This directory contains a Jiri manifest. It is used to integrate Cobalt into
 the rest of the Fuchsia build when Cobalt is imported into third_party/cobalt.
@@ -132,6 +127,11 @@ decode Observations.
 This directory contains the code for Cobalt's Encoder, which is a
 client library whose job is to encode Observations using one of several
 privacy-preserving encodings, and send Envelopes to the Shuffler using gRPC.
+
+### src/logger
+This directory contains the code for Cobalt 1.0's Logger, which is a client
+library whose job is to encode Observation2s using one of several
+privacy-preserving encodings, and send Envelopes to the shuffler.
 
 ### src/registry
 This directory contains the implementation of Cobalt's config registration

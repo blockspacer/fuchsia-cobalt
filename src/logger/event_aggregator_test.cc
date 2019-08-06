@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/event_aggregator.h"
+#include "src/logger/event_aggregator.h"
 
 #include <algorithm>
 #include <map>
@@ -16,8 +16,8 @@
 
 #include "./event.pb.h"
 #include "./gtest.h"
-#include "logger/logger_test_utils.h"
-#include "logger/testing_constants.h"
+#include "src/logger/logger_test_utils.h"
+#include "src/logger/testing_constants.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/registry/project_configs.h"
 #include "util/clock.h"

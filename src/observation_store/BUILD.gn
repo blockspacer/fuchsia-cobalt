@@ -41,8 +41,8 @@ source_set("observation_store") {
   deps = [
     ":file_observation_store_internal_proto",
     ":observation_store_update_recipient",
-    "$cobalt_root/logger:internal_metrics",
-    "$cobalt_root/logger:logger_interface",
+    "$cobalt_root/src/logger:internal_metrics",
+    "$cobalt_root/src/logger:logger_interface",
   ]
   public_deps = [
     "$cobalt_root:cobalt_proto",

@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/internal_metrics.h"
+#include "src/logger/internal_metrics.h"
 
 #include <vector>
 
 #include "./gtest.h"
-#include "logger/fake_logger.h"
+#include "src/logger/fake_logger.h"
 
 namespace cobalt {
 namespace logger {

@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_PROJECT_CONTEXT_H_
-#define COBALT_LOGGER_PROJECT_CONTEXT_H_
+#ifndef COBALT_SRC_LOGGER_PROJECT_CONTEXT_H_
+#define COBALT_SRC_LOGGER_PROJECT_CONTEXT_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "logger/status.h"
+#include "src/logger/status.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project.pb.h"
@@ -172,4 +172,4 @@ class ProjectContext {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_PROJECT_CONTEXT_H_
+#endif  // COBALT_SRC_LOGGER_PROJECT_CONTEXT_H_

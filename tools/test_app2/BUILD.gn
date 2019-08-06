@@ -25,16 +25,16 @@ source_set("lib") {
   configs += [ "$cobalt_root/src/registry:proto_config" ]
 
   public_deps = [
-    "$cobalt_root/logger",
-    "$cobalt_root/logger:encoder",
-    "$cobalt_root/logger:event_aggregator",
+    "$cobalt_root/src/logger",
+    "$cobalt_root/src/logger:encoder",
+    "$cobalt_root/src/logger:event_aggregator",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
   ]
   deps = [
     "$cobalt_root:logging",
     "$cobalt_root:registry",
-    "$cobalt_root/logger:project_context_factory",
+    "$cobalt_root/src/logger:project_context_factory",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/uploader:shipping_manager",
     "$cobalt_root/util:datetime_util",

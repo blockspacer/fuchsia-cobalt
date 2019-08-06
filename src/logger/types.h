@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_TYPES_H_
-#define COBALT_LOGGER_TYPES_H_
+#ifndef COBALT_SRC_LOGGER_TYPES_H_
+#define COBALT_SRC_LOGGER_TYPES_H_
 
 #include <memory>
 #include <string>
@@ -26,4 +26,4 @@ using EventValuesPtr = std::unique_ptr<google::protobuf::Map<std::string, Custom
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_TYPES_H_
+#endif  // COBALT_SRC_LOGGER_TYPES_H_

@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "./observation_batch.pb.h"
-#include "logger/channel_mapper.h"
+#include "src/logger/channel_mapper.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++11-compat"

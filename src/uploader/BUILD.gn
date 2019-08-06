@@ -13,7 +13,7 @@ source_set("shipping_manager") {
     "$cobalt_root/src/system_data",
   ]
   public_deps = [
-    "$cobalt_root/logger:logger_interface",
+    "$cobalt_root/src/logger:logger_interface",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/third_party/clearcut:clearcut",

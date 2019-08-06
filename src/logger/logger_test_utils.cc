@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/logger_test_utils.h"
+#include "src/logger/logger_test_utils.h"
 
 #include <algorithm>
 #include <utility>
@@ -13,10 +13,10 @@
 #include "./logging.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
-#include "logger/encoder.h"
-#include "logger/project_context_factory.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/logger/encoder.h"
+#include "src/logger/project_context_factory.h"
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 #include "util/encrypted_message_util.h"

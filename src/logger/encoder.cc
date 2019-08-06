@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/encoder.h"
+#include "src/logger/encoder.h"
 
 #include <memory>
 #include <string>
@@ -10,10 +10,10 @@
 #include "./logging.h"
 #include "./observation2.pb.h"
 #include "./tracing.h"
-#include "logger/project_context.h"
 #include "src/algorithms/forculus/forculus_encrypter.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/logger/project_context.h"
 #include "src/registry/packed_event_codes.h"
 
 namespace cobalt {

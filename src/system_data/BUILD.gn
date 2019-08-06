@@ -9,8 +9,8 @@ group("encoder") {
   public_deps = [
     ":client_secret",
     ":system_data",
-    "$cobalt_root/logger:channel_mapper",
-    "$cobalt_root/logger:internal_metrics",
+    "$cobalt_root/src/logger:channel_mapper",
+    "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/registry:client_config",
     "$cobalt_root/src/uploader:shipping_manager",
@@ -41,7 +41,7 @@ source_set("system_data") {
   ]
   deps = [
     "$cobalt_root:logging",
-    "$cobalt_root/logger:channel_mapper",
+    "$cobalt_root/src/logger:channel_mapper",
     "//third_party/abseil-cpp",
   ]
   public_deps = [

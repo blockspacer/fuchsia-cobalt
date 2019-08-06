@@ -14,7 +14,7 @@
 #include "./envelope.pb.h"
 #include "./observation.pb.h"
 #include "./observation_batch.pb.h"
-#include "logger/logger_interface.h"
+#include "src/logger/logger_interface.h"
 
 namespace cobalt {
 namespace encoder {

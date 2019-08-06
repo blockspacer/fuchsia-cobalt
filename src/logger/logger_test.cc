@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/logger.h"
+#include "src/logger/logger.h"
 
 #include <chrono>
 #include <memory>
@@ -14,14 +14,14 @@
 #include "./gtest.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
-#include "logger/encoder.h"
-#include "logger/event_aggregator.h"
-#include "logger/fake_logger.h"
-#include "logger/logger_test_utils.h"
-#include "logger/project_context.h"
-#include "logger/status.h"
-#include "logger/testing_constants.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/logger/encoder.h"
+#include "src/logger/event_aggregator.h"
+#include "src/logger/fake_logger.h"
+#include "src/logger/logger_test_utils.h"
+#include "src/logger/project_context.h"
+#include "src/logger/status.h"
+#include "src/logger/testing_constants.h"
 #include "src/registry/encodings.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"

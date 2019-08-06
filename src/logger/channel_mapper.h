@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_CHANNEL_MAPPER_H_
-#define COBALT_LOGGER_CHANNEL_MAPPER_H_
+#ifndef COBALT_SRC_LOGGER_CHANNEL_MAPPER_H_
+#define COBALT_SRC_LOGGER_CHANNEL_MAPPER_H_
 
 #include <map>
 #include <string>
@@ -45,4 +45,4 @@ class ChannelMapper {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_CHANNEL_MAPPER_H_
+#endif  // COBALT_SRC_LOGGER_CHANNEL_MAPPER_H_

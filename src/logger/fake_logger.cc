@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "logger/fake_logger.h"
+#include "src/logger/fake_logger.h"
 
 #include <map>
 #include <memory>
@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "logger/logger_interface.h"
+#include "src/logger/logger_interface.h"
 #include "src/registry/project_configs.h"
 #include "util/status.h"
 

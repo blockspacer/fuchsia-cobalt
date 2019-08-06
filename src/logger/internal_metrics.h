@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_INTERNAL_METRICS_H_
-#define COBALT_LOGGER_INTERNAL_METRICS_H_
+#ifndef COBALT_SRC_LOGGER_INTERNAL_METRICS_H_
+#define COBALT_SRC_LOGGER_INTERNAL_METRICS_H_
 
 #include <memory>
 #include <string>
 
-#include "logger/internal_metrics_config.cb.h"
-#include "logger/logger_interface.h"
+#include "src/logger/internal_metrics_config.cb.h"
+#include "src/logger/logger_interface.h"
 #include "src/registry/project.pb.h"
 
 namespace cobalt {
@@ -105,4 +105,4 @@ class InternalMetricsImpl : public InternalMetrics {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_INTERNAL_METRICS_H_
+#endif  // COBALT_SRC_LOGGER_INTERNAL_METRICS_H_

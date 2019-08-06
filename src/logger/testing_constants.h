@@ -2,26 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGER_TESTING_CONSTANTS_H_
-#define COBALT_LOGGER_TESTING_CONSTANTS_H_
+#ifndef COBALT_SRC_LOGGER_TESTING_CONSTANTS_H_
+#define COBALT_SRC_LOGGER_TESTING_CONSTANTS_H_
 
-#include "logger/logger_test_utils.h"
+#include "src/logger/logger_test_utils.h"
 
 // Generated from all_reports_test_registry.yaml
 // Namespace: cobalt::logger::testing::all_report_types
-#include "logger/test_registries/all_report_types_test_registry.cb.h"
+#include "src/logger/test_registries/all_report_types_test_registry.cb.h"
 // Generated from mixed_time_zone_test_registry.yaml
 // Namespace: cobalt::logger::testing::mixed_time_zone
-#include "logger/test_registries/mixed_time_zone_test_registry.cb.h"
+#include "src/logger/test_registries/mixed_time_zone_test_registry.cb.h"
 // Generated from per_device_numeric_stats_test_registry.yaml
 // Namespace: cobalt::logger::testing::per_device_numeric_stats
-#include "logger/test_registries/per_device_numeric_stats_test_registry.cb.h"
+#include "src/logger/test_registries/per_device_numeric_stats_test_registry.cb.h"
 // Generated from unique_actives_noise_free_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives_noise_free
-#include "logger/test_registries/unique_actives_noise_free_test_registry.cb.h"
+#include "src/logger/test_registries/unique_actives_noise_free_test_registry.cb.h"
 // Generated from unique_actives_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives
-#include "logger/test_registries/unique_actives_test_registry.cb.h"
+#include "src/logger/test_registries/unique_actives_test_registry.cb.h"
 
 namespace cobalt {
 namespace logger {
@@ -232,4 +232,4 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 }  // namespace logger
 }  // namespace cobalt
 
-#endif  // COBALT_LOGGER_TESTING_CONSTANTS_H_
+#endif  // COBALT_SRC_LOGGER_TESTING_CONSTANTS_H_
