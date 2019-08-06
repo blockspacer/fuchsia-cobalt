@@ -133,6 +133,9 @@ This directory contains the code for Cobalt 1.0's Logger, which is a client
 library whose job is to encode Observation2s using one of several
 privacy-preserving encodings, and send Envelopes to the shuffler.
 
+### src/test_app2
+This directory contains the code for a linux test client for cobalt.
+
 ### src/registry
 This directory contains the implementation of Cobalt's config registration
 system. A client that wants to use Cobalt starts by registering configurations

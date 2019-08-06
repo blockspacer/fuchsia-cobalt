@@ -4,7 +4,7 @@
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "tools/test_app2/test_app.h"
+#include "src/bin/test_app/test_app.h"
 
 int main(int argc, char* argv[]) {
   google::SetUsageMessage(

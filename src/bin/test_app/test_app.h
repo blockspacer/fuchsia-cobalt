@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_TOOLS_TEST_APP2_TEST_APP_H_
-#define COBALT_TOOLS_TEST_APP2_TEST_APP_H_
+#ifndef COBALT_SRC_BIN_TEST_APP_TEST_APP_H_
+#define COBALT_SRC_BIN_TEST_APP_TEST_APP_H_
 
 #include <stdint.h>
 
@@ -188,4 +188,4 @@ class TestApp {
 
 }  // namespace cobalt
 
-#endif  // COBALT_TOOLS_TEST_APP2_TEST_APP_H_
+#endif  // COBALT_SRC_BIN_TEST_APP_TEST_APP_H_

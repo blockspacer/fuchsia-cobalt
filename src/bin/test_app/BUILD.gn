@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-executable("test_app2") {
+executable("test_app") {
   testonly = true
 
   sources = [
@@ -41,7 +41,7 @@ source_set("lib") {
     "$cobalt_root/util:file_util",
     "$cobalt_root/util:posix_file_system",
     "$cobalt_root/util:proto_serialization",
-    "$cobalt_root/util/clearcut:curl_http_client",
+    "$cobalt_root/src/lib/clearcut:curl_http_client",
     "//third_party/abseil-cpp",
     "//third_party/grpc:grpc++",
     "//third_party/protobuf:protobuf_lite",

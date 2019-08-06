@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "tools/test_app2/test_app.h"
+#include "src/bin/test_app/test_app.h"
 
 #include <libgen.h>
 
@@ -17,6 +17,7 @@
 #include "./observation2.pb.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "src/lib/clearcut/curl_http_client.h"
 #include "src/logger/encoder.h"
 #include "src/logger/event_aggregator.h"
 #include "src/logger/local_aggregation.pb.h"
@@ -30,7 +31,6 @@
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
 #include "third_party/statusor/statusor.h"
-#include "util/clearcut/curl_http_client.h"
 #include "util/clock.h"
 #include "util/consistent_proto_store.h"
 #include "util/datetime_util.h"

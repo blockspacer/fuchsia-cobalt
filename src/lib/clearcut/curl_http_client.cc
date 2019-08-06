@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "util/clearcut/curl_http_client.h"
+#include "src/lib/clearcut/curl_http_client.h"
 
 #include <iostream>
 #include <utility>
 
-#include "util/clearcut/curl_handle.h"
+#include "src/lib/clearcut/curl_handle.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++11-compat"

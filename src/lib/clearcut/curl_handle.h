@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_UTIL_CLEARCUT_CURL_HANDLE_H_
-#define COBALT_UTIL_CLEARCUT_CURL_HANDLE_H_
+#ifndef COBALT_SRC_LIB_CLEARCUT_CURL_HANDLE_H_
+#define COBALT_SRC_LIB_CLEARCUT_CURL_HANDLE_H_
 
 #include <map>
 #include <memory>
@@ -56,4 +56,4 @@ class CurlHandle {
 }  // namespace util
 }  // namespace cobalt
 
-#endif  // COBALT_UTIL_CLEARCUT_CURL_HANDLE_H_
+#endif  // COBALT_SRC_LIB_CLEARCUT_CURL_HANDLE_H_

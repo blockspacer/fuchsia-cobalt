@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_UTIL_CLEARCUT_CURL_HTTP_CLIENT_H_
-#define COBALT_UTIL_CLEARCUT_CURL_HTTP_CLIENT_H_
+#ifndef COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
+#define COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
 
 #include "third_party/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"
@@ -34,4 +34,4 @@ class CurlHTTPClient : public clearcut::HTTPClient {
 }  // namespace util
 }  // namespace cobalt
 
-#endif  // COBALT_UTIL_CLEARCUT_CURL_HTTP_CLIENT_H_
+#endif  // COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
