@@ -21,8 +21,8 @@ When imported into `//third_party/cobalt` within a Fuchsia checkout, the Cobalt
 client library is compiled for Fuchsia and accessed via a FIDL wrapper. If you
 are trying to use Cobalt from an application running on Fuchsia, stop reading
 this document and instead read Cobalt's
-[README.md](https://fuchsia.googlesource.com/garnet/+/master/bin/cobalt/README.md)
-in the Garnet repo.
+[README.md](https://fuchsia.googlesource.com/fuchsia/+/master/src/cobalt/bin/README.md)
+in the Fuchsia repo.
 
 ## Requirements
   1. We only develop on Linux. You may or may not have success on other
@@ -44,7 +44,6 @@ For example via
   * Fetches third party code into the `third_party` dir via git submodules.
   * Fetches the sysroot and puts it in the `sysroot` dir. This uses a tool
   called `cipd` or *Chrome Infrastructure Package Deployer*.
-  * Updates the Google Cloud SDK (which was included in sysroot)
   * Other miscellaneous stuff
 
 ## cobaltb.py
@@ -97,79 +96,47 @@ stored in an *EncryptedMessage.* Multiple EncryptedMessages are stored in an
 *ObservationBatch*. Multiple ObservationBatches are stored in an Envelope.
 Envelopes are sent via gRPC from the *Encoder* to the *Shuffler*.
 
-### encoder
-This directory contains the code for Cobalt's Encoder, which is a
-client library whose job is to encode Observations using one of several
-privacy-preserving encodings, and send Envelopes to the Shuffler using gRPC.
-
-### shuffler
-This directory contains the code for one of Cobalt's server-side components,
-the Shuffler. The Shuffler receives encrypted Observations from the Encoder,
-stores them briefly, shuffles them, and forwards the shuffled ObservationBatches
-on to the Analyzer Service. The purpose of the Shuffler is to break linkability
-with individual users. It is one of the privacy tools in Cobalt's arsenal.
-The Shuffler is written in Go.
-
-### analyzer
-This directory contains the code for more of Cobalt's server side components.
-Conceptually the Analyzer is a single entity responsible for receiving
-Observations from the Shuffler, storing them in a database, and later
-analyzing them to produce published reports. The analyzer is actually composed
-of two different processes.
-
-#### analyzer/analyzer_service
-This directory contains the code for Cobalt's
-Analyzer Service process. This is a gRPC server that receives ObservationBatches
-from the Shuffler and writes the Observations to Cobalt's ObservationStore
-in Bigtable.
-
-#### analyzer/report_master
-This directory contains the code for Cobalt's
-Report Master process. This is a server that generates periodic reports
-on a schedule. It analyzes the Observations in the ObservationStore,
-decodes them if they were encoded using a privacy-preserving algorithm,
-and aggregates them into reports. The reports are stored in Cobalt's ReportStore
-in Bigtable and also published as CSV files to Google Cloud Storage. The
-ReportMaster also exposes a gRPC API so that one-off reports may be requested.
-
-#### analyzer/store
-This directory contains the implementations of the ObservationStore and
-ReportStore using Bigtable.
-
 ### algorithms
 This directory contains the implementations of Cobalt's privacy-
 preserving algorithms. This code is linked into both the Encoder, which
 uses it to encode Observations, and the ReportMaster, which uses it to
 decode Observations.
 
+### build
+This directory contains GN files needed for building Cobalt. Most of these files
+should be similar if not identical to the associated file in the Fuchsia
+repository [here](https://fuchsia.googlesource.com/fuchsia/+/master/build).
+
 ### config
 This directory contains the implementation of Cobalt's config registration
 system. A client that wants to use Cobalt starts by registering configurations
 of their *Metrics*, *Encodings* and *Reports*.
 
-### end_to_end_tests
-Contains our end-to-end test, written in Go.
+### encoder
+This directory contains the code for Cobalt's Encoder, which is a
+client library whose job is to encode Observations using one of several
+privacy-preserving encodings, and send Envelopes to the Shuffler using gRPC.
 
-### infra
-This directory contains hooks used by Fuchsia's CI (continuous integration)
-and CQ (commit queue) systems.
+### keys
+This directory contains development keys for encrypting observations/envelopes
+to the backend.
 
-### kubernetes
-This directory contains data files related to deploying Cobalt to Google
-Kubernetes Engine. It is used only at deploy time.
+### logger
+This directory contains the code for Cobalt 1.0's Logger, which is a client
+library whose job is to encode Observation2s using one of several
+privacy-preserving encodings, and send Envelopes to the shuffler.
 
 ### manifest
 This directory contains a Jiri manifest. It is used to integrate Cobalt into
 the rest of the Fuchsia build when Cobalt is imported into third_party/cobalt.
 This is not used at all in Cobalt's stand-alone build.
 
-### production
-This directory contains configuration about the production data centers
-where the Cobalt servers are deployed. It is used only at deploy time.
+### meta
+This directory contains cmx files for running Cobalt's tests in fuchsia.
 
-### prototype
-This directory contains a rather old and obsolete early Python prototype
-of Cobalt.
+### src
+This directory is the root directory of the Cobalt source code. All new code
+should be put in a subdirectory of src/
 
 ### tools
 This directory contains build, test and deployment tooling.
