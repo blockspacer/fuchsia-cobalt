@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "./event.pb.h"
-#include "config/metric_definition.pb.h"
+#include "src/registry/metric_definition.pb.h"
 
 namespace cobalt {
 namespace logger {

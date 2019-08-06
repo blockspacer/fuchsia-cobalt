@@ -15,7 +15,7 @@
 #ifndef COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_UTILS_H_
 #define COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_UTILS_H_
 
-#include "config/encodings.pb.h"
+#include "src/registry/encodings.pb.h"
 #include "util/datetime_util.h"
 
 // Common utilities used in the encoder and analyzer.

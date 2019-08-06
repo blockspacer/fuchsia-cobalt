@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "./observation.pb.h"
-#include "config/report_configs.pb.h"
+#include "src/registry/report_configs.pb.h"
 
 namespace cobalt {
 namespace rappor {

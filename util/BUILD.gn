@@ -51,8 +51,8 @@ static_library("datetime_util") {
     "datetime_util.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
-  deps = [
-    "$cobalt_root/config:cobalt_registry_proto",
+  public_deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }
 

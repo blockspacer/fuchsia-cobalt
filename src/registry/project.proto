@@ -1,0 +1,18 @@
+// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+syntax = "proto3";
+
+package cobalt;
+
+import "src/registry/metric_definition.proto";
+
+// A Project message contains the names and IDs of a customer and a
+// project, as well as an identifier of the project's release stage.
+message Project {
+  uint32 customer_id = 1;
+  uint32 project_id = 2;
+  string customer_name = 3;
+  string project_name = 4;
+  ReleaseStage release_stage = 5;
+}

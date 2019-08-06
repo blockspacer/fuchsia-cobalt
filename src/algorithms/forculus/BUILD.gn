@@ -14,7 +14,7 @@ source_set("forculus_utils") {
   public_deps = [
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
@@ -28,8 +28,8 @@ source_set("forculus_encrypter") {
   public_deps = [
     ":forculus_utils",
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/encoder:client_secret",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/util:datetime_util",
     "$cobalt_root/util/crypto_util",
   ]
@@ -45,7 +45,7 @@ source_set("forculus_analyzer") {
   public_deps = [
     ":forculus_utils",
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
 }

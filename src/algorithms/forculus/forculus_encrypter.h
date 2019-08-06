@@ -20,8 +20,8 @@
 #include <utility>
 
 #include "./observation.pb.h"
-#include "config/encodings.pb.h"
 #include "encoder/client_secret.h"
+#include "src/registry/encodings.pb.h"
 
 namespace cobalt {
 namespace forculus {

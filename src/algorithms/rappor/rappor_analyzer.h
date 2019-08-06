@@ -21,12 +21,12 @@
 #include <vector>
 
 #include "./observation.pb.h"
-#include "config/encodings.pb.h"
-#include "config/report_configs.pb.h"
 #include "src/algorithms/rappor/bloom_bit_counter.h"
 #include "src/algorithms/rappor/lasso_runner.h"
 #include "src/algorithms/rappor/rappor_analyzer_utils.h"
 #include "src/algorithms/rappor/rappor_config_validator.h"
+#include "src/registry/encodings.pb.h"
+#include "src/registry/report_configs.pb.h"
 
 #include "grpc++/grpc++.h"
 #include "third_party/eigen/Eigen/SparseCore"

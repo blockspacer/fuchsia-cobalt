@@ -59,9 +59,9 @@
 #include <chrono>
 #include <cstdint>
 
-#include "config/cobalt_registry.pb.h"
-#include "config/metric_definition.pb.h"
-#include "config/metrics.pb.h"
+#include "src/registry/cobalt_registry.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/metrics.pb.h"
 
 namespace cobalt {
 namespace util {

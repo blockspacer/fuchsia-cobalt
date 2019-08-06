@@ -22,7 +22,7 @@ source_set("lib") {
     "test_app.cc",
   ]
 
-  configs += [ "$cobalt_root/config:proto_config" ]
+  configs += [ "$cobalt_root/src/registry:proto_config" ]
 
   public_deps = [
     "$cobalt_root/logger",

@@ -101,11 +101,6 @@ This directory contains GN files needed for building Cobalt. Most of these files
 should be similar if not identical to the associated file in the Fuchsia
 repository [here](https://fuchsia.googlesource.com/fuchsia/+/master/build).
 
-### config
-This directory contains the implementation of Cobalt's config registration
-system. A client that wants to use Cobalt starts by registering configurations
-of their *Metrics*, *Encodings* and *Reports*.
-
 ### encoder
 This directory contains the code for Cobalt's Encoder, which is a
 client library whose job is to encode Observations using one of several
@@ -137,6 +132,11 @@ This directory contains the implementations of Cobalt's privacy-
 preserving algorithms. This code is linked into both the Encoder, which
 uses it to encode Observations, and the ReportMaster, which uses it to
 decode Observations.
+
+### src/registry
+This directory contains the implementation of Cobalt's config registration
+system. A client that wants to use Cobalt starts by registering configurations
+of their *Metrics*, *Encodings* and *Reports*.
 
 ### tools
 This directory contains build, test and deployment tooling.

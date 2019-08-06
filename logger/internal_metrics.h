@@ -8,9 +8,9 @@
 #include <memory>
 #include <string>
 
-#include "config/project.pb.h"
 #include "logger/internal_metrics_config.cb.h"
 #include "logger/logger_interface.h"
+#include "src/registry/project.pb.h"
 
 namespace cobalt {
 namespace logger {

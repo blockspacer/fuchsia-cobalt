@@ -12,9 +12,9 @@ group("encoder") {
     ":observation_store",
     ":shipping_manager",
     ":system_data",
-    "$cobalt_root/config:client_config",
     "$cobalt_root/logger:channel_mapper",
     "$cobalt_root/logger:internal_metrics",
+    "$cobalt_root/src/registry:client_config",
     "$cobalt_root/util:clock",
     "$cobalt_root/util:encrypted_message_util",
   ]
@@ -30,7 +30,7 @@ source_set("legacy_project_context") {
   deps = [
     ":client_secret",
     "$cobalt_root:logging",
-    "$cobalt_root/config:client_config",
+    "$cobalt_root/src/registry:client_config",
     "//third_party/protobuf:protobuf_lite",
   ]
 }

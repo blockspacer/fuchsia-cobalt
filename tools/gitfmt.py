@@ -174,7 +174,7 @@ def _git_show():
 IGNORED_FILES = [
     "third_party",
     "build",
-    "config/config_parser/src/source_generator/source_generator_test_files",
+    "src/bin/config_parser/src/source_generator/source_generator_test_files",
 ]
 
 

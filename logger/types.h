@@ -10,8 +10,8 @@
 
 #include "./event.pb.h"
 #include "./observation2.pb.h"
-#include "config/metric_definition.pb.h"
-#include "config/report_definition.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/report_definition.pb.h"
 
 namespace cobalt {
 namespace logger {

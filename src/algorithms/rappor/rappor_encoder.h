@@ -20,9 +20,9 @@
 #include <utility>
 
 #include "./observation.pb.h"
-#include "config/encodings.pb.h"
 #include "encoder/client_secret.h"
 #include "src/algorithms/rappor/rappor_config_validator.h"
+#include "src/registry/encodings.pb.h"
 #include "util/crypto_util/hash.h"
 #include "util/crypto_util/random.h"
 

@@ -1,0 +1,181 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/protobuf/proto_library.gni")
+
+config("proto_config") {
+  defines = [ "PROTO_LITE" ]
+}
+
+proto_library("cobalt_registry_proto") {
+  proto_in_dir = "$cobalt_root"
+  sources = [
+    "aggregation_window.proto",
+    "annotations.proto",
+    "cobalt_registry.proto",
+    "encodings.proto",
+    "metric_definition.proto",
+    "metrics.proto",
+    "project.proto",
+    "report_configs.proto",
+    "report_definition.proto",
+    "window_size.proto",
+  ]
+  import_dirs = [ "//third_party/protobuf/src" ]
+  generate_python = false
+  generate_go = true
+  cc_generator_options = "lite"
+
+  deps = [
+    "$cobalt_root:cobalt_proto",
+  ]
+
+  extra_configs = [
+    ":proto_config",
+    "$cobalt_root:cobalt_config",
+  ]
+}
+
+static_library("client_config") {
+  sources = [
+    "client_config.cc",
+    "client_config.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    ":cobalt_registry_proto",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+  ]
+}
+
+source_set("client_config_test") {
+  testonly = true
+  sources = [
+    "client_config_test.cc",
+  ]
+  deps = [
+    ":client_config",
+    ":cobalt_registry_proto",
+    "$cobalt_root:logging",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("buckets_config") {
+  sources = [
+    "buckets_config.cc",
+    "buckets_config.h",
+  ]
+  public_deps = [
+    ":cobalt_registry_proto",
+    "$cobalt_root:logging",
+  ]
+
+  public_configs = [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("buckets_config_test") {
+  testonly = true
+  sources = [
+    "buckets_config_test.cc",
+  ]
+  deps = [
+    ":buckets_config",
+    ":cobalt_registry_proto",
+    "$cobalt_root:logging",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("project_configs") {
+  sources = [
+    "project_configs.cc",
+    "project_configs.h",
+  ]
+
+  public_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/src/registry:proto_config",
+  ]
+
+  public_deps = [
+    "$cobalt_root:logging",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
+}
+
+source_set("project_configs_test") {
+  testonly = true
+  sources = [
+    "project_configs_test.cc",
+  ]
+  deps = [
+    ":project_configs",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("id") {
+  sources = [
+    "id.cc",
+    "id.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("id_test") {
+  testonly = true
+  sources = [
+    "id_test.cc",
+  ]
+  deps = [
+    ":id",
+    "//third_party/gflags",
+    "//third_party/glog",
+    "//third_party/googletest:gtest",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("packed_event_codes") {
+  sources = [
+    "packed_event_codes.cc",
+    "packed_event_codes.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+source_set("packed_event_codes_test") {
+  testonly = true
+
+  sources = [
+    "packed_event_codes_test.cc",
+  ]
+
+  deps = [
+    ":packed_event_codes",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+group("tests") {
+  testonly = true
+
+  deps = [
+    ":buckets_config_test",
+    ":client_config_test",
+    ":id_test",
+    ":packed_event_codes_test",
+    ":project_configs_test",
+  ]
+}

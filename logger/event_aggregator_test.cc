@@ -16,10 +16,10 @@
 
 #include "./event.pb.h"
 #include "./gtest.h"
-#include "config/packed_event_codes.h"
-#include "config/project_configs.h"
 #include "logger/logger_test_utils.h"
 #include "logger/testing_constants.h"
+#include "src/registry/packed_event_codes.h"
+#include "src/registry/project_configs.h"
 #include "util/clock.h"
 #include "util/datetime_util.h"
 #include "util/proto_util.h"

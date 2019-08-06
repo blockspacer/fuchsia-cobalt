@@ -1,0 +1,223 @@
+// Copyright 2016 The Fuchsia Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+syntax = "proto3";
+
+package cobalt;
+
+import "src/registry/encodings.proto";
+import "src/registry/metrics.proto";
+
+option go_package = "config";
+
+message DifferentialPrivacyConfig {
+  float epsilon = 1;
+  float delta = 2;
+}
+
+// A list of candidates to use during a string RAPPOR analysis.
+message RapporCandidateList {
+  repeated string candidates = 1;
+}
+
+// Human-readable labels to associate with the rows of a report for a
+// metric variable of type INDEX. Values of this type are zero-based indices
+// into some enumerated set defined outside of the Cobalt configuration system.
+message IndexLabels {
+  // The keys to the map are the zero-based indices and
+  // the values are human-readable labels to be used in the report.
+  // A missing label is NOT a fatal error. If an index occurs in the data but
+  // there is no corresponding label specified here then the generated report
+  // will contain a string such as "<index 42>."
+  map<uint32, string> labels = 1;
+}
+
+// A ReportVariable is used within a |ReportConfig|. It specifies that
+// a generated report should include a named part of a metric and it
+// gives additional information necessary to analyze that metric part.
+message ReportVariable {
+  // The named part of the metric to include in the report.
+  string metric_part = 1;
+
+  // This field will be populated only if the corresponding metric part
+  // is of type INDEX.
+  IndexLabels index_labels = 2;
+
+  // This field will be populated only if the corresponding metric part
+  // is of type STRING and if the report is expected to include some
+  // string RAPPOR analysis.
+  RapporCandidateList rappor_candidates = 3;
+}
+
+// The different types of reports that Cobalt knows how to create. Each
+// ReportConfig specifies one ReportType in its |report_type| field.
+//
+// The number of variables that occur in the ReportConfig's |variable| field
+// must be consistent with the ReportType.
+//
+// Not every ReportType is consistent with every kind of encoding. If an
+// observation occurs in the set of  observations being analyzed whose
+// encoding is not consistent with the ReportType then the report generation
+// may fail.
+enum ReportType {
+  // A single-variable histogram report. Exactly one variable must appear in
+  // the |variable| field. Each row of the report presents a value and an
+  // estimate of the count of observations in the analysis set that contain
+  // that value.
+  //
+  // All encoding types are supported but in the current version of Cobalt
+  // the set of observations being analyzed must be homogeneous with respect to
+  // the encoding.
+  HISTOGRAM = 0;
+
+  // A joint two-variable histogram report. Exactly two variables must appear
+  // in the |variable| field. Each row of the report presents two values and an
+  // estimate of the count of observations in the analysis set that contain
+  // those two values.
+  //
+  // A report of this type will be dependent on the two one-way marginal reports
+  // being generated prior to the generation of this report. When a report of
+  // this type is requested by a user, the Cobalt system will arrange for the
+  // two one-way marginals to also be generated--the user does not have to
+  // explicitly request those. The association between the joint report and
+  // its two one-way marginals will be captured via the |associated_report_ids|
+  // field of |ReportMetadata|.
+  //
+  // Only the String RAPPOR and Basic RAPPOR encoding types are supported.
+  JOINT = 1;
+
+  // A raw dump of the input observations. No aggregation, analysis or
+  // differentially private release will be performed. The report rows will
+  // not be stored in the ReportStore so they may not be retrieved later
+  // via a GetReport() operation. At report generation time the raw dump will
+  // be serialized and exported to an external system if one or more
+  // ReportExportConfigs are specified in the ReportConfig. The external system
+  // may then be used to perform aggregation and analysis.
+  //
+  // Raw Dump reports should be used in Cobalt only as a last resort if none
+  // of Cobalt's built-in report types will serve your purpose. As Raw Dump
+  // reports provide the ability to perform arbitrary, ad hoc, ex post facto
+  // aggregation and querying, they may also be a good solution for temporary
+  // exploration with an eye towards eventually replacing the Raw Dump report
+  // with one of Cobalt's built-in report types.
+  //
+  // In more detail, a raw dump report is a report on any number of variables
+  // in which each input ObservationPart must use the NoOp encoding so that it
+  // contains an unencoded ValuePart. There will be one output report row for
+  // each input observation and each output report row will contain a copy of
+  // the ValueParts from the input ObservationParts, in the order specified by
+  // the |variable|s in the ReportConfig.
+  RAW_DUMP = -1;
+}
+
+// A specification of how and where to export a Cobalt report to some external
+// system.
+message ReportExportConfig {
+  // A specification of how to serialize the report for export.
+  oneof export_serialization {
+    // Export as CSV
+    CSVSerializationConfig csv = 1;
+  }
+  // A specification of the location to which the report should be exported.
+  oneof export_location {
+    // Export to Google Cloud Storage.
+    GCSExportLocation gcs = 2;
+  }
+}
+
+// A specification of how to export a report as a CSV file.
+message CSVSerializationConfig {}
+
+// A specification of a location within Google Cloud Storage where a report
+// should be exported.
+message GCSExportLocation {
+  // The name of a GCS bucket
+  string bucket = 1;
+}
+
+// A specification of how to schedule the execution of a report.
+message ReportSchedulingConfig {
+  // The type of epoch to use when aggregating Observations for a report.
+  // This also determines the frequency of generating reports.
+  EpochType aggregation_epoch_type = 1;
+
+  // The number of days to wait before considering a report finalized. The
+  // The ReportScheduler may re-generate a report multiple times in case
+  // additional observations trickle in several days after the period ends.
+  // This is important for several reasons: (a) The client and server may use
+  // different time zones (b) The client may be temporarily offline (c) the
+  // Shuffler may be configured to intentionally add a delay. This setting
+  // controls the number of days before the ReportScheduler considers the report
+  // to be finalized. Usually a good value for this field is 3, but this may be
+  // decreased or increased based on special circumstances. Larger values
+  // cause the ReportScheduler to do more work by re-generating the same report
+  // multiple times.
+  // This value must be an integer in the range [0, 20].
+  uint32 report_finalization_days = 2;
+}
+
+// A ReportConfig describes to the Analyzer a particular report to produce.
+// A report is for a particular metric.
+message ReportConfig {
+  // Next ID: 13
+
+  // These three numbers form this ReportConfig's unique ID in the Cobalt Config
+  // DB.
+  uint32 customer_id = 1;
+  uint32 project_id = 2;
+  uint32 id = 3;
+
+  // e.g. "Fuchsia Usage by Hour"
+  string name = 4;
+
+  // e.g. "Whenever a Fuchsia device is woken up from sleep we capture the
+  //  hour of the day."
+  string description = 5;
+
+  // The customer_id, project_id and metric_id refer to the metric that this
+  // is a report of.
+  uint32 metric_id = 6;
+
+  // Which type of report is this?
+  ReportType report_type = 7;
+
+  // The variables being analyzed in this report. The number of variables must
+  // be consistent with the type of report.
+  repeated ReportVariable variable = 8;
+
+  // The list of SystemProfileFields to include in each row of the report.
+  repeated SystemProfileField system_profile_field = 12;
+
+  DifferentialPrivacyConfig dp_config = 9;
+
+  // If this field is set it means that the ReportMaster should generate reports
+  // for this ReportConfig automatically on a recurring schedule. The field
+  // |export_configs| below should also be set in order to cause the
+  // automatically generated reports to be exported.
+  ReportSchedulingConfig scheduling = 10;
+
+  // If this list is non-empty, then reports for this ReportConfig that are
+  // automatically generated by the Report Scheduler (but not one-off reports)
+  // will, in addition to being saved in the ReportStore, also be exported to
+  // one or more external systems as specified. The field |scheduling| above
+  // should also be set in order to enable the automatic generation of
+  // reports.
+  repeated ReportExportConfig export_configs = 11;
+}
+
+// Constains the list of all ReportConfig that are registered in the
+// Cobalt system. An instance of RegisteredReports is deserialized
+// from a text file.
+message RegisteredReports {
+  repeated ReportConfig element = 1;
+}

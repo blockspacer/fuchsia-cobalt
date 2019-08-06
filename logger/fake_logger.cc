@@ -12,8 +12,8 @@
 #include <utility>
 #include <vector>
 
-#include "config/project_configs.h"
 #include "logger/logger_interface.h"
+#include "src/registry/project_configs.h"
 #include "util/status.h"
 
 namespace cobalt {

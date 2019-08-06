@@ -10,10 +10,10 @@
 #include <utility>
 #include <vector>
 
-#include "config/metric_definition.pb.h"
-#include "config/packed_event_codes.h"
 #include "logger/project_context.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/packed_event_codes.h"
 #include "util/datetime_util.h"
 #include "util/proto_util.h"
 #include "util/status.h"

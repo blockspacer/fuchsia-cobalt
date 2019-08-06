@@ -8,8 +8,8 @@
 #include <utility>
 
 #include "./logging.h"
-#include "config/encoding_config.h"
-#include "config/metric_config.h"
+#include "src/registry/encoding_config.h"
+#include "src/registry/metric_config.h"
 
 namespace cobalt {
 namespace encoder {

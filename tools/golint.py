@@ -25,7 +25,8 @@ THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 
 GO_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'config/config_parser'),
+    os.path.join(SRC_ROOT_DIR, 'src/bin/config_parser'),
+    os.path.join(SRC_ROOT_DIR, 'src/bin/config_change_validator'),
 ]
 
 

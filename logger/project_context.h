@@ -10,11 +10,11 @@
 #include <string>
 #include <utility>
 
-#include "config/cobalt_registry.pb.h"
-#include "config/metric_definition.pb.h"
-#include "config/project.pb.h"
-#include "config/project_configs.h"
 #include "logger/status.h"
+#include "src/registry/cobalt_registry.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/project.pb.h"
+#include "src/registry/project_configs.h"
 #include "third_party/statusor/statusor.h"
 
 namespace cobalt {

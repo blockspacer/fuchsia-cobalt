@@ -14,8 +14,8 @@
 #include "./gtest.h"
 #include "./logging.h"
 #include "./observation2.pb.h"
-#include "config/project_configs.h"
 #include "logger/test_registries/project_context_test_registry.cb.h"
+#include "src/registry/project_configs.h"
 #include "util/crypto_util/base64.h"
 
 using cobalt::config::ProjectConfigs;

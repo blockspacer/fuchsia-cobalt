@@ -21,8 +21,8 @@ source_set("rappor_config_validator") {
 
   public_deps = [
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/encoder:client_secret",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 
   configs += [ ":rappor_config" ]
@@ -65,7 +65,7 @@ source_set("rappor_config_helper") {
     "rappor_config_helper.cc",
   ]
   public_deps = [
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
   deps = [
     "$cobalt_root:logging",

@@ -5,8 +5,8 @@
 #include "src/algorithms/rappor/rappor_config_helper.h"
 
 #include "./logging.h"
-#include "config/metric_definition.pb.h"
-#include "config/report_definition.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/report_definition.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {

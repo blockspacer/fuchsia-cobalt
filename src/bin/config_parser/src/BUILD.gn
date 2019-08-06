@@ -1,0 +1,103 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/go/go_binary.gni")
+import("//build/go/go_library.gni")
+import("//build/go/go_test.gni")
+import("//third_party/protobuf/proto_library.gni")
+
+go_library("config") {
+  name = "config"
+  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/registry"
+  non_go_deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
+}
+
+proto_library("yamlpb_test_proto") {
+  generate_cc = false
+  generate_go = true
+  generate_python = false
+  sources = [
+    "yamlpb/yamlpb_test.proto",
+  ]
+
+  extra_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/src/registry:proto_config",
+  ]
+}
+
+go_library("yamlpb_test_lib") {
+  name = "config/config_parser/src/yamlpb"
+  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/bin/config_parser/src/yamlpb"
+  non_go_deps = [ ":yamlpb_test_proto" ]
+}
+
+_source_packages = [
+  "config_parser",
+  "config_validator",
+  "source_generator",
+  "yamlpb",
+]
+foreach(pkg, _source_packages) {
+  go_library(pkg) {
+    name = pkg
+    source_dir = pkg
+  }
+}
+
+# This duplicates some source paths, but main needs to be relocated into a
+# package path for our go_build rules.
+go_library("main") {
+  name = "main"
+
+  # sources = ["config_parser_main.go"]
+  source_dir = "."
+}
+
+go_binary("bin") {
+  gopackage = "main"
+  output_name = "config_parser"
+
+  deps = [
+    ":config",
+    ":main",
+    "//garnet/public/go/third_party:github.com/go-yaml/yaml",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
+  ]
+  foreach(pkg, _source_packages) {
+    deps += [ ":$pkg" ]
+  }
+}
+
+foreach(pkg, _source_packages) {
+  go_test("${pkg}_test") {
+    gopackages = [ pkg ]
+
+    deps = [
+      ":$pkg",
+      ":config_parser",
+      ":yamlpb",
+      "//garnet/public/go/third_party:github.com/go-yaml/yaml",
+      "//garnet/public/go/third_party:github.com/golang/glog",
+      "//garnet/public/go/third_party:github.com/golang/protobuf",
+      "//garnet/public/go/third_party:github.com/google/go-cmp",
+    ]
+
+    if (pkg == "yamlpb") {
+      deps += [ ":yamlpb_test_lib" ]
+    } else {
+      deps += [ ":config" ]
+    }
+  }
+}
+
+group("tests") {
+  testonly = true
+
+  deps = []
+  foreach(pkg, _source_packages) {
+    deps += [ ":${pkg}_test" ]
+  }
+}

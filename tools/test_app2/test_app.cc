@@ -15,9 +15,6 @@
 #include <vector>
 
 #include "./observation2.pb.h"
-#include "config/cobalt_registry.pb.h"
-#include "config/metric_definition.pb.h"
-#include "config/project_configs.h"
 #include "encoder/memory_observation_store.h"
 #include "encoder/shipping_manager.h"
 #include "encoder/system_data.h"
@@ -29,6 +26,9 @@
 #include "logger/project_context.h"
 #include "logger/project_context_factory.h"
 #include "logger/status.h"
+#include "src/registry/cobalt_registry.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/project_configs.h"
 #include "third_party/statusor/statusor.h"
 #include "util/clearcut/curl_http_client.h"
 #include "util/clock.h"

@@ -6,9 +6,9 @@ syntax = "proto3";
 
 package cobalt;
 
-import "config/metric_definition.proto";
-import "config/report_definition.proto";
-import "config/project.proto";
+import "src/registry/metric_definition.proto";
+import "src/registry/report_definition.proto";
+import "src/registry/project.proto";
 
 // An identifier of a locally aggregated report.
 message ReportAggregationKey {

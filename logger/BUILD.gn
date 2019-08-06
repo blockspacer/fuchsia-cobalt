@@ -23,12 +23,12 @@ proto_library("cobalt_local_aggregation_proto") {
   generate_python = false
   cc_generator_options = "lite"
   deps = [
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 
   extra_configs = [
     "$cobalt_root:cobalt_config",
-    "$cobalt_root/config:proto_config",
+    "$cobalt_root/src/registry:proto_config",
   ]
 }
 
@@ -45,12 +45,12 @@ source_set("event_record") {
 
   public_configs = [
     "$cobalt_root:cobalt_config",
-    "$cobalt_root/config:proto_config",
+    "$cobalt_root/src/registry:proto_config",
   ]
 
   public_deps = [
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }
 
@@ -62,14 +62,14 @@ source_set("project_context") {
 
   public_configs = [
     "$cobalt_root:cobalt_config",
-    "$cobalt_root/config:proto_config",
+    "$cobalt_root/src/registry:proto_config",
   ]
 
   public_deps = [
     ":status",
     "$cobalt_root:logging",
-    "$cobalt_root/config:cobalt_registry_proto",
-    "$cobalt_root/config:project_configs",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/registry:project_configs",
   ]
 }
 
@@ -81,11 +81,11 @@ source_set("project_context_factory") {
 
   public_configs = [
     "$cobalt_root:cobalt_config",
-    "$cobalt_root/config:proto_config",
+    "$cobalt_root/src/registry:proto_config",
   ]
 
   deps = [
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
 
     # This is for base64 decoding.
     "$cobalt_root/util/crypto_util",
@@ -114,10 +114,10 @@ source_set("encoder") {
     ":logger_interface",
     ":status",
     "$cobalt_root:logging",
-    "$cobalt_root/config:cobalt_registry_proto",
-    "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/encoder:system_data",
     "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/registry:packed_event_codes",
     "$cobalt_root/util/crypto_util",
     "//third_party/abseil-cpp",
   ]
@@ -149,7 +149,7 @@ source_set("event_aggregator") {
 
   public_configs = [
     "$cobalt_root:cobalt_config",
-    "$cobalt_root/config:proto_config",
+    "$cobalt_root/src/registry:proto_config",
   ]
 
   public_deps = [
@@ -160,9 +160,9 @@ source_set("event_aggregator") {
     ":status",
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
-    "$cobalt_root/config:cobalt_registry_proto",
-    "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/registry:packed_event_codes",
     "$cobalt_root/util:consistent_proto_store",
     "$cobalt_root/util:proto_util",
   ]
@@ -178,8 +178,8 @@ source_set("logger_interface") {
 
   public_deps = [
     ":status",
-    "$cobalt_root/config:cobalt_registry_proto",
-    "$cobalt_root/config:packed_event_codes",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/registry:packed_event_codes",
   ]
 }
 
@@ -216,7 +216,7 @@ source_set("logger") {
     ":observation_writer",
     ":status",
     "$cobalt_root:tracing",
-    "$cobalt_root/config:id",
+    "$cobalt_root/src/registry:id",
   ]
 }
 
@@ -230,7 +230,7 @@ source_set("channel_mapper") {
 
   public_deps = [
     "$cobalt_root:logging",
-    "$cobalt_root/config:cobalt_registry_proto",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }
 
@@ -261,7 +261,7 @@ source_set("fake_logger") {
   deps = [
     ":cobalt_local_aggregation_proto",
     ":project_context_factory",
-    "$cobalt_root/config:project_configs",
+    "$cobalt_root/src/registry:project_configs",
     "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
   ]
@@ -279,9 +279,9 @@ source_set("logger_test_utils") {
     ":encoder",
     ":fake_logger",
     ":project_context_factory",
-    "$cobalt_root/config:project_configs",
     "$cobalt_root/encoder:observation_store",
     "$cobalt_root/encoder:observation_store_update_recipient",
+    "$cobalt_root/src/registry:project_configs",
     "$cobalt_root/util:encrypted_message_util",
     "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
