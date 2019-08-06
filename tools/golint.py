@@ -25,8 +25,6 @@ THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 
 GO_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'shuffler'),
-    os.path.join(SRC_ROOT_DIR, 'end_to_end_tests'),
     os.path.join(SRC_ROOT_DIR, 'config/config_parser'),
 ]
 
