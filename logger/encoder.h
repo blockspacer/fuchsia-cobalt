@@ -11,7 +11,6 @@
 
 #include "./event.pb.h"
 #include "./observation2.pb.h"
-#include "algorithms/rappor/rappor_encoder.h"
 #include "config/metric_definition.pb.h"
 #include "config/report_definition.pb.h"
 #include "encoder/client_secret.h"
@@ -19,6 +18,7 @@
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "logger/types.h"
+#include "src/algorithms/rappor/rappor_encoder.h"
 #include "util/crypto_util/random.h"
 
 namespace cobalt {

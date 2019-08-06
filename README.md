@@ -96,12 +96,6 @@ stored in an *EncryptedMessage.* Multiple EncryptedMessages are stored in an
 *ObservationBatch*. Multiple ObservationBatches are stored in an Envelope.
 Envelopes are sent via gRPC from the *Encoder* to the *Shuffler*.
 
-### algorithms
-This directory contains the implementations of Cobalt's privacy-
-preserving algorithms. This code is linked into both the Encoder, which
-uses it to encode Observations, and the ReportMaster, which uses it to
-decode Observations.
-
 ### build
 This directory contains GN files needed for building Cobalt. Most of these files
 should be similar if not identical to the associated file in the Fuchsia
@@ -137,6 +131,12 @@ This directory contains cmx files for running Cobalt's tests in fuchsia.
 ### src
 This directory is the root directory of the Cobalt source code. All new code
 should be put in a subdirectory of src/
+
+### src/algorithms
+This directory contains the implementations of Cobalt's privacy-
+preserving algorithms. This code is linked into both the Encoder, which
+uses it to encode Observations, and the ReportMaster, which uses it to
+decode Observations.
 
 ### tools
 This directory contains build, test and deployment tooling.

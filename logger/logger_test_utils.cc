@@ -13,12 +13,12 @@
 #include "./logging.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
-#include "algorithms/rappor/rappor_config_helper.h"
-#include "algorithms/rappor/rappor_encoder.h"
 #include "config/encodings.pb.h"
 #include "encoder/client_secret.h"
 #include "logger/encoder.h"
 #include "logger/project_context_factory.h"
+#include "src/algorithms/rappor/rappor_config_helper.h"
+#include "src/algorithms/rappor/rappor_encoder.h"
 #include "util/encrypted_message_util.h"
 
 namespace cobalt {

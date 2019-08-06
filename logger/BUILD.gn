@@ -107,17 +107,17 @@ source_set("encoder") {
 
   deps = [
     "$cobalt_root:tracing",
-    "$cobalt_root/algorithms/forculus:forculus_encrypter",
-    "$cobalt_root/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/src/algorithms/forculus:forculus_encrypter",
+    "$cobalt_root/src/algorithms/rappor:rappor_encoder",
   ]
   public_deps = [
     ":logger_interface",
     ":status",
     "$cobalt_root:logging",
-    "$cobalt_root/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:packed_event_codes",
     "$cobalt_root/encoder:system_data",
+    "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/util/crypto_util",
     "//third_party/abseil-cpp",
   ]
@@ -160,9 +160,9 @@ source_set("event_aggregator") {
     ":status",
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
-    "$cobalt_root/algorithms/rappor:rappor_encoder",
     "$cobalt_root/config:cobalt_registry_proto",
     "$cobalt_root/config:packed_event_codes",
+    "$cobalt_root/src/algorithms/rappor:rappor_encoder",
     "$cobalt_root/util:consistent_proto_store",
     "$cobalt_root/util:proto_util",
   ]

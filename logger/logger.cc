@@ -11,12 +11,12 @@
 #include "./logging.h"
 #include "./observation2.pb.h"
 #include "./tracing.h"
-#include "algorithms/rappor/rappor_config_helper.h"
 #include "config/encodings.pb.h"
 #include "config/id.h"
 #include "config/metric_definition.pb.h"
 #include "config/report_definition.pb.h"
 #include "logger/event_record.h"
+#include "src/algorithms/rappor/rappor_config_helper.h"
 #include "util/datetime_util.h"
 
 namespace cobalt {
