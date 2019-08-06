@@ -8,9 +8,9 @@
 #include <memory>
 
 #include "./observation2.pb.h"
-#include "encoder/observation_store.h"
-#include "encoder/observation_store_update_recipient.h"
 #include "logger/status.h"
+#include "src/observation_store/observation_store.h"
+#include "src/observation_store/observation_store_update_recipient.h"
 #include "util/encrypted_message_util.h"
 
 namespace cobalt {

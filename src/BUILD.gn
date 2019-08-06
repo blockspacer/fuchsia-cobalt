@@ -7,6 +7,9 @@ group("tests") {
   deps = [
     "algorithms:tests",
     "bin:tests",
+    "observation_store:tests",
     "registry:tests",
+    "system_data:unittests",
+    "uploader:tests",
   ]
 }

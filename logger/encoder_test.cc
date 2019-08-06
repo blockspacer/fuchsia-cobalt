@@ -13,12 +13,12 @@
 #include "./logging.h"
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
-#include "encoder/fake_system_data.h"
 #include "logger/project_context.h"
 #include "logger/project_context_factory.h"
 #include "logger/status.h"
 #include "logger/test_registries/encoder_test_registry.cb.h"
 #include "src/registry/packed_event_codes.h"
+#include "src/system_data/fake_system_data.h"
 #include "util/crypto_util/base64.h"
 
 namespace cobalt {

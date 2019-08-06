@@ -1,0 +1,70 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/protobuf/proto_library.gni")
+
+source_set("observation_store_update_recipient") {
+  sources = [
+    "observation_store_update_recipient.h",
+  ]
+}
+
+proto_library("file_observation_store_internal_proto") {
+  sources = [
+    "file_observation_store_internal.proto",
+  ]
+  extra_configs = [ "$cobalt_root:cobalt_config" ]
+  import_dirs = [
+    "//third_party/protobuf/src",
+    "$cobalt_root",
+  ]
+  cc_generator_options = "lite"
+  generate_python = false
+  deps = [
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/util:proto_serialization",
+  ]
+}
+
+source_set("observation_store") {
+  sources = [
+    "envelope_maker.cc",
+    "envelope_maker.h",
+    "file_observation_store.cc",
+    "file_observation_store.h",
+    "memory_observation_store.cc",
+    "memory_observation_store.h",
+    "observation_store.cc",
+    "observation_store.h",
+  ]
+  deps = [
+    ":file_observation_store_internal_proto",
+    ":observation_store_update_recipient",
+    "$cobalt_root/logger:internal_metrics",
+    "$cobalt_root/logger:logger_interface",
+  ]
+  public_deps = [
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
+    "$cobalt_root/util:encrypted_message_util",
+  ]
+}
+
+source_set("tests") {
+  testonly = true
+
+  sources = [
+    "envelope_maker_test.cc",
+    "envelope_maker_test_config.h",
+    "file_observation_store_test.cc",
+  ]
+
+  deps = [
+    ":observation_store",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+}

@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "encoder/file_observation_store.h"
+#include "src/observation_store/file_observation_store.h"
 
 #include <random>
 #include <utility>
 
 #include "./gtest.h"
 #include "./logging.h"
-#include "encoder/client_secret.h"
+#include "src/system_data/client_secret.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "util/posix_file_system.h"
 

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ENCODER_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
-#define COBALT_ENCODER_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
+#ifndef COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
+#define COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
 
 namespace cobalt {
 namespace encoder {
@@ -22,4 +22,4 @@ class ObservationStoreUpdateRecipient {
 }  // namespace encoder
 }  // namespace cobalt
 
-#endif  // COBALT_ENCODER_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
+#endif  // COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_UPDATE_RECIPIENT_H_

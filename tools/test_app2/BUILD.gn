@@ -34,9 +34,9 @@ source_set("lib") {
   deps = [
     "$cobalt_root:logging",
     "$cobalt_root:registry",
-    "$cobalt_root/encoder:observation_store",
-    "$cobalt_root/encoder:shipping_manager",
     "$cobalt_root/logger:project_context_factory",
+    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/uploader:shipping_manager",
     "$cobalt_root/util:datetime_util",
     "$cobalt_root/util:file_util",
     "$cobalt_root/util:posix_file_system",

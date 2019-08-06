@@ -11,14 +11,14 @@
 
 #include "./event.pb.h"
 #include "./observation2.pb.h"
-#include "encoder/client_secret.h"
-#include "encoder/system_data.h"
 #include "logger/project_context.h"
 #include "logger/status.h"
 #include "logger/types.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
+#include "src/system_data/client_secret.h"
+#include "src/system_data/system_data.h"
 #include "util/crypto_util/random.h"
 
 namespace cobalt {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "encoder/shipping_manager.h"
+#include "src/uploader/shipping_manager.h"
 
 #include <chrono>
 #include <memory>
@@ -14,9 +14,9 @@
 #include "./clearcut_extensions.pb.h"
 #include "./gtest.h"
 #include "./logging.h"
-#include "encoder/fake_system_data.h"
-#include "encoder/memory_observation_store.h"
-#include "encoder/observation_store.h"
+#include "src/observation_store/memory_observation_store.h"
+#include "src/observation_store/observation_store.h"
+#include "src/system_data/fake_system_data.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 

@@ -16,10 +16,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "encoder/client_secret.h"
 #include "src/algorithms/rappor/rappor_analyzer.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/algorithms/rappor/rappor_test_utils.h"
+#include "src/system_data/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 #include "third_party/eigen/Eigen/SparseQR"

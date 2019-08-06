@@ -1,0 +1,83 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("$cobalt_root/cobalt_config_header.gni")
+
+#TODO(rudominer) Delete once the Fuchsia build does not depend on this target.
+group("encoder") {
+  public_deps = [
+    ":client_secret",
+    ":system_data",
+    "$cobalt_root/logger:channel_mapper",
+    "$cobalt_root/logger:internal_metrics",
+    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/registry:client_config",
+    "$cobalt_root/src/uploader:shipping_manager",
+    "$cobalt_root/util:clock",
+    "$cobalt_root/util:encrypted_message_util",
+  ]
+}
+
+source_set("legacy_project_context") {
+  sources = [
+    "project_context.cc",
+    "project_context.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    ":client_secret",
+    "$cobalt_root:logging",
+    "$cobalt_root/src/registry:client_config",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+source_set("system_data") {
+  sources = [
+    "system_data.cc",
+    "system_data.h",
+  ]
+  deps = [
+    "$cobalt_root:logging",
+    "$cobalt_root/logger:channel_mapper",
+    "//third_party/abseil-cpp",
+  ]
+  public_deps = [
+    "$cobalt_root:cobalt_proto",
+  ]
+}
+
+source_set("client_secret") {
+  sources = [
+    "client_secret.cc",
+    "client_secret.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    "$cobalt_root/util/crypto_util",
+  ]
+}
+
+source_set("unittests") {
+  testonly = true
+
+  sources = [
+    "client_secret_test.cc",
+    "system_data_test.cc",
+  ]
+
+  deps = [
+    ":client_secret",
+    ":legacy_project_context",
+    ":system_data",
+    "$cobalt_root:logging",
+    "//third_party/abseil-cpp",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}

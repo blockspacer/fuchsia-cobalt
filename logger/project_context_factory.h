@@ -8,11 +8,11 @@
 #include <memory>
 #include <string>
 
-#include "encoder/project_context.h"
 #include "logger/project_context.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project.pb.h"
 #include "src/registry/project_configs.h"
+#include "src/system_data/project_context.h"
 
 namespace cobalt {
 namespace logger {

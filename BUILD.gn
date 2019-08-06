@@ -71,7 +71,6 @@ group("tracing") {
 group("tests") {
   testonly = true
   deps = [
-    "encoder:unittests",
     "keys:tests",
     "logger:tests",
     "src:tests",

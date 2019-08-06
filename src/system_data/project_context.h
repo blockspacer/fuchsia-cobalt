@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ENCODER_PROJECT_CONTEXT_H_
-#define COBALT_ENCODER_PROJECT_CONTEXT_H_
+#ifndef COBALT_SRC_SYSTEM_DATA_PROJECT_CONTEXT_H_
+#define COBALT_SRC_SYSTEM_DATA_PROJECT_CONTEXT_H_
 
 #include <memory>
 #include <string>
@@ -62,4 +62,4 @@ class ProjectContext {
 }  // namespace encoder
 }  // namespace cobalt
 
-#endif  // COBALT_ENCODER_PROJECT_CONTEXT_H_
+#endif  // COBALT_SRC_SYSTEM_DATA_PROJECT_CONTEXT_H_

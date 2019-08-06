@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ENCODER_ENVELOPE_MAKER_H_
-#define COBALT_ENCODER_ENVELOPE_MAKER_H_
+#ifndef COBALT_SRC_OBSERVATION_STORE_ENVELOPE_MAKER_H_
+#define COBALT_SRC_OBSERVATION_STORE_ENVELOPE_MAKER_H_
 
 #include <memory>
 #include <string>
@@ -12,7 +12,7 @@
 #include "./encrypted_message.pb.h"
 #include "./logging.h"
 #include "./observation.pb.h"
-#include "encoder/observation_store.h"
+#include "src/observation_store/observation_store.h"
 #include "util/encrypted_message_util.h"
 
 namespace cobalt {
@@ -95,4 +95,4 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
 }  // namespace encoder
 }  // namespace cobalt
 
-#endif  // COBALT_ENCODER_ENVELOPE_MAKER_H_
+#endif  // COBALT_SRC_OBSERVATION_STORE_ENVELOPE_MAKER_H_

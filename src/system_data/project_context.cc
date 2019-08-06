@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "encoder/project_context.h"
+#include "src/system_data/project_context.h"
 
 #include <memory>
 #include <utility>

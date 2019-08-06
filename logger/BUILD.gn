@@ -93,7 +93,7 @@ source_set("project_context_factory") {
 
   public_deps = [
     ":project_context",
-    "$cobalt_root/encoder:legacy_project_context",
+    "$cobalt_root/src/system_data:legacy_project_context",
   ]
 }
 
@@ -114,10 +114,10 @@ source_set("encoder") {
     ":logger_interface",
     ":status",
     "$cobalt_root:logging",
-    "$cobalt_root/encoder:system_data",
     "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
+    "$cobalt_root/src/system_data",
     "$cobalt_root/util/crypto_util",
     "//third_party/abseil-cpp",
   ]
@@ -136,7 +136,7 @@ source_set("observation_writer") {
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
     "$cobalt_root:tracing",
-    "$cobalt_root/encoder:observation_store",
+    "$cobalt_root/src/observation_store",
     "$cobalt_root/util:encrypted_message_util",
   ]
 }
@@ -279,8 +279,8 @@ source_set("logger_test_utils") {
     ":encoder",
     ":fake_logger",
     ":project_context_factory",
-    "$cobalt_root/encoder:observation_store",
-    "$cobalt_root/encoder:observation_store_update_recipient",
+    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/src/registry:project_configs",
     "$cobalt_root/util:encrypted_message_util",
     "$cobalt_root/util:posix_file_system",

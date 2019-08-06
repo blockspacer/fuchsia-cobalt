@@ -1,0 +1,36 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("shipping_manager") {
+  sources = [
+    "shipping_manager.cc",
+    "shipping_manager.h",
+    "upload_scheduler.cc",
+    "upload_scheduler.h",
+  ]
+  deps = [
+    "$cobalt_root/src/system_data",
+  ]
+  public_deps = [
+    "$cobalt_root/logger:logger_interface",
+    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/observation_store:observation_store_update_recipient",
+    "$cobalt_root/third_party/clearcut:clearcut",
+    "//third_party/grpc:grpc++",
+  ]
+}
+
+source_set("tests") {
+  testonly = true
+
+  sources = [
+    "shipping_manager_test.cc",
+  ]
+
+  deps = [
+    ":shipping_manager",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+}

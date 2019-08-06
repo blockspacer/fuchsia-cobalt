@@ -14,12 +14,12 @@
 #include <vector>
 
 #include "./gtest.h"
-#include "encoder/observation_store.h"
-#include "encoder/observation_store_update_recipient.h"
 #include "logger/fake_logger.h"
 #include "logger/local_aggregation.pb.h"
 #include "logger/logger_interface.h"
 #include "logger/project_context.h"
+#include "src/observation_store/observation_store.h"
+#include "src/observation_store/observation_store_update_recipient.h"
 #include "src/registry/project_configs.h"
 #include "util/consistent_proto_store.h"
 #include "util/posix_file_system.h"

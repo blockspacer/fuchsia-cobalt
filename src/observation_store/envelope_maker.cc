@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "encoder/envelope_maker.h"
+#include "src/observation_store/envelope_maker.h"
 
 #include <memory>
 #include <utility>

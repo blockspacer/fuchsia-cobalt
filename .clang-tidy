@@ -23,7 +23,7 @@ Checks: >
 WarningsAsErrors: '*'
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
-HeaderFilterRegex: '.*\.\./(encoder|keys|logger|manifest|meta|src|tools|util)'
+HeaderFilterRegex: '.*\.\./(keys|logger|manifest|meta|src|tools|util)'
 CheckOptions:
   - key:             bugprone-assert-side-effect.AssertMacros
     value:           'FXL_DCHECK'

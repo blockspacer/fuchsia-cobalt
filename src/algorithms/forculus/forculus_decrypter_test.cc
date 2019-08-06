@@ -16,8 +16,8 @@
 
 #include <map>
 
-#include "encoder/client_secret.h"
 #include "src/algorithms/forculus/forculus_encrypter.h"
+#include "src/system_data/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {

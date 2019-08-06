@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "encoder/upload_scheduler.h"
+#include "src/uploader/upload_scheduler.h"
 
 namespace cobalt {
 namespace encoder {

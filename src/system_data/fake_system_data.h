@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ENCODER_FAKE_SYSTEM_DATA_H_
-#define COBALT_ENCODER_FAKE_SYSTEM_DATA_H_
+#ifndef COBALT_SRC_SYSTEM_DATA_FAKE_SYSTEM_DATA_H_
+#define COBALT_SRC_SYSTEM_DATA_FAKE_SYSTEM_DATA_H_
 
 #include <string>
 #include <vector>
 
-#include "encoder/system_data.h"
+#include "src/system_data/system_data.h"
 
 namespace cobalt {
 namespace encoder {
@@ -41,4 +41,4 @@ class FakeSystemData : public SystemDataInterface {
 }  // namespace encoder
 }  // namespace cobalt
 
-#endif  // COBALT_ENCODER_FAKE_SYSTEM_DATA_H_
+#endif  // COBALT_SRC_SYSTEM_DATA_FAKE_SYSTEM_DATA_H_
