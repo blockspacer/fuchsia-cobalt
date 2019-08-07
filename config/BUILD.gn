@@ -64,6 +64,35 @@ source_set("client_config_test") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("buckets_config") {
+  sources = [
+    "buckets_config.cc",
+    "buckets_config.h",
+  ]
+  public_deps = [
+    ":cobalt_registry_proto",
+    "$cobalt_root:logging",
+
+  ]
+
+  public_configs = [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("buckets_config_test") {
+  testonly = true
+  sources = [
+    "buckets_config_test.cc",
+  ]
+  deps = [
+    ":buckets_config",
+    ":cobalt_registry_proto",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+    "$cobalt_root:logging",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
 source_set("project_configs") {
   sources = [
     "project_configs.cc",
@@ -143,6 +172,7 @@ group("tests") {
   testonly = true
 
   deps = [
+    ":buckets_config_test",
     ":client_config_test",
     ":id_test",
     ":packed_event_codes_test",

@@ -27,17 +27,17 @@ class IntegerBucketConfig {
   // Maps an integer value to a bucket index.
   // Recall that index 0 is the index of the underflow bucket and
   // OverflowBucket() is the index of the overflow bucket.
-  uint32_t BucketIndex(int64_t val) const;
+  [[nodiscard]] uint32_t BucketIndex(int64_t val) const;
 
   // Returns the index of the underflow bucket: 0.
-  uint32_t UnderflowBucket() const { return 0; }
+  [[nodiscard]] uint32_t UnderflowBucket() const { return 0; }
 
   // Returns the index of the overflow bucket.
-  uint32_t OverflowBucket() const { return floors_.size(); }
+  [[nodiscard]] uint32_t OverflowBucket() const { return floors_.size(); }
 
  private:
   // Constructs an IntegerBucketConfig with the specified floors. See floors_.
-  explicit IntegerBucketConfig(const std::vector<int64_t>& floors) : floors_(floors) {}
+  explicit IntegerBucketConfig(std::vector<int64_t> floors) : floors_(std::move(floors)) {}
 
   // Creates an IntegerBucketConfig with exponentially-sized buckets.
   // There will be num_buckets+2 buckets created with the first bucket being

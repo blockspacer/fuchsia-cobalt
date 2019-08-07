@@ -4,7 +4,7 @@
 
 #include "config/buckets_config.h"
 
-#include "glog/logging.h"
+#include "./logging.h"
 
 namespace cobalt {
 namespace config {
@@ -85,7 +85,7 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateExponential(
   std::vector<int64_t> floors(num_buckets + 1);
 
   floors[0] = floor;
-  uint32_t offset = initial_step;
+  uint64_t offset = initial_step;
   for (uint32_t i = 1; i < num_buckets + 1; i++) {
     floors[i] = floor + offset;
     offset *= step_multiplier;
