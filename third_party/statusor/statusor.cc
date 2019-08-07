@@ -14,23 +14,22 @@ limitations under the License.
 ==============================================================================*/
 
 #include "third_party/statusor/statusor.h"
+
 #include "glog/logging.h"
-#include "util/status.h"
+#include "src/lib/util/status.h"
 
 namespace statusor {
 namespace internal_statusor {
 
 void Helper::HandleInvalidStatusCtorArg(Status* status) {
-  const char* kMessage =
-      "An OK status is not a valid constructor argument to StatusOr<T>";
+  const char* kMessage = "An OK status is not a valid constructor argument to StatusOr<T>";
   LOG(ERROR) << kMessage;
   // Fall back to cobalt::util::StatusCode::INTERNAL.
   *status = cobalt::util::Status(cobalt::util::StatusCode::INTERNAL, kMessage);
 }
 
 void Helper::Crash(const Status& status) {
-  LOG(FATAL) << "Attempting to fetch value instead of handling error "
-             << status.error_message();
+  LOG(FATAL) << "Attempting to fetch value instead of handling error " << status.error_message();
 }
 
 }  // namespace internal_statusor

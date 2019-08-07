@@ -18,6 +18,12 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "src/lib/clearcut/curl_http_client.h"
+#include "src/lib/util/clock.h"
+#include "src/lib/util/consistent_proto_store.h"
+#include "src/lib/util/datetime_util.h"
+#include "src/lib/util/file_util.h"
+#include "src/lib/util/posix_file_system.h"
+#include "src/lib/util/status.h"
 #include "src/logger/encoder.h"
 #include "src/logger/event_aggregator.h"
 #include "src/logger/local_aggregation.pb.h"
@@ -31,12 +37,6 @@
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
 #include "third_party/statusor/statusor.h"
-#include "util/clock.h"
-#include "util/consistent_proto_store.h"
-#include "util/datetime_util.h"
-#include "util/file_util.h"
-#include "util/posix_file_system.h"
-#include "util/status.h"
 
 namespace cobalt {
 

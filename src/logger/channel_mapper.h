@@ -10,9 +10,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/lib/util/protected_fields.h"
 #include "src/registry/metric_definition.pb.h"
 #include "third_party/statusor/statusor.h"
-#include "util/protected_fields.h"
 
 namespace cobalt {
 namespace logger {

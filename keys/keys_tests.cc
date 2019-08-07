@@ -6,10 +6,10 @@
 #include "./observation2.pb.h"
 #include "glog/logging.h"
 #include "proto/tink.pb.h"
+#include "src/lib/crypto_util/base64.h"
+#include "src/lib/util/encrypted_message_util.h"
+#include "src/lib/util/file_util.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "util/crypto_util/base64.h"
-#include "util/encrypted_message_util.h"
-#include "util/file_util.h"
 
 // Does some sanity-checking on the tink keys.
 

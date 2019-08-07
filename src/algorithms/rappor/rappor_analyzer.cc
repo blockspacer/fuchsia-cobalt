@@ -21,11 +21,11 @@
 #include <glog/logging.h>
 
 #include "src/algorithms/rappor/rappor_encoder.h"
-#include "util/crypto_util/hash.h"
-#include "util/log_based_metrics.h"
-#include "util/lossmin/eigen-types.h"
-#include "util/lossmin/minimizers/gradient-evaluator.h"
-#include "util/lossmin/minimizers/parallel-boosting-with-momentum.h"
+#include "src/lib/crypto_util/hash.h"
+#include "src/lib/lossmin/eigen-types.h"
+#include "src/lib/lossmin/minimizers/gradient-evaluator.h"
+#include "src/lib/lossmin/minimizers/parallel-boosting-with-momentum.h"
+#include "src/lib/util/log_based_metrics.h"
 
 using cobalt_lossmin::InstanceSet;
 using cobalt_lossmin::LabelSet;

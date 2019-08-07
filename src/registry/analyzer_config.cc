@@ -21,6 +21,7 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "src/lib/util/log_based_metrics.h"
 #include "src/registry/config_text_parser.h"
 #include "src/registry/encoding_config.h"
 #include "src/registry/encodings.pb.h"
@@ -28,7 +29,6 @@
 #include "src/registry/metrics.pb.h"
 #include "src/registry/report_config.h"
 #include "src/registry/report_configs.pb.h"
-#include "util/log_based_metrics.h"
 
 namespace cobalt {
 namespace config {

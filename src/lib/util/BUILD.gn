@@ -1,0 +1,145 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("clock") {
+  sources = [
+    "clock.h",
+  ]
+}
+
+source_set("proto_serialization") {
+  sources = [
+    # Sources from protobuf that are not included in protobuf lite
+    "//third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc",
+    "//third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h",
+    "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.cc",
+    "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.h",
+  ]
+  public_deps = [
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+source_set("encrypted_message_util") {
+  sources = [
+    "encrypted_message_util.cc",
+    "encrypted_message_util.h",
+  ]
+  configs -= [ "//build/config:no_rtti" ]
+
+  public_configs = [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    "//third_party/abseil-cpp",
+  ]
+
+  public_deps = [
+    ":status",
+    "$cobalt_root:cobalt_proto",
+    "$cobalt_root:logging",
+    "$cobalt_root:tracing",
+    "//third_party/tink/cc:hybrid_encrypt",
+    "//third_party/tink/cc:keyset_handle",
+    "//third_party/tink/cc/hybrid:hybrid_config",
+  ]
+}
+
+static_library("datetime_util") {
+  sources = [
+    "datetime_util.cc",
+    "datetime_util.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  public_deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
+}
+
+static_library("file_util") {
+  sources = [
+    "file_util.cc",
+    "file_util.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":status",
+    "$cobalt_root:logging",
+    "$cobalt_root/src/lib/crypto_util",
+  ]
+}
+
+static_library("pem_util") {
+  sources = [
+    "pem_util.cc",
+    "pem_util.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":file_util",
+    "$cobalt_root:logging",
+    "$cobalt_root/src/lib/crypto_util",
+  ]
+}
+
+static_library("status") {
+  sources = [
+    "status.cc",
+    "status.h",
+    "status_codes.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+static_library("posix_file_system") {
+  sources = [
+    "file_system.h",
+    "posix_file_system.cc",
+    "posix_file_system.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+static_library("consistent_proto_store") {
+  sources = [
+    "consistent_proto_store.cc",
+    "consistent_proto_store.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":proto_serialization",
+    ":status",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+static_library("proto_util") {
+  sources = [
+    "proto_util.cc",
+    "proto_util.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    "$cobalt_root:logging",
+    "$cobalt_root/src/lib/crypto_util",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+source_set("maybe_encrypted") {
+  sources = [
+    "maybe_encrypted.h",
+  ]
+  public_deps = [
+    ":encrypted_message_util",
+  ]
+}
+source_set("protected_fields") {
+  sources = [
+    "protected_fields.h",
+  ]
+}
+
+group("tests") {
+  testonly = true
+}

@@ -20,7 +20,7 @@
 
 #include <glog/logging.h>
 
-#include "util/log_based_metrics.h"
+#include "src/lib/util/log_based_metrics.h"
 
 namespace cobalt {
 namespace rappor {

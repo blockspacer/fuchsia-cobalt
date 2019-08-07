@@ -12,9 +12,9 @@
 #include <utility>
 #include <vector>
 
+#include "src/lib/util/status.h"
 #include "src/logger/logger_interface.h"
 #include "src/registry/project_configs.h"
-#include "util/status.h"
 
 namespace cobalt {
 namespace logger {

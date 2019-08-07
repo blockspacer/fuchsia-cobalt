@@ -16,8 +16,8 @@
 
 #include "./logging.h"
 #include "src/algorithms/forculus/forculus_utils.h"
-#include "util/crypto_util/base64.h"
-#include "util/log_based_metrics.h"
+#include "src/lib/crypto_util/base64.h"
+#include "src/lib/util/log_based_metrics.h"
 
 namespace cobalt {
 namespace forculus {

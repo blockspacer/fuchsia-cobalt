@@ -19,8 +19,8 @@
 #include <utility>
 #include <vector>
 
-#include "util/crypto_util/random.h"
-#include "util/crypto_util/types.h"
+#include "src/lib/crypto_util/random.h"
+#include "src/lib/crypto_util/types.h"
 
 namespace cobalt {
 namespace encoder {

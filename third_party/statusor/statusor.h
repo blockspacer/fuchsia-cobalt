@@ -72,8 +72,9 @@ limitations under the License.
 #define THIRD_PARTY_STATUSOR_STATUSOR_H_
 
 #include <utility>
+
+#include "src/lib/util/status.h"
 #include "third_party/statusor/statusor_internals.h"
-#include "util/status.h"
 
 namespace statusor {
 
@@ -81,9 +82,8 @@ using cobalt::util::Status;
 
 template <typename T>
 class StatusOr : private internal_statusor::StatusOrData<T>,
-                 private internal_statusor::TraitsBase<
-                     std::is_copy_constructible<T>::value,
-                     std::is_move_constructible<T>::value> {
+                 private internal_statusor::TraitsBase<std::is_copy_constructible<T>::value,
+                                                       std::is_move_constructible<T>::value> {
   template <typename U>
   friend class StatusOr;
 

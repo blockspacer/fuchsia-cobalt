@@ -18,7 +18,7 @@ limitations under the License.
 
 #include <utility>
 
-#include "util/status.h"
+#include "src/lib/util/status.h"
 
 namespace statusor {
 namespace internal_statusor {
@@ -39,7 +39,8 @@ template <typename T, typename... Args>
 void PlacementNew(void* p, Args&&... args) {
 #if defined(__GNUC__) && !defined(__clang__)
   // Teach gcc that 'p' cannot be null, fixing code size issues.
-  if (p == nullptr) __builtin_unreachable();
+  if (p == nullptr)
+    __builtin_unreachable();
 #endif
   new (p) T(std::forward<Args>(args)...);
 }
@@ -96,15 +97,12 @@ class StatusOrData {
   explicit StatusOrData(const T& value) : data_(value) { MakeStatus(); }
   explicit StatusOrData(T&& value) : data_(std::move(value)) { MakeStatus(); }
 
-  explicit StatusOrData(const Status& status) : status_(status) {
-    EnsureNotOk();
-  }
-  explicit StatusOrData(Status&& status) : status_(std::move(status)) {
-    EnsureNotOk();
-  }
+  explicit StatusOrData(const Status& status) : status_(status) { EnsureNotOk(); }
+  explicit StatusOrData(Status&& status) : status_(std::move(status)) { EnsureNotOk(); }
 
   StatusOrData& operator=(const StatusOrData& other) {
-    if (this == &other) return *this;
+    if (this == &other)
+      return *this;
     if (other.ok())
       Assign(other.data_);
     else
@@ -113,7 +111,8 @@ class StatusOrData {
   }
 
   StatusOrData& operator=(StatusOrData&& other) {
-    if (this == &other) return *this;
+    if (this == &other)
+      return *this;
     if (other.ok())
       Assign(std::move(other.data_));
     else
@@ -184,15 +183,18 @@ class StatusOrData {
   };
 
   void Clear() {
-    if (ok()) data_.~T();
+    if (ok())
+      data_.~T();
   }
 
   void EnsureOk() const {
-    if (!ok()) Helper::Crash(status_);
+    if (!ok())
+      Helper::Crash(status_);
   }
 
   void EnsureNotOk() {
-    if (ok()) Helper::HandleInvalidStatusCtorArg(&status_);
+    if (ok())
+      Helper::HandleInvalidStatusCtorArg(&status_);
   }
 
   // Construct the value (ie. data_) through placement new with the passed
@@ -206,8 +208,7 @@ class StatusOrData {
   // argument.
   template <typename... Args>
   void MakeStatus(Args&&... args) {
-    internal_statusor::PlacementNew<Status>(&status_,
-                                            std::forward<Args>(args)...);
+    internal_statusor::PlacementNew<Status>(&status_, std::forward<Args>(args)...);
   }
 };
 

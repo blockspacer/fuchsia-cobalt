@@ -11,8 +11,8 @@
 #include <glog/logging.h>
 
 #include "src/algorithms/rappor/lasso_runner.h"
+#include "src/lib/lossmin/eigen-types.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "util/lossmin/eigen-types.h"
 
 #include "third_party/eigen/Eigen/SparseCore"
 

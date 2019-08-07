@@ -9,11 +9,11 @@
 #include <memory>
 #include <vector>
 
+#include "src/lib/util/status.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"
-#include "util/status.h"
 
 namespace clearcut {
 
@@ -29,17 +29,14 @@ static const int32_t kMaxRetries = 5;
 class ClearcutUploader {
  public:
   ClearcutUploader(const std::string &url, std::unique_ptr<HTTPClient> client,
-                   int64_t upload_timeout = 0,
-                   int64_t initial_backoff_millis = 250);
+                   int64_t upload_timeout = 0, int64_t initial_backoff_millis = 250);
 
   // Uploads the |log_request|  with retries.
-  Status UploadEvents(LogRequest *log_request,
-                      int32_t max_retries = kMaxRetries);
+  Status UploadEvents(LogRequest *log_request, int32_t max_retries = kMaxRetries);
 
  private:
   // Tries once to upload |log_request|.
-  Status TryUploadEvents(LogRequest *log_request,
-                         std::chrono::steady_clock::time_point deadline);
+  Status TryUploadEvents(LogRequest *log_request, std::chrono::steady_clock::time_point deadline);
 
   const std::string url_;
   const std::unique_ptr<HTTPClient> client_;

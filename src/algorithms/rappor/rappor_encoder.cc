@@ -21,9 +21,9 @@
 
 #include "./logging.h"
 #include "./tracing.h"
-#include "util/crypto_util/hash.h"
-#include "util/crypto_util/mac.h"
-#include "util/crypto_util/random.h"
+#include "src/lib/crypto_util/hash.h"
+#include "src/lib/crypto_util/mac.h"
+#include "src/lib/crypto_util/random.h"
 
 namespace cobalt {
 namespace rappor {

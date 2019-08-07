@@ -16,13 +16,13 @@
 
 #include "./event.pb.h"
 #include "./gtest.h"
+#include "src/lib/util/clock.h"
+#include "src/lib/util/datetime_util.h"
+#include "src/lib/util/proto_util.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/registry/project_configs.h"
-#include "util/clock.h"
-#include "util/datetime_util.h"
-#include "util/proto_util.h"
 
 namespace cobalt {
 

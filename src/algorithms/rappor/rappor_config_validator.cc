@@ -19,7 +19,7 @@
 
 #include "./logging.h"
 #include "./observation.pb.h"
-#include "util/crypto_util/hash.h"
+#include "src/lib/crypto_util/hash.h"
 
 namespace cobalt {
 namespace rappor {

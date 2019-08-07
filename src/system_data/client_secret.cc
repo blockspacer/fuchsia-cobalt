@@ -16,8 +16,8 @@
 
 #include <utility>
 
-#include "util/crypto_util/base64.h"
-#include "util/crypto_util/random.h"
+#include "src/lib/crypto_util/base64.h"
+#include "src/lib/crypto_util/random.h"
 
 namespace cobalt {
 namespace encoder {

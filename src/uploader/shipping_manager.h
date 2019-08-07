@@ -16,12 +16,12 @@
 #include <vector>
 
 #include "./logging.h"
+#include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/internal_metrics.h"
 #include "src/observation_store/observation_store.h"
 #include "src/observation_store/observation_store_update_recipient.h"
 #include "src/uploader/upload_scheduler.h"
 #include "third_party/clearcut/uploader.h"
-#include "util/encrypted_message_util.h"
 
 #include "grpc++/grpc++.h"
 

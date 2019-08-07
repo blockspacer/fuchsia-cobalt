@@ -41,7 +41,7 @@ source_set("rappor_encoder") {
   ]
   public_deps = [
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/util/crypto_util",
+    "$cobalt_root/src/lib/crypto_util",
   ]
   configs += [ ":rappor_config" ]
 }
@@ -53,7 +53,7 @@ if (!is_fuchsia_tree) {
     ]
     deps = [
       "$cobalt_root:logging",
-      "$cobalt_root/util/lossmin/minimizers",
+      "$cobalt_root/src/lib/lossmin/minimizers",
       "//third_party/eigen",
     ]
     configs += [ ":rappor_config" ]
@@ -87,12 +87,12 @@ if (!is_fuchsia_tree) {
       ":rappor_config_validator",
       ":rappor_encoder",
       "$cobalt_root:logging",
-      "$cobalt_root/util/lossmin/minimizers",
+      "$cobalt_root/src/lib/lossmin/minimizers",
       "//third_party/eigen",
       "//third_party/grpc:grpc++",
     ]
     public_deps = [
-      "$cobalt_root/util/crypto_util",
+      "$cobalt_root/src/lib/crypto_util",
     ]
     configs += [ ":rappor_config" ]
   }

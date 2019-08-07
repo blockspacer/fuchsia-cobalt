@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "src/algorithms/forculus/polynomial_computations.h"
-#include "util/crypto_util/cipher.h"
+#include "src/lib/crypto_util/cipher.h"
 
 namespace cobalt {
 namespace forculus {

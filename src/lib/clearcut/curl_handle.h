@@ -11,9 +11,9 @@
 
 #include <curl/curl.h>
 
+#include "src/lib/util/status.h"
 #include "third_party/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"
-#include "util/status.h"
 
 namespace cobalt {
 namespace util {

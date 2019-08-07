@@ -9,9 +9,9 @@
 
 #include <vector>
 
-#include "util/lossmin/eigen-types.h"
-#include "util/lossmin/minimizers/gradient-evaluator.h"
-#include "util/lossmin/minimizers/parallel-boosting-with-momentum.h"
+#include "src/lib/lossmin/eigen-types.h"
+#include "src/lib/lossmin/minimizers/gradient-evaluator.h"
+#include "src/lib/lossmin/minimizers/parallel-boosting-with-momentum.h"
 
 #include "third_party/eigen/Eigen/SparseCore"
 

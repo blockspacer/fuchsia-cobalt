@@ -1,0 +1,43 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+static_library("crypto_util") {
+  sources = [
+    "base64.cc",
+    "base64.h",
+    "cipher.cc",
+    "cipher.h",
+    "errors.cc",
+    "errors.h",
+    "hash.cc",
+    "hash.h",
+    "mac.cc",
+    "mac.h",
+    "random.cc",
+    "random.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  public_deps = [
+    "//third_party/boringssl",
+  ]
+}
+
+source_set("tests") {
+  testonly = true
+  sources = [
+    "base64_test.cc",
+    "cipher_test.cc",
+    "hash_test.cc",
+    "mac_test.cc",
+    "random_test.cc",
+  ]
+
+  deps = [
+    ":crypto_util",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}

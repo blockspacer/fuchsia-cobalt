@@ -5,7 +5,7 @@
 #include "src/registry/project_configs.h"
 
 #include "./logging.h"
-#include "util/crypto_util/base64.h"
+#include "src/lib/crypto_util/base64.h"
 
 namespace cobalt {
 namespace config {

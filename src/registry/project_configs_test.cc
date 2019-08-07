@@ -7,8 +7,8 @@
 #include <sstream>
 
 #include "./logging.h"
+#include "src/lib/crypto_util/base64.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "util/crypto_util/base64.h"
 
 namespace cobalt {
 namespace config {

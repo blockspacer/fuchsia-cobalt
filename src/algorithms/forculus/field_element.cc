@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "util/crypto_util/types.h"
+#include "src/lib/crypto_util/types.h"
 
 namespace cobalt {
 namespace forculus {

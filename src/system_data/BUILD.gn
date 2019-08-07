@@ -9,13 +9,13 @@ group("encoder") {
   public_deps = [
     ":client_secret",
     ":system_data",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/logger:channel_mapper",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/registry:client_config",
     "$cobalt_root/src/uploader:shipping_manager",
-    "$cobalt_root/util:clock",
-    "$cobalt_root/util:encrypted_message_util",
   ]
 }
 
@@ -57,7 +57,7 @@ source_set("client_secret") {
   configs += [ "$cobalt_root:cobalt_config" ]
 
   deps = [
-    "$cobalt_root/util/crypto_util",
+    "$cobalt_root/src/lib/crypto_util",
   ]
 }
 

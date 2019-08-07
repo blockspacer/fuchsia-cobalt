@@ -14,27 +14,27 @@ limitations under the License.
 ==============================================================================*/
 
 #include "third_party/statusor/status_macros.h"
-#include "util/status.h"
 
-#include <google/protobuf/stubs/strutil.h>
 #include <algorithm>
 
+#include <google/protobuf/stubs/strutil.h>
+
 #include "glog/logging.h"
+#include "src/lib/util/status.h"
 
 namespace statusor {
 namespace status_macros {
 
 using cobalt::util::Status;
 
-static Status MakeStatus(cobalt::util::StatusCode code,
-                         const std::string& message) {
+static Status MakeStatus(cobalt::util::StatusCode code, const std::string& message) {
   return Status(code, message);
 }
 
 // Log the error at the given severity, optionally with a stack trace.
 // If log_severity is NUM_SEVERITIES, nothing is logged.
-static void LogError(const Status& status, const char* filename, int line,
-                     int log_severity, bool should_log_stack_trace) {
+static void LogError(const Status& status, const char* filename, int line, int log_severity,
+                     bool should_log_stack_trace) {
   if (log_severity != google::NUM_SEVERITIES) {
     std::string stack_trace;
     switch (log_severity) {
@@ -64,10 +64,9 @@ static void LogError(const Status& status, const char* filename, int line,
 // NUM_SEVERITIES).  If should_log_stack_trace is true, the stack
 // trace is included in the log message (ignored if should_log is
 // false).
-static Status MakeError(const char* filename, int line,
-                        cobalt::util::StatusCode code,
-                        const std::string& message, bool should_log,
-                        int log_severity, bool should_log_stack_trace) {
+static Status MakeError(const char* filename, int line, cobalt::util::StatusCode code,
+                        const std::string& message, bool should_log, int log_severity,
+                        bool should_log_stack_trace) {
   if (code == cobalt::util::StatusCode::OK) {
     LOG(ERROR) << "Cannot create error with status OK";
     code = cobalt::util::StatusCode::UNKNOWN;
@@ -83,10 +82,8 @@ static Status MakeError(const char* filename, int line,
 // generating a lot of inline code for error cases in all callers.
 void MakeErrorStream::CheckNotDone() const { impl_->CheckNotDone(); }
 
-MakeErrorStream::Impl::Impl(const char* file, int line,
-                            cobalt::util::StatusCode code,
-                            MakeErrorStream* error_stream,
-                            bool is_logged_by_default)
+MakeErrorStream::Impl::Impl(const char* file, int line, cobalt::util::StatusCode code,
+                            MakeErrorStream* error_stream, bool is_logged_by_default)
     : file_(file),
       line_(line),
       code_(code),
@@ -96,15 +93,12 @@ MakeErrorStream::Impl::Impl(const char* file, int line,
       should_log_stack_trace_(false),
       make_error_stream_with_output_wrapper_(error_stream) {}
 
-MakeErrorStream::Impl::Impl(const Status& status,
-                            PriorMessageHandling prior_message_handling,
-                            const char* file, int line,
-                            MakeErrorStream* error_stream)
+MakeErrorStream::Impl::Impl(const Status& status, PriorMessageHandling prior_message_handling,
+                            const char* file, int line, MakeErrorStream* error_stream)
     : file_(file),
       line_(line),
       // Make sure we show some error, even if the call is incorrect.
-      code_(!status.ok() ? status.error_code()
-                         : cobalt::util::StatusCode::UNKNOWN),
+      code_(!status.ok() ? status.error_code() : cobalt::util::StatusCode::UNKNOWN),
       prior_message_handling_(prior_message_handling),
       prior_message_(status.error_message()),
       is_done_(false),
@@ -121,8 +115,8 @@ MakeErrorStream::Impl::~Impl() {
   // Note: error messages refer to the public MakeErrorStream class.
 
   if (!is_done_) {
-    LOG(ERROR) << "MakeErrorStream destructed without getting Status: " << file_
-               << ":" << line_ << " " << stream_.str();
+    LOG(ERROR) << "MakeErrorStream destructed without getting Status: " << file_ << ":" << line_
+               << " " << stream_.str();
   }
 }
 
@@ -133,33 +127,30 @@ Status MakeErrorStream::Impl::GetStatus() {
   // it doesn't match the expected pattern, where the stream is constructed
   // as a temporary, loaded with a message, and then casted to Status.
   if (is_done_) {
-    LOG(ERROR) << "MakeErrorStream got Status more than once: " << file_ << ":"
-               << line_ << " " << stream_.str();
+    LOG(ERROR) << "MakeErrorStream got Status more than once: " << file_ << ":" << line_ << " "
+               << stream_.str();
   }
 
   is_done_ = true;
 
   const std::string& stream_str = stream_.str();
-  const std::string str =
-      prior_message_handling_ == kAppendToPriorMessage
-          ? google::protobuf::StrCat(prior_message_, stream_str)
-          : google::protobuf::StrCat(stream_str, prior_message_);
+  const std::string str = prior_message_handling_ == kAppendToPriorMessage
+                              ? google::protobuf::StrCat(prior_message_, stream_str)
+                              : google::protobuf::StrCat(stream_str, prior_message_);
   if (str.empty()) {
     return MakeError(file_, line_, code_,
-                     google::protobuf::StrCat(str, "Error without message at ",
-                                              file_, ":", line_),
+                     google::protobuf::StrCat(str, "Error without message at ", file_, ":", line_),
                      true /* should_log */, google::ERROR /* log_severity */,
                      should_log_stack_trace_);
   } else {
-    return MakeError(file_, line_, code_, str, should_log_, log_severity_,
-                     should_log_stack_trace_);
+    return MakeError(file_, line_, code_, str, should_log_, log_severity_, should_log_stack_trace_);
   }
 }
 
 void MakeErrorStream::Impl::CheckNotDone() const {
   if (is_done_) {
-    LOG(ERROR) << "MakeErrorStream shift called after getting Status: " << file_
-               << ":" << line_ << " " << stream_.str();
+    LOG(ERROR) << "MakeErrorStream shift called after getting Status: " << file_ << ":" << line_
+               << " " << stream_.str();
   }
 }
 

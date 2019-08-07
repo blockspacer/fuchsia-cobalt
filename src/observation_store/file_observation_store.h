@@ -14,13 +14,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/lib/util/file_system.h"
+#include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
 #include "src/observation_store/envelope_maker.h"
 #include "src/observation_store/observation_store.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 #include "third_party/statusor/statusor.h"
-#include "util/file_system.h"
-#include "util/protected_fields.h"
 
 namespace cobalt {
 namespace encoder {

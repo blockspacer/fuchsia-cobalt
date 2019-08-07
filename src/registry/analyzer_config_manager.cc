@@ -18,9 +18,9 @@
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "src/lib/util/log_based_metrics.h"
 #include "src/registry/analyzer_config.h"
 #include "src/registry/cobalt_registry.pb.h"
-#include "util/log_based_metrics.h"
 
 namespace cobalt {
 namespace config {

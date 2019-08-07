@@ -12,8 +12,8 @@
 #include "./encrypted_message.pb.h"
 #include "./logging.h"
 #include "./observation.pb.h"
+#include "src/lib/util/encrypted_message_util.h"
 #include "src/observation_store/observation_store.h"
-#include "util/encrypted_message_util.h"
 
 namespace cobalt {
 namespace encoder {

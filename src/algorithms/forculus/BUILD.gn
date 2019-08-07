@@ -28,10 +28,10 @@ source_set("forculus_encrypter") {
   public_deps = [
     ":forculus_utils",
     "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/src/lib/util:datetime_util",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/system_data:client_secret",
-    "$cobalt_root/util:datetime_util",
-    "$cobalt_root/util/crypto_util",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
 }

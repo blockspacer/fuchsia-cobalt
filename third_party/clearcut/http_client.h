@@ -8,8 +8,8 @@
 #include <future>
 #include <map>
 
+#include "src/lib/util/status.h"
 #include "third_party/statusor/statusor.h"
-#include "util/status.h"
 
 namespace clearcut {
 

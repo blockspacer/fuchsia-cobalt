@@ -15,6 +15,9 @@
 #include "./observation.pb.h"
 #include "./observation2.pb.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/lib/util/clock.h"
+#include "src/lib/util/datetime_util.h"
+#include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/encoder.h"
 #include "src/logger/event_aggregator.h"
 #include "src/logger/fake_logger.h"
@@ -25,9 +28,6 @@
 #include "src/registry/encodings.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"
-#include "util/clock.h"
-#include "util/datetime_util.h"
-#include "util/encrypted_message_util.h"
 
 using ::google::protobuf::RepeatedPtrField;
 #ifndef PROTO_LITE

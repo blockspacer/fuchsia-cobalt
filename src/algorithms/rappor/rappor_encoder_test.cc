@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "src/algorithms/rappor/rappor_test_utils.h"
+#include "src/lib/crypto_util/random_test_utils.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "util/crypto_util/random_test_utils.h"
 
 namespace cobalt {
 namespace rappor {

@@ -21,10 +21,10 @@
 
 #include "./observation.pb.h"
 #include "src/algorithms/rappor/rappor_config_validator.h"
+#include "src/lib/crypto_util/hash.h"
+#include "src/lib/crypto_util/random.h"
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
-#include "util/crypto_util/hash.h"
-#include "util/crypto_util/random.h"
 
 namespace cobalt {
 namespace rappor {

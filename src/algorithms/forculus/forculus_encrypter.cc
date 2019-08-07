@@ -20,8 +20,8 @@
 #include "src/algorithms/forculus/field_element.h"
 #include "src/algorithms/forculus/forculus_utils.h"
 #include "src/algorithms/forculus/polynomial_computations.h"
-#include "util/crypto_util/cipher.h"
-#include "util/crypto_util/mac.h"
+#include "src/lib/crypto_util/cipher.h"
+#include "src/lib/crypto_util/mac.h"
 
 namespace cobalt {
 namespace forculus {

@@ -14,6 +14,9 @@
 #include <vector>
 
 #include "./gtest.h"
+#include "src/lib/util/consistent_proto_store.h"
+#include "src/lib/util/posix_file_system.h"
+#include "src/lib/util/status.h"
 #include "src/logger/fake_logger.h"
 #include "src/logger/local_aggregation.pb.h"
 #include "src/logger/logger_interface.h"
@@ -21,9 +24,6 @@
 #include "src/observation_store/observation_store.h"
 #include "src/observation_store/observation_store_update_recipient.h"
 #include "src/registry/project_configs.h"
-#include "util/consistent_proto_store.h"
-#include "util/posix_file_system.h"
-#include "util/status.h"
 
 namespace cobalt {
 namespace logger {

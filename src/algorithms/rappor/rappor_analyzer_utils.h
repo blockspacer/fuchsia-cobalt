@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "util/lossmin/eigen-types.h"
+#include "src/lib/lossmin/eigen-types.h"
 
 #include "third_party/eigen/Eigen/SparseCore"
 

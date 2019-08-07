@@ -13,6 +13,9 @@
 #include "./event.pb.h"
 #include "./logging.h"
 #include "./observation2.pb.h"
+#include "src/lib/util/clock.h"
+#include "src/lib/util/consistent_proto_store.h"
+#include "src/lib/util/protected_fields.h"
 #include "src/logger/encoder.h"
 #include "src/logger/event_record.h"
 #include "src/logger/local_aggregation.pb.h"
@@ -20,9 +23,6 @@
 #include "src/logger/status.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
-#include "util/clock.h"
-#include "util/consistent_proto_store.h"
-#include "util/protected_fields.h"
 
 namespace cobalt {
 namespace logger {

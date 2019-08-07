@@ -9,13 +9,13 @@
 #include <utility>
 
 #include "./logging.h"
+#include "src/lib/crypto_util/base64.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/encoding_config.h"
 #include "src/registry/encodings.pb.h"
 #include "src/registry/metric_config.h"
 #include "src/registry/metrics.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
-#include "util/crypto_util/base64.h"
 
 namespace cobalt {
 namespace config {

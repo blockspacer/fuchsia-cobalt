@@ -23,7 +23,7 @@ proto_library("file_observation_store_internal_proto") {
   generate_python = false
   deps = [
     "$cobalt_root:cobalt_proto",
-    "$cobalt_root/util:proto_serialization",
+    "$cobalt_root/src/lib/util:proto_serialization",
   ]
 }
 
@@ -48,7 +48,7 @@ source_set("observation_store") {
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
     "$cobalt_root:tracing",
-    "$cobalt_root/util:encrypted_message_util",
+    "$cobalt_root/src/lib/util:encrypted_message_util",
   ]
 }
 

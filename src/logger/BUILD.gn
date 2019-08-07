@@ -88,7 +88,7 @@ source_set("project_context_factory") {
     "$cobalt_root/src/registry:cobalt_registry_proto",
 
     # This is for base64 decoding.
-    "$cobalt_root/util/crypto_util",
+    "$cobalt_root/src/lib/crypto_util",
   ]
 
   public_deps = [
@@ -115,10 +115,10 @@ source_set("encoder") {
     ":status",
     "$cobalt_root:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
+    "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
     "$cobalt_root/src/system_data:system_data",
-    "$cobalt_root/util/crypto_util",
     "//third_party/abseil-cpp",
   ]
 }
@@ -136,8 +136,8 @@ source_set("observation_writer") {
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
     "$cobalt_root:tracing",
+    "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/observation_store",
-    "$cobalt_root/util:encrypted_message_util",
   ]
 }
 
@@ -161,10 +161,10 @@ source_set("event_aggregator") {
     "$cobalt_root:cobalt_proto",
     "$cobalt_root:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
+    "$cobalt_root/src/lib/util:proto_util",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
-    "$cobalt_root/util:consistent_proto_store",
-    "$cobalt_root/util:proto_util",
   ]
 }
 
@@ -261,8 +261,8 @@ source_set("fake_logger") {
   deps = [
     ":cobalt_local_aggregation_proto",
     ":project_context_factory",
+    "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/registry:project_configs",
-    "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
@@ -279,11 +279,11 @@ source_set("logger_test_utils") {
     ":encoder",
     ":fake_logger",
     ":project_context_factory",
+    "$cobalt_root/src/lib/util:encrypted_message_util",
+    "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/src/registry:project_configs",
-    "$cobalt_root/util:encrypted_message_util",
-    "$cobalt_root/util:posix_file_system",
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
