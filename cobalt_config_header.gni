@@ -91,7 +91,7 @@ template("cobalt_config_header") {
     ]
 
     deps = [
-      "$cobalt_root:cobalt_proto",
+      "$cobalt_root/src/pb",
       config_parser_target,
     ]
   }

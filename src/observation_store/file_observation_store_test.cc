@@ -7,9 +7,9 @@
 #include <random>
 #include <utility>
 
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
 #include "src/lib/util/posix_file_system.h"
+#include "src/logging.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 

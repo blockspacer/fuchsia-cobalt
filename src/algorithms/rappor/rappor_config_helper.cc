@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "./logging.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace rappor {

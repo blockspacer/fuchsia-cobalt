@@ -9,13 +9,13 @@
 #include <string>
 #include <vector>
 
-#include "./event.pb.h"
-#include "./observation2.pb.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/lib/crypto_util/random.h"
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
 #include "src/logger/types.h"
+#include "src/pb/event.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 #include "src/system_data/client_secret.h"

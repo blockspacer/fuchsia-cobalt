@@ -9,12 +9,12 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/a.cb.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/b.cb.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/c.cb.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace logger {

@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 
-#include "./observation.pb.h"
+#include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 

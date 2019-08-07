@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-#include "./observation2.pb.h"
 #include "src/lib/util/clock.h"
 #include "src/logger/logger.h"
 #include "src/logger/project_context.h"
+#include "src/pb/observation2.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {

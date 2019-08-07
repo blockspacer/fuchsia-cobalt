@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "./observation.pb.h"
+#include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 
 namespace cobalt {

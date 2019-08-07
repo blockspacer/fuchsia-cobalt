@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "./envelope.pb.h"
-#include "./observation.pb.h"
-#include "./observation_batch.pb.h"
 #include "src/logger/logger_interface.h"
+#include "src/pb/envelope.pb.h"
+#include "src/pb/observation.pb.h"
+#include "src/pb/observation_batch.pb.h"
 
 namespace cobalt {
 namespace encoder {

@@ -36,9 +36,9 @@ source_set("encrypted_message_util") {
 
   public_deps = [
     ":status",
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
-    "$cobalt_root:tracing",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src:tracing",
+    "$cobalt_root/src/pb",
     "//third_party/tink/cc:hybrid_encrypt",
     "//third_party/tink/cc:keyset_handle",
     "//third_party/tink/cc/hybrid:hybrid_config",
@@ -64,7 +64,7 @@ static_library("file_util") {
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":status",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
   ]
 }
@@ -77,7 +77,7 @@ static_library("pem_util") {
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":file_util",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
   ]
 }
@@ -120,7 +120,7 @@ static_library("proto_util") {
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
     "//third_party/protobuf:protobuf_lite",
   ]

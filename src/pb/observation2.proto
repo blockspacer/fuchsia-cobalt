@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package cobalt;
 
-import "observation.proto";
+import "src/pb/observation.proto";
 
 // An Observation is a piece of data sent from a Cobalt client to the Cobalt
 // server as input to a Report.

@@ -11,11 +11,11 @@
 #include <utility>
 #include <vector>
 
-#include "./clearcut_extensions.pb.h"
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
+#include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/observation_store/observation_store.h"
+#include "src/pb/clearcut_extensions.pb.h"
 #include "src/system_data/fake_system_data.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"

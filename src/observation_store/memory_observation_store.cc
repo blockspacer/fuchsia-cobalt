@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "./logging.h"
 #include "src/logger/logger_interface.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace encoder {

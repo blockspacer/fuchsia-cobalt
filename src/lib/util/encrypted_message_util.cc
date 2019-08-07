@@ -7,11 +7,11 @@
 #include <utility>
 #include <vector>
 
-#include "./encrypted_message.pb.h"
-#include "./key.pb.h"
-#include "./logging.h"
-#include "./tracing.h"
 #include "google/protobuf/message_lite.h"
+#include "src/logging.h"
+#include "src/pb/encrypted_message.pb.h"
+#include "src/pb/key.pb.h"
+#include "src/tracing.h"
 #include "third_party/tink/cc/hybrid/hybrid_config.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
 #pragma clang diagnostic push

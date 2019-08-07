@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include "./gtest.h"
+#include "src/gtest.h"
 #include "src/logger/fake_logger.h"
 
 namespace cobalt {

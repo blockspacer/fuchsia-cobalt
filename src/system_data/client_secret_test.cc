@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-#include "./gtest.h"
+#include "src/gtest.h"
 
 namespace cobalt {
 namespace encoder {

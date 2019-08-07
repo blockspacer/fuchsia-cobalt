@@ -14,8 +14,8 @@
 
 #include "src/lib/util/pem_util.h"
 
-#include "./logging.h"
 #include "src/lib/util/file_util.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace util {

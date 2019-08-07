@@ -7,7 +7,7 @@ package cobalt;
 
 option go_package = "cobalt";
 
-import "encrypted_message.proto";
+import "src/pb/encrypted_message.proto";
 
 ////////////////////////////////////////////////////////////////////////////////
 //

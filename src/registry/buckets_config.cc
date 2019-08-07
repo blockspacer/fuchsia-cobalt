@@ -4,7 +4,7 @@
 
 #include "src/registry/buckets_config.h"
 
-#include "./logging.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace config {

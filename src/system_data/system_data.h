@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "./observation_batch.pb.h"
 #include "src/logger/channel_mapper.h"
+#include "src/pb/observation_batch.pb.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++11-compat"

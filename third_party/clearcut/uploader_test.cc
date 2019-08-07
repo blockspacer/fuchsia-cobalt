@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "third_party/clearcut/uploader.h"
+
 #include <chrono>
 #include <thread>
 
-#include "third_party/clearcut/uploader.h"
-
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
+#include "src/logging.h"
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
@@ -26,13 +26,12 @@ static bool fail_next_request;
 
 class TestHTTPClient : public HTTPClient {
  public:
-  std::future<StatusOr<HTTPResponse>> Post(
-      HTTPRequest request, std::chrono::steady_clock::time_point _ignored) {
+  std::future<StatusOr<HTTPResponse>> Post(HTTPRequest request,
+                                           std::chrono::steady_clock::time_point _ignored) {
     if (fail_next_request) {
       fail_next_request = false;
       std::promise<StatusOr<HTTPResponse>> response_promise;
-      response_promise.set_value(
-          Status(StatusCode::DEADLINE_EXCEEDED, "Artificial post failure"));
+      response_promise.set_value(Status(StatusCode::DEADLINE_EXCEEDED, "Artificial post failure"));
       return response_promise.get_future();
     }
 
@@ -66,8 +65,8 @@ class UploaderTest : public ::testing::Test {
     fail_next_request = false;
     auto unique_client = std::make_unique<TestHTTPClient>();
     client = unique_client.get();
-    uploader = std::make_unique<ClearcutUploader>(
-        "http://test.com", std::move(unique_client), 0, kInitialBackoffMillis);
+    uploader = std::make_unique<ClearcutUploader>("http://test.com", std::move(unique_client), 0,
+                                                  kInitialBackoffMillis);
   }
 
  public:

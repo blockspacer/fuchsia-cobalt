@@ -7,11 +7,11 @@
 
 #include <memory>
 
-#include "./observation2.pb.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/status.h"
 #include "src/observation_store/observation_store.h"
 #include "src/observation_store/observation_store_update_recipient.h"
+#include "src/pb/observation2.pb.h"
 
 namespace cobalt {
 namespace logger {

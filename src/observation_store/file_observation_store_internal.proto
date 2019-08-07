@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package cobalt.encoder;
 
-import "observation_batch.proto";
-import "encrypted_message.proto";
+import "src/pb/observation_batch.proto";
+import "src/pb/encrypted_message.proto";
 
 // ObservationStoreRecord is used internally by FileObservationStore for
 // serializing protos into files. It allows writing either a meta_data or an

@@ -16,12 +16,13 @@ source_set("rappor_config_validator") {
   ]
 
   deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
   ]
 
   public_deps = [
-    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/system_data:client_secret",
     "$cobalt_root/src/system_data:client_secret",
   ]
 
@@ -35,13 +36,13 @@ source_set("rappor_encoder") {
 
   deps = [
     ":rappor_config_validator",
-    "$cobalt_root:logging",
-    "$cobalt_root:tracing",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/system_data:client_secret",
   ]
   public_deps = [
-    "$cobalt_root:cobalt_proto",
     "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/src/pb",
   ]
   configs += [ ":rappor_config" ]
 }
@@ -52,7 +53,7 @@ if (!is_fuchsia_tree) {
       "lasso_runner.cc",
     ]
     deps = [
-      "$cobalt_root:logging",
+      "$cobalt_root/src:logging",
       "$cobalt_root/src/lib/lossmin/minimizers",
       "//third_party/eigen",
     ]
@@ -68,7 +69,7 @@ source_set("rappor_config_helper") {
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
   deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
   ]
   configs += [ ":rappor_config" ]
 }
@@ -86,7 +87,7 @@ if (!is_fuchsia_tree) {
       ":lasso_runner",
       ":rappor_config_validator",
       ":rappor_encoder",
-      "$cobalt_root:logging",
+      "$cobalt_root/src:logging",
       "$cobalt_root/src/lib/lossmin/minimizers",
       "//third_party/eigen",
       "//third_party/grpc:grpc++",
@@ -118,7 +119,7 @@ test("rappor_tests") {
   deps = [
     ":rappor_config_helper",
     ":rappor_encoder",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
     "//third_party/grpc:grpc++",
@@ -149,7 +150,7 @@ test("rappor_manual_tests") {
   deps = [
     ":rappor_config_helper",
     ":rappor_encoder",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
@@ -170,7 +171,7 @@ if (!is_fuchsia_tree) {
     ]
     deps = [
       ":lasso_runner",
-      "$cobalt_root:logging",
+      "$cobalt_root/src:logging",
       "//third_party/googletest:gtest",
     ]
     configs += [ "$cobalt_root:cobalt_config" ]

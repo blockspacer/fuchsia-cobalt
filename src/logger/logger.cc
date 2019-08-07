@@ -7,17 +7,17 @@
 #include <memory>
 #include <string>
 
-#include "./event.pb.h"
-#include "./logging.h"
-#include "./observation2.pb.h"
-#include "./tracing.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/logger/event_record.h"
+#include "src/logging.h"
+#include "src/pb/event.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/encodings.pb.h"
 #include "src/registry/id.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
+#include "src/tracing.h"
 
 namespace cobalt {
 namespace logger {

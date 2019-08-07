@@ -6,7 +6,7 @@
 
 #include <fstream>
 
-#include "./gtest.h"
+#include "src/gtest.h"
 #include "src/lib/util/consistent_proto_store_test.pb.h"
 #include "src/lib/util/posix_file_system.h"
 

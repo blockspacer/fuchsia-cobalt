@@ -1,0 +1,30 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/protobuf/proto_library.gni")
+
+proto_library("pb") {
+  sources = [
+    "clearcut_extensions.proto",
+    "encrypted_message.proto",
+    "envelope.proto",
+    "event.proto",
+    "key.proto",
+    "observation.proto",
+    "observation2.proto",
+    "observation_batch.proto",
+  ]
+  import_dirs = [
+    "//third_party/protobuf/src",
+    "$cobalt_root",
+  ]
+  proto_in_dir = "$cobalt_root"
+  generate_python = false
+  cc_generator_options = "lite"
+  deps = [
+    "$cobalt_root/third_party/clearcut:clearcut_proto",
+    "//third_party/boringssl",
+  ]
+  extra_configs = [ "$cobalt_root:cobalt_config" ]
+}

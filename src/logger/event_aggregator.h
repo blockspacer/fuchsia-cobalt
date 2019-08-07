@@ -10,9 +10,6 @@
 #include <string>
 #include <thread>
 
-#include "./event.pb.h"
-#include "./logging.h"
-#include "./observation2.pb.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/protected_fields.h"
@@ -21,6 +18,9 @@
 #include "src/logger/local_aggregation.pb.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/status.h"
+#include "src/logging.h"
+#include "src/pb/event.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 

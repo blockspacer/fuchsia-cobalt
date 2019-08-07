@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "./logging.h"
-#include "./observation.pb.h"
 #include "src/lib/crypto_util/hash.h"
+#include "src/logging.h"
+#include "src/pb/observation.pb.h"
 
 namespace cobalt {
 namespace rappor {

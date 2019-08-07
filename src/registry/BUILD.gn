@@ -28,7 +28,7 @@ proto_library("cobalt_registry_proto") {
   cc_generator_options = "lite"
 
   deps = [
-    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/pb",
   ]
 
   extra_configs = [
@@ -46,8 +46,8 @@ static_library("client_config") {
 
   deps = [
     ":cobalt_registry_proto",
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src/pb",
   ]
 }
 
@@ -59,7 +59,7 @@ source_set("client_config_test") {
   deps = [
     ":client_config",
     ":cobalt_registry_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/googletest:gtest",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
@@ -72,7 +72,7 @@ source_set("buckets_config") {
   ]
   public_deps = [
     ":cobalt_registry_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
   ]
 
   public_configs = [ "$cobalt_root:cobalt_config" ]
@@ -86,7 +86,7 @@ source_set("buckets_config_test") {
   deps = [
     ":buckets_config",
     ":cobalt_registry_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
   ]
@@ -105,7 +105,7 @@ source_set("project_configs") {
   ]
 
   public_deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }

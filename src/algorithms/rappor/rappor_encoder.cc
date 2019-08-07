@@ -19,11 +19,11 @@
 #include <memory>
 #include <vector>
 
-#include "./logging.h"
-#include "./tracing.h"
 #include "src/lib/crypto_util/hash.h"
 #include "src/lib/crypto_util/mac.h"
 #include "src/lib/crypto_util/random.h"
+#include "src/logging.h"
+#include "src/tracing.h"
 
 namespace cobalt {
 namespace rappor {

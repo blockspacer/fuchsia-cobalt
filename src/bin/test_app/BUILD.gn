@@ -11,7 +11,7 @@ executable("test_app") {
 
   deps = [
     ":lib",
-    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/pb",
   ]
 }
 
@@ -32,8 +32,8 @@ source_set("lib") {
     "//third_party/googletest:gtest",
   ]
   deps = [
-    "$cobalt_root:logging",
     "$cobalt_root:registry",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/clearcut:curl_http_client",
     "$cobalt_root/src/lib/util:datetime_util",
     "$cobalt_root/src/lib/util:file_util",

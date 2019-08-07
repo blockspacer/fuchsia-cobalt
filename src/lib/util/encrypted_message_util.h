@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "./encrypted_message.pb.h"
 #include "google/protobuf/message_lite.h"
 #include "src/lib/crypto_util/cipher.h"
+#include "src/pb/encrypted_message.pb.h"
 #include "third_party/statusor/statusor.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
 

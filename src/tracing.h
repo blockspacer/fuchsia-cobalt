@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_TRACING_H_
-#define COBALT_TRACING_H_
+#ifndef COBALT_SRC_TRACING_H_
+#define COBALT_SRC_TRACING_H_
 
 #if defined(__Fuchsia__)
 
@@ -27,4 +27,4 @@
 
 #endif
 
-#endif  // COBALT_TRACING_H_
+#endif  // COBALT_SRC_TRACING_H_

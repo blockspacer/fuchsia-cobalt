@@ -16,8 +16,8 @@
 
 #include <gflags/gflags.h>
 
-#include "./logging.h"
 #include "src/algorithms/forculus/forculus_encrypter.h"
+#include "src/logging.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 

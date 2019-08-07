@@ -7,9 +7,9 @@
 #include <mutex>
 #include <utility>
 
-#include "./clearcut_extensions.pb.h"
-#include "./logging.h"
 #include "src/logger/logger_interface.h"
+#include "src/logging.h"
+#include "src/pb/clearcut_extensions.pb.h"
 
 namespace cobalt {
 namespace encoder {

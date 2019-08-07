@@ -28,7 +28,7 @@ source_set("legacy_project_context") {
 
   deps = [
     ":client_secret",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/registry:client_config",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -40,12 +40,12 @@ source_set("system_data") {
     "system_data.h",
   ]
   deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/logger:channel_mapper",
     "//third_party/abseil-cpp",
   ]
   public_deps = [
-    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/pb",
   ]
 }
 
@@ -73,7 +73,7 @@ source_set("unittests") {
     ":client_secret",
     ":legacy_project_context",
     ":system_data",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/abseil-cpp",
     "//third_party/gflags",
     "//third_party/googletest:gtest",

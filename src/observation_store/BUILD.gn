@@ -18,12 +18,13 @@ proto_library("file_observation_store_internal_proto") {
   import_dirs = [
     "//third_party/protobuf/src",
     "$cobalt_root",
+    "$cobalt_root/src/pb",
   ]
   cc_generator_options = "lite"
   generate_python = false
   deps = [
-    "$cobalt_root:cobalt_proto",
     "$cobalt_root/src/lib/util:proto_serialization",
+    "$cobalt_root/src/pb",
   ]
 }
 
@@ -39,16 +40,17 @@ source_set("observation_store") {
     "observation_store.h",
   ]
   deps = [
-    ":file_observation_store_internal_proto",
     ":observation_store_update_recipient",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/logger:logger_interface",
   ]
   public_deps = [
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
-    "$cobalt_root:tracing",
+    ":file_observation_store_internal_proto",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/lib/util:encrypted_message_util",
+    "$cobalt_root/src/pb",
   ]
 }
 

@@ -10,14 +10,14 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/message_differencer.h>
 
-#include "./logging.h"
-#include "./observation.pb.h"
-#include "./observation2.pb.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/encoder.h"
 #include "src/logger/project_context_factory.h"
+#include "src/logging.h"
+#include "src/pb/observation.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 

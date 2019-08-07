@@ -49,7 +49,7 @@ source_set("event_record") {
   ]
 
   public_deps = [
-    "$cobalt_root:cobalt_proto",
+    "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }
@@ -67,7 +67,7 @@ source_set("project_context") {
 
   public_deps = [
     ":status",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:project_configs",
   ]
@@ -106,14 +106,14 @@ source_set("encoder") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   deps = [
-    "$cobalt_root:tracing",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/algorithms/forculus:forculus_encrypter",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
   ]
   public_deps = [
     ":logger_interface",
     ":status",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/registry:cobalt_registry_proto",
@@ -133,11 +133,11 @@ source_set("observation_writer") {
 
   public_deps = [
     ":status",
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
-    "$cobalt_root:tracing",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/pb",
   ]
 }
 
@@ -158,11 +158,11 @@ source_set("event_aggregator") {
     ":event_record",
     ":observation_writer",
     ":status",
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
     "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:proto_util",
+    "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
   ]
@@ -194,7 +194,7 @@ source_set("internal_metrics") {
   public_deps = [
     ":internal_metrics_config_cc",
     ":logger_interface",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "//third_party/abseil-cpp",
   ]
 }
@@ -215,7 +215,7 @@ source_set("logger") {
     ":logger_interface",
     ":observation_writer",
     ":status",
-    "$cobalt_root:tracing",
+    "$cobalt_root/src:tracing",
     "$cobalt_root/src/registry:id",
   ]
 }
@@ -229,7 +229,7 @@ source_set("channel_mapper") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }

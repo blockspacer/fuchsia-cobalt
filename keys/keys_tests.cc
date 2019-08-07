@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "./encrypted_message.pb.h"
-#include "./observation2.pb.h"
 #include "glog/logging.h"
 #include "proto/tink.pb.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/lib/util/file_util.h"
+#include "src/pb/encrypted_message.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 // Does some sanity-checking on the tink keys.

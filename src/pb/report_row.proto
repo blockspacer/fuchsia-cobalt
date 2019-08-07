@@ -5,7 +5,7 @@ syntax = "proto3";
 
 package cobalt;
 
-import "observation_batch.proto";
+import "src/pb/observation_batch.proto";
 
 // A row of output for a report of type SIMPLE_OCCURRENCE_COUNT.
 //

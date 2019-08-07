@@ -17,7 +17,7 @@
 #include <memory>
 #include <utility>
 
-#include "./logging.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace encoder {

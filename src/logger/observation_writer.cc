@@ -7,8 +7,8 @@
 #include <memory>
 #include <utility>
 
-#include "./logging.h"
-#include "./tracing.h"
+#include "src/logging.h"
+#include "src/tracing.h"
 
 namespace cobalt {
 namespace logger {

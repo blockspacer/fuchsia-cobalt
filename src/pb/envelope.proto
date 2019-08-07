@@ -7,7 +7,7 @@ package cobalt;
 
 option go_package = "cobalt";
 
-import "observation_batch.proto";
+import "src/pb/observation_batch.proto";
 
 // An envelope contains multiple ObservationBatches. An encrypted Envelope
 // is the unit sent from an Encoder client to a Shuffler.

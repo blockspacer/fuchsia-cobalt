@@ -4,7 +4,7 @@
 
 #include "src/system_data/upload_scheduler.h"
 
-#include "./gtest.h"
+#include "src/gtest.h"
 
 namespace cobalt {
 namespace encoder {

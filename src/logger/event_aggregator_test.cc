@@ -14,13 +14,13 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
-#include "./event.pb.h"
-#include "./gtest.h"
+#include "src/gtest.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
+#include "src/pb/event.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/registry/project_configs.h"
 

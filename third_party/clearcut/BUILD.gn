@@ -22,7 +22,7 @@ source_set("clearcut") {
   configs += [ "$cobalt_root:cobalt_config" ]
   public_deps = [
     ":clearcut_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/third_party/statusor:statusor",
     "//third_party/abseil-cpp",
   ]

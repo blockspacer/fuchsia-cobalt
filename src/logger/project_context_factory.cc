@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "./logging.h"
 #include "src/lib/crypto_util/base64.h"
+#include "src/logging.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project.pb.h"
 #include "src/registry/project_configs.h"

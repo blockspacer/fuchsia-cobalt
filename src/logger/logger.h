@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "./observation2.pb.h"
 #include "src/lib/util/clock.h"
 #include "src/logger/encoder.h"
 #include "src/logger/event_aggregator.h"
@@ -19,6 +18,7 @@
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
+#include "src/pb/observation2.pb.h"
 
 namespace cobalt {
 

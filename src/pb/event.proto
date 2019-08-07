@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package cobalt;
 
-import "observation2.proto";
+import "src/pb/observation2.proto";
 
 // An Event is the unit of data logged in Cobalt.
 //

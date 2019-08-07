@@ -11,10 +11,8 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/message_differencer.h>
 
-#include "./gtest.h"
-#include "./observation.pb.h"
-#include "./observation2.pb.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/gtest.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
@@ -25,6 +23,8 @@
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
 #include "src/logger/testing_constants.h"
+#include "src/pb/observation.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/encodings.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"

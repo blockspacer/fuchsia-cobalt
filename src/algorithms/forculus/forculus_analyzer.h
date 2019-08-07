@@ -21,8 +21,8 @@
 #include <unordered_map>
 #include <utility>
 
-#include "./observation.pb.h"
 #include "src/algorithms/forculus/forculus_decrypter.h"
+#include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 
 namespace cobalt {

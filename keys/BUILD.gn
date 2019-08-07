@@ -21,10 +21,10 @@ test("keys_tests") {
   ]
   deps = [
     ":key_tests_files",
-    "$cobalt_root:cobalt_proto",
-    "$cobalt_root:logging",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/lib/util:file_util",
+    "$cobalt_root/src/pb",
     "$cobalt_root/third_party/statusor",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",

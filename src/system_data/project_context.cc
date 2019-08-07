@@ -7,7 +7,7 @@
 #include <memory>
 #include <utility>
 
-#include "./logging.h"
+#include "src/logging.h"
 #include "src/registry/encoding_config.h"
 #include "src/registry/metric_config.h"
 

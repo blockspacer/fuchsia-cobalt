@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "./observation2.pb.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "src/lib/clearcut/curl_http_client.h"
@@ -31,6 +30,7 @@
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
 #include "src/observation_store/memory_observation_store.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project_configs.h"

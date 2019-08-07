@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "third_party/clearcut/uploader.h"
+
 #include <algorithm>
 #include <cmath>
 
-#include "./logging.h"
+#include "src/logging.h"
 #include "third_party/clearcut/clearcut.pb.h"
-#include "third_party/clearcut/uploader.h"
 #include "third_party/statusor/status_macros.h"
 #include "unistd.h"
 
@@ -16,26 +17,21 @@ namespace clearcut {
 using cobalt::util::Status;
 using cobalt::util::StatusCode;
 
-ClearcutUploader::ClearcutUploader(const std::string& url,
-                                   std::unique_ptr<HTTPClient> client,
-                                   int64_t upload_timeout,
-                                   int64_t initial_backoff_millis)
+ClearcutUploader::ClearcutUploader(const std::string& url, std::unique_ptr<HTTPClient> client,
+                                   int64_t upload_timeout, int64_t initial_backoff_millis)
     : url_(url),
       client_(std::move(client)),
       upload_timeout_(upload_timeout),
       initial_backoff_millis_(initial_backoff_millis),
-      pause_uploads_until_(
-          std::chrono::steady_clock::now())  // Set this to now() so that we
-                                             // can immediately upload.
+      pause_uploads_until_(std::chrono::steady_clock::now())  // Set this to now() so that we
+                                                              // can immediately upload.
 {}
 
-Status ClearcutUploader::UploadEvents(LogRequest* log_request,
-                                      int32_t max_retries) {
+Status ClearcutUploader::UploadEvents(LogRequest* log_request, int32_t max_retries) {
   int32_t i = 0;
   auto deadline = std::chrono::steady_clock::time_point::max();
   if (upload_timeout_ > 0) {
-    deadline = std::chrono::steady_clock::now() +
-               std::chrono::milliseconds(upload_timeout_);
+    deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(upload_timeout_);
   }
   auto backoff = std::chrono::milliseconds(initial_backoff_millis_);
   while (true) {
@@ -48,8 +44,7 @@ Status ClearcutUploader::UploadEvents(LogRequest* log_request,
       case StatusCode::NOT_FOUND:
       case StatusCode::PERMISSION_DENIED:
         // Don't retry permanent errors.
-        LOG(WARNING) << "Got a permanent error from TryUploadEvents: "
-                     << response.error_message();
+        LOG(WARNING) << "Got a permanent error from TryUploadEvents: " << response.error_message();
         return response;
       default:
         break;
@@ -58,8 +53,7 @@ Status ClearcutUploader::UploadEvents(LogRequest* log_request,
       return Status(StatusCode::DEADLINE_EXCEEDED, "Deadline exceeded.");
     }
     // Exponential backoff.
-    auto time_until_pause_end =
-        pause_uploads_until_ - std::chrono::steady_clock::now();
+    auto time_until_pause_end = pause_uploads_until_ - std::chrono::steady_clock::now();
     if (time_until_pause_end > backoff) {
       std::this_thread::sleep_for(time_until_pause_end);
     } else {
@@ -69,8 +63,8 @@ Status ClearcutUploader::UploadEvents(LogRequest* log_request,
   }
 }
 
-Status ClearcutUploader::TryUploadEvents(
-    LogRequest* log_request, std::chrono::steady_clock::time_point deadline) {
+Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
+                                         std::chrono::steady_clock::time_point deadline) {
   if (std::chrono::steady_clock::now() < pause_uploads_until_) {
     return Status(StatusCode::RESOURCE_EXHAUSTED,
                   "Uploads are currently paused at the request of the "
@@ -80,9 +74,8 @@ Status ClearcutUploader::TryUploadEvents(
   HTTPRequest request(url_);
   log_request->mutable_client_info()->set_client_type(kFuchsiaClientType);
   if (!log_request->SerializeToString(&request.body)) {
-    return Status(
-        StatusCode::INVALID_ARGUMENT,
-        "ClearcutUploader: Unable to serialize log_request to binary proto.");
+    return Status(StatusCode::INVALID_ARGUMENT,
+                  "ClearcutUploader: Unable to serialize log_request to binary proto.");
   }
   VLOG(5) << "ClearcutUploader: Sending POST request to " << url_ << ".";
   auto response_future = client_->Post(std::move(request), deadline);
@@ -93,8 +86,7 @@ Status ClearcutUploader::TryUploadEvents(
 
   auto response = response_or.ConsumeValueOrDie();
 
-  VLOG(5) << "ClearcutUploader: Received POST response: " << response.http_code
-          << ".";
+  VLOG(5) << "ClearcutUploader: Received POST response: " << response.http_code << ".";
   if (response.http_code != 200) {
     std::string escaped_body = absl::CEscape(request.body);
     VLOG(1) << "ClearcutUploader: Failed POST request to " << url_
@@ -126,14 +118,12 @@ Status ClearcutUploader::TryUploadEvents(
 
   LogResponse log_response;
   if (!log_response.ParseFromString(response.response)) {
-    return Status(StatusCode::INTERNAL,
-                  "Unable to parse response from clearcut server");
+    return Status(StatusCode::INTERNAL, "Unable to parse response from clearcut server");
   }
 
   if (log_response.next_request_wait_millis() >= 0) {
-    pause_uploads_until_ =
-        std::chrono::steady_clock::now() +
-        std::chrono::milliseconds(log_response.next_request_wait_millis());
+    pause_uploads_until_ = std::chrono::steady_clock::now() +
+                           std::chrono::milliseconds(log_response.next_request_wait_millis());
   }
 
   return Status::OK;

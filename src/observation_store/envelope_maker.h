@@ -9,11 +9,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "./encrypted_message.pb.h"
-#include "./logging.h"
-#include "./observation.pb.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/logging.h"
 #include "src/observation_store/observation_store.h"
+#include "src/pb/encrypted_message.pb.h"
+#include "src/pb/observation.pb.h"
 
 namespace cobalt {
 namespace encoder {

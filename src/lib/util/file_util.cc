@@ -7,9 +7,9 @@
 #include <streambuf>
 #include <string>
 
-#include "./logging.h"
 #include "src/lib/util/status.h"
 #include "src/lib/util/status_codes.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace util {

@@ -7,13 +7,13 @@
 #include <string>
 #include <utility>
 
-#include "./encrypted_message.pb.h"
-#include "./envelope.pb.h"
-#include "./key.pb.h"
-#include "./observation.pb.h"
-#include "./observation2.pb.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/lib/crypto_util/cipher.h"
+#include "src/pb/encrypted_message.pb.h"
+#include "src/pb/envelope.pb.h"
+#include "src/pb/key.pb.h"
+#include "src/pb/observation.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "third_party/tink/cc/cleartext_keyset_handle.h"
 #include "third_party/tink/cc/hybrid_config.h"

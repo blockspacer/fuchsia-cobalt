@@ -4,8 +4,8 @@
 
 #include "src/registry/buckets_config.h"
 
-#include "./logging.h"
 #include "gflags/gflags.h"
+#include "src/logging.h"
 #include "src/registry/metrics.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 

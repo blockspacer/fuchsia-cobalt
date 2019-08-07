@@ -7,14 +7,14 @@
 #include <memory>
 #include <string>
 
-#include "./logging.h"
-#include "./observation2.pb.h"
-#include "./tracing.h"
 #include "src/algorithms/forculus/forculus_encrypter.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/logger/project_context.h"
+#include "src/logging.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/packed_event_codes.h"
+#include "src/tracing.h"
 
 namespace cobalt {
 namespace logger {

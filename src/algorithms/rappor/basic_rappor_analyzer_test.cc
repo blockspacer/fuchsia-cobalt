@@ -21,10 +21,10 @@
 
 #include <gflags/gflags.h>
 
-#include "./logging.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/algorithms/rappor/rappor_test_utils.h"
 #include "src/lib/crypto_util/random_test_utils.h"
+#include "src/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {

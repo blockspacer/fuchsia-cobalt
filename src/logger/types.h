@@ -8,8 +8,8 @@
 #include <memory>
 #include <string>
 
-#include "./event.pb.h"
-#include "./observation2.pb.h"
+#include "src/pb/event.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 

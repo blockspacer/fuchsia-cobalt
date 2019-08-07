@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "./gtest.h"
+#include "src/gtest.h"
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"

@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "./event.pb.h"
+#include "src/pb/event.pb.h"
 #include "src/registry/metric_definition.pb.h"
 
 namespace cobalt {

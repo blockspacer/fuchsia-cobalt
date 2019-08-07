@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
+#include "src/logging.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
 namespace cobalt {

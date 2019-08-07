@@ -10,8 +10,8 @@
 #include <string>
 #include <utility>
 
-#include "./gtest.h"
-#include "./logging.h"
+#include "src/gtest.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace encoder {

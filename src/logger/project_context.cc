@@ -6,7 +6,7 @@
 
 #include <sstream>
 
-#include "./logging.h"
+#include "src/logging.h"
 
 namespace cobalt {
 namespace logger {

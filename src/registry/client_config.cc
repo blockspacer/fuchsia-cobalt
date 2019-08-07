@@ -8,8 +8,8 @@
 #include <string>
 #include <utility>
 
-#include "./logging.h"
 #include "src/lib/crypto_util/base64.h"
+#include "src/logging.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/encoding_config.h"
 #include "src/registry/encodings.pb.h"

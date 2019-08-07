@@ -19,10 +19,10 @@
 #include <string>
 #include <utility>
 
-#include "./observation.pb.h"
 #include "src/algorithms/rappor/rappor_config_validator.h"
 #include "src/lib/crypto_util/hash.h"
 #include "src/lib/crypto_util/random.h"
+#include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 

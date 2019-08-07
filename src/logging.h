@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_LOGGING_H_
-#define COBALT_LOGGING_H_
+#ifndef COBALT_SRC_LOGGING_H_
+#define COBALT_SRC_LOGGING_H_
 
 #ifdef HAVE_GLOG
 #include <glog/logging.h>
@@ -36,4 +36,4 @@
 #error "Either HAVE_GLOG or __Fuchsia__ must be defined"
 #endif
 
-#endif  // COBALT_LOGGING_H_
+#endif  // COBALT_SRC_LOGGING_H_

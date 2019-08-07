@@ -11,11 +11,11 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "./gtest.h"
-#include "./logging.h"
-#include "./observation2.pb.h"
+#include "src/gtest.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/logger/test_registries/project_context_test_registry.cb.h"
+#include "src/logging.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/project_configs.h"
 
 using cobalt::config::ProjectConfigs;

@@ -9,15 +9,15 @@
 #include <utility>
 #include <vector>
 
-#include "./gtest.h"
-#include "./logging.h"
-#include "./observation.pb.h"
-#include "./observation2.pb.h"
+#include "src/gtest.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
 #include "src/logger/test_registries/encoder_test_registry.cb.h"
+#include "src/logging.h"
+#include "src/pb/observation.pb.h"
+#include "src/pb/observation2.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/fake_system_data.h"
 
