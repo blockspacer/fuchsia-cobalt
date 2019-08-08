@@ -13,6 +13,7 @@ metric_definitions:
     - local_privacy_noise_level: SMALL
       report_name: ErrorCountsByType
       report_type: SIMPLE_OCCURRENCE_COUNT
+      system_profile_field: [BOARD_NAME, PRODUCT_NAME]
 
 - id: 2
   metric_name: ReadCacheHits
@@ -47,9 +48,11 @@ metric_definitions:
       local_privacy_noise_level: SMALL
       expected_population_size: 20000
       expected_string_set_size: 10000
+      system_profile_field: [BOARD_NAME, PRODUCT_NAME]
     - report_name: ModuleDownloads_WithThreshold
       report_type: STRING_COUNTS_WITH_THRESHOLD
       threshold: 200
+      system_profile_field: [BOARD_NAME, PRODUCT_NAME]
 
 - id: 8
   metric_name: ModuleInstalls

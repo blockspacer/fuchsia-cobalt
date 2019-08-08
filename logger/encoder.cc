@@ -327,31 +327,26 @@ Encoder::Result Encoder::MakeObservation(MetricRef metric, const ReportDefinitio
 
   if (system_data_) {
     const auto& profile = system_data_->system_profile();
-    if (report->system_profile_field_size() == 0) {
-      metadata->mutable_system_profile()->set_board_name(profile.board_name());
-      metadata->mutable_system_profile()->set_product_name(profile.product_name());
-    } else {
-      for (const auto& field : report->system_profile_field()) {
-        switch (field) {
-          case SystemProfileField::OS:
-            metadata->mutable_system_profile()->set_os(profile.os());
-            break;
-          case SystemProfileField::ARCH:
-            metadata->mutable_system_profile()->set_arch(profile.arch());
-            break;
-          case SystemProfileField::BOARD_NAME:
-            metadata->mutable_system_profile()->set_board_name(profile.board_name());
-            break;
-          case SystemProfileField::PRODUCT_NAME:
-            metadata->mutable_system_profile()->set_product_name(profile.product_name());
-            break;
-          case SystemProfileField::SYSTEM_VERSION:
-            metadata->mutable_system_profile()->set_system_version(profile.system_version());
-            break;
-          case SystemProfileField::CHANNEL:
-            metadata->mutable_system_profile()->set_channel(profile.channel());
-            break;
-        }
+    for (const auto& field : report->system_profile_field()) {
+      switch (field) {
+        case SystemProfileField::OS:
+          metadata->mutable_system_profile()->set_os(profile.os());
+          break;
+        case SystemProfileField::ARCH:
+          metadata->mutable_system_profile()->set_arch(profile.arch());
+          break;
+        case SystemProfileField::BOARD_NAME:
+          metadata->mutable_system_profile()->set_board_name(profile.board_name());
+          break;
+        case SystemProfileField::PRODUCT_NAME:
+          metadata->mutable_system_profile()->set_product_name(profile.product_name());
+          break;
+        case SystemProfileField::SYSTEM_VERSION:
+          metadata->mutable_system_profile()->set_system_version(profile.system_version());
+          break;
+        case SystemProfileField::CHANNEL:
+          metadata->mutable_system_profile()->set_channel(profile.channel());
+          break;
       }
     }
   }
