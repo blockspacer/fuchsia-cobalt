@@ -59,6 +59,7 @@
 #include <chrono>
 #include <cstdint>
 
+#include "config/cobalt_registry.pb.h"
 #include "config/metric_definition.pb.h"
 #include "config/metrics.pb.h"
 
