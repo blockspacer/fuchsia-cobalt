@@ -1,5 +1,0 @@
-group("bin") {
-  deps = [
-    "$cobalt_root/src/bin/config_parser/src:bin",
-  ]
-}

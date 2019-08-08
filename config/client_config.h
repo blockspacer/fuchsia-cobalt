@@ -1,1 +1,0 @@
-../src/registry/client_config.h

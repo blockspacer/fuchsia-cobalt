@@ -1,1 +1,0 @@
-../src/lib/util/consistent_proto_store.h

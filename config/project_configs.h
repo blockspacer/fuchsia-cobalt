@@ -1,1 +1,0 @@
-../src/registry/project_configs.h
