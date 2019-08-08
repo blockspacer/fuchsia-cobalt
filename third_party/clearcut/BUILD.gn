@@ -13,7 +13,7 @@ proto_library("clearcut_proto") {
   cc_generator_options = "lite"
 }
 
-static_library("clearcut") {
+source_set("clearcut") {
   sources = [
     "http_client.h",
     "uploader.cc",
@@ -22,6 +22,7 @@ static_library("clearcut") {
   configs += [ "$cobalt_root:cobalt_config" ]
   public_deps = [
     ":clearcut_proto",
+    "$cobalt_root:logging",
     "$cobalt_root/third_party/statusor:statusor",
     "//third_party/abseil-cpp",
   ]
