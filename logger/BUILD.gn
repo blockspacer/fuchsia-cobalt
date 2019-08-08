@@ -324,6 +324,7 @@ source_set("event_aggregator_test") {
   ]
   public_deps = [
     ":event_aggregator",
+    ":testing_constants",
     "//third_party/googletest:gtest",
   ]
 }
