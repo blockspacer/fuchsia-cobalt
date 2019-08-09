@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COBALT_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
-#define COBALT_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
+#ifndef COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
+#define COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
 
 #include <memory>
 #include <string>
@@ -95,4 +95,4 @@ class ForculusEncrypter {
 }  // namespace forculus
 }  // namespace cobalt
 
-#endif  // COBALT_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_
+#endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_

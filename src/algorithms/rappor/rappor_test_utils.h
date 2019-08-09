@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COBALT_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_
-#define COBALT_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_
+#ifndef COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_
+#define COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_
 
 #include <string>
 #include <vector>
@@ -68,4 +68,4 @@ RapporObservation RapporObservationFromString(uint32_t cohort, const std::string
 }  // namespace rappor
 }  // namespace cobalt
 
-#endif  // COBALT_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_
+#endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COBALT_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_
-#define COBALT_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_
+#ifndef COBALT_SRC_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_
+#define COBALT_SRC_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_
 
 #include <cstring>
 #include <cwchar>
@@ -125,4 +125,4 @@ std::ostream& operator<<(std::ostream& os, const FieldElement& el);
 }  // namespace forculus
 }  // namespace cobalt
 
-#endif  // COBALT_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_
+#endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_
-#define COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_
+#ifndef COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_
+#define COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_
 
 #include <vector>
 
@@ -25,4 +25,4 @@ void PrepareSecondRapporStepMatrix(cobalt_lossmin::InstanceSet* second_step_matr
 }  // namespace rappor
 }  // namespace cobalt
 
-#endif  // COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_
+#endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
-#define COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
+#ifndef COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
+#define COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
 
 #include <algorithm>
 #include <chrono>
@@ -165,4 +165,4 @@ class RapporAnalyzerTest : public ::testing::Test {
 }  // namespace rappor
 }  // namespace cobalt
 
-#endif  //  COBALT_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_
+#endif  //  COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_TEST_H_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COBALT_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
-#define COBALT_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
+#ifndef COBALT_SRC_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
+#define COBALT_SRC_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
 
 #include <memory>
 #include <vector>
@@ -101,4 +101,4 @@ class BasicRapporAnalyzer {
 }  // namespace rappor
 }  // namespace cobalt
 
-#endif  // COBALT_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
+#endif  // COBALT_SRC_ALGORITHMS_RAPPOR_BASIC_RAPPOR_ANALYZER_H_
