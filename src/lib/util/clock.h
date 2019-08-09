@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -78,6 +79,16 @@ class IncrementingClock : public ClockInterface {
       std::chrono::system_clock::time_point(std::chrono::system_clock::duration(0));
   std::chrono::system_clock::duration increment_ = std::chrono::system_clock::duration(1);
   std::function<void(std::chrono::system_clock::time_point)> callback_;
+};
+
+// An abstract interface to a clock that refuses to provide the time if a quality condition is not
+// satisfied; for example, if the clock has not been initialized from a trustworthy source.
+class ValidatedClockInterface {
+ public:
+  virtual ~ValidatedClockInterface() = default;
+
+  // Returns the current time if an accurate clock is avaliable or nullopt otherwise.
+  virtual std::optional<std::chrono::system_clock::time_point> now() = 0;
 };
 
 }  // namespace util
