@@ -203,7 +203,7 @@ message IntRangeHistogramReportRow {
 //
 // Gives an estimate of the number of devices with a particular system profile
 // which experienced at least one event with a particular event code, during a
-// window of a particular number of days ending on a particular date.
+// particular time window.
 message UniqueActivesReportRow {
   // The date of the last day of the aggregation window, as measured on the
   // device. This is a string in yyyy-mm-dd format.
@@ -221,13 +221,19 @@ message UniqueActivesReportRow {
   // event code.
   repeated string event_code = 3;
 
-  // The size in days of the aggregation window.
+  // The size in days of the aggregation window (deprecated).
+  // TODO(pesk): remove this field once the transition to aggregation_window is
+  // complete.
   uint32 window_size = 4;
 
-  // The total count of active devices for the window of size |window_size|
-  // ending on |date|, over all reporting devices with the |system_profile|.
-  // Unless |local_privacy_noise_level| in the Reportdefintion is set to NONE,
-  // this value is an estimate.
+  // A string describing the aggregation window, with units in hours or days.
+  // The format is Nh (for a window of N hours) or Nd (for a window of N days).
+  string aggregation_window = 8;
+
+  // The total count of active devices over the aggregation window, over all
+  // reporting devices with the |system_profile|. Unless
+  // |local_privacy_noise_level| in the Reportdefintion is set to NONE, this
+  // value is an estimate.
   float active_count = 5;
 
   // An estimate of the standard error in the value of |active_count|. This will
@@ -240,13 +246,12 @@ message UniqueActivesReportRow {
   // Z ~ Normal(0, 1).
   float std_err = 6;
 
-  // The total number of Observations received for the window of size
-  // |window_size| ending on |date|, over all reporting devices with the
-  // |system_profile|. This is equal to the total number of Fuchsia devices
-  // with |system_profile| which were awake at a time that locally aggregated
-  // Observations for this ReportDefinition and this aggregation window were
-  // created and and uploaded, whether or not |event_code| occurred on the
-  // device during the window.
+  // The total number of Observations received for the aggregation window,
+  // over all reporting devices with the |system_profile|. This is equal to
+  // the total number of Fuchsia devices with |system_profile| which were
+  // awake at a time that locally aggregated Observations for this
+  // ReportDefinition and this aggregation window were created and and uploaded,
+  // whether or not |event_code| occurred on the device during the window.
   int64 sample_size = 7;
 }
 
@@ -288,8 +293,14 @@ message PerDeviceNumericStatsReportRow {
   // a non-empty component string that was not pre-registered.
   string component = 4;
 
-  // The size in days of the aggregation window.
+  // The size in days of the aggregation window (deprecated).
+  // TODO(pesk): remove this field once the transition to aggregation_window is
+  // complete.
   uint32 window_size = 5;
+
+  // A string describing the aggregation window, with units in hours or days.
+  // The format is Nh (for a window of N hours) or Nd (for a window of N days).
+  string aggregation_window = 9;
 
   // The mean of the values contributing to this report row.
   float mean = 6;
@@ -327,6 +338,6 @@ message PerDeviceNumericStatsReportRow {
 
   // The number of unique devices that contributed to this report row. This is
   // equal to the number of ReportParticipationObservations received by
-  // the ReportGenerator for this report, window size, and date.
+  // the ReportGenerator for this report, aggregation window size, and date.
   int64 sample_size = 200;
 }
