@@ -28,7 +28,7 @@ import subprocess
 import sys
 import tempfile
 
-import tools.cpplint as cpplint
+import tools.clang_tidy as clang_tidy
 import tools.golint as golint
 import tools.test_runner as test_runner
 import tools.gitfmt as gitfmt
@@ -239,7 +239,7 @@ def _fmt(args):
 
 def _lint(args):
   status = 0
-  status += cpplint.main(args.directory)
+  status += clang_tidy.main(args.directory)
   status += golint.main()
 
   exit(status)
@@ -351,6 +351,7 @@ def _clean(args):
     if not os.path.exists(out_dir(args)):
       return
     partial_clean(out_dir(args), TO_SKIP_ON_PARTIAL_CLEAN)
+
 
 def _parse_bool(bool_string):
   return bool_string.lower() in ['true', 't', 'y', 'yes', '1']
