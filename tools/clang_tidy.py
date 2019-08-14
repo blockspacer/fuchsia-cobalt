@@ -18,6 +18,8 @@ SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 OUT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir, 'out'))
 CLANG_TIDY = os.path.join(SRC_ROOT_DIR, 'sysroot', 'share', 'clang',
                           'run-clang-tidy.py')
+CHECK_HEADER_GUARDS = os.path.join(SRC_ROOT_DIR, 'tools', 'style',
+                                   'check-header-guards.py')
 
 # A list of directories which should be skipped while walking the directory
 # tree looking for C++ files to be linted. We also skip directories starting
@@ -35,55 +37,6 @@ TEST_FILE_CLANG_TIDY_CHECKS = [
     '-readability-magic-numbers',
     '-misc-non-private-member-variables-in-classes'
 ]
-
-
-def report_error(filename, linenum, message):
-  print('%s:%s: %s' % (filename, linenum, message))
-
-
-# TODO(zmbush): try to accomplish this with llvm-header-guard
-def has_guard(f):
-  if os.path.islink(f):
-    return True
-
-  localpath = os.path.relpath(f, SRC_ROOT_DIR)
-  guard = 'COBALT_%s_' % re.sub(r'[-/.]', '_', localpath).upper()
-  ifndef = ''
-  ifndef_linenum = 0
-  define = ''
-  endif = ''
-  endif_linenum = 0
-  with open(f) as fd:
-    for linenum, line in enumerate(fd):
-      linesplit = line.split()
-      if len(linesplit) >= 2:
-        if not ifndef and linesplit[0] == '#ifndef':
-          ifndef = linesplit[1]
-          ifndef_linenum = linenum
-        if not define and linesplit[0] == '#define':
-          define = linesplit[1]
-      if line.startswith('#endif'):
-        endif = line
-        endif_linenum = linenum
-
-  if not ifndef or not define or ifndef != define:
-    report_error(
-        localpath, 0,
-        'No #ifndef header guard found, suggested CPP variable is %s' % guard)
-    return False
-
-  if ifndef != guard:
-    report_error(localpath, ifndef_linenum,
-                 '#ifndef header guard has wrong style, please use %s' % guard)
-    return False
-
-  endif_re = re.compile(r'#endif\s*//\s*' + guard + r'\b')
-  if endif_re.match(endif):
-    return True
-
-  report_error(localpath, endif_linenum,
-               '#endif line should be "#endif  // %s"' % guard)
-  return False
 
 
 def main(only_directories=[]):
@@ -116,9 +69,15 @@ def main(only_directories=[]):
     for d in dirs_to_skip:
       dirs.remove(d)
 
-  for f in clang_tidy_files + clang_tidy_test_files:
-    if f.endswith('.h') and not has_guard(f):
-      status += 1
+  header_files = [
+      f for f in clang_tidy_files + clang_tidy_test_files
+      if f.endswith('.h') and not os.path.islink(f)
+  ]
+  print('Running check-header-guards.py on %d files' % len(header_files))
+  try:
+    subprocess.check_call([CHECK_HEADER_GUARDS] + header_files)
+  except:
+    status += 1
 
   clang_tidy_command = [CLANG_TIDY, '-quiet', '-p', OUT_DIR]
   print('Running clang-tidy on %d source files' % len(clang_tidy_files))

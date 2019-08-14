@@ -25,8 +25,8 @@ import re
 import string
 import sys
 
-FUCHSIA_ROOT = os.path.dirname(  # $root
-    os.path.dirname(  # scripts
+SOURCE_ROOT = os.path.dirname(  # $root
+    os.path.dirname(  # tools
         os.path.dirname(  # style
             os.path.realpath(os.path.abspath(__file__)))))
 
@@ -60,12 +60,12 @@ def adjust_for_location(header_guard):
 
 def header_guard_from_path(path):
   """Compute the header guard from the path"""
-  assert (path.startswith(FUCHSIA_ROOT))
-  relative_path = path[len(FUCHSIA_ROOT):].strip('/')
+  assert (path.startswith(SOURCE_ROOT))
+  relative_path = path[len(SOURCE_ROOT):].strip('/')
   upper_path = relative_path.upper()
   header_guard = re.sub(disallowed_header_characters, '_', upper_path) + '_'
   header_guard = adjust_for_location(header_guard)
-  return header_guard
+  return 'COBALT_' + header_guard
 
 
 def check_file(path, fix_guards=False):
@@ -160,7 +160,7 @@ def check_file(path, fix_guards=False):
     header_guards_fixed = fix_header_guard(path, header_guard)
 
   if not header_guards_fixed:
-    print('Allowable header guard values are %s' % all_header_guards.keys())
+    print('Expected header guard value is %s' % header_guard)
 
   return False
 

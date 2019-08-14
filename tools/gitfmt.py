@@ -78,7 +78,7 @@ class Formatter(object):
     # Check to see if the binary specified in the command can be executed.
     paths = os.getenv("PATH").split(":")
     binary = self._cmd[0]
-    for path in paths:
+    for path in paths + [SRC_ROOT_DIR]:
       bin_path = os.path.join(path, binary)
       if os.path.exists(bin_path) and os.access(bin_path, os.X_OK):
         self._can_use_bin = True
@@ -100,6 +100,7 @@ class FormattingSession(object):
             "clang-format", "-style=file", "-fallback-style=Google",
             "-sort-includes", "-i"
         ]),
+        Formatter([".h"], ["./scripts/style/check-header-guards.py", "--fix"]),
         Formatter([".go"], ["gofmt", "-w"]),
         Formatter([".gn"], ["gn", "format", "--in-place"]),
         Formatter([".py"], ["pyformat", "-i"]),
@@ -160,7 +161,11 @@ def _git_status():
   "Get the files that are changed."
   status_str = _run_command(
       ["git", "status", "--ignored=no", "--ignore-submodules", "--porcelain"])
-  return [l.split() for l in status_str.split("\n") if len(l.split()) >= 2]
+  return [
+      l.split()
+      for l in status_str.split("\n")
+      if len(l.split()) >= 2 and not _ignored_file(l.split()[1])
+  ]
 
 
 def _git_show():
@@ -168,7 +173,11 @@ def _git_show():
   show_str = _run_command(
       ["git", "show", "--name-status", "--oneline", "--ignore-submodules"])
   lines = show_str.split("\n")
-  return [l.split() for l in lines[1:] if len(l.split()) >= 2]
+  return [
+      l.split()
+      for l in lines[1:]
+      if len(l.split()) >= 2 and not _ignored_file(l.split()[1])
+  ]
 
 
 IGNORED_FILES = [
