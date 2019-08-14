@@ -1,0 +1,359 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Runs the Cobalt registry parser on either the entire (global) registry or
+# the registry for a single project. Generates a .pb file containing the
+# registry.
+#
+# Args:
+#   global: (default: false) Should generate the global config.
+#   customer_id: (default: 1) Override the customer for the config.
+#   project_id: numeric project_id of the project to generate the config of
+#   project_name: The string name of the project to use (cobalt v1.0 configs
+#                 only)
+#   output_name: base of the filename for the output
+#   generate_binarypb: (default: true) should we generate a *.pb file with a
+#                      binary representation of the config.
+#   generate_cc: (default: false) Should we generate a *.cb.h file and a library.
+#   generate_dart: (default: false) Should we generate a dart library.
+#   generate_rust: (default: false) Should we generate a rust crate.
+#   v1_project: (default: true) Is this a v1 project.
+#   directory: (default: //third_party/cobalt_config) The directory to parse.
+#
+# Note: Other args are forwarded to dart_library when generate_dart is true.
+#
+# example usage:
+#
+# metrics_registry("generate_testapp_config") {
+#   project_id = 2
+# }
+
+import("//build/config/clang/clang.gni")
+
+template("metrics_registry") {
+  if (defined(invoker.global)) {
+    global = invoker.global
+  } else {
+    global = false
+  }
+
+  if (defined(invoker.customer_id)) {
+    not_needed(["global"])
+    customer_id = invoker.customer_id
+  } else if (!global) {
+    # Customer is Fuchsia
+    customer_id = 1
+  }
+
+  if (defined(invoker.project_id) && !defined(invoker.project_name)) {
+    not_needed(["global"])
+    project_id = invoker.project_id
+  } else if (!defined(invoker.project_id) && defined(invoker.project_name)) {
+    not_needed(["global"])
+    project_name = invoker.project_name
+  } else {
+    assert(
+        global,
+        "Exactly one of 'project_id' and 'project_name' or 'global' must be defined")
+  }
+
+  if (defined(invoker.namespace)) {
+    namespace = invoker.namespace
+  } else {
+    namespace = ""
+  }
+
+  if (defined(invoker.generate_binarypb)) {
+    generate_binarypb = invoker.generate_binarypb
+  } else {
+    generate_binarypb = true
+  }
+
+  if (defined(invoker.generate_cc)) {
+    generate_cc = invoker.generate_cc
+  } else {
+    generate_cc = false
+  }
+
+  if (defined(invoker.generate_dart)) {
+    generate_dart = invoker.generate_dart
+  } else {
+    generate_dart = false
+  }
+
+  if (defined(invoker.generate_rust)) {
+    generate_rust = invoker.generate_rust
+  } else {
+    generate_rust = false
+  }
+
+  if (defined(invoker.source)) {
+    source = invoker.source
+  }
+
+  if (defined(invoker.skip_validation)) {
+    skip_validation = invoker.skip_validation
+  } else {
+    skip_validation = false
+  }
+
+  if (defined(invoker.for_testing)) {
+    for_testing = invoker.for_testing
+  } else {
+    for_testing = false
+  }
+
+  if (defined(invoker.var_name)) {
+    var_name = invoker.var_name
+  }
+
+  if (defined(invoker.v1_project)) {
+    v1_project = invoker.v1_project
+  } else {
+    v1_project = true
+  }
+
+  if (defined(invoker.use_target_name)) {
+    not_needed(invoker, [ "use_target_name" ])
+  }
+
+  if (defined(invoker.output_name)) {
+    output_name = invoker.output_name
+  } else {
+    output_name = target_name
+  }
+
+  if (defined(invoker.directory)) {
+    cobalt_config_dir = invoker.directory
+  } else {
+    cobalt_config_dir = "//third_party/cobalt_config"
+  }
+
+  out_format = ""
+  generated_files = []
+  if (generate_binarypb) {
+    out_format = "${out_format}bin "
+    generated_files += [ "$target_gen_dir/$output_name.pb" ]
+  }
+  if (generate_cc) {
+    out_format = "${out_format}cpp "
+    cc_source_file = "$target_gen_dir/$output_name.cb.h"
+    generated_files += [ cc_source_file ]
+  }
+  if (generate_dart) {
+    out_format = "${out_format}dart "
+    dart_out_dir = "$target_gen_dir/${target_name}_package"
+    dart_src_dir = "$dart_out_dir/lib"
+    dart_library_name = target_name
+    dart_source_file = "$dart_src_dir/$output_name.dart"
+    generated_files += [ dart_source_file ]
+  }
+  if (generate_rust) {
+    out_format = "${out_format}rust "
+    rust_source_file = "$target_gen_dir/$output_name.rs"
+    generated_files += [ rust_source_file ]
+  }
+
+  gen_target_name = "${target_name}_gen"
+  group_deps = [ ":${gen_target_name}" ]
+
+  action(gen_target_name) {
+    config_parser_target =
+        "$cobalt_root/src/bin/config_parser/src:bin($host_toolchain)"
+    config_parser_bin =
+        get_label_info(config_parser_target, "root_out_dir") + "/config_parser"
+
+
+    depfile = "$target_gen_dir/$output_name.d"
+    outputs = generated_files
+    inputs = [
+      "$cobalt_config_dir/projects.yaml",
+    ]
+
+    script = "//build/gn_run_binary.sh"
+    args = [
+      clang_prefix,
+      rebase_path(config_parser_bin, root_build_dir),
+      "-out_format",
+      "$out_format",
+      "-out_filename",
+      "$output_name",
+      "-out_dir",
+      rebase_path(target_gen_dir, root_build_dir),
+      "-for_client",
+      "-dep_file",
+      rebase_path(depfile, root_build_dir),
+    ]
+
+    if (skip_validation) {
+      args += [ "-skip_validation" ]
+    }
+
+    if (for_testing) {
+      args += [ "-for_testing" ]
+    }
+
+    if (defined(var_name)) {
+      args += [
+        "-var_name",
+        var_name,
+      ]
+    }
+
+    if (defined(source)) {
+      args += [
+        "-config_file",
+        rebase_path(source, root_build_dir),
+      ]
+      if (v1_project) {
+        args += [
+        "-v1_project",
+      ]
+      }
+    } else {
+      not_needed(["v1_project"])
+      args += [
+        "-config_dir",
+        rebase_path(cobalt_config_dir, root_build_dir),
+      ]
+    }
+
+    if (defined(customer_id)) {
+      args += [
+        "-customer_id",
+        "$customer_id",
+      ]
+    }
+
+    if (namespace != "") {
+      args += [
+        "-namespace",
+        "${namespace}",
+      ]
+    }
+
+    if (defined(project_id)) {
+      args += [
+        "-project_id",
+        "$project_id",
+      ]
+    } else if (defined(project_name)) {
+      args += [
+        "-project_name",
+        "$project_name",
+      ]
+    }
+
+    if (generate_dart) {
+      args += [
+        "-dart_out_dir",
+        rebase_path(dart_src_dir, root_build_dir),
+      ]
+    }
+
+    deps = [
+      config_parser_target,
+    ]
+  }
+
+  if (generate_cc) {
+    cclib = "${target_name}_cc"
+    group_deps += [ ":${cclib}" ]
+
+    source_set(cclib) {
+      output_name = cclib
+
+      sources = [
+        cc_source_file,
+      ]
+
+      public_deps = [
+        ":$gen_target_name",
+      ]
+    }
+  }
+
+  if (generate_dart) {
+    import("//build/dart/dart_library.gni")
+
+    dartlib = "${target_name}_dartlib"
+    group_deps += [ ":${dartlib}" ]
+
+    copy_pubspec_target_name = "${dartlib}_copy_pubspec"
+    copy_options_target_name = "${dartlib}_copy_options"
+
+    copy(copy_pubspec_target_name) {
+      sources = [
+        "//build/dart/empty_pubspec.yaml",
+      ]
+
+      outputs = [
+        "$dart_out_dir/pubspec.yaml",
+      ]
+    }
+
+    copy(copy_options_target_name) {
+      sources = [
+        "//topaz/tools/analysis_options.yaml",
+      ]
+
+      outputs = [
+        "$dart_out_dir/analysis_options.yaml",
+      ]
+    }
+
+    dart_library(dartlib) {
+      forward_variables_from(invoker,
+                             [
+                               "testonly",
+                               "sdk_category",
+                               "visibility",
+                             ])
+
+      package_root = dart_out_dir
+
+      package_name = dart_library_name
+
+      sources = [
+        rebase_path(dart_source_file, dart_src_dir),
+      ]
+
+      if (defined(invoker.deps)) {
+        deps += invoker.deps
+      }
+
+      if (defined(invoker.public_deps)) {
+        deps += invoker.public_deps
+      }
+
+      non_dart_deps = [
+        ":$copy_options_target_name",
+        ":$copy_pubspec_target_name",
+        ":$gen_target_name",
+      ]
+    }
+  }
+
+  if (generate_rust) {
+    import("//build/rust/rustc_library.gni")
+
+    rust_library_name = target_name
+    rustlib = "${target_name}_rustlib"
+    group_deps += [ ":${rustlib}" ]
+    rustc_library(rustlib) {
+      name = rust_library_name
+
+      version = "1.0.0"
+      edition = "2018"
+      source_root = rust_source_file
+
+      non_rust_deps = [ ":$gen_target_name" ]
+    }
+  }
+
+  group(target_name) {
+    forward_variables_from(invoker, [ "testonly" ])
+    public_deps = group_deps
+  }
+}
