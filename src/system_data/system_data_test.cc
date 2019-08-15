@@ -17,9 +17,10 @@ namespace cobalt {
 namespace encoder {
 
 TEST(SystemDataTest, BasicTest) {
-  SystemData system_data("test_product", "", "test_version");
+  SystemData system_data("test_product", "", GA, "test_version");
   EXPECT_NE(SystemProfile::UNKNOWN_OS, system_data.system_profile().os());
   EXPECT_NE(SystemProfile::UNKNOWN_ARCH, system_data.system_profile().arch());
+  EXPECT_EQ(ReleaseStage::GA, system_data.release_stage());
   EXPECT_NE(system_data.system_profile().board_name(), "");
   EXPECT_EQ(system_data.system_profile().product_name(), "test_product");
   EXPECT_EQ(system_data.system_profile().system_version(), "test_version");
@@ -72,7 +73,7 @@ TEST(SystemDataTest, SetChannelTest) {
       "test_product", "", "test_version",
       std::make_unique<logger::ChannelMapper>(std::vector<std::string>({"Channel"})));
   EXPECT_EQ(system_data.channel(), "<unset>");
-  EXPECT_EQ(system_data.release_stage(), ReleaseStage::GA);
+  EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
   system_data.SetChannel("Channel");
   EXPECT_EQ(system_data.channel(), "Channel");
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);

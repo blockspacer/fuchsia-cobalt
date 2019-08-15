@@ -92,9 +92,8 @@ void PopulateBoardName(SystemProfile* profile) {}
 }  // namespace
 
 SystemData::SystemData(const std::string& product_name, const std::string& board_name_suggestion,
-                       const std::string& version,
-                       std::unique_ptr<logger::ChannelMapper> channel_mapper)
-    : channel_mapper_(std::move(channel_mapper)) {
+                       ReleaseStage release_stage, const std::string& version)
+    : release_stage_(release_stage) {
   system_profile_.set_product_name(product_name);
   system_profile_.set_board_name(board_name_suggestion);
   system_profile_.set_system_version(version);
@@ -102,12 +101,14 @@ SystemData::SystemData(const std::string& product_name, const std::string& board
   PopulateSystemProfile();
 }
 
-void SystemData::SetChannel(const std::string& channel) {
-  system_profile_.set_channel(channel);
-  if (channel_mapper_) {
-    current_stage_ = channel_mapper_->ToReleaseStage(channel);
-  }
-}
+SystemData::SystemData(const std::string& product_name, const std::string& board_name_suggestion,
+                       const std::string& version,
+                       std::unique_ptr<logger::ChannelMapper> /* channel_mapper */)
+    // TODO(rudominer) We default to DEBUG for now. This is only temporary. See
+    // https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=34960
+    : SystemData(product_name, board_name_suggestion, ReleaseStage::DEBUG, version) {}
+
+void SystemData::SetChannel(const std::string& channel) { system_profile_.set_channel(channel); }
 
 void SystemData::OverrideSystemProfile(const SystemProfile& profile) { system_profile_ = profile; }
 

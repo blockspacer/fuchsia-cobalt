@@ -17,6 +17,8 @@
 namespace cobalt {
 namespace logger {
 
+// DEPRECATED. Do not use. Talk to rudominer@
+//
 // ChannelMapper is used to for mapping a channel string to a ReleaseStage enum
 // value.
 class ChannelMapper {

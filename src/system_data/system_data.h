@@ -47,6 +47,9 @@ class SystemDataInterface {
 // the SystemProfile, and dynamic stateful data about the running system.
 class SystemData : public SystemDataInterface {
  public:
+  // DEPRECATED: Use the version of the construcor that takes a ReleaseStage
+  // rather than a ChannelMapper.
+  //
   // Constructor: Uses the real SystemProfile of the actual running system.
   //
   // |product_name|: The value to use for the |product_name| field of the
@@ -64,6 +67,25 @@ class SystemData : public SystemDataInterface {
   SystemData(const std::string& product_name, const std::string& board_name_suggestion,
              const std::string& version = "",
              std::unique_ptr<logger::ChannelMapper> channel_mapper = nullptr);
+
+  // Constructor: Uses the real SystemProfile of the actual running system.
+  //
+  // |product_name|: The value to use for the |product_name| field of the
+  // embedded SystemProfile.
+  //
+  // |board_name_suggestion|: A suggestion for the value to use for the
+  // |board_name| field of the embedded SystemProfile. This may be ignored if
+  // SystemData is able to determine the boardh name directly. A value of ""
+  // indicates that the caller has no information about board name, so one
+  // should be guessed.
+  //
+  // |release_stage|: The ReleaseStage of the running system.
+  //
+  // |version|: The version of the running system. The use of this field is
+  // system-specific. For example on Fuchsia a possible value for |version| is
+  // "20190220_01_RC00".
+  SystemData(const std::string& product_name, const std::string& board_name_suggestion,
+             ReleaseStage release_stage, const std::string& version = "");
 
   ~SystemData() override = default;
 
@@ -87,7 +109,7 @@ class SystemData : public SystemDataInterface {
 
   const std::string& channel() const override { return system_profile_.channel(); }
 
-  const ReleaseStage& release_stage() const override { return current_stage_; }
+  const ReleaseStage& release_stage() const override { return release_stage_; }
 
   // Overrides the stored SystemProfile. Useful for testing.
   void OverrideSystemProfile(const SystemProfile& profile);
@@ -98,8 +120,7 @@ class SystemData : public SystemDataInterface {
   SystemProfile system_profile_;
   mutable absl::Mutex experiments_mutex_;
   std::vector<Experiment> experiments_ GUARDED_BY(experiments_mutex_);
-  std::unique_ptr<logger::ChannelMapper> channel_mapper_;
-  ReleaseStage current_stage_;
+  ReleaseStage release_stage_;
 };
 
 }  // namespace encoder
