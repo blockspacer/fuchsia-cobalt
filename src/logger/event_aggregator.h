@@ -111,7 +111,17 @@ class EventAggregator {
   ~EventAggregator() { ShutDown(); }
 
   // Start the worker thread.
+  // DEPRECATED: use the Start() method below that takes the clock as input.
   void Start();
+
+  // Starts the worker thread.
+  //
+  // |clock| The clock that should be used by the worker thread for scheduling
+  //         tasks and determining the current day and hour. On systems on which
+  //         the clock may be initially inaccurate, the caller should wait to
+  //         invoke this method until after it is known that the clock is
+  //         accurate.
+  void Start(std::unique_ptr<util::ClockInterface> clock);
 
   // Updates the EventAggregator's view of the Cobalt metric and report
   // registry.
@@ -195,7 +205,7 @@ class EventAggregator {
   // calls BackUpLocalAggregateStore(). If not notified of shutdown, calls
   // DoScheduledTasks() and schedules the next occurrence of any completed
   // tasks.
-  void Run();
+  void Run(std::unique_ptr<util::ClockInterface> system_clock);
 
   // Helper method called by Run(). If |next_generate_obs_| is less than or
   // equal to |current_time|, calls GenerateObservations() with the day index of
@@ -205,7 +215,8 @@ class EventAggregator {
   // day in each of UTC and local time and then backs up the
   // LocalAggregateStore. In each case, an error is logged and execution
   // continues if the operation fails.
-  void DoScheduledTasks(std::chrono::system_clock::time_point current_time);
+  void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
+                        std::chrono::steady_clock::time_point steady_time);
 
   // Writes a snapshot of the LocalAggregateStore to
   // |local_aggregate_proto_store_|.
@@ -347,12 +358,12 @@ class EventAggregator {
     return local_aggregate_store;
   }
 
-  // Sets the EventAggregator's ClockInterface. Only for use in tests.
-  void SetClock(util::ClockInterface* clock) { clock_.reset(clock); }
-
   struct AggregateStoreFields {
     LocalAggregateStore local_aggregate_store;
   };
+
+  // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.
+  void SetSteadyClock(util::SteadyClockInterface* clock) { steady_clock_.reset(clock); }
 
   struct ShutDownFlag {
     bool shut_down = true;
@@ -373,9 +384,9 @@ class EventAggregator {
   std::chrono::seconds aggregate_backup_interval_;
   std::chrono::seconds generate_obs_interval_;
   std::chrono::seconds gc_interval_;
-  std::chrono::system_clock::time_point next_generate_obs_;
-  std::chrono::system_clock::time_point next_gc_;
-  std::unique_ptr<util::ClockInterface> clock_;
+  std::chrono::steady_clock::time_point next_generate_obs_;
+  std::chrono::steady_clock::time_point next_gc_;
+  std::unique_ptr<util::SteadyClockInterface> steady_clock_;
 };
 
 }  // namespace logger

@@ -1,8 +1,8 @@
+#include <memory>
+
 // Copyright 2018 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-#include "src/logger/event_aggregator.h"
 
 #include <algorithm>
 #include <map>
@@ -18,6 +18,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
+#include "src/logger/event_aggregator.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
@@ -113,11 +114,11 @@ class EventAggregatorTest : public ::testing::Test {
     event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
                                                           local_aggregate_proto_store_.get(),
                                                           obs_history_proto_store_.get());
-    // Provide the EventAggregator with a mock clock starting at 10 years after
-    // the beginning of time.
-    mock_clock_ = new IncrementingClock(std::chrono::system_clock::duration(0));
-    mock_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(10 * kYear)));
-    event_aggregator_->SetClock(mock_clock_);
+    // This clock is used to create and track times that are passed to the
+    // EventAggregator, but is not passed to the EventAggregator itself.
+    test_clock_ = std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0));
+    // Initilize it to 10 years after the beginning of time.
+    test_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(10 * kYear)));
     day_store_created_ = CurrentDayIndex();
   }
 
@@ -126,15 +127,15 @@ class EventAggregatorTest : public ::testing::Test {
   // not own.
   void TearDown() override { event_aggregator_.reset(); }
 
-  // Advances |mock_clock_| by |num_seconds| seconds.
+  // Advances |test_clock_| by |num_seconds| seconds.
   void AdvanceClock(int num_seconds) {
-    mock_clock_->increment_by(std::chrono::seconds(num_seconds));
+    test_clock_->increment_by(std::chrono::seconds(num_seconds));
   }
 
-  // Returns the day index of the current day according to |mock_clock_|, in
+  // Returns the day index of the current day according to |test_clock_|, in
   // |time_zone|, without incrementing the clock.
   uint32_t CurrentDayIndex(MetricDefinition::TimeZonePolicy time_zone = MetricDefinition::UTC) {
-    return TimeToDayIndex(std::chrono::system_clock::to_time_t(mock_clock_->peek_now()), time_zone);
+    return TimeToDayIndex(std::chrono::system_clock::to_time_t(test_clock_->peek_now()), time_zone);
   }
 
   size_t GetBackfillDays() { return event_aggregator_->backfill_days_; }
@@ -159,10 +160,11 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   void DoScheduledTasksNow() {
-    auto current_time = mock_clock_->now();
-    event_aggregator_->next_generate_obs_ = current_time;
-    event_aggregator_->next_gc_ = current_time;
-    event_aggregator_->DoScheduledTasks(current_time);
+    // Steady values don't matter, just tell DoScheduledTasks to run everything.
+    auto steady_time = std::chrono::steady_clock::now();
+    event_aggregator_->next_generate_obs_ = steady_time;
+    event_aggregator_->next_gc_ = steady_time;
+    event_aggregator_->DoScheduledTasks(test_clock_->now(), steady_time);
   }
 
   // Clears the FakeObservationStore and resets the counts of Observations
@@ -172,11 +174,6 @@ class EventAggregatorTest : public ::testing::Test {
     observation_store_->metadata_received.clear();
     observation_store_->ResetObservationCounter();
     update_recipient_->invocation_count = 0;
-  }
-
-  void ResetProtoStores() {
-    local_aggregate_proto_store_->ResetCounts();
-    obs_history_proto_store_->ResetCounts();
   }
 
   // Given a ProjectContext |project_context| and the MetricReportId of a
@@ -674,7 +671,7 @@ class EventAggregatorTest : public ::testing::Test {
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<FakeObservationStore> observation_store_;
-  IncrementingClock* mock_clock_;
+  std::unique_ptr<IncrementingClock> test_clock_;
   // The day index on which the LocalAggregateStore was last
   // garbage-collected. A value of 0 indicates that the store has never been
   // garbage-collected.
@@ -1626,13 +1623,13 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest,
         EXPECT_EQ(kOK, LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
-    // Advance |mock_clock_| by 1 day.
+    // Advance |test_clock_| by 1 day.
     AdvanceClock(kDay);
     // Clear the FakeObservationStore.
     ResetObservationStore();
     // Generate locally aggregated Observations and garbage-collect the
     // LocalAggregateStore, both for the previous day as measured by
-    // |mock_clock_|. Back up the LocalAggregateStore and
+    // |test_clock_|. Back up the LocalAggregateStore and
     // AggregatedObservationHistoryStore.
     DoScheduledTasksNow();
     // Check the generated Observations against the expectation.
@@ -1882,11 +1879,11 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, CheckObservationValuesWithBack
         EXPECT_EQ(kOK, LogUniqueActivesEvent(expected_id, day_index, event_code));
       }
     }
-    // Advance |mock_clock_| by 1 day.
+    // Advance |test_clock_| by 1 day.
     AdvanceClock(kDay);
     if (offset < 6 || offset == 9) {
       // Generate Observations and garbage-collect, both for the previous day
-      // index according to |mock_clock_|. Back up the LocalAggregateStore and
+      // index according to |test_clock_|. Back up the LocalAggregateStore and
       // the AggregatedObservationHistoryStore.
       DoScheduledTasksNow();
     }
@@ -2666,13 +2663,13 @@ TEST_F(PerDeviceNumericEventAggregatorTest, CheckObservationValuesMultiDayWithGa
         EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B", event_code, 2));
       }
     }
-    // Advance |mock_clock_| by 1 day.
+    // Advance |test_clock_| by 1 day.
     AdvanceClock(kDay);
     // Clear the FakeObservationStore.
     ResetObservationStore();
     // Generate locally aggregated Observations and garbage-collect the
     // LocalAggregateStore, both for the previous day as measured by
-    // |mock_clock_|. Back up the LocalAggregateStore and
+    // |test_clock_|. Back up the LocalAggregateStore and
     // AggregatedObservationHistoryStore.
     DoScheduledTasksNow();
     EXPECT_TRUE(CheckPerDeviceNumericObservations(
@@ -2849,11 +2846,11 @@ TEST_F(PerDeviceNumericEventAggregatorTest, EventCountCheckObservationValuesWith
         EXPECT_EQ(kOK, LogPerDeviceCountEvent(expected_id, day_index, "B", event_code, 2));
       }
     }
-    // Advance |mock_clock_| by 1 day.
+    // Advance |test_clock_| by 1 day.
     AdvanceClock(kDay);
     if (offset < 6 || offset == 8) {
       // Generate Observations and garbage-collect, both for the previous day
-      // index according to |mock_clock_|. Back up the LocalAggregateStore and
+      // index according to |test_clock_|. Back up the LocalAggregateStore and
       // the AggregatedObservationHistoryStore.
       DoScheduledTasksNow();
     }
@@ -3084,11 +3081,11 @@ TEST_F(PerDeviceNumericEventAggregatorTest, ElapsedTimeCheckObservationValuesWit
       }
     }
 
-    // Advance |mock_clock_| by 1 day.
+    // Advance |test_clock_| by 1 day.
     AdvanceClock(kDay);
     if (offset < 6 || offset == 8) {
       // Generate Observations and garbage-collect, both for the previous day
-      // index according to |mock_clock_|. Back up the LocalAggregateStore and
+      // index according to |test_clock_|. Back up the LocalAggregateStore and
       // the AggregatedObservationHistoryStore.
       DoScheduledTasksNow();
     }
@@ -3367,7 +3364,8 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
 // started.
 TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
-  event_aggregator_->Start();
+  event_aggregator_->Start(
+      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
   EXPECT_TRUE(in_run_state());
 }
 
@@ -3376,7 +3374,8 @@ TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
 // expected states.
 TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
-  event_aggregator_->Start();
+  event_aggregator_->Start(
+      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
   EXPECT_TRUE(in_run_state());
   ShutDownWorkerThread();
   EXPECT_TRUE(in_shutdown_state());
@@ -3385,7 +3384,8 @@ TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
 // Starts the worker thread and immediately shuts it down. Checks that the
 // LocalAggregateStore was backed up during shutdown.
 TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
-  event_aggregator_->Start();
+  event_aggregator_->Start(
+      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
   ShutDownWorkerThread();
   EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
 }
@@ -3393,7 +3393,8 @@ TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
 // Starts the worker thread and calls
 // EventAggregator::UpdateAggregationConfigs() on the main thread.
 TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
-  event_aggregator_->Start();
+  event_aggregator_->Start(
+      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
   // Provide the EventAggregator with the all_report_types registry.
   auto project_context = GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
@@ -3409,7 +3410,8 @@ TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
 // backed up at least once during the lifetime of the worker thread.
 TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
-  event_aggregator_->Start();
+  event_aggregator_->Start(
+      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
   // Provide the EventAggregator with the all_report_types registry.
   auto project_context = GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));

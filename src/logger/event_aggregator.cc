@@ -25,6 +25,7 @@ using rappor::RapporConfigHelper;
 using util::ConsistentProtoStore;
 using util::SerializeToBase64;
 using util::StatusCode;
+using util::SteadyClock;
 using util::SystemClock;
 using util::TimeToDayIndex;
 
@@ -190,13 +191,17 @@ EventAggregator::EventAggregator(const Encoder* encoder,
       obs_history_ = AggregatedObservationHistoryStore();
     }
   }
-  clock_ = std::make_unique<SystemClock>();
+  steady_clock_ = std::make_unique<SteadyClock>();
 }
 
-void EventAggregator::Start() {
+void EventAggregator::Start() { Start(std::make_unique<SystemClock>()); }
+
+void EventAggregator::Start(std::unique_ptr<util::ClockInterface> clock) {
   auto locked = protected_shutdown_flag_.lock();
   locked->shut_down = false;
-  std::thread t([this] { this->Run(); });
+  std::thread t(std::bind(
+      [this](std::unique_ptr<util::ClockInterface>& clock) { this->Run(std::move(clock)); },
+      std::move(clock)));
   worker_thread_ = std::move(t);
 }
 
@@ -435,12 +440,12 @@ void EventAggregator::ShutDown() {
   }
 }
 
-void EventAggregator::Run() {
-  auto current_time = clock_->now();
+void EventAggregator::Run(std::unique_ptr<util::ClockInterface> system_clock) {
+  std::chrono::steady_clock::time_point steady_time = steady_clock_->now();
   // Schedule Observation generation to happen in the first cycle.
-  next_generate_obs_ = current_time;
+  next_generate_obs_ = steady_time;
   // Schedule garbage collection to happen |gc_interval_| seconds from now.
-  next_gc_ = current_time + gc_interval_;
+  next_gc_ = steady_time + gc_interval_;
   // Acquire the mutex protecting the shutdown flag and condition variable.
   auto locked = protected_shutdown_flag_.lock();
   while (true) {
@@ -466,12 +471,13 @@ void EventAggregator::Run() {
     // Check whether it is time to generate Observations or to garbage-collect
     // the LocalAggregate store. If so, do that task and schedule the next
     // occurrence.
-    DoScheduledTasks(clock_->now());
+    DoScheduledTasks(system_clock->now(), steady_time);
   }
 }
 
-void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point current_time) {
-  auto current_time_t = std::chrono::system_clock::to_time_t(current_time);
+void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point system_time,
+                                       std::chrono::steady_clock::time_point steady_time) {
+  auto current_time_t = std::chrono::system_clock::to_time_t(system_time);
   auto current_day_index_utc = TimeToDayIndex(current_time_t, MetricDefinition::UTC);
   auto current_day_index_local = TimeToDayIndex(current_time_t, MetricDefinition::LOCAL);
   // Skip the tasks (but do schedule a retry) if either day index is too small.
@@ -479,7 +485,7 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point cur
   bool skip_tasks = (current_day_index_utc < min_allowed_day_index ||
                      current_day_index_local < min_allowed_day_index);
 
-  if (current_time >= next_generate_obs_) {
+  if (steady_time >= next_generate_obs_) {
     next_generate_obs_ += generate_obs_interval_;
     if (skip_tasks) {
       LOG_FIRST_N(ERROR, 10) << "EventAggregator is skipping Observation generation because the "
@@ -494,7 +500,7 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point cur
       }
     }
   }
-  if (current_time >= next_gc_) {
+  if (steady_time >= next_gc_) {
     next_gc_ += gc_interval_;
     if (skip_tasks) {
       LOG_FIRST_N(ERROR, 10) << "EventAggregator is skipping garbage collection because the "
