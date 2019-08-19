@@ -129,7 +129,7 @@ class Logger : public LoggerInterface {
   friend class LoggerTest;
   friend class cobalt::internal::RealLoggerFactory;
 
-  void SetClock(util::ClockInterface* clock) { clock_.reset(clock); }
+  void SetClock(util::SystemClockInterface* clock) { clock_.reset(clock); }
 
   const std::unique_ptr<ProjectContext> project_context_;
 
@@ -137,7 +137,7 @@ class Logger : public LoggerInterface {
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
-  std::unique_ptr<util::ClockInterface> clock_;
+  std::unique_ptr<util::SystemClockInterface> clock_;
 
   std::unique_ptr<InternalMetrics> internal_metrics_;
 };

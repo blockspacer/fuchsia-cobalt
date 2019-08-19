@@ -183,7 +183,7 @@ class TestApp {
   Mode mode_ = kInteractive;
   std::unique_ptr<LoggerFactory> logger_factory_;
   std::ostream* ostream_;
-  util::ClockInterface* clock_;
+  util::SystemClockInterface* clock_;
 };
 
 }  // namespace cobalt

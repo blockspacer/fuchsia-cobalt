@@ -14,7 +14,7 @@
 namespace cobalt {
 namespace util {
 
-// Allows us to mock out a clock for tests.
+// DEPRECATED: use the SystemClockInterface instead.
 class ClockInterface {
  public:
   virtual ~ClockInterface() = default;
@@ -22,8 +22,14 @@ class ClockInterface {
   virtual std::chrono::system_clock::time_point now() = 0;
 };
 
+// Allows us to mock out a clock for tests.
+// TODO(camrdale): move the now() from ClockInterface into here, and remove
+// ClockInterface once all users have migrated to this new interface.
+class SystemClockInterface : public ClockInterface {
+};
+
 // A clock that returns the real system time.
-class SystemClock : public ClockInterface {
+class SystemClock : public SystemClockInterface {
  public:
   std::chrono::system_clock::time_point now() override { return std::chrono::system_clock::now(); }
 };
@@ -42,15 +48,15 @@ class SteadyClock : public SteadyClockInterface {
   std::chrono::steady_clock::time_point now() override { return std::chrono::steady_clock::now(); }
 };
 
-// A clock that returns an incrementing sequence of tics each time it is called.
-// Optionally a callback may be set that will be invoked each time the
-// clock ticks.
-class IncrementingClock : public ClockInterface {
+// A system clock that returns an incrementing sequence of tics each time it is
+// called. Optionally a callback may be set that will be invoked each time the
+// clock ticks. Intended for use in tests only.
+class IncrementingSystemClock : public SystemClockInterface {
  public:
-  IncrementingClock() = default;
-  // Constructs an IncrementingClock which increments by |increment| seconds
-  // each time it is called.
-  explicit IncrementingClock(std::chrono::system_clock::duration increment)
+  IncrementingSystemClock() = default;
+  // Constructs an IncrementingSystemClock which increments by |increment|
+  // seconds each time it is called.
+  explicit IncrementingSystemClock(std::chrono::system_clock::duration increment)
       : increment_(increment) {}
 
   std::chrono::system_clock::time_point now() override {

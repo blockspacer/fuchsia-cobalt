@@ -30,7 +30,7 @@ using config::PackEventCodes;
 using encoder::ClientSecret;
 using encoder::SystemDataInterface;
 using util::EncryptedMessageMaker;
-using util::IncrementingClock;
+using util::IncrementingSystemClock;
 using util::SerializeToBase64;
 using util::TimeToDayIndex;
 
@@ -115,7 +115,9 @@ class EventAggregatorTest : public ::testing::Test {
                                                           obs_history_proto_store_.get());
     // This clock is used to create and track times that are passed to the
     // EventAggregator, but is not passed to the EventAggregator itself.
-    test_clock_ = std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0));
+    test_clock_ =
+        std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+            0));
     // Initilize it to 10 years after the beginning of time.
     test_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(10 * kYear)));
     day_store_created_ = CurrentDayIndex();
@@ -670,7 +672,7 @@ class EventAggregatorTest : public ::testing::Test {
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   std::unique_ptr<FakeObservationStore> observation_store_;
-  std::unique_ptr<IncrementingClock> test_clock_;
+  std::unique_ptr<IncrementingSystemClock> test_clock_;
   // The day index on which the LocalAggregateStore was last
   // garbage-collected. A value of 0 indicates that the store has never been
   // garbage-collected.
@@ -3364,7 +3366,8 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
 TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
   event_aggregator_->Start(
-      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
+      std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+          0)));
   EXPECT_TRUE(in_run_state());
 }
 
@@ -3374,7 +3377,8 @@ TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
 TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
   event_aggregator_->Start(
-      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
+      std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+          0)));
   EXPECT_TRUE(in_run_state());
   ShutDownWorkerThread();
   EXPECT_TRUE(in_shutdown_state());
@@ -3384,7 +3388,8 @@ TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
 // LocalAggregateStore was backed up during shutdown.
 TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
   event_aggregator_->Start(
-      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
+      std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+          0)));
   ShutDownWorkerThread();
   EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
 }
@@ -3393,7 +3398,8 @@ TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
 // EventAggregator::UpdateAggregationConfigs() on the main thread.
 TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
   event_aggregator_->Start(
-      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
+      std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+          0)));
   // Provide the EventAggregator with the all_report_types registry.
   auto project_context = GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
@@ -3410,7 +3416,8 @@ TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
 TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
   event_aggregator_->Start(
-      std::make_unique<IncrementingClock>(std::chrono::system_clock::duration(0)));
+      std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(
+          0)));
   // Provide the EventAggregator with the all_report_types registry.
   auto project_context = GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));

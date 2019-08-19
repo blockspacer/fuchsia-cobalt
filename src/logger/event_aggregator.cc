@@ -196,11 +196,13 @@ EventAggregator::EventAggregator(const Encoder* encoder,
 
 void EventAggregator::Start() { Start(std::make_unique<SystemClock>()); }
 
-void EventAggregator::Start(std::unique_ptr<util::ClockInterface> clock) {
+void EventAggregator::Start(std::unique_ptr<util::SystemClockInterface> clock) {
   auto locked = protected_shutdown_flag_.lock();
   locked->shut_down = false;
   std::thread t(std::bind(
-      [this](std::unique_ptr<util::ClockInterface>& clock) { this->Run(std::move(clock)); },
+      [this](std::unique_ptr<util::SystemClockInterface>& clock) {
+        this->Run(std::move(clock));
+      },
       std::move(clock)));
   worker_thread_ = std::move(t);
 }
@@ -440,7 +442,7 @@ void EventAggregator::ShutDown() {
   }
 }
 
-void EventAggregator::Run(std::unique_ptr<util::ClockInterface> system_clock) {
+void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clock) {
   std::chrono::steady_clock::time_point steady_time = steady_clock_->now();
   // Schedule Observation generation to happen in the first cycle.
   next_generate_obs_ = steady_time;

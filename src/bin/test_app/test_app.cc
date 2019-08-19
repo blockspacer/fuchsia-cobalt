@@ -59,7 +59,7 @@ using logger::Status;
 using observation_store::MemoryObservationStore;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
-using util::IncrementingClock;
+using util::IncrementingSystemClock;
 using util::PosixFileSystem;
 using util::SystemClock;
 using util::TimeToDayIndex;
@@ -378,7 +378,7 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index
       project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
       event_aggregator_.get(), observation_writer_.get());
   if (day_index != 0u) {
-    auto mock_clock = new IncrementingClock();
+    auto mock_clock = new IncrementingSystemClock();
     mock_clock->set_time(
         std::chrono::system_clock::time_point(std::chrono::seconds(kDay * day_index)));
     logger->SetClock(mock_clock);

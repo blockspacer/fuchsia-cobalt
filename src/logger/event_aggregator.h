@@ -121,7 +121,7 @@ class EventAggregator {
   //         the clock may be initially inaccurate, the caller should wait to
   //         invoke this method until after it is known that the clock is
   //         accurate.
-  void Start(std::unique_ptr<util::ClockInterface> clock);
+  void Start(std::unique_ptr<util::SystemClockInterface> clock);
 
   // Updates the EventAggregator's view of the Cobalt metric and report
   // registry.
@@ -205,7 +205,7 @@ class EventAggregator {
   // calls BackUpLocalAggregateStore(). If not notified of shutdown, calls
   // DoScheduledTasks() and schedules the next occurrence of any completed
   // tasks.
-  void Run(std::unique_ptr<util::ClockInterface> system_clock);
+  void Run(std::unique_ptr<util::SystemClockInterface> system_clock);
 
   // Helper method called by Run(). If |next_generate_obs_| is less than or
   // equal to |current_time|, calls GenerateObservations() with the day index of

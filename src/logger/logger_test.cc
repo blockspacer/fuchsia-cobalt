@@ -42,7 +42,7 @@ using encoder::ClientSecret;
 using encoder::SystemDataInterface;
 
 using util::EncryptedMessageMaker;
-using util::IncrementingClock;
+using util::IncrementingSystemClock;
 using util::TimeToDayIndex;
 
 namespace logger {
@@ -126,7 +126,8 @@ class LoggerTest : public ::testing::Test {
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
-    mock_clock_ = new IncrementingClock(std::chrono::system_clock::duration(0));
+    mock_clock_ =
+        new IncrementingSystemClock(std::chrono::system_clock::duration(0));
     mock_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(kYear)));
     logger_->SetClock(mock_clock_);
   }
@@ -178,7 +179,7 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
-  IncrementingClock* mock_clock_;
+  IncrementingSystemClock* mock_clock_;
 };
 
 // Creates a Logger whose ProjectContext contains only EVENT_OCCURRED metrics,
