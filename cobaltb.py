@@ -99,6 +99,22 @@ def _update_config(args):
     os.chdir(savedDir)
 
 
+def _compdb(args):
+  # Copy the compile_commands.json to the top level for use in IDEs (CLion).
+  subprocess.check_call([
+      'cp',
+      '%s/compile_commands.json' % out_dir(args),
+      './compile_commands.json'])
+  # Remove the gomacc references that confuse IDEs.
+  subprocess.check_call([
+      'perl',
+      '-p',
+      '-i',
+      '-e',
+      's|/[/\w]+/gomacc *||',
+      './compile_commands.json'])
+
+
 def _build(args):
   gn_args = []
   use_ccache = False
@@ -697,6 +713,16 @@ def main():
   sub_parser.set_defaults(func=_clean)
   sub_parser.add_argument(
       '--full', help='Delete the entire "out" directory.', action='store_true')
+
+  ########################################################
+  # compdb command
+  ########################################################
+  sub_parser = subparsers.add_parser(
+      'compdb',
+      parents=[parent_parser],
+      help=('Generate a compilation database for the current build '
+            'configuration.'))
+  sub_parser.set_defaults(func=_compdb)
 
   args = parser.parse_args()
   global _verbose_count
