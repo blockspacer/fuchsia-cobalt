@@ -4,13 +4,30 @@ package cobalt.observation_store;
 
 import "src/pb/observation_batch.proto";
 import "src/pb/encrypted_message.proto";
+import "src/pb/observation2.proto";
 
-// FileObservationStoreRecord is used internally by FileObservationStore for
-// serializing protos into files. It allows writing either a meta_data or an
-// encrypted_observation so they can later be reconstructed into an Envelope.
+// A StoredObservationBatch is similar to an ObservationBatch except that the observations it
+// contains may or may not be encrypted. It is used internally by ObservationStore.
+message StoredObservationBatch {
+  ObservationMetadata meta_data = 1;
+  repeated StoredObservation observation = 2;
+}
+
+// A StoredObservation contains data about one observation that is stored in an ObservationStore.
+message StoredObservation {
+  oneof observation {
+    EncryptedMessage encrypted = 1;
+    Observation2 unencrypted = 2;
+  }
+}
+
+// FileObservationStoreRecord is used internally by FileObservationStore for serializing protos into
+// files. It allows writing either a meta_data or an encrypted_observation so they can later be
+// reconstructed into an Envelope.
 message FileObservationStoreRecord {
   oneof contents {
     ObservationMetadata meta_data = 1;
     EncryptedMessage encrypted_observation = 2;
+    Observation2 unencrypted_observation = 3;
   }
 }
