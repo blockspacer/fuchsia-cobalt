@@ -53,11 +53,6 @@ class MemoryObservationStore : public ObservationStore {
 };
 
 }  // namespace observation_store
-
-// TODO(zmbush): Remove this.
-namespace encoder {
-using MemoryObservationStore = observation_store::MemoryObservationStore;
-}
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_MEMORY_OBSERVATION_STORE_H_

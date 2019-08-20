@@ -186,11 +186,6 @@ class FileObservationStore : public ObservationStore {
 };
 
 }  // namespace observation_store
-
-// TODO(zmbush): Remove this.
-namespace encoder {
-using FileObservationStore = observation_store::FileObservationStore;
-}  // namespace encoder
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_FILE_OBSERVATION_STORE_H_

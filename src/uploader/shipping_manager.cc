@@ -14,6 +14,7 @@
 namespace cobalt {
 namespace encoder {
 
+using observation_store::ObservationStore;
 using EnvelopeHolder = ObservationStore::EnvelopeHolder;
 using cobalt::clearcut_extensions::LogEventExtension;
 

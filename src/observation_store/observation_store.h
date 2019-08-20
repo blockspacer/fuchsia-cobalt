@@ -176,12 +176,6 @@ class ObservationStore : public ObservationStoreWriterInterface {
 };
 
 }  // namespace observation_store
-
-// TODO(zmbush): Remove this.
-namespace encoder {
-using ObservationStore = observation_store::ObservationStore;
-}
-
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_H_
