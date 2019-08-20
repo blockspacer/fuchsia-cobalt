@@ -1,8 +1,8 @@
-#include <memory>
-
 // Copyright 2018 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+#include "src/logger/event_aggregator.h"
 
 #include <algorithm>
 #include <map>
@@ -18,7 +18,6 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
-#include "src/logger/event_aggregator.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
