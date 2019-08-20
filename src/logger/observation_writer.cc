@@ -13,7 +13,7 @@
 namespace cobalt {
 namespace logger {
 
-using ::cobalt::encoder::ObservationStoreWriterInterface;
+using ::cobalt::observation_store::ObservationStoreWriterInterface;
 
 Status ObservationWriter::WriteObservation(const Observation2 &observation,
                                            std::unique_ptr<ObservationMetadata> metadata) const {

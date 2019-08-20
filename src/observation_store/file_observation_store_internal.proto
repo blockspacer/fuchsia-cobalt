@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cobalt.encoder;
+package cobalt.observation_store;
 
 import "src/pb/observation_batch.proto";
 import "src/pb/encrypted_message.proto";

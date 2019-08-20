@@ -36,8 +36,8 @@ class ObservationWriter {
   // |observation_encrypter| This is used to encrypt Observations to the public
   // key of Cobalt's Analyzer prior to writing them into the Observation Store.
   // This must remain valid as long as the ObservationWriter is being used.
-  ObservationWriter(encoder::ObservationStoreWriterInterface* observation_store,
-                    encoder::ObservationStoreUpdateRecipient* update_recipient,
+  ObservationWriter(observation_store::ObservationStoreWriterInterface* observation_store,
+                    observation_store::ObservationStoreUpdateRecipient* update_recipient,
                     util::EncryptedMessageMaker* observation_encrypter)
       : observation_store_(observation_store),
         update_recipient_(update_recipient),
@@ -51,8 +51,8 @@ class ObservationWriter {
                                         std::unique_ptr<ObservationMetadata> metadata) const;
 
  private:
-  encoder::ObservationStoreWriterInterface* observation_store_;
-  encoder::ObservationStoreUpdateRecipient* update_recipient_;
+  observation_store::ObservationStoreWriterInterface* observation_store_;
+  observation_store::ObservationStoreUpdateRecipient* update_recipient_;
   util::EncryptedMessageMaker* observation_encrypter_;
 };
 

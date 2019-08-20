@@ -14,7 +14,7 @@
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 using ::testing::MatchesRegex;
 using util::PosixFileSystem;
@@ -316,5 +316,5 @@ TEST(FilenameGenerator, PadsTimestamp) {
       MatchesRegex(R"(1234567890123-[0-9]{10}.data)"));
 }
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt

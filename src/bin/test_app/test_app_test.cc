@@ -231,7 +231,7 @@ void TestLoggerFactory::ResetLocalAggregation() { last_obs_generation_ = 0; }
 bool TestLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
   if (day_index > last_obs_generation_) {
     for (int i = 0; i < kNumAggregatedObservations; i++) {
-      if (encoder::ObservationStore::kOk !=
+      if (observation_store::ObservationStore::kOk !=
           observation_store_->AddEncryptedObservation(std::make_unique<EncryptedMessage>(),
                                                       std::make_unique<ObservationMetadata>())) {
         return false;

@@ -23,7 +23,7 @@
 #include "third_party/statusor/statusor.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 // FileObservationStore is an implementation of ObservationStore that persists
 // observations to a file system.
@@ -185,6 +185,11 @@ class FileObservationStore : public ObservationStore {
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
+}  // namespace observation_store
+
+// TODO(zmbush): Remove this.
+namespace encoder {
+using FileObservationStore = observation_store::FileObservationStore;
 }  // namespace encoder
 }  // namespace cobalt
 

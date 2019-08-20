@@ -49,7 +49,7 @@ namespace encoder {
 // expedite a send operation.
 //
 // Usually a single ShippingManager will be constructed for a device.
-class ShippingManager : public ObservationStoreUpdateRecipient {
+class ShippingManager : public observation_store::ObservationStoreUpdateRecipient {
  public:
   // Constructor
   //
@@ -61,7 +61,8 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   //
   // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
   // Envelopes to the shuffler.
-  ShippingManager(const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+  ShippingManager(const UploadScheduler& upload_scheduler,
+                  observation_store::ObservationStore* observation_store,
                   util::EncryptedMessageMaker* encrypt_to_shuffler);
 
   // The destructor will stop the worker thread and wait for it to stop
@@ -132,8 +133,9 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
   void SendAllEnvelopes();
 
   // Invoked by SendAllEnvelopes() to actually perform the send..
-  virtual std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) = 0;
+  virtual std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder>
+  SendEnvelopeToBackend(
+      std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> envelope_to_send) = 0;
 
   // Returns a name for this ShippingManager. Useful for log messages in cases
   // where the system is working with more than one.
@@ -189,7 +191,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
     size_t num_failed_attempts = 0;
     grpc::Status last_send_status;
 
-    ObservationStore* observation_store;
+    observation_store::ObservationStore* observation_store;
 
     std::condition_variable add_observation_notifier;
     std::condition_variable expedited_send_notifier;
@@ -241,7 +243,7 @@ class ShippingManager : public ObservationStoreUpdateRecipient {
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
   ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
-                            ObservationStore* observation_store,
+                            observation_store::ObservationStore* observation_store,
                             util::EncryptedMessageMaker* encrypt_to_shuffler,
                             std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
                             logger::LoggerInterface* internal_logger = nullptr,
@@ -257,8 +259,9 @@ class ClearcutV1ShippingManager : public ShippingManager {
   }
 
  private:
-  std::unique_ptr<ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
-      std::unique_ptr<ObservationStore::EnvelopeHolder> envelope_to_send) override;
+  std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
+      std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> envelope_to_send)
+      override;
 
   [[nodiscard]] std::string name() const override { return "ClearcutV1ShippingManager"; }
 

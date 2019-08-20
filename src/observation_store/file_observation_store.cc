@@ -16,7 +16,7 @@
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 using statusor::StatusOr;
 using util::FileSystem;
@@ -407,5 +407,5 @@ size_t FileObservationStore::FileEnvelopeHolder::Size() {
   return cached_file_size_;
 }
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt

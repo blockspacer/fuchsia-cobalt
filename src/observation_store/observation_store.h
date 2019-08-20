@@ -17,7 +17,7 @@
 #include "src/pb/observation_batch.pb.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 // ObservationStoreWriterInterface is an abstract interface to a store
 // of Observations, to be used by code that writes to this store. This is
@@ -175,7 +175,13 @@ class ObservationStore : public ObservationStoreWriterInterface {
   std::map<uint32_t, uint64_t> num_obs_per_report_;
 };
 
-}  // namespace encoder
+}  // namespace observation_store
+
+// TODO(zmbush): Remove this.
+namespace encoder {
+using ObservationStore = observation_store::ObservationStore;
+}
+
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_H_

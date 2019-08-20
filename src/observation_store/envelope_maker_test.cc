@@ -11,7 +11,7 @@
 #include "third_party/gflags/include/gflags/gflags.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 namespace {
 
@@ -328,5 +328,5 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
                  expected_this_batch_size, ObservationStore::kOk);
 }
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt

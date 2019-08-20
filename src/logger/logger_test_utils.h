@@ -86,7 +86,7 @@ using ExpectedPerDeviceNumericObservations =
 using ExpectedReportParticipationObservations = std::set<std::pair<MetricReportId, uint32_t>>;
 
 // A mock ObservationStore.
-class FakeObservationStore : public ::cobalt::encoder::ObservationStoreWriterInterface {
+class FakeObservationStore : public ::cobalt::observation_store::ObservationStoreWriterInterface {
  public:
   StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
                                       std::unique_ptr<ObservationMetadata> metadata) override {
@@ -108,7 +108,7 @@ class FakeObservationStore : public ::cobalt::encoder::ObservationStoreWriterInt
 };
 
 // A mock ObservationStoreUpdateRecipient.
-class TestUpdateRecipient : public ::cobalt::encoder::ObservationStoreUpdateRecipient {
+class TestUpdateRecipient : public ::cobalt::observation_store::ObservationStoreUpdateRecipient {
  public:
   void NotifyObservationsAdded() override { invocation_count++; }
 

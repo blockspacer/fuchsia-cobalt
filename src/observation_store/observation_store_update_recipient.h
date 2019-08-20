@@ -6,7 +6,7 @@
 #define COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_UPDATE_RECIPIENT_H_
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 // An ObservationStoreUpdateRecipient is any component that wishes to receive
 // notifications when an Observation has been added to the ObservationStore.
@@ -19,7 +19,7 @@ class ObservationStoreUpdateRecipient {
   virtual void NotifyObservationsAdded() = 0;
 };
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_OBSERVATION_STORE_UPDATE_RECIPIENT_H_

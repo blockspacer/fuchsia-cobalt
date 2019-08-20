@@ -13,7 +13,7 @@
 #include "src/observation_store/observation_store.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 // MemoryObservationStore is an ObservationStore that stores its data in memory.
 class MemoryObservationStore : public ObservationStore {
@@ -52,7 +52,12 @@ class MemoryObservationStore : public ObservationStore {
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
-}  // namespace encoder
+}  // namespace observation_store
+
+// TODO(zmbush): Remove this.
+namespace encoder {
+using MemoryObservationStore = observation_store::MemoryObservationStore;
+}
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_MEMORY_OBSERVATION_STORE_H_

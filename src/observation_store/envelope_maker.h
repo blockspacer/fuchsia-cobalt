@@ -16,7 +16,7 @@
 #include "src/pb/observation.pb.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 // EnvelopeMaker is an implementation of ObservationStore::EnvelopeHolder that
 // holds its Envelope in memory. This implementation is used by
@@ -92,7 +92,7 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   const size_t max_num_bytes_;
 };
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_ENVELOPE_MAKER_H_

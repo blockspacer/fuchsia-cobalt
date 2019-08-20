@@ -10,7 +10,7 @@
 #include "src/logging.h"
 
 namespace cobalt {
-namespace encoder {
+namespace observation_store {
 
 namespace {
 
@@ -134,5 +134,5 @@ bool MemoryObservationStore::Empty() const {
   return current_envelope_->Empty() && finalized_envelopes_.empty();
 }
 
-}  // namespace encoder
+}  // namespace observation_store
 }  // namespace cobalt
