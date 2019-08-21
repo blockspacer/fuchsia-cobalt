@@ -50,10 +50,6 @@
 	path = third_party/cares
 	url = https://fuchsia.googlesource.com/third_party/c-ares
 	branch = cobalt
-[submodule "third_party/googleapis"]
-	path = third_party/googleapis
-	url = https://fuchsia.googlesource.com/third_party/googleapis
-	branch = cobalt
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://fuchsia.googlesource.com/third_party/zlib
