@@ -66,8 +66,8 @@ class FileObservationStoreTest : public ::testing::Test {
     auto message = std::make_unique<EncryptedMessage>();
     // We subtract 1 from |num_bytes| because FileObservationStore adds one
     // to its definition of size.
-    CHECK(num_bytes > 1);
-    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+    CHECK(num_bytes > 4);
+    message->set_ciphertext(std::string(num_bytes - 4, 'x'));
     auto metadata = std::make_unique<ObservationMetadata>();
     metadata->set_customer_id(kCustomerId);
     metadata->set_project_id(kProjectId);
@@ -176,7 +176,7 @@ TEST_F(FileObservationStoreTest, AddWhileEnvelopeTaken) {
   // Note that kNumObservationsThatWillFit is discovered by experiment
   // since the precise size of an observation is awkward to arrange since
   // it depends on protobuf serialization.
-  constexpr int kNumObservationsThatWillFit = 94;
+  constexpr int kNumObservationsThatWillFit = 96;
 
   // Fill the store until its full.
   for (int i = 0; i < kNumObservationsThatWillFit; i++) {
@@ -210,7 +210,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   // Note that kNumObservationsThatWillFit is discovered by experiment
   // since the precise size of an observation is awkward to arrange since
   // it depends on protobuf serialization.
-  constexpr int kNumObservationsThatWillFit = 94;
+  constexpr int kNumObservationsThatWillFit = 96;
 
   // Fill the store until its full.
   for (int i = 0; i < kNumObservationsThatWillFit; i++) {
@@ -240,7 +240,7 @@ TEST_F(FileObservationStoreTest, StoreFull) {
   // store to become full. Again these constants are determined by
   // experimentation.
   constexpr int kExpectedFullIteration = 18;
-  constexpr int kExpectedFullStep = 4;
+  constexpr int kExpectedFullStep = 6;
   constexpr int kNumStepsPerIteration = 10;
 
   int iteration = 0;
@@ -352,7 +352,50 @@ TEST_F(FileObservationStoreTest, StressTest) {
   }
 }
 
+TEST_F(FileObservationStoreTest, CanWriteUnencrypted) {
+  auto observation = std::make_unique<Observation2>();
+  observation->set_random_id("test123");
+  observation->mutable_basic_rappor()->set_data("test");
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  ASSERT_EQ(ObservationStore::kOk,
+            store_->StoreObservation(std::move(observation), std::move(metadata)));
+}
+
 TEST_F(FileObservationStoreTest, CanReadUnencrypted) {
+  auto observation = std::make_unique<Observation2>();
+  observation->set_random_id("test123");
+  observation->mutable_basic_rappor()->set_data("test");
+
+  auto encrypted_obs = std::make_unique<EncryptedMessage>();
+  encrypt_->Encrypt(*observation, encrypted_obs.get());
+
+  // Verify that our encrypted observation is non-trivial.
+  ASSERT_GT(encrypted_obs->ciphertext().size(), 0);
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  ASSERT_EQ(ObservationStore::kOk,
+            store_->StoreObservation(std::move(observation), std::move(metadata)));
+
+  auto envelope = store_->TakeNextEnvelopeHolder();
+  ASSERT_NE(envelope, nullptr);
+  auto read_env = envelope->GetEnvelope(encrypt_.get());
+  ASSERT_EQ(read_env.batch_size(), 1);
+  ASSERT_EQ(read_env.batch(0).encrypted_observation_size(), 1);
+
+  // Verify that we got the observation we expected.
+  ASSERT_EQ(read_env.batch(0).encrypted_observation(0).ciphertext(), encrypted_obs->ciphertext());
+}
+
+TEST_F(FileObservationStoreTest, CanReadWriteUnencrypted) {
   auto observation = std::make_unique<Observation2>();
   observation->set_random_id("test123");
   observation->mutable_basic_rappor()->set_data("test");

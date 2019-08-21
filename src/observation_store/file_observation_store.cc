@@ -78,17 +78,9 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
 ObservationStore::StoreStatus FileObservationStore::StoreObservation(
     std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
   TRACE_DURATION("cobalt_core", "FileObservationStore::StoreObservation");
-  if (!observation->has_encrypted()) {
-    LOG(WARNING) << "FileObservationStore does not yet support unencrypted observations";
-    return kWriteFailed;
-  }
-
-  auto message = observation->mutable_encrypted();
-
   auto fields = protected_fields_.lock();
 
-  // "+1" below is for the |scheme| field of EncryptedMessage.
-  size_t obs_size = message->ciphertext().size() + message->public_key_fingerprint().size() + 1;
+  size_t obs_size = observation->ByteSizeLong();
   internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
                                  obs_size, metadata->customer_id(), metadata->project_id());
 
@@ -133,7 +125,14 @@ ObservationStore::StoreStatus FileObservationStore::StoreObservation(
   }
 
   FileObservationStoreRecord stored_message;
-  stored_message.mutable_encrypted_observation()->Swap(message);
+  if (observation->has_encrypted()) {
+    stored_message.mutable_encrypted_observation()->Swap(observation->mutable_encrypted());
+  } else if (observation->has_unencrypted()) {
+    stored_message.mutable_unencrypted_observation()->Swap(observation->mutable_unencrypted());
+  } else {
+    LOG(ERROR) << "Recieved StoredObservation of unexpected type.";
+    return kWriteFailed;
+  }
   if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_message, active_file)) {
     LOG(WARNING) << "Unable to write encrypted_observation to `" << active_file_name_ << "`";
     return kWriteFailed;

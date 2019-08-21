@@ -29,13 +29,6 @@ MemoryObservationStore::MemoryObservationStore(size_t max_bytes_per_observation,
 
 ObservationStore::StoreStatus MemoryObservationStore::StoreObservation(
     std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
-  if (!observation->has_encrypted()) {
-    LOG(WARNING) << "MemoryObservationStore does not yet support unencrypted observations";
-    return kWriteFailed;
-  }
-
-  auto message = observation->mutable_encrypted();
-
   std::unique_lock<std::mutex> lock(envelope_mutex_);
 
   internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
@@ -48,7 +41,7 @@ ObservationStore::StoreStatus MemoryObservationStore::StoreObservation(
     return kStoreFull;
   }
 
-  auto status_peek = current_envelope_->CanAddObservation(*message);
+  auto status_peek = current_envelope_->CanAddObservation(*observation);
 
   if (status_peek == kStoreFull) {
     VLOG(4) << "MemoryObservationStore::StoreObservation(): Current "
@@ -62,9 +55,7 @@ ObservationStore::StoreStatus MemoryObservationStore::StoreObservation(
   uint32_t project_id = metadata->project_id();
   auto report_id = metadata->report_id();
 
-  auto m = std::make_unique<EncryptedMessage>();
-  m->Swap(message);
-  auto status = current_envelope_->AddEncryptedObservation(std::move(m), std::move(metadata));
+  auto status = current_envelope_->StoreObservation(std::move(observation), std::move(metadata));
   if (status == kOk) {
     num_obs_per_report_[report_id]++;
     internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Succeeded,

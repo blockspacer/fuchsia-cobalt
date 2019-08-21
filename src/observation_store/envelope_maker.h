@@ -41,15 +41,15 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
                          size_t max_num_bytes = SIZE_MAX);
 
   // CanAddObservation returns the status that EnvelopeMaker would return if you
-  // passed the |message| into AddEncryptedObservation. This allows the user to
+  // passed the |message| into StoreObservation. This allows the user to
   // check if a call will succeed before moving the unique_ptr into
-  // AddEncryptedObservation.
-  ObservationStore::StoreStatus CanAddObservation(const EncryptedMessage& message);
+  // StoreObservation.
+  ObservationStore::StoreStatus CanAddObservation(const StoredObservation& observation);
 
-  // AddEncryptedObservation adds a message and its associated metadata to the
+  // StoreObservation adds a message and its associated metadata to the
   // store. This should return the same value as CanAddObservation.
-  ObservationStore::StoreStatus AddEncryptedObservation(
-      std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata);
+  ObservationStore::StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
+                                                 std::unique_ptr<ObservationMetadata> metadata);
 
   const Envelope& GetEnvelope(util::EncryptedMessageMaker* encrypter) override;
 

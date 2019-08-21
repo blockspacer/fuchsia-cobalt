@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "src/logging.h"
+#include "src/observation_store/observation_store.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -58,8 +59,8 @@ class EnvelopeMakerTest : public ::testing::Test {
     auto message = std::make_unique<EncryptedMessage>();
     // We subtract 1 from |num_bytes| because EnvelopeMaker adds one
     // to its definition of size.
-    CHECK(num_bytes > 1);
-    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+    CHECK(num_bytes > 4);
+    message->set_ciphertext(std::string(num_bytes - 4, 'x'));
     auto metadata = std::make_unique<ObservationMetadata>();
     metadata->set_customer_id(kCustomerId);
     metadata->set_project_id(kProjectId);
@@ -69,8 +70,10 @@ class EnvelopeMakerTest : public ::testing::Test {
     ASSERT_NE(nullptr, envelope_maker_);
     // Add the Observation to the EnvelopeMaker
     size_t size_before_add = envelope_maker_->Size();
+    auto m = std::make_unique<StoredObservation>();
+    m->set_allocated_encrypted(message.release());
     ASSERT_EQ(expected_status,
-              envelope_maker_->AddEncryptedObservation(std::move(message), std::move(metadata)));
+              envelope_maker_->StoreObservation(std::move(m), std::move(metadata)));
     size_t size_after_add = envelope_maker_->Size();
     size_t expected_size_change = (expected_status == ObservationStore::kOk ? num_bytes : 0);
     EXPECT_EQ(expected_size_change, size_after_add - size_before_add);
@@ -95,7 +98,7 @@ class EnvelopeMakerTest : public ::testing::Test {
         << "batch_index=" << expected_this_batch_index << "; metric_id=" << metric_id;
 
     // The Observation we just added should be the last one in the batch.
-    EXPECT_EQ(num_bytes - 1,
+    EXPECT_EQ(num_bytes - 4,
               batch.encrypted_observation(expected_this_batch_size - 1).ciphertext().size());
   }
 
@@ -331,6 +334,21 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
                  expected_this_batch_size, ObservationStore::kOk);
 }
 
+TEST_F(EnvelopeMakerTest, CanWriteUnencrypted) {
+  auto observation = std::make_unique<StoredObservation>();
+  auto unencrypted = observation->mutable_unencrypted();
+  unencrypted->set_random_id("test123");
+  unencrypted->mutable_basic_rappor()->set_data("test");
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  ASSERT_EQ(ObservationStore::kOk,
+            envelope_maker_->StoreObservation(std::move(observation), std::move(metadata)));
+}
+
 TEST_F(EnvelopeMakerTest, CanReadUnencrypted) {
   auto observation = std::make_unique<Observation2>();
   observation->set_random_id("test123");
@@ -351,6 +369,34 @@ TEST_F(EnvelopeMakerTest, CanReadUnencrypted) {
       ->add_observation()
       ->mutable_unencrypted()
       ->Swap(observation.get());
+
+  auto read_env = envelope_maker_->GetEnvelope(encrypt_.get());
+  ASSERT_EQ(read_env.batch_size(), 1);
+  ASSERT_EQ(read_env.batch(0).encrypted_observation_size(), 1);
+
+  // Verify that we got the observation we expected.
+  ASSERT_EQ(read_env.batch(0).encrypted_observation(0).ciphertext(), encrypted_obs->ciphertext());
+}
+
+TEST_F(EnvelopeMakerTest, CanReadWriteUnencrypted) {
+  auto observation = std::make_unique<StoredObservation>();
+  auto unencrypted = observation->mutable_unencrypted();
+  unencrypted->set_random_id("test123");
+  unencrypted->mutable_basic_rappor()->set_data("test");
+
+  auto encrypted_obs = std::make_unique<EncryptedMessage>();
+  encrypt_->Encrypt(*unencrypted, encrypted_obs.get());
+
+  // Verify that our encrypted observation is non-trivial.
+  ASSERT_GT(encrypted_obs->ciphertext().size(), 0);
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  ASSERT_EQ(ObservationStore::kOk,
+            envelope_maker_->StoreObservation(std::move(observation), std::move(metadata)));
 
   auto read_env = envelope_maker_->GetEnvelope(encrypt_.get());
   ASSERT_EQ(read_env.batch_size(), 1);

@@ -24,9 +24,9 @@ namespace cobalt::observation_store {
 EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation, size_t max_num_bytes)
     : max_bytes_each_observation_(max_bytes_each_observation), max_num_bytes_(max_num_bytes) {}
 
-ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(const EncryptedMessage& message) {
-  // "+1" below is for the |scheme| field of EncryptedMessage.
-  size_t obs_size = message.ciphertext().size() + message.public_key_fingerprint().size() + 1;
+ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(
+    const StoredObservation& observation) {
+  size_t obs_size = observation.ByteSizeLong();
   if (obs_size > max_bytes_each_observation_) {
     VLOG(1) << "WARNING: An Observation that was too big was passed in to "
                "EnvelopeMaker::CanAddObservation(): "
@@ -44,17 +44,16 @@ ObservationStore::StoreStatus EnvelopeMaker::CanAddObservation(const EncryptedMe
   return ObservationStore::kOk;
 }
 
-ObservationStore::StoreStatus EnvelopeMaker::AddEncryptedObservation(
-    std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata) {
-  auto status = CanAddObservation(*message);
+ObservationStore::StoreStatus EnvelopeMaker::StoreObservation(
+    std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
+  auto status = CanAddObservation(*observation);
   if (status != ObservationStore::kOk) {
     return status;
   }
 
-  // "+1" below is for the |scheme| field of EncryptedMessage.
-  num_bytes_ += message->ciphertext().size() + message->public_key_fingerprint().size() + 1;
+  num_bytes_ += observation->ByteSizeLong();
   // Put the encrypted observation into the appropriate ObservationBatch.
-  GetBatch(std::move(metadata))->add_observation()->mutable_encrypted()->Swap(message.get());
+  GetBatch(std::move(metadata))->add_observation()->Swap(observation.get());
   return ObservationStore::kOk;
 }
 

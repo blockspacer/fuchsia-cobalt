@@ -88,12 +88,12 @@ class FakeHTTPClient : public lib::clearcut::HTTPClient {
 };
 
 std::unique_ptr<EncryptedMessage> CreateObservationMessage(size_t num_bytes) {
-  CHECK_GT(num_bytes, 1);
+  CHECK_GT(num_bytes, 4);
   auto message = std::make_unique<EncryptedMessage>();
   // Because the MemoryObservationStore counts the size of an Observation
-  // to be the ciphertext size + 1, we set the ciphertext size to be
-  // num_bytes - 1.
-  message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+  // to be the ciphertext size + 4, we set the ciphertext size to be
+  // num_bytes - 4.
+  message->set_ciphertext(std::string(num_bytes - 4, 'x'));
   return message;
 }
 
