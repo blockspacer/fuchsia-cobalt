@@ -10,9 +10,9 @@ source_set("observation_store_update_recipient") {
   ]
 }
 
-proto_library("file_observation_store_internal_proto") {
+proto_library("observation_store_internal_proto") {
   sources = [
-    "file_observation_store_internal.proto",
+    "observation_store_internal.proto",
   ]
   extra_configs = [ "$cobalt_root:cobalt_config" ]
   import_dirs = [
@@ -50,7 +50,7 @@ source_set("observation_store") {
     "$cobalt_root/third_party/statusor",
   ]
   public_deps = [
-    ":file_observation_store_internal_proto",
+    ":observation_store_internal_proto",
     "$cobalt_root/src:logging",
     "$cobalt_root/src:tracing",
     "$cobalt_root/src/lib/util:encrypted_message_util",

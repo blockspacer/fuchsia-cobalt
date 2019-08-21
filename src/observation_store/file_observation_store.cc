@@ -11,7 +11,7 @@
 
 #include "src/logger/logger_interface.h"
 #include "src/logging.h"
-#include "src/observation_store/file_observation_store_internal.pb.h"
+#include "src/observation_store/observation_store_internal.pb.h"
 #include "src/tracing.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
@@ -113,7 +113,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
 
   if (!fields->metadata_written || metadata_str != fields->last_written_metadata) {
     VLOG(5) << name_ << ": Writing observation metadata.";
-    ObservationStoreRecord stored_metadata;
+    FileObservationStoreRecord stored_metadata;
     stored_metadata.mutable_meta_data()->Swap(metadata.get());
     if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_metadata, active_file)) {
       LOG(WARNING) << name_ << ": Unable to write metadata to `" << active_file_name_ << "`";
@@ -123,7 +123,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
     fields->last_written_metadata = metadata_str;
   }
 
-  ObservationStoreRecord stored_message;
+  FileObservationStoreRecord stored_message;
   stored_message.mutable_encrypted_observation()->Swap(message.get());
   if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_message, active_file)) {
     LOG(WARNING) << "Unable to write encrypted_observation to `" << active_file_name_ << "`";
@@ -348,7 +348,7 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
   std::unordered_map<std::string, ObservationBatch *> batch_map;
   ObservationBatch *current_batch;
 
-  ObservationStoreRecord stored;
+  FileObservationStoreRecord stored;
 
   for (const auto &file_name : file_names_) {
     auto iis_or = fs_->NewProtoInputStream(FullPath(file_name));
