@@ -14,18 +14,12 @@
 namespace cobalt {
 namespace util {
 
-// DEPRECATED: use the SystemClockInterface instead.
-class ClockInterface {
+// Allows us to mock out a clock for tests.
+class SystemClockInterface {
  public:
-  virtual ~ClockInterface() = default;
+  virtual ~SystemClockInterface() = default;
 
   virtual std::chrono::system_clock::time_point now() = 0;
-};
-
-// Allows us to mock out a clock for tests.
-// TODO(camrdale): move the now() from ClockInterface into here, and remove
-// ClockInterface once all users have migrated to this new interface.
-class SystemClockInterface : public ClockInterface {
 };
 
 // A clock that returns the real system time.
