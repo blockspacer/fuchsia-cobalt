@@ -126,14 +126,6 @@ static_library("proto_util") {
   ]
 }
 
-source_set("maybe_encrypted") {
-  sources = [
-    "maybe_encrypted.h",
-  ]
-  public_deps = [
-    ":encrypted_message_util",
-  ]
-}
 source_set("protected_fields") {
   sources = [
     "protected_fields.h",
