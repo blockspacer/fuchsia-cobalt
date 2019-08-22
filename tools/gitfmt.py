@@ -100,7 +100,7 @@ class FormattingSession(object):
             "clang-format", "-style=file", "-fallback-style=Google",
             "-sort-includes", "-i"
         ]),
-        Formatter([".h"], ["./scripts/style/check-header-guards.py", "--fix"]),
+        Formatter([".h"], ["./tools/style/check-header-guards.py", "--fix"]),
         Formatter([".go"], ["gofmt", "-w"]),
         Formatter([".gn"], ["gn", "format", "--in-place"]),
         Formatter([".py"], ["pyformat", "-i"]),
