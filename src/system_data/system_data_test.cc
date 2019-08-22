@@ -55,7 +55,7 @@ TEST(SystemDataTest, SetExperimentTest) {
   const int kExperimentId = 1;
   const int kArmId = 123;
 
-  SystemData system_data("test_product", "", "");
+  SystemData system_data("test_product", "", ReleaseStage::DEBUG);
 
   Experiment experiment;
   experiment.set_experiment_id(kExperimentId);
@@ -69,9 +69,7 @@ TEST(SystemDataTest, SetExperimentTest) {
 }
 
 TEST(SystemDataTest, SetChannelTest) {
-  SystemData system_data(
-      "test_product", "", "test_version",
-      std::make_unique<logger::ChannelMapper>(std::vector<std::string>({"Channel"})));
+  SystemData system_data("test_product", "", ReleaseStage::DEBUG, "test_version");
   EXPECT_EQ(system_data.channel(), "<unset>");
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
   system_data.SetChannel("Channel");

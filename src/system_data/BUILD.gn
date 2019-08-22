@@ -11,7 +11,6 @@ group("encoder") {
     ":system_data",
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/lib/util:encrypted_message_util",
-    "$cobalt_root/src/logger:channel_mapper",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/registry:client_config",
@@ -39,13 +38,14 @@ source_set("system_data") {
     "system_data.cc",
     "system_data.h",
   ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     "$cobalt_root/src:logging",
-    "$cobalt_root/src/logger:channel_mapper",
     "//third_party/abseil-cpp",
   ]
   public_deps = [
     "$cobalt_root/src/pb",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 }
 

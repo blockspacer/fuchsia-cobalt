@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$cobalt_root/metrics_registry.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("$cobalt_root/metrics_registry.gni")
 
 metrics_registry("internal_metrics_config") {
   customer_id = 2147483647
@@ -220,20 +220,6 @@ source_set("logger") {
   ]
 }
 
-source_set("channel_mapper") {
-  sources = [
-    "channel_mapper.cc",
-    "channel_mapper.h",
-  ]
-
-  public_configs = [ "$cobalt_root:cobalt_config" ]
-
-  public_deps = [
-    "$cobalt_root/src:logging",
-    "$cobalt_root/src/registry:cobalt_registry_proto",
-  ]
-}
-
 source_set("testing_constants") {
   testonly = true
 
@@ -372,24 +358,10 @@ source_set("internal_metrics_test") {
   ]
 }
 
-source_set("channel_mapper_test") {
-  testonly = true
-
-  sources = [
-    "channel_mapper_test.cc",
-  ]
-
-  public_deps = [
-    ":channel_mapper",
-    "//third_party/googletest:gtest",
-  ]
-}
-
 group("tests") {
   testonly = true
 
   deps = [
-    ":channel_mapper_test",
     ":encoder_test",
     ":event_aggregator_test",
     ":internal_metrics_test",

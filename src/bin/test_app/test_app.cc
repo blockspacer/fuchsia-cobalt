@@ -454,7 +454,8 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
     envelope_encrypter = EncryptedMessageMaker::MakeForObservations(key_value).ValueOrDie();
   }
 
-  std::unique_ptr<SystemDataInterface> system_data(new SystemData("test_app", "", ""));
+  std::unique_ptr<SystemDataInterface> system_data(
+      new SystemData("test_app", "", ReleaseStage::DEBUG));
 
   auto observation_store = std::make_unique<MemoryObservationStore>(
       kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);

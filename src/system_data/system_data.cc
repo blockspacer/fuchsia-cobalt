@@ -101,13 +101,6 @@ SystemData::SystemData(const std::string& product_name, const std::string& board
   PopulateSystemProfile();
 }
 
-SystemData::SystemData(const std::string& product_name, const std::string& board_name_suggestion,
-                       const std::string& version,
-                       std::unique_ptr<logger::ChannelMapper> /* channel_mapper */)
-    // TODO(rudominer) We default to DEBUG for now. This is only temporary. See
-    // https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=34960
-    : SystemData(product_name, board_name_suggestion, ReleaseStage::DEBUG, version) {}
-
 void SystemData::SetChannel(const std::string& channel) { system_profile_.set_channel(channel); }
 
 void SystemData::OverrideSystemProfile(const SystemProfile& profile) { system_profile_ = profile; }

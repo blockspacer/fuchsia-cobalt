@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "src/logger/channel_mapper.h"
 #include "src/pb/observation_batch.pb.h"
+#include "src/registry/metric_definition.pb.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++11-compat"
@@ -41,33 +41,12 @@ class SystemDataInterface {
   [[nodiscard]] virtual const ReleaseStage& release_stage() const = 0;
 };
 
-// The Encoder client creates a singleton instance of SystemData at start-up
+// The embedding client creates a singleton instance of SystemData at start-up
 // time and uses it to query data about the client's running system. There
 // are two categories of data: static data about the system encapsulated in
 // the SystemProfile, and dynamic stateful data about the running system.
 class SystemData : public SystemDataInterface {
  public:
-  // DEPRECATED: Use the version of the construcor that takes a ReleaseStage
-  // rather than a ChannelMapper.
-  //
-  // Constructor: Uses the real SystemProfile of the actual running system.
-  //
-  // |product_name|: The value to use for the |product_name| field of the
-  // embedded SystemProfile.
-  //
-  // |board_name_suggestion|: A suggestion for the value to use for the
-  // |board_name| field of the embedded SystemProfile. This may be ignored if
-  // SystemData is able to determine the boardh name directly. A value of ""
-  // indicates that the caller has no information about board name, so one
-  // should be guessed.
-  //
-  // |version|: The version of the running system. The use of this field is
-  // system-specific. For example on Fuchsia a possible value for |version| is
-  // "20190220_01_RC00".
-  SystemData(const std::string& product_name, const std::string& board_name_suggestion,
-             const std::string& version = "",
-             std::unique_ptr<logger::ChannelMapper> channel_mapper = nullptr);
-
   // Constructor: Uses the real SystemProfile of the actual running system.
   //
   // |product_name|: The value to use for the |product_name| field of the
