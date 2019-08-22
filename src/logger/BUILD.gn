@@ -205,6 +205,27 @@ source_set("internal_metrics") {
   ]
 }
 
+source_set("event_loggers") {
+  visibility = [ ":logger" ]
+
+  sources = [
+    "event_loggers.cc",
+    "event_loggers.h",
+  ]
+
+  public_configs = [ "$cobalt_root:cobalt_config" ]
+
+  public_deps = [
+    ":encoder",
+    ":event_aggregator",
+    ":event_record",
+    ":observation_writer",
+    ":status",
+    "$cobalt_root/src:tracing",
+    "$cobalt_root/src/registry:id",
+  ]
+}
+
 source_set("logger") {
   sources = [
     "logger.cc",
@@ -216,12 +237,12 @@ source_set("logger") {
   public_deps = [
     ":encoder",
     ":event_aggregator",
+    ":event_loggers",
     ":event_record",
     ":internal_metrics",
     ":logger_interface",
     ":observation_writer",
     ":status",
-    "$cobalt_root/src:tracing",
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/registry:id",
   ]
