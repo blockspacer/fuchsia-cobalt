@@ -93,7 +93,6 @@ source_set("project_context_factory") {
 
   public_deps = [
     ":project_context",
-    "$cobalt_root/src/system_data:legacy_project_context",
   ]
 }
 

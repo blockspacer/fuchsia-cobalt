@@ -18,21 +18,6 @@ group("encoder") {
   ]
 }
 
-source_set("legacy_project_context") {
-  sources = [
-    "project_context.cc",
-    "project_context.h",
-  ]
-  configs += [ "$cobalt_root:cobalt_config" ]
-
-  deps = [
-    ":client_secret",
-    "$cobalt_root/src:logging",
-    "$cobalt_root/src/registry:client_config",
-    "//third_party/protobuf:protobuf_lite",
-  ]
-}
-
 source_set("system_data") {
   sources = [
     "system_data.cc",
@@ -71,7 +56,6 @@ source_set("unittests") {
 
   deps = [
     ":client_secret",
-    ":legacy_project_context",
     ":system_data",
     "$cobalt_root/src:logging",
     "//third_party/abseil-cpp",

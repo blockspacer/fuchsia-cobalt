@@ -21,13 +21,6 @@ namespace logger {
 
 namespace {
 
-constexpr uint32_t kCustomer11 = 11;
-constexpr uint32_t kProject11 = 11;
-constexpr uint32_t kMetric11 = 11;
-constexpr uint32_t kCustomer22 = 22;
-constexpr uint32_t kProject22 = 22;
-constexpr uint32_t kMetric22 = 22;
-
 // Returns the bytes of a serialized CobaltRegistry, corresponding to
 // registry A, B or C, according as |which_registry| is equal to 1, 2, or 3.
 std::string GetCobaltRegistryBytes(int which_registry) {
@@ -61,12 +54,9 @@ TEST(ProjectContextFactoryTest, InvalidBytes) {
   ProjectContextFactory factory("Invalid bytes");
   EXPECT_FALSE(factory.is_valid());
   EXPECT_FALSE(factory.is_single_project());
-  EXPECT_FALSE(factory.is_single_legacy_project());
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22"));
   EXPECT_EQ(nullptr, factory.TakeSingleProjectContext());
-  EXPECT_EQ(nullptr, factory.NewLegacyProjectContext(kCustomer11, kProject11).get());
-  EXPECT_EQ(nullptr, factory.NewSingleLegacyProjectContext().get());
 }
 
 // Tests the methods of ProjectContext factory when it is constructed
@@ -77,40 +67,24 @@ TEST(ProjectContextFactoryTest, RegistryA) {
   // Registry A is valid
   EXPECT_TRUE(factory.is_valid());
 
-  // Registry A is not a single Cobalt 1.0 project
-  EXPECT_FALSE(factory.is_single_project());
+  // Registry A is a single Cobalt 1.0 poject.
+  EXPECT_TRUE(factory.is_single_project());
 
-  // Registry A is a single Cobalt 0.1 project
-  EXPECT_TRUE(factory.is_single_legacy_project());
-
-  // Registry A does not contain any Cobalt 1.0 projects.
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
+  // Registry A contains Cobalt 1.0 project 11, but no project 22
+  EXPECT_NE(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
 
-  // Registry A does not contain a single Cobalt 1.0 project.
-  EXPECT_EQ(nullptr, factory.TakeSingleProjectContext());
+  // Registry A does contain a single Cobalt 1.0 project.
+  auto context = factory.TakeSingleProjectContext();
+  EXPECT_NE(nullptr, context);
 
-  // Registry A does contain some Cobalt 0.1 project data.
-  EXPECT_NE(nullptr, factory.NewLegacyProjectContext(kCustomer11, kProject11).get());
-  EXPECT_NE(nullptr, factory.NewLegacyProjectContext(kCustomer22, kProject22).get());
+  // The single Cobalt 1.0 project contains metric 11 but not metric 22.
+  EXPECT_NE(nullptr, context->GetMetric("Metric11"));
+  EXPECT_EQ(nullptr, context->GetMetric("Metric22"));
 
-  // Registry A does contain a single Cobalt 0.1 project
-  EXPECT_NE(nullptr, factory.NewSingleLegacyProjectContext().get());
-
-  // The single Cobalt 0.1 project contains only metric 11.
-  auto legacy_context = factory.NewSingleLegacyProjectContext();
-  EXPECT_NE(nullptr, legacy_context->Metric(kMetric11));
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric22));
-
-  // The Cobalt 0.1 project 11 contains only metric 11.
-  legacy_context = factory.NewLegacyProjectContext(kCustomer11, kProject11);
-  EXPECT_NE(nullptr, legacy_context->Metric(kMetric11));
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric22));
-
-  // The Cobalt 0.1 project 22 contains no metrics.
-  legacy_context = factory.NewLegacyProjectContext(kCustomer22, kProject22);
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric11));
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric22));
+  // The data has been removed from the factory.
+  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
+  EXPECT_FALSE(factory.is_valid());
 }
 
 TEST(ProjectContextFactoryTest, RegistryB) {
@@ -122,16 +96,9 @@ TEST(ProjectContextFactoryTest, RegistryB) {
   // Registry B is a single Cobalt 1.0 poject.
   EXPECT_TRUE(factory.is_single_project());
 
-  // Registry B is not a single Cobalt 0.1 project.
-  EXPECT_FALSE(factory.is_single_legacy_project());
-
   // Registry B contains Cobalt 1.0 project 22, but no project 11
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
   EXPECT_NE(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
-
-  // Registry B does not contain any Cobalt 0.1 project data.
-  EXPECT_EQ(nullptr, factory.NewLegacyProjectContext(kCustomer11, kProject11).get());
-  EXPECT_EQ(nullptr, factory.NewSingleLegacyProjectContext().get());
 
   // Registry B does contain a single Cobalt 1.0 project.
   auto context = factory.TakeSingleProjectContext();
@@ -152,37 +119,19 @@ TEST(ProjectContextFactoryTest, RegistryC) {
   // Registry C is valid.
   EXPECT_TRUE(factory.is_valid());
 
-  // Registry C does not contain only a single Cobalt 1.0 project.
+  // Registry C does not contain only a single project.
   EXPECT_FALSE(factory.is_single_project());
 
-  // Registry C does not contain only a single Cobalt 0.1 project.
-  EXPECT_FALSE(factory.is_single_legacy_project());
+  // Registry C contains Cobalt 1.0 projects 11 and 22.
+  auto context1 = factory.NewProjectContext("Customer11", "Project11");
+  auto context2 = factory.NewProjectContext("Customer22", "Project22");
+  EXPECT_NE(nullptr, context1.get());
+  EXPECT_NE(nullptr, context2.get());
 
-  // Registry C contains Cobalt 1.0 project 22 but not project 11.
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
-  EXPECT_NE(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
-
-  // Registry C does not contain only a single Cobalt 0.1 project.
-  EXPECT_EQ(nullptr, factory.TakeSingleProjectContext());
-
-  // Registry C contains Cobalt 0.1 project 11 but not project 22.
-  EXPECT_NE(nullptr, factory.NewLegacyProjectContext(kCustomer11, kProject11).get());
-  EXPECT_EQ(nullptr, factory.NewSingleLegacyProjectContext().get());
-
-  // Cobalt 0.1 project 11 contains metric 11 but not metric 22.
-  auto legacy_context = factory.NewLegacyProjectContext(kCustomer11, kProject11);
-  EXPECT_NE(nullptr, legacy_context->Metric(kMetric11));
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric22));
-
-  // There are no Cobalt 0.1 metrics for project 22.
-  legacy_context = factory.NewLegacyProjectContext(kCustomer22, kProject22);
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric11));
-  EXPECT_EQ(nullptr, legacy_context->Metric(kMetric22));
-
-  // Cobalt 1.0 project 22 contains metric 22 but not metric 11.
-  auto context = factory.NewProjectContext("Customer22", "Project22");
-  EXPECT_EQ(nullptr, context->GetMetric("Metric11"));
-  EXPECT_NE(nullptr, context->GetMetric("Metric22"));
+  EXPECT_NE(nullptr, context1->GetMetric("Metric11"));
+  EXPECT_EQ(nullptr, context1->GetMetric("Metric22"));
+  EXPECT_NE(nullptr, context2->GetMetric("Metric22"));
+  EXPECT_EQ(nullptr, context2->GetMetric("Metric11"));
 }
 
 TEST(ProjectContextFactoryTest, ReleaseStage) {

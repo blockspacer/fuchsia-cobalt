@@ -36,6 +36,7 @@
 #include "src/registry/project_configs.h"
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
+#include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 #include "third_party/statusor/statusor.h"
 
 namespace cobalt {

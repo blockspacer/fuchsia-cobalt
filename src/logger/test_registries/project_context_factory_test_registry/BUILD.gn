@@ -6,14 +6,13 @@ import("$cobalt_root/metrics_registry.gni")
 
 metrics_registry("a") {
   customer_id = 11
-  project_id = 11
+  project_name = "Project11"
   skip_validation = true
   for_testing = true
   directory = "."
   namespace = "cobalt.logger.a"
   var_name = "cobalt_registry_base64"
 
-  v1_project = false
   generate_binarypb = false
   generate_cc = true
 }
