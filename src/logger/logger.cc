@@ -38,7 +38,15 @@ using LoggerMethod = LoggerCallsMadeMetricDimensionLoggerMethod;
 // of EventLogger for each of several Metric types.
 class EventLogger {
  public:
-  explicit EventLogger(Logger* logger) : logger_(logger) {}
+  EventLogger(const ProjectContext* project_context, const Encoder* encoder,
+              EventAggregator* event_aggregator, const ObservationWriter* observation_writer,
+              const encoder::SystemDataInterface* system_data, util::SystemClockInterface* clock)
+      : project_context_(project_context),
+        encoder_(encoder),
+        event_aggregator_(event_aggregator),
+        observation_writer_(observation_writer),
+        system_data_(system_data),
+        clock_(clock) {}
 
   virtual ~EventLogger() = default;
 
@@ -49,9 +57,10 @@ class EventLogger {
              EventRecord* event_record);
 
  protected:
-  const Encoder* encoder() { return logger_->encoder_; }
-  EventAggregator* event_aggregator() { return logger_->event_aggregator_; }
-  const ProjectContext* project_context() { return logger_->project_context_.get(); }
+  const ProjectContext* project_context() { return project_context_; }
+  const Encoder* encoder() { return encoder_; }
+  EventAggregator* event_aggregator() { return event_aggregator_; }
+
   Encoder::Result BadReportType(const MetricDefinition& metric, const ReportDefinition& report);
 
   // Validates the supplied event_codes against the defined metric dimensions
@@ -115,13 +124,18 @@ class EventLogger {
   // |trace| The string output from TraceEvent().
   void TraceLogSuccess(EventRecord* event_record, const std::string& trace);
 
-  Logger* logger_;
+  const ProjectContext* project_context_;
+  const Encoder* encoder_;
+  EventAggregator* event_aggregator_;
+  const ObservationWriter* observation_writer_;
+  const encoder::SystemDataInterface* system_data_;
+  util::SystemClockInterface* clock_;
 };
 
 // Implementation of EventLogger for metrics of type EVENT_OCCURRED.
 class OccurrenceEventLogger : public EventLogger {
  public:
-  explicit OccurrenceEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~OccurrenceEventLogger() override = default;
 
  private:
@@ -136,7 +150,7 @@ class OccurrenceEventLogger : public EventLogger {
 // Implementation of EventLogger for metrics of type EVENT_COUNT.
 class CountEventLogger : public EventLogger {
  public:
-  explicit CountEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~CountEventLogger() override = default;
 
  private:
@@ -153,7 +167,7 @@ class CountEventLogger : public EventLogger {
 // metric type.
 class IntegerPerformanceEventLogger : public EventLogger {
  protected:
-  explicit IntegerPerformanceEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~IntegerPerformanceEventLogger() override = default;
 
  private:
@@ -168,7 +182,7 @@ class IntegerPerformanceEventLogger : public EventLogger {
 // Implementation of EventLogger for metrics of type ELAPSED_TIME.
 class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
  public:
-  explicit ElapsedTimeEventLogger(Logger* logger) : IntegerPerformanceEventLogger(logger) {}
+  using IntegerPerformanceEventLogger::IntegerPerformanceEventLogger;
   ~ElapsedTimeEventLogger() override = default;
 
  private:
@@ -183,7 +197,7 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
 // Implementation of EventLogger for metrics of type FRAME_RATE.
 class FrameRateEventLogger : public IntegerPerformanceEventLogger {
  public:
-  explicit FrameRateEventLogger(Logger* logger) : IntegerPerformanceEventLogger(logger) {}
+  using IntegerPerformanceEventLogger::IntegerPerformanceEventLogger;
   ~FrameRateEventLogger() override = default;
 
  private:
@@ -198,7 +212,7 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
 // Implementation of EventLogger for metrics of type MEMORY_USAGE.
 class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
  public:
-  explicit MemoryUsageEventLogger(Logger* logger) : IntegerPerformanceEventLogger(logger) {}
+  using IntegerPerformanceEventLogger::IntegerPerformanceEventLogger;
   ~MemoryUsageEventLogger() override = default;
 
  private:
@@ -213,7 +227,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
 // Implementation of EventLogger for metrics of type INT_HISTOGRAM.
 class IntHistogramEventLogger : public EventLogger {
  public:
-  explicit IntHistogramEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~IntHistogramEventLogger() override = default;
 
  private:
@@ -226,7 +240,7 @@ class IntHistogramEventLogger : public EventLogger {
 // Implementation of EventLogger for metrics of type STRING_USED.
 class StringUsedEventLogger : public EventLogger {
  public:
-  explicit StringUsedEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~StringUsedEventLogger() override = default;
 
  private:
@@ -238,7 +252,7 @@ class StringUsedEventLogger : public EventLogger {
 // Implementation of EventLogger for metrics of type CUSTOM.
 class CustomEventLogger : public EventLogger {
  public:
-  explicit CustomEventLogger(Logger* logger) : EventLogger(logger) {}
+  using EventLogger::EventLogger;
   ~CustomEventLogger() override = default;
 
  private:
@@ -301,7 +315,9 @@ Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogEvent, project_context_->project());
   auto* occurrence_event = event_record.event->mutable_occurrence_event();
   occurrence_event->set_event_code(event_code);
-  auto event_logger = std::make_unique<OccurrenceEventLogger>(this);
+  auto event_logger =
+      std::make_unique<OccurrenceEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                              observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::EVENT_OCCURRED, &event_record);
 }
 
@@ -314,7 +330,9 @@ Status Logger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& ev
   CopyEventCodesAndComponent(event_codes, component, count_event);
   count_event->set_period_duration_micros(period_duration_micros);
   count_event->set_count(count);
-  auto event_logger = std::make_unique<CountEventLogger>(this);
+  auto event_logger =
+      std::make_unique<CountEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                         observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::EVENT_COUNT, &event_record);
 }
 
@@ -325,7 +343,9 @@ Status Logger::LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& e
   auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
   CopyEventCodesAndComponent(event_codes, component, elapsed_time_event);
   elapsed_time_event->set_elapsed_micros(elapsed_micros);
-  auto event_logger = std::make_unique<ElapsedTimeEventLogger>(this);
+  auto event_logger =
+      std::make_unique<ElapsedTimeEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                               observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::ELAPSED_TIME, &event_record);
 }
 
@@ -337,7 +357,9 @@ Status Logger::LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& eve
   CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
   // NOLINTNEXTLINE readability-magic-numbers
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
-  auto event_logger = std::make_unique<FrameRateEventLogger>(this);
+  auto event_logger =
+      std::make_unique<FrameRateEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                             observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::FRAME_RATE, &event_record);
 }
 
@@ -348,7 +370,9 @@ Status Logger::LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& e
   auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
   CopyEventCodesAndComponent(event_codes, component, memory_usage_event);
   memory_usage_event->set_bytes(bytes);
-  auto event_logger = std::make_unique<MemoryUsageEventLogger>(this);
+  auto event_logger =
+      std::make_unique<MemoryUsageEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                               observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::MEMORY_USAGE, &event_record);
 }
 
@@ -359,7 +383,9 @@ Status Logger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& 
   auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
   CopyEventCodesAndComponent(event_codes, component, int_histogram_event);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
-  auto event_logger = std::make_unique<IntHistogramEventLogger>(this);
+  auto event_logger =
+      std::make_unique<IntHistogramEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                                observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::INT_HISTOGRAM, &event_record);
 }
 
@@ -368,7 +394,9 @@ Status Logger::LogString(uint32_t metric_id, const std::string& str) {
   EventRecord event_record;
   auto* string_used_event = event_record.event->mutable_string_used_event();
   string_used_event->set_str(str);
-  auto event_logger = std::make_unique<StringUsedEventLogger>(this);
+  auto event_logger =
+      std::make_unique<StringUsedEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                              observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::STRING_USED, &event_record);
 }
 
@@ -377,7 +405,9 @@ Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   EventRecord event_record;
   auto* custom_event = event_record.event->mutable_custom_event();
   custom_event->mutable_values()->swap(*event_values);
-  auto event_logger = std::make_unique<CustomEventLogger>(this);
+  auto event_logger =
+      std::make_unique<CustomEventLogger>(project_context_.get(), encoder_, event_aggregator_,
+                                          observation_writer_, system_data_, clock_.get());
   return event_logger->Log(metric_id, MetricDefinition::CUSTOM, &event_record);
 }
 
@@ -516,16 +546,15 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
     return status;
   }
 
-  if (logger_->system_data_) {
-    if (logger_->system_data_->release_stage() >
-        event_record->metric->meta_data().max_release_stage()) {
+  if (system_data_) {
+    if (system_data_->release_stage() > event_record->metric->meta_data().max_release_stage()) {
       // Quietly ignore this metric.
       LOG_FIRST_N(INFO, 10) << "Not logging metric `"
                             << project_context()->FullMetricName(*event_record->metric)
                             << "` because its max_release_stage ("
                             << event_record->metric->meta_data().max_release_stage()
                             << ") is lower than the device's current release_stage: "
-                            << logger_->system_data_->release_stage();
+                            << system_data_->release_stage();
       return kOK;
     }
   }
@@ -585,7 +614,7 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricTy
   }
 
   // Compute the day_index and hour index.
-  auto now = std::chrono::system_clock::to_time_t(logger_->clock_->now());
+  auto now = std::chrono::system_clock::to_time_t(clock_->now());
   event_record->event->set_day_index(TimeToDayIndex(now, event_record->metric->time_zone_policy()));
   event_record->event->set_hour_index(
       TimeToHourIndex(now, event_record->metric->time_zone_policy()));
@@ -682,8 +711,8 @@ Status EventLogger::MaybeGenerateImmediateObservation(const ReportDefinition& re
   if (encoder_result.observation == nullptr) {
     return kOK;
   }
-  return logger_->observation_writer_->WriteObservation(*encoder_result.observation,
-                                                        std::move(encoder_result.metadata));
+  return observation_writer_->WriteObservation(*encoder_result.observation,
+                                               std::move(encoder_result.metadata));
 }
 
 // The default implementation of MaybeEncodeImmediateObservation does

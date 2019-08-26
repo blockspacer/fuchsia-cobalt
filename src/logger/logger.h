@@ -125,7 +125,6 @@ class Logger : public LoggerInterface {
   void ResumeInternalLogging();
 
  private:
-  friend class EventLogger;
   friend class LoggerTest;
   friend class cobalt::internal::RealLoggerFactory;
 
