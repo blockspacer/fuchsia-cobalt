@@ -160,17 +160,9 @@ def _build(args):
       args.gn_path,
       'gen',
       out_dir(args),
+      '--export-compile-commands=default',
       '--args=%s' % ' '.join(gn_args),
   ])
-
-  # Create the compile_commands.json database required for clang-tidy.
-  contents = subprocess.check_output([
-      args.ninja_path, '-C',
-      out_dir(args), '-t', 'compdb', 'cc', 'cxx', 'objc', 'objcxx', 'asm'
-  ])
-  compile_commands = open('%s/compile_commands.json' % out_dir(args), 'w+')
-  compile_commands.write(contents)
-  compile_commands.close()
 
   subprocess.check_call([args.ninja_path, '-C', out_dir(args)])
 
