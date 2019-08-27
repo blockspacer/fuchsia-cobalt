@@ -19,3 +19,4 @@ personal*
 CMakeLists.txt
 cmake-build-debug/
 compile_commands.json
+.clangd
