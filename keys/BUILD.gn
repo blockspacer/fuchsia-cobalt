@@ -22,6 +22,7 @@ test("keys_tests") {
   deps = [
     ":key_tests_files",
     "$cobalt_root/src:logging",
+    "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/lib/util:file_util",
     "$cobalt_root/src/pb",

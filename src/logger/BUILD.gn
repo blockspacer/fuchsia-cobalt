@@ -70,6 +70,7 @@ source_set("project_context") {
     "$cobalt_root/src:logging",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:project_configs",
+    "$cobalt_root/third_party/statusor",
   ]
 }
 
@@ -115,6 +116,7 @@ source_set("encoder") {
     "$cobalt_root/src:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_config_helper",
     "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/src/logger:project_context",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
     "$cobalt_root/src/system_data:system_data",
@@ -136,6 +138,7 @@ source_set("observation_writer") {
     "$cobalt_root/src:tracing",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/src/pb",
   ]
 }
@@ -159,7 +162,10 @@ source_set("event_aggregator") {
     ":status",
     "$cobalt_root/src:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/lib/util:consistent_proto_store",
+    "$cobalt_root/src/lib/util:datetime_util",
+    "$cobalt_root/src/lib/util:protected_fields",
     "$cobalt_root/src/lib/util:proto_util",
     "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
@@ -177,6 +183,7 @@ source_set("logger_interface") {
 
   public_deps = [
     ":status",
+    "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
   ]
@@ -215,6 +222,7 @@ source_set("logger") {
     ":observation_writer",
     ":status",
     "$cobalt_root/src:tracing",
+    "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/registry:id",
   ]
 }
@@ -224,6 +232,10 @@ source_set("testing_constants") {
 
   sources = [
     "testing_constants.h",
+  ]
+
+  deps = [
+    "$cobalt_root/src/logger:logger_test_utils",
   ]
 
   public_deps = [
@@ -246,7 +258,10 @@ source_set("fake_logger") {
   deps = [
     ":cobalt_local_aggregation_proto",
     ":project_context_factory",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/lib/util:status",
+    "$cobalt_root/src/logger:logger_interface",
     "$cobalt_root/src/registry:project_configs",
     "//third_party/googletest:gtest",
   ]
@@ -264,11 +279,13 @@ source_set("logger_test_utils") {
     ":encoder",
     ":fake_logger",
     ":project_context_factory",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/src/registry:project_configs",
+    "$cobalt_root/src/system_data:client_secret",
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
@@ -279,6 +296,11 @@ source_set("logger_test") {
 
   sources = [
     "logger_test.cc",
+  ]
+
+  deps = [
+    "$cobalt_root/src/logger:fake_logger",
+    "$cobalt_root/src/system_data:client_secret",
   ]
 
   public_deps = [
@@ -293,6 +315,9 @@ source_set("encoder_test") {
   testonly = true
   sources = [
     "encoder_test.cc",
+  ]
+  deps = [
+    "$cobalt_root/src/logger:project_context_factory",
   ]
   public_deps = [
     ":encoder",
@@ -310,6 +335,7 @@ source_set("event_aggregator_test") {
   public_deps = [
     ":event_aggregator",
     ":testing_constants",
+    "$cobalt_root/src/logger:logger_test_utils",
     "//third_party/googletest:gtest",
   ]
 }
@@ -321,6 +347,8 @@ source_set("project_context_test") {
   ]
   public_deps = [
     ":project_context",
+    "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/src/pb",
     "test_registries:project_context_test_registry",
     "//third_party/googletest:gtest",
   ]
@@ -345,6 +373,10 @@ source_set("internal_metrics_test") {
 
   sources = [
     "internal_metrics_test.cc",
+  ]
+
+  deps = [
+    ":fake_logger",
   ]
 
   public_deps = [

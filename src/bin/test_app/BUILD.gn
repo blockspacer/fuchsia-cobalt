@@ -35,6 +35,7 @@ source_set("lib") {
     "$cobalt_root:registry",
     "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/clearcut:curl_http_client",
+    "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/lib/util:datetime_util",
     "$cobalt_root/src/lib/util:file_util",
     "$cobalt_root/src/lib/util:posix_file_system",

@@ -5,3 +5,4 @@
 buildconfig = "//build/config/BUILDCONFIG.gn"
 script_executable = "/usr/bin/env"
 secondary_source = "//build/secondary/"
+check_targets = [ "//src/*" ]

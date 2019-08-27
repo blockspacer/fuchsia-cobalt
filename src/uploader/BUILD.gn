@@ -10,6 +10,7 @@ source_set("shipping_manager") {
     "upload_scheduler.h",
   ]
   deps = [
+    "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/system_data",
   ]
   public_deps = [

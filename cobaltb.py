@@ -160,6 +160,7 @@ def _build(args):
       args.gn_path,
       'gen',
       out_dir(args),
+      '--check',
       '--export-compile-commands=default',
       '--args=%s' % ' '.join(gn_args),
   ])

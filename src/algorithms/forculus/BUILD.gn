@@ -45,6 +45,7 @@ source_set("forculus_analyzer") {
 
   public_deps = [
     ":forculus_utils",
+    "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]

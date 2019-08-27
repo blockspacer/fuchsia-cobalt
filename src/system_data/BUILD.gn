@@ -27,6 +27,7 @@ source_set("system_data") {
   deps = [
     "$cobalt_root/src:logging",
     "//third_party/abseil-cpp",
+    "//third_party/abseil-cpp/absl/synchronization",
   ]
   public_deps = [
     "$cobalt_root/src/pb",

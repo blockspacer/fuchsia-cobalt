@@ -31,6 +31,8 @@ source_set("encrypted_message_util") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   deps = [
+    "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/third_party/statusor",
     "//third_party/abseil-cpp",
   ]
 
@@ -66,6 +68,7 @@ static_library("file_util") {
     ":status",
     "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
+    "$cobalt_root/third_party/statusor",
   ]
 }
 
@@ -98,6 +101,9 @@ static_library("posix_file_system") {
     "posix_file_system.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    "$cobalt_root/third_party/statusor",
+  ]
 }
 
 static_library("consistent_proto_store") {
@@ -109,6 +115,8 @@ static_library("consistent_proto_store") {
   deps = [
     ":proto_serialization",
     ":status",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/third_party/statusor",
     "//third_party/protobuf:protobuf_lite",
   ]
 }

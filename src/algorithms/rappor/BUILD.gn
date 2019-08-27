@@ -17,6 +17,7 @@ source_set("rappor_config_validator") {
 
   deps = [
     "$cobalt_root/src:logging",
+    "$cobalt_root/src/lib/crypto_util",
   ]
 
   public_deps = [

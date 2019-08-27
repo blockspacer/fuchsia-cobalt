@@ -42,8 +42,12 @@ source_set("observation_store") {
   deps = [
     ":observation_store_update_recipient",
     "$cobalt_root/src:tracing",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/lib/util:protected_fields",
+    "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/logger:logger_interface",
+    "$cobalt_root/third_party/statusor",
   ]
   public_deps = [
     ":file_observation_store_internal_proto",
@@ -59,12 +63,13 @@ source_set("tests") {
 
   sources = [
     "envelope_maker_test.cc",
-    "envelope_maker_test_config.h",
     "file_observation_store_test.cc",
   ]
 
   deps = [
     ":observation_store",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/system_data:client_secret",
     "//third_party/gflags",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
