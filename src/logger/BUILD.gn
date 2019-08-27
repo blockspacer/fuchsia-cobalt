@@ -206,7 +206,10 @@ source_set("internal_metrics") {
 }
 
 source_set("event_loggers") {
-  visibility = [ ":logger" ]
+  visibility = [
+    ":event_loggers_test",
+    ":logger",
+  ]
 
   sources = [
     "event_loggers.cc",
@@ -310,6 +313,26 @@ source_set("logger_test_utils") {
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("event_loggers_test") {
+  testonly = true
+
+  sources = [
+    "event_loggers_test.cc",
+  ]
+
+  deps = [
+    "$cobalt_root/src/system_data:client_secret",
+  ]
+
+  public_deps = [
+    ":event_loggers",
+    ":logger_test_utils",
+    ":testing_constants",
+    "//third_party/googletest:gtest",
+    "//third_party/protobuf:protobuf_lite",
+  ]
 }
 
 source_set("logger_test") {
@@ -417,6 +440,7 @@ group("tests") {
   deps = [
     ":encoder_test",
     ":event_aggregator_test",
+    ":event_loggers_test",
     ":internal_metrics_test",
     ":logger_test",
     ":project_context_factory_test",

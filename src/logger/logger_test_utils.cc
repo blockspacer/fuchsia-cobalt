@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include <google/protobuf/repeated_field.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/message_differencer.h>
 
@@ -98,6 +99,28 @@ AggregationConfig MakeAggregationConfig(const ProjectContext& project_context,
     LOG(ERROR) << "Report ID " << metric_report_id.second << " not found.\n";
   }
   return config;
+}
+
+HistogramPtr NewHistogram(std::vector<uint32_t> indices, std::vector<uint32_t> counts) {
+  CHECK(indices.size() == counts.size());
+  HistogramPtr histogram = std::make_unique<google::protobuf::RepeatedPtrField<HistogramBucket>>();
+  for (auto i = 0u; i < indices.size(); i++) {
+    auto* bucket = histogram->Add();
+    bucket->set_index(indices[i]);
+    bucket->set_count(counts[i]);
+  }
+  return histogram;
+}
+
+EventValuesPtr NewCustomEvent(std::vector<std::string> dimension_names,
+                              std::vector<CustomDimensionValue> values) {
+  CHECK(dimension_names.size() == values.size());
+  EventValuesPtr custom_event =
+      std::make_unique<google::protobuf::Map<std::string, CustomDimensionValue>>();
+  for (auto i = 0u; i < values.size(); i++) {
+    (*custom_event)[dimension_names[i]] = values[i];
+  }
+  return custom_event;
 }
 
 ExpectedUniqueActivesObservations MakeNullExpectedUniqueActivesObservations(

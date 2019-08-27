@@ -173,6 +173,14 @@ ReportAggregationKey MakeAggregationKey(const ProjectContext& project_context,
 AggregationConfig MakeAggregationConfig(const ProjectContext& project_context,
                                         const MetricReportId& metric_report_id);
 
+// Construct a histogram to log from the indices for buckets, and the counts in that bucket.
+HistogramPtr NewHistogram(std::vector<uint32_t> indices, std::vector<uint32_t> counts);
+
+// Construct a custom event to log from the names of dimensions, and the values to log for that
+// dimension.
+EventValuesPtr NewCustomEvent(std::vector<std::string> dimension_names,
+                              std::vector<CustomDimensionValue> values);
+
 // Given an ExpectedAggregationParams struct populated with information about
 // the locally aggregated reports in a config, return an
 // ExpectedUniqueActivesObservations map initialized with that config's
