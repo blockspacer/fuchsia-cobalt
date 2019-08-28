@@ -423,7 +423,7 @@ Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDefinition& report,
-                                                                  bool may_invalidate,
+                                                                  bool /*may_invalidate*/,
                                                                   EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "CountEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric);
@@ -436,15 +436,9 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT:
     case ReportDefinition::INT_RANGE_HISTOGRAM:
     case ReportDefinition::NUMERIC_AGGREGATION: {
-      std::string component;
-      if (may_invalidate) {
-        component = std::move(*count_event->mutable_component());
-      } else {
-        component = count_event->component();
-      }
       return encoder()->EncodeIntegerEventObservation(
           project_context()->RefMetric(&metric), &report, event.day_index(),
-          count_event->event_code(), component, count_event->count());
+          count_event->event_code(), count_event->component(), count_event->count());
     }
       // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
       // generation of an immediate observation.
