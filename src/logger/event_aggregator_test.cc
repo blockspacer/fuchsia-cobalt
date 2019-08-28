@@ -191,7 +191,7 @@ class EventAggregatorTest : public ::testing::Test {
     event_record.metric = project_context.GetMetric(metric_report_id.first);
     event_record.event->set_day_index(day_index);
     event_record.event->mutable_occurrence_event()->set_event_code(event_code);
-    auto status = event_aggregator_->LogUniqueActivesEvent(metric_report_id.second, &event_record);
+    auto status = event_aggregator_->LogUniqueActivesEvent(metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
       return status;
     }
@@ -220,7 +220,7 @@ class EventAggregatorTest : public ::testing::Test {
     count_event->set_component(component);
     count_event->add_event_code(event_code);
     count_event->set_count(count);
-    auto status = event_aggregator_->LogCountEvent(metric_report_id.second, &event_record);
+    auto status = event_aggregator_->LogCountEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -249,7 +249,7 @@ class EventAggregatorTest : public ::testing::Test {
     elapsed_time_event->set_component(component);
     elapsed_time_event->add_event_code(event_code);
     elapsed_time_event->set_elapsed_micros(micros);
-    auto status = event_aggregator_->LogElapsedTimeEvent(metric_report_id.second, &event_record);
+    auto status = event_aggregator_->LogElapsedTimeEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -279,7 +279,7 @@ class EventAggregatorTest : public ::testing::Test {
     frame_rate_event->add_event_code(event_code);
     int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
-    auto status = event_aggregator_->LogFrameRateEvent(metric_report_id.second, &event_record);
+    auto status = event_aggregator_->LogFrameRateEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -311,7 +311,7 @@ class EventAggregatorTest : public ::testing::Test {
       memory_usage_event->add_event_code(event_code);
     }
     memory_usage_event->set_bytes(bytes);
-    auto status = event_aggregator_->LogMemoryUsageEvent(metric_report_id.second, &event_record);
+    auto status = event_aggregator_->LogMemoryUsageEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -946,7 +946,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
                 testing::unique_actives_noise_free::kEventsOccurredUniqueDevicesReportId,
-                &bad_event_record));
+                bad_event_record));
   // Attempt to call LogUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
   // OccurrenceEvent. Check that the result is |kInvalidArguments|.
@@ -955,7 +955,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   bad_event_record.event->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
-                testing::unique_actives::kFeaturesActiveUniqueDevicesReportId, &bad_event_record));
+                testing::unique_actives::kFeaturesActiveUniqueDevicesReportId, bad_event_record));
   // Attempt to call LogPerDeviceCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
   // CountEvent. Check that the result is |kInvalidArguments|.
@@ -965,7 +965,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogCountEvent(
                 testing::per_device_numeric_stats::kConnectionFailuresPerDeviceCountReportId,
-                &bad_event_record));
+                bad_event_record));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive

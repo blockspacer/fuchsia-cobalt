@@ -155,7 +155,7 @@ class EventAggregator {
   // aggregates associated with invalid event codes will be garbage-collected
   // together with valid aggregates when EventAggregator::GarbageCollect() is
   // called.
-  Status LogUniqueActivesEvent(uint32_t report_id, EventRecord* event_record);
+  Status LogUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record);
 
   // LogCountEvent, LogElapsedTimeEvent:
   //
@@ -173,13 +173,13 @@ class EventAggregator {
   // EventRecord is not of the expected type.
   //
   // LogCountEvent: |event_record| should wrap a CountEvent.
-  Status LogCountEvent(uint32_t report_id, EventRecord* event_record);
+  Status LogCountEvent(uint32_t report_id, const EventRecord& event_record);
   // LogElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
-  Status LogElapsedTimeEvent(uint32_t report_id, EventRecord* event_record);
+  Status LogElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record);
   // LogFrameRateEvent: |event_record| should wrap a FrameRateEvent.
-  Status LogFrameRateEvent(uint32_t report_id, EventRecord* event_record);
+  Status LogFrameRateEvent(uint32_t report_id, const EventRecord& event_record);
   // LogMemoryUsageEvent: |event_record| should wrap a MemoryUsageEvent.
-  Status LogMemoryUsageEvent(uint32_t report_id, EventRecord* event_record);
+  Status LogMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record);
 
   // Checks that the worker thread is shut down, and if so, calls the private
   // method GenerateObservations() and returns its result. Returns kOther if the

@@ -142,82 +142,82 @@ class EventLoggersTest : public ::testing::Test {
   }
 
   Status LogEvent(uint32_t metric_id, uint32_t event_code) {
-    EventRecord event_record;
-    event_record.event->mutable_occurrence_event()->set_event_code(event_code);
-    return logger_->Log(metric_id, MetricDefinition::EVENT_OCCURRED, &event_record);
+    auto event_record = std::make_unique<EventRecord>();
+    event_record->event->mutable_occurrence_event()->set_event_code(event_code);
+    return logger_->Log(metric_id, MetricDefinition::EVENT_OCCURRED, std::move(event_record));
   }
 
   Status LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                        const std::string& component, int64_t period_duration_micros,
                        uint32_t count) {
-    EventRecord event_record;
-    auto* count_event = event_record.event->mutable_count_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* count_event = event_record->event->mutable_count_event();
     count_event->set_component(component);
     count_event->set_period_duration_micros(period_duration_micros);
     count_event->set_count(count);
     count_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::EVENT_COUNT, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::EVENT_COUNT, std::move(event_record));
   }
 
   Status LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t elapsed_micros) {
-    EventRecord event_record;
-    auto* elapsed_time_event = event_record.event->mutable_elapsed_time_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* elapsed_time_event = event_record->event->mutable_elapsed_time_event();
     elapsed_time_event->set_component(component);
     elapsed_time_event->set_elapsed_micros(elapsed_micros);
     elapsed_time_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::ELAPSED_TIME, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::ELAPSED_TIME, std::move(event_record));
   }
 
   Status LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                       const std::string& component, int64_t frames_per_1000_seconds) {
-    EventRecord event_record;
-    auto* frame_rate_event = event_record.event->mutable_frame_rate_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* frame_rate_event = event_record->event->mutable_frame_rate_event();
     frame_rate_event->set_component(component);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
     frame_rate_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::FRAME_RATE, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::FRAME_RATE, std::move(event_record));
   }
 
   Status LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t bytes) {
-    EventRecord event_record;
-    auto* memory_usage_event = event_record.event->mutable_memory_usage_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* memory_usage_event = event_record->event->mutable_memory_usage_event();
     memory_usage_event->set_component(component);
     memory_usage_event->set_bytes(bytes);
     memory_usage_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::MEMORY_USAGE, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::MEMORY_USAGE, std::move(event_record));
   }
 
   Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                          const std::string& component, const std::vector<uint32_t>& indices,
                          const std::vector<uint32_t>& counts) {
-    EventRecord event_record;
-    auto* int_histogram_event = event_record.event->mutable_int_histogram_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* int_histogram_event = event_record->event->mutable_int_histogram_event();
     int_histogram_event->set_component(component);
     int_histogram_event->mutable_buckets()->Swap(testing::NewHistogram(indices, counts).get());
     int_histogram_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::INT_HISTOGRAM, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::INT_HISTOGRAM, std::move(event_record));
   }
 
   Status LogString(uint32_t metric_id, const std::string& str) {
-    EventRecord event_record;
-    auto* string_used_event = event_record.event->mutable_string_used_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* string_used_event = event_record->event->mutable_string_used_event();
     string_used_event->set_str(str);
-    return logger_->Log(metric_id, MetricDefinition::STRING_USED, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::STRING_USED, std::move(event_record));
   }
 
   Status LogCustomEvent(uint32_t metric_id, const std::vector<std::string>& dimension_names,
                         const std::vector<CustomDimensionValue>& values) {
-    EventRecord event_record;
-    auto* custom_event = event_record.event->mutable_custom_event();
+    auto event_record = std::make_unique<EventRecord>();
+    auto* custom_event = event_record->event->mutable_custom_event();
     custom_event->mutable_values()->swap(*testing::NewCustomEvent(dimension_names, values));
-    return logger_->Log(metric_id, MetricDefinition::CUSTOM, &event_record);
+    return logger_->Log(metric_id, MetricDefinition::CUSTOM, std::move(event_record));
   }
 
   std::unique_ptr<internal::EventLogger> logger_;

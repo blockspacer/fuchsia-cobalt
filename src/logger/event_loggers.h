@@ -52,7 +52,7 @@ class EventLogger {
   // |expected_metric_type|. If not logs an error and returns.
   // If so then Logs the Event specified by |event_record| to Cobalt.
   Status Log(uint32_t metric_id, MetricDefinition::MetricType expected_metric_type,
-             EventRecord* event_record);
+             std::unique_ptr<EventRecord> event_record);
 
  protected:
   const ProjectContext* project_context() { return project_context_; }
@@ -77,7 +77,7 @@ class EventLogger {
   // the Event should be used to update a local aggregation and if so passes
   // the Event to the Local Aggregator.
   virtual Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                             EventRecord* event_record);
+                                             const EventRecord& event_record);
 
   // Given an EventRecord and a ReportDefinition, determines whether or not
   // the Event should be used to generate an immediate Observation and if so
@@ -105,7 +105,7 @@ class EventLogger {
 
   // Traces an |event_record| into a string if the metric is tagged with
   // also_log_locally. If not, it will return the empty string.
-  std::string TraceEvent(EventRecord* event_record);
+  std::string TraceEvent(const EventRecord& event_record);
 
   // Logs a trace of an |event_record| that failed to be logged to Cobalt.
   //
@@ -113,14 +113,14 @@ class EventLogger {
   // |event_record| The event_record associated with the event.
   // |trace| The string output from TraceEvent().
   // |report| Information about the report for which the logging failed.
-  void TraceLogFailure(const Status& status, EventRecord* event_record, const std::string& trace,
-                       const ReportDefinition& report);
+  void TraceLogFailure(const Status& status, const EventRecord& event_record,
+                       const std::string& trace, const ReportDefinition& report);
 
   // Logs a trace of an |event_record| that successfully logged to Cobalt.
   //
   // |event_record| The event_record associated with the event.
   // |trace| The string output from TraceEvent().
-  void TraceLogSuccess(EventRecord* event_record, const std::string& trace);
+  void TraceLogSuccess(const EventRecord& event_record, const std::string& trace);
 
   const ProjectContext* project_context_;
   const Encoder* encoder_;
@@ -142,7 +142,7 @@ class OccurrenceEventLogger : public EventLogger {
                                                   bool may_invalidate,
                                                   EventRecord* event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
+                                     const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type EVENT_COUNT.
@@ -157,7 +157,7 @@ class CountEventLogger : public EventLogger {
                                                   bool may_invalidate,
                                                   EventRecord* event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
+                                     const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for all of the numerical performance metric
@@ -189,7 +189,7 @@ class ElapsedTimeEventLogger : public IntegerPerformanceEventLogger {
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
+                                     const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type FRAME_RATE.
@@ -204,7 +204,7 @@ class FrameRateEventLogger : public IntegerPerformanceEventLogger {
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
+                                     const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type MEMORY_USAGE.
@@ -219,7 +219,7 @@ class MemoryUsageEventLogger : public IntegerPerformanceEventLogger {
   int64_t IntValue(const Event& event) override;
   Status ValidateEvent(const EventRecord& event_record) override;
   Status MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                     EventRecord* event_record) override;
+                                     const EventRecord& event_record) override;
 };
 
 // Implementation of EventLogger for metrics of type INT_HISTOGRAM.

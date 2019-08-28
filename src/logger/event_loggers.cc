@@ -31,12 +31,12 @@ using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
-std::string EventLogger::TraceEvent(EventRecord* event_record) {
-  if (!event_record->metric->meta_data().also_log_locally()) {
+std::string EventLogger::TraceEvent(const EventRecord& event_record) {
+  if (!event_record.metric->meta_data().also_log_locally()) {
     return "";
   }
 
-  auto event = event_record->event.get();
+  auto event = event_record.event.get();
 
   std::stringstream ss;
   ss << "Day index: " << event->day_index() << std::endl;
@@ -129,34 +129,34 @@ std::string EventLogger::TraceEvent(EventRecord* event_record) {
   return ss.str();
 }
 
-void EventLogger::TraceLogFailure(const Status& status, EventRecord* event_record,
+void EventLogger::TraceLogFailure(const Status& status, const EventRecord& event_record,
                                   const std::string& trace, const ReportDefinition& report) {
-  if (!event_record->metric->meta_data().also_log_locally()) {
+  if (!event_record.metric->meta_data().also_log_locally()) {
     return;
   }
 
   LOG(INFO) << TRACE_PREFIX << "("
-            << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
+            << project_context()->RefMetric(event_record.metric).FullyQualifiedName()
             << "): Error (" << status << ")" << std::endl
             << trace << "While trying to send report: " << report.report_name() << std::endl;
 }
 
-void EventLogger::TraceLogSuccess(EventRecord* event_record, const std::string& trace) {
-  if (!event_record->metric->meta_data().also_log_locally()) {
+void EventLogger::TraceLogSuccess(const EventRecord& event_record, const std::string& trace) {
+  if (!event_record.metric->meta_data().also_log_locally()) {
     return;
   }
 
   LOG(INFO) << TRACE_PREFIX << "("
-            << project_context()->RefMetric(event_record->metric).FullyQualifiedName()
+            << project_context()->RefMetric(event_record.metric).FullyQualifiedName()
             << "):" << std::endl
             << trace;
 }
 
 Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expected_metric_type,
-                        EventRecord* event_record) {
+                        std::unique_ptr<EventRecord> event_record) {
   TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
 
-  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record);
+  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record.get());
   if (status != kOK) {
     return status;
   }
@@ -185,12 +185,12 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
   // Store the trace before attempting to log the event. This way, if parts of
   // the event are moved out of the object, the resulting trace will still have
   // useful information.
-  auto trace = TraceEvent(event_record);
+  auto trace = TraceEvent(*event_record);
 
   for (const auto& report : event_record->metric->reports()) {
-    status = MaybeUpdateLocalAggregation(report, event_record);
+    status = MaybeUpdateLocalAggregation(report, *event_record);
     if (status != kOK) {
-      TraceLogFailure(status, event_record, trace, report);
+      TraceLogFailure(status, *event_record, trace, report);
       return status;
     }
 
@@ -203,14 +203,14 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
     // operation on the |event_record| must be performed before this for
     // loop.
     bool may_invalidate = ++report_index == num_reports;
-    status = MaybeGenerateImmediateObservation(report, may_invalidate, event_record);
+    status = MaybeGenerateImmediateObservation(report, may_invalidate, event_record.get());
     if (status != kOK) {
-      TraceLogFailure(status, event_record, trace, report);
+      TraceLogFailure(status, *event_record, trace, report);
       return status;
     }
   }
 
-  TraceLogSuccess(event_record, trace);
+  TraceLogSuccess(*event_record, trace);
   return kOK;
 }
 
@@ -310,7 +310,7 @@ Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
 // The default implementation of MaybeUpdateLocalAggregation does nothing
 // and returns OK.
 Status EventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& /*report*/,
-                                                EventRecord* /*event_record*/) {
+                                                const EventRecord& /*event_record*/) {
   return kOK;
 }
 
@@ -405,7 +405,7 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
 }
 
 Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                          EventRecord* event_record) {
+                                                          const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
       return event_aggregator()->LogUniqueActivesEvent(report.id(), event_record);
@@ -462,7 +462,7 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
 }
 
 Status CountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                     EventRecord* event_record) {
+                                                     const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogCountEvent(report.id(), event_record);
@@ -528,7 +528,7 @@ Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                           EventRecord* event_record) {
+                                                           const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogElapsedTimeEvent(report.id(), event_record);
@@ -562,7 +562,7 @@ Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Status FrameRateEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                         EventRecord* event_record) {
+                                                         const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogFrameRateEvent(report.id(), event_record);
@@ -595,7 +595,7 @@ Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
 }
 
 Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                           EventRecord* event_record) {
+                                                           const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
       return event_aggregator()->LogMemoryUsageEvent(report.id(), event_record);
