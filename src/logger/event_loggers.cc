@@ -153,10 +153,11 @@ void EventLogger::TraceLogSuccess(const EventRecord& event_record, const std::st
 }
 
 Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expected_metric_type,
-                        std::unique_ptr<EventRecord> event_record) {
+                        std::unique_ptr<EventRecord> event_record,
+                        const std::chrono::system_clock::time_point& event_timestamp) {
   TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
 
-  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record.get());
+  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record.get(), event_timestamp);
   if (status != kOK) {
     return status;
   }
@@ -215,7 +216,8 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
 }
 
 Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricType expected_type,
-                                  EventRecord* event_record) {
+                                  EventRecord* event_record,
+                                  const std::chrono::system_clock::time_point& event_timestamp) {
   event_record->metric = project_context()->GetMetric(metric_id);
   if (event_record->metric == nullptr) {
     LOG(ERROR) << "There is no metric with ID '" << metric_id << "' registered "
@@ -229,7 +231,7 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricTy
   }
 
   // Compute the day_index and hour index.
-  auto now = std::chrono::system_clock::to_time_t(clock_->now());
+  auto now = std::chrono::system_clock::to_time_t(event_timestamp);
   event_record->event->set_day_index(TimeToDayIndex(now, event_record->metric->time_zone_policy()));
   event_record->event->set_hour_index(
       TimeToHourIndex(now, event_record->metric->time_zone_policy()));

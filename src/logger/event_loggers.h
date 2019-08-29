@@ -38,21 +38,22 @@ class EventLogger {
  public:
   EventLogger(const ProjectContext* project_context, const Encoder* encoder,
               EventAggregator* event_aggregator, const ObservationWriter* observation_writer,
-              const encoder::SystemDataInterface* system_data, util::SystemClockInterface* clock)
+              const encoder::SystemDataInterface* system_data)
       : project_context_(project_context),
         encoder_(encoder),
         event_aggregator_(event_aggregator),
         observation_writer_(observation_writer),
-        system_data_(system_data),
-        clock_(clock) {}
+        system_data_(system_data) {}
 
   virtual ~EventLogger() = default;
 
   // Finds the Metric with the given ID. Expects that this has type
   // |expected_metric_type|. If not logs an error and returns.
-  // If so then Logs the Event specified by |event_record| to Cobalt.
+  // If so then logs the Event specified by |event_record| to Cobalt.
+  // The |event_timestamp| is recorded as the time the event occurred at.
   Status Log(uint32_t metric_id, MetricDefinition::MetricType expected_metric_type,
-             std::unique_ptr<EventRecord> event_record);
+             std::unique_ptr<EventRecord> event_record,
+             const std::chrono::system_clock::time_point& event_timestamp);
 
  protected:
   const ProjectContext* project_context() { return project_context_; }
@@ -67,9 +68,11 @@ class EventLogger {
                                     const RepeatedField<uint32_t>& event_codes);
 
  private:
-  // Finishes setting up and then validates |event_record|.
+  // Finishes setting up and then validates |event_record|, using |event_timestamp|
+  // as the time the event occurred at.
   Status FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricType expected_type,
-                       EventRecord* event_record);
+                       EventRecord* event_record,
+                       const std::chrono::system_clock::time_point& event_timestamp);
 
   virtual Status ValidateEvent(const EventRecord& event_record);
 
@@ -127,7 +130,6 @@ class EventLogger {
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
-  util::SystemClockInterface* clock_;
 };
 
 // Implementation of EventLogger for metrics of type EVENT_OCCURRED.
