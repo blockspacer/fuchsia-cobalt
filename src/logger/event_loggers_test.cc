@@ -144,8 +144,12 @@ class EventLoggersTest : public ::testing::Test {
   Status LogEvent(uint32_t metric_id, uint32_t event_code) {
     auto event_record = std::make_unique<EventRecord>();
     event_record->event->mutable_occurrence_event()->set_event_code(event_code);
-    return logger_->Log(metric_id, MetricDefinition::EVENT_OCCURRED, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(
+                    metric_id, MetricDefinition::EVENT_OCCURRED, event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
@@ -158,8 +162,12 @@ class EventLoggersTest : public ::testing::Test {
     count_event->set_count(count);
     count_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::EVENT_COUNT, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::EVENT_COUNT,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
@@ -170,8 +178,12 @@ class EventLoggersTest : public ::testing::Test {
     elapsed_time_event->set_elapsed_micros(elapsed_micros);
     elapsed_time_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::ELAPSED_TIME, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::ELAPSED_TIME,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
@@ -182,8 +194,12 @@ class EventLoggersTest : public ::testing::Test {
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
     frame_rate_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::FRAME_RATE, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::FRAME_RATE,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
@@ -194,8 +210,12 @@ class EventLoggersTest : public ::testing::Test {
     memory_usage_event->set_bytes(bytes);
     memory_usage_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::MEMORY_USAGE, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::MEMORY_USAGE,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
@@ -207,16 +227,24 @@ class EventLoggersTest : public ::testing::Test {
     int_histogram_event->mutable_buckets()->Swap(testing::NewHistogram(indices, counts).get());
     int_histogram_event->mutable_event_code()->CopyFrom(
         RepeatedField<uint32_t>(event_codes.begin(), event_codes.end()));
-    return logger_->Log(metric_id, MetricDefinition::INT_HISTOGRAM, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::INT_HISTOGRAM,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogString(uint32_t metric_id, const std::string& str) {
     auto event_record = std::make_unique<EventRecord>();
     auto* string_used_event = event_record->event->mutable_string_used_event();
     string_used_event->set_str(str);
-    return logger_->Log(metric_id, MetricDefinition::STRING_USED, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::STRING_USED,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   Status LogCustomEvent(uint32_t metric_id, const std::vector<std::string>& dimension_names,
@@ -224,8 +252,12 @@ class EventLoggersTest : public ::testing::Test {
     auto event_record = std::make_unique<EventRecord>();
     auto* custom_event = event_record->event->mutable_custom_event();
     custom_event->mutable_values()->swap(*testing::NewCustomEvent(dimension_names, values));
-    return logger_->Log(metric_id, MetricDefinition::CUSTOM, std::move(event_record),
-                        mock_clock_->now());
+    Status valid;
+    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::CUSTOM,
+                                                         event_record.get()))) {
+      return valid;
+    }
+    return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
   std::unique_ptr<internal::EventLogger> logger_;

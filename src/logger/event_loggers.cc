@@ -29,6 +29,52 @@ using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
+std::unique_ptr<EventLogger> EventLogger::Create(MetricDefinition::MetricType metric_type,
+                                                 const ProjectContext* project_context,
+                                                 const Encoder* encoder,
+                                                 EventAggregator* event_aggregator,
+                                                 const ObservationWriter* observation_writer,
+                                                 const encoder::SystemDataInterface* system_data) {
+  switch (metric_type) {
+    case MetricDefinition::EVENT_OCCURRED: {
+      return std::make_unique<internal::OccurrenceEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::EVENT_COUNT: {
+      return std::make_unique<internal::CountEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::ELAPSED_TIME: {
+      return std::make_unique<internal::ElapsedTimeEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::FRAME_RATE: {
+      return std::make_unique<internal::FrameRateEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::MEMORY_USAGE: {
+      return std::make_unique<internal::MemoryUsageEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::INT_HISTOGRAM: {
+      return std::make_unique<internal::IntHistogramEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::STRING_USED: {
+      return std::make_unique<internal::StringUsedEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    case MetricDefinition::CUSTOM: {
+      return std::make_unique<internal::CustomEventLogger>(
+          project_context, encoder, event_aggregator, observation_writer, system_data);
+    }
+    default: {
+      LOG(ERROR) << "Failed to process a metric type of " << metric_type;
+      return nullptr;
+    }
+  }
+}
+
 std::string EventLogger::TraceEvent(const EventRecord& event_record) {
   if (!event_record.metric->meta_data().also_log_locally()) {
     return "";
@@ -150,15 +196,11 @@ void EventLogger::TraceLogSuccess(const EventRecord& event_record, const std::st
             << trace;
 }
 
-Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expected_metric_type,
-                        std::unique_ptr<EventRecord> event_record,
+Status EventLogger::Log(std::unique_ptr<EventRecord> event_record,
                         const std::chrono::system_clock::time_point& event_timestamp) {
-  TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", metric_id);
+  TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", event_record->metric->id());
 
-  auto status = FinalizeEvent(metric_id, expected_metric_type, event_record.get(), event_timestamp);
-  if (status != kOK) {
-    return status;
-  }
+  FinalizeEvent(event_record.get(), event_timestamp);
 
   if (system_data_) {
     if (system_data_->release_stage() > event_record->metric->meta_data().max_release_stage()) {
@@ -187,7 +229,7 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
   auto trace = TraceEvent(*event_record);
 
   for (const auto& report : event_record->metric->reports()) {
-    status = MaybeUpdateLocalAggregation(report, *event_record);
+    auto status = MaybeUpdateLocalAggregation(report, *event_record);
     if (status != kOK) {
       TraceLogFailure(status, *event_record, trace, report);
       return status;
@@ -213,9 +255,9 @@ Status EventLogger::Log(uint32_t metric_id, MetricDefinition::MetricType expecte
   return kOK;
 }
 
-Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricType expected_type,
-                                  EventRecord* event_record,
-                                  const std::chrono::system_clock::time_point& event_timestamp) {
+Status EventLogger::PrepareAndValidateEvent(uint32_t metric_id,
+                                            MetricDefinition::MetricType expected_type,
+                                            EventRecord* event_record) {
   event_record->metric = project_context()->GetMetric(metric_id);
   if (event_record->metric == nullptr) {
     LOG(ERROR) << "There is no metric with ID '" << metric_id << "' registered "
@@ -227,14 +269,16 @@ Status EventLogger::FinalizeEvent(uint32_t metric_id, MetricDefinition::MetricTy
                << " is not of type " << expected_type << ".";
     return kInvalidArguments;
   }
+  return ValidateEvent(*event_record);
+}
 
+void EventLogger::FinalizeEvent(EventRecord* event_record,
+                                const std::chrono::system_clock::time_point& event_timestamp) {
   // Compute the day_index and hour index.
   auto now = std::chrono::system_clock::to_time_t(event_timestamp);
   event_record->event->set_day_index(TimeToDayIndex(now, event_record->metric->time_zone_policy()));
   event_record->event->set_hour_index(
       TimeToHourIndex(now, event_record->metric->time_zone_policy()));
-
-  return ValidateEvent(*event_record);
 }
 
 Status EventLogger::ValidateEvent(const EventRecord& /*event_record*/) { return kOK; }

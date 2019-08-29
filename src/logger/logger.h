@@ -122,6 +122,10 @@ class Logger : public LoggerInterface {
   friend class LoggerTest;
   friend class cobalt::internal::RealLoggerFactory;
 
+  // Constructs an appropriate event logger and sends it an |event_record| to log.
+  Status Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
+             std::unique_ptr<EventRecord> event_record);
+
   void SetClock(util::SystemClockInterface* clock) { clock_.reset(clock); }
 
   const std::unique_ptr<ProjectContext> project_context_;
