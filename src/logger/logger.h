@@ -65,11 +65,6 @@ class Logger : public LoggerInterface {
          EventAggregator* event_aggregator, ObservationWriter* observation_writer,
          encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger = nullptr);
 
-  // DEPRECATED Constructor
-  Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
-         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
-         LoggerInterface* internal_logger = nullptr);
-
   ~Logger() override = default;
 
   Status LogEvent(uint32_t metric_id, uint32_t event_code) override;

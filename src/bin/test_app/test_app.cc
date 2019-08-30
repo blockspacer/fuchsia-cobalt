@@ -377,7 +377,7 @@ RealLoggerFactory::RealLoggerFactory(
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index) {
   std::unique_ptr<Logger> logger = std::make_unique<Logger>(
       project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
-      event_aggregator_.get(), observation_writer_.get());
+      event_aggregator_.get(), observation_writer_.get(), system_data_.get());
   if (day_index != 0u) {
     auto mock_clock = new IncrementingSystemClock();
     mock_clock->set_time(

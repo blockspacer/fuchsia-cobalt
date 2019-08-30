@@ -37,12 +37,6 @@ void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
 
 Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
                EventAggregator* event_aggregator, ObservationWriter* observation_writer,
-               LoggerInterface* internal_logger)
-    : Logger(std::move(project_context), encoder, event_aggregator, observation_writer, nullptr,
-             internal_logger) {}
-
-Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
-               EventAggregator* event_aggregator, ObservationWriter* observation_writer,
                encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger)
     : project_context_(std::move(project_context)),
       encoder_(encoder),
