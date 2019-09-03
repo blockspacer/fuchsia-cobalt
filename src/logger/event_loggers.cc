@@ -260,9 +260,12 @@ Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
   if (metric.metric_dimensions_size() == 0 && event_codes.size() == 1 && event_codes.Get(0) == 0) {
     return kOK;
   }
-  if (metric.metric_dimensions_size() != event_codes.size()) {
+  // When new dimensions are added to a metric, they can only be appended, not deleted or inserted.
+  // Because of this, and because metric definitions may change before the matching code does, we
+  // want to accept events where fewer than the expected number of event_codes have been provided.
+  if (event_codes.size() > metric.metric_dimensions_size()) {
     LOG(ERROR) << "The number of event_codes given, " << event_codes.size()
-               << ", does not match the number of metric_dimensions, "
+               << ", is more than the number of metric_dimensions, "
                << metric.metric_dimensions_size() << ", for metric "
                << project_context()->FullMetricName(metric) << ".";
     return kInvalidArguments;

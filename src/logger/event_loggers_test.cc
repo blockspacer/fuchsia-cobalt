@@ -357,22 +357,26 @@ TEST_F(CountEventLoggerTest, Log) {
 
 // Tests the CountEventLogger with multiple event codes.
 TEST_F(CountEventLoggerTest, LogMultiDimension) {
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitStatsReportId};
+
   // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
   EXPECT_EQ(kInvalidArguments,
             LogEventCount(testing::all_report_types::kErrorOccurredMetricId, {43}, "", 0, 303));
 
-  // Use no event codes when the metric has one dimension. Expect
-  // kInvalidArguments.
-  EXPECT_EQ(kInvalidArguments,
-            LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, {}, "", 0, 303));
+  // Use no event codes when the metric has one dimension. Expect kOK.
+  EXPECT_EQ(kOK, LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, {}, "", 0, 303));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 0, "", 303,
+                                            observation_store_.get(), update_recipient_.get()));
+  ResetObservationStore();
 
-  // Use two event codes when the metric has one dimension. Expect
-  // kInvalidArguments.
+  // Use two event codes when the metric has one dimension. Expect kInvalidArguments.
   EXPECT_EQ(kInvalidArguments,
             LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, {43, 44}, "", 0, 303));
 
-  // Use an event code that exceeds the specified max_event_code. Expect
-  // kInvalidArguments.
+  // Use an event code that exceeds the specified max_event_code. Expect kInvalidArguments.
   EXPECT_EQ(kInvalidArguments,
             LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, {200}, "", 0, 303));
 
@@ -380,10 +384,6 @@ TEST_F(CountEventLoggerTest, LogMultiDimension) {
   EXPECT_EQ(kOK,
             LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, {43}, "", 0, 303));
 
-  std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
   EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 43u, "", 303,
                                             observation_store_.get(), update_recipient_.get()));
 }
@@ -465,13 +465,15 @@ TEST_F(FrameRateEventLoggerTest, LogMultiDimension) {
   ASSERT_EQ(kInvalidArguments,
             LogFrameRate(testing::all_report_types::kModuleLoadTimeMetricId, {45}, "", 5123));
 
-  // Use no event codes when the metric has one dimension. Expect
-  // kInvalidArguments.
-  ASSERT_EQ(kInvalidArguments,
+  // Use no event codes when the metric has one dimension. Expect kOK.
+  ASSERT_EQ(kOK,
             LogFrameRate(testing::all_report_types::kLoginModuleFrameRateMetricId, {}, "", 5123));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 0, "", 5123,
+                                            observation_store_.get(), update_recipient_.get()));
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
 
-  // Use two event codes when the metric has one dimension. Expect
-  // kInvalidArguments.
+  // Use two event codes when the metric has one dimension. Expect kInvalidArguments.
   ASSERT_EQ(
       kInvalidArguments,
       LogFrameRate(testing::all_report_types::kLoginModuleFrameRateMetricId, {45, 46}, "", 5123));
@@ -489,10 +491,16 @@ TEST_F(FrameRateEventLoggerTest, LogMultiDimension) {
 
 // Tests the MemoryUsageEventLogger.
 TEST_F(MemoryUsageEventLoggerTest, Log) {
-  // The simple version of LogMemoryUsage() cannot be used at all since this
-  // metric has two dimensions.
-  ASSERT_EQ(kInvalidArguments, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId,
-                                              {46}, "component6", 606));
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+
+  // The simple version of LogMemoryUsage() can be used, even though the metric has two dimensions.
+  ASSERT_EQ(kOK, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId, {46},
+                                "component6", 606));
+
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 46, "component6", 606,
+                                            observation_store_.get(), update_recipient_.get()));
 }
 
 // Tests the MemoryUsageEventLogger with multiple event codes.
@@ -506,18 +514,25 @@ TEST_F(MemoryUsageEventLoggerTest, LogMultiDimension) {
             LogMemoryUsage(testing::all_report_types::kLoginModuleFrameRateMetricId, {45, 46},
                            "component6", 606));
 
-  // Use no event codes when the metric has two dimension. Expect
-  // kInvalidArguments.
-  ASSERT_EQ(kInvalidArguments, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId,
-                                              {}, "component6", 606));
+  // Use no event codes when the metric has two dimension. Expect kOK.
+  ASSERT_EQ(kOK, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId, {},
+                                "component6", 606));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 0, "component6", 606,
+                                            observation_store_.get(), update_recipient_.get()));
 
-  // Use one event code when the metric has two dimension. Expect
-  // kInvalidArguments.
-  ASSERT_EQ(kInvalidArguments, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId,
-                                              {45}, "component6", 606));
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
 
-  // Use three event codes when the metric has two dimension. Expect
-  // kInvalidArguments.
+  // Use one event code when the metric has two dimension. Expect kOK.
+  ASSERT_EQ(kOK, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId, {45},
+                                "component6", 606));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 45u, "component6", 606,
+                                            observation_store_.get(), update_recipient_.get()));
+
+  // Clear the FakeObservationStore.
+  ResetObservationStore();
+
+  // Use three event codes when the metric has two dimension. Expect kInvalidArguments.
   ASSERT_EQ(kInvalidArguments, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId,
                                               {45, 46, 47}, "component6", 606));
 
