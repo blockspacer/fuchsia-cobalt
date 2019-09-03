@@ -208,13 +208,13 @@ class EventAggregator {
   void Run(std::unique_ptr<util::SystemClockInterface> system_clock);
 
   // Helper method called by Run(). If |next_generate_obs_| is less than or
-  // equal to |current_time|, calls GenerateObservations() with the day index of
-  // the previous day in each of UTC and local time, and then backs up the
-  // history of generated Observations. If |next_gc_| is less than or equal to
-  // |current_time|, calls GarbageCollect() with the day index of the previous
-  // day in each of UTC and local time and then backs up the
-  // LocalAggregateStore. In each case, an error is logged and execution
-  // continues if the operation fails.
+  // equal to |steady_time|, calls GenerateObservations() with the day index of
+  // the previous day from |system_time| in each of UTC and local time, and then
+  // backs up the history of generated Observations. If |next_gc_| is less than
+  // or equal to |steady_time|, calls GarbageCollect() with the day index of the
+  // previous day from |system_time| in each of UTC and local time and then
+  // backs up the LocalAggregateStore. In each case, an error is logged and
+  // execution continues if the operation fails.
   void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
                         std::chrono::steady_clock::time_point steady_time);
 

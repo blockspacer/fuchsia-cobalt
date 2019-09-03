@@ -200,9 +200,7 @@ void EventAggregator::Start(std::unique_ptr<util::SystemClockInterface> clock) {
   auto locked = protected_shutdown_flag_.lock();
   locked->shut_down = false;
   std::thread t(std::bind(
-      [this](std::unique_ptr<util::SystemClockInterface>& clock) {
-        this->Run(std::move(clock));
-      },
+      [this](std::unique_ptr<util::SystemClockInterface>& clock) { this->Run(std::move(clock)); },
       std::move(clock)));
   worker_thread_ = std::move(t);
 }
@@ -473,7 +471,7 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
     // Check whether it is time to generate Observations or to garbage-collect
     // the LocalAggregate store. If so, do that task and schedule the next
     // occurrence.
-    DoScheduledTasks(system_clock->now(), steady_time);
+    DoScheduledTasks(system_clock->now(), steady_clock_->now());
   }
 }
 
