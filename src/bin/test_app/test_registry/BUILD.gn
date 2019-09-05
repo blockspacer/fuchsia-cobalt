@@ -1,0 +1,16 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("$cobalt_root/metrics_registry.gni")
+
+metrics_registry("test_registry") {
+  project_name = "Cobalt"
+
+  skip_validation = true
+  for_testing = true
+  directory = "."
+  namespace = "cobalt.test_app.testing"
+  generate_binarypb = false
+  generate_cc = true
+}

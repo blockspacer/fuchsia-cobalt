@@ -1,0 +1,8 @@
+- customer_name: Fuchsia
+  customer_id: 1
+
+  projects:
+    - name: Cobalt
+      project_id: 1
+      cobalt_version: 1
+      contact: nobody@example.com

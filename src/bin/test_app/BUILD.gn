@@ -49,3 +49,22 @@ source_set("lib") {
     "//third_party/tink/cc/util:status",
   ]
 }
+
+source_set("tests") {
+  testonly = true
+
+  sources = [
+    "test_app_test.cc",
+  ]
+
+  deps = [
+    ":lib",
+    "$cobalt_root/src/bin/test_app/test_registry",
+    "$cobalt_root/src/logger:logger_test_utils",
+    "$cobalt_root/src/logger:project_context_factory",
+    "//third_party/abseil-cpp/absl/synchronization",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+    "//third_party/tink/cc/util:status",
+  ]
+}

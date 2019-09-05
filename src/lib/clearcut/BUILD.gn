@@ -25,4 +25,5 @@ source_set("curl_handle") {
   ]
 
   configs += ["$cobalt_root:cobalt_config"]
+  configs -= ["//build/config:no_exceptions"]
 }

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "gflags/gflags.h"
-#include "glog/logging.h"
 #include "src/bin/test_app/test_app.h"
+#include "src/logging.h"
 
 int main(int argc, char* argv[]) {
   google::SetUsageMessage(
@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
       "automatic: The program runs forever sending many Envelopes with "
       "randomly generated values.");
   google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  INIT_LOGGING(argv[0]);
 
   auto app = cobalt::TestApp::CreateFromFlagsOrDie(argv);
   app->Run();

@@ -7,5 +7,6 @@ group("tests") {
   deps = [
     "config_change_validator:tests",
     "config_parser:tests",
+    "test_app:tests",
   ]
 }

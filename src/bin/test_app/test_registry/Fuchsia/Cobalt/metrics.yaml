@@ -1,0 +1,99 @@
+metric_definitions:
+
+- metric_name: "ErrorOccurred"
+  metric_type: EVENT_OCCURRED
+  customer_id: 1
+  project_id: 1
+  id: 1
+  metric_dimensions:
+    - dimension: "Event"
+      max_event_code: 100
+  reports:
+    - report_name: "ErrorCountsByType"
+      id: 123
+      report_type: SIMPLE_OCCURRENCE_COUNT
+      local_privacy_noise_level: SMALL
+
+- metric_name: "CacheMiss"
+  metric_type: EVENT_COUNT
+  customer_id: 1
+  project_id: 1
+  id: 2
+  reports:
+    - report_name: "CacheMissCounts"
+      id: 111
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+
+- metric_name: "update_duration"
+  metric_type: ELAPSED_TIME
+  customer_id: 1
+  project_id: 1
+  id: 3
+  reports:
+    - report_name: "update_duration_report"
+      report_type: INT_RANGE_HISTOGRAM
+      int_buckets:
+        exponential:
+          floor: 0
+          num_buckets: 10
+          initial_step: 1
+          step_multiplier: 2
+
+- metric_name: "game_frame_rate"
+  metric_type: FRAME_RATE
+  customer_id: 1
+  project_id: 1
+  id: 4
+  reports:
+    - report_name: "game_frame_rate_histograms"
+      report_type: INT_RANGE_HISTOGRAM
+      int_buckets:
+        exponential:
+          floor: 0
+          num_buckets: 10
+          initial_step: 1000
+          step_multiplier: 2
+
+- metric_name: "application_memory"
+  metric_type: MEMORY_USAGE
+  customer_id: 1
+  project_id: 1
+  id: 5
+  reports:
+    - report_name: "application_memory_histograms"
+      report_type: INT_RANGE_HISTOGRAM
+      int_buckets:
+        exponential:
+          floor: 0
+          num_buckets: 10
+          initial_step: 1000
+          step_multiplier: 2
+
+- metric_name: "power_usage"
+  metric_type: INT_HISTOGRAM
+  customer_id: 1
+  project_id: 1
+  id: 6
+  int_buckets:
+    linear:
+      floor: 0
+      num_buckets: 50
+      step_size: 2
+  reports:
+    - report_name: "power_usage_histograms"
+      report_type: INT_RANGE_HISTOGRAM
+
+- metric_name: "FeaturesActive"
+  metric_type: EVENT_OCCURRED
+  customer_id: 1
+  project_id: 1
+  id: 7
+  metric_dimensions:
+    - dimension: "Feature"
+      max_event_code: 9
+  reports:
+    - report_name: "FeaturesActiveUniqueDevices"
+      id: 301
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: SMALL
+      window_size: [1, 7]

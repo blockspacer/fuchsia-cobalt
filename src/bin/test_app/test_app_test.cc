@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "src/test_app2/test_app.h"
+#include "src/bin/test_app/test_app.h"
 
 #include <map>
 #include <memory>
@@ -12,11 +12,13 @@
 #include <google/protobuf/text_format.h>
 
 #include "gflags/gflags.h"
-#include "glog/logging.h"
+#include "src/bin/test_app/test_registry/test_registry.cb.h"
+#include "src/gtest.h"
+#include "src/lib/crypto_util/base64.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "src/logging.h"
 
 namespace cobalt {
 
@@ -31,149 +33,6 @@ DECLARE_string(values);
 namespace {
 constexpr char kErrorOccurredMetricName[] = "ErrorOccurred";
 
-constexpr char kCobaltRegistry[] = R"(
-customers {
-  customer_name: "Fuchsia"
-  customer_id: 1
-
-  projects: {
-    project_name: "Cobalt"
-    project_id: 1
-
-    metrics: {
-      metric_name: "ErrorOccurred"
-      metric_type: EVENT_OCCURRED
-      customer_id: 1
-      project_id: 1
-      id: 1
-      metric_dimensions: {
-        dimension: "Event"
-        max_event_code: 100
-      }
-      reports: {
-        report_name: "ErrorCountsByType"
-        id: 123
-        report_type: SIMPLE_OCCURRENCE_COUNT
-        local_privacy_noise_level: SMALL
-      }
-    }
-
-    metrics: {
-      metric_name: "CacheMiss"
-      metric_type: EVENT_COUNT
-      customer_id: 1
-      project_id: 1
-      id: 2
-      reports: {
-        report_name: "CacheMissCounts"
-        id: 111
-        report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
-      }
-    }
-
-    metrics: {
-      metric_name: "update_duration"
-      metric_type: ELAPSED_TIME
-      customer_id: 1
-      project_id: 1
-      id: 3
-      reports: {
-        report_name: "update_duration_report"
-        report_type: INT_RANGE_HISTOGRAM
-        int_buckets: {
-          exponential: {
-            floor: 0
-            num_buckets: 10
-            initial_step: 1
-            step_multiplier: 2
-          }
-        }
-      }
-    }
-
-    metrics: {
-      metric_name: "game_frame_rate"
-      metric_type: FRAME_RATE
-      customer_id: 1
-      project_id: 1
-      id: 4
-      reports: {
-        report_name: "game_frame_rate_histograms"
-        report_type: INT_RANGE_HISTOGRAM
-        int_buckets: {
-          exponential: {
-            floor: 0
-            num_buckets: 10
-            initial_step: 1000
-            step_multiplier: 2
-          }
-        }
-      }
-    }
-
-    metrics: {
-      metric_name: "application_memory"
-      metric_type: MEMORY_USAGE
-      customer_id: 1
-      project_id: 1
-      id: 5
-      reports: {
-        report_name: "application_memory_histograms"
-        report_type: INT_RANGE_HISTOGRAM
-        int_buckets: {
-          exponential: {
-            floor: 0
-            num_buckets: 10
-            initial_step: 1000
-            step_multiplier: 2
-          }
-        }
-      }
-    }
-
-    metrics: {
-      metric_name: "power_usage"
-      metric_type: INT_HISTOGRAM
-      customer_id: 1
-      project_id: 1
-      id: 6
-      int_buckets: {
-        linear: {
-          floor: 0
-          num_buckets: 50
-          step_size: 2
-        }
-      }
-      reports: {
-        report_name: "power_usage_histograms"
-        report_type: INT_RANGE_HISTOGRAM
-      }
-    }
-
-    metrics: {
-      metric_name: "FeaturesActive"
-      metric_type: EVENT_OCCURRED
-      customer_id: 1
-      project_id: 1
-      id: 7
-      metric_dimensions: {
-        dimension: "Feature"
-        max_event_code: 9
-      }
-      reports: {
-        report_name: "FeaturesActiveUniqueDevices"
-        id: 301
-        report_type: UNIQUE_N_DAY_ACTIVES
-        local_privacy_noise_level: SMALL
-        window_size: 1
-        window_size: 7
-      }
-    }
-  }
-}
-
-)";
-
 // The number of locally aggregated Observations that should be generated for
 // each day. Since Observation generation is faked here, this number does not
 // need to correspond to a test Metric registry. It just needs to be a positive
@@ -181,8 +40,12 @@ customers {
 constexpr int kNumAggregatedObservations = 20;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
-  google::protobuf::TextFormat::Parser parser;
-  return parser.ParseFromString(kCobaltRegistry, cobalt_registry);
+  std::string proto;
+  if (!crypto::Base64Decode(test_app::testing::kConfig, &proto)) {
+    return false;
+  }
+
+  return cobalt_registry->ParseFromString(proto);
 }
 
 class TestLoggerFactory : public LoggerFactory {
@@ -214,7 +77,7 @@ TestLoggerFactory::TestLoggerFactory(const ProjectContext* project_context)
       observation_store_(new FakeObservationStore),
       last_obs_generation_(0) {}
 
-std::unique_ptr<LoggerInterface> TestLoggerFactory::NewLogger(uint32_t day_index) {
+std::unique_ptr<LoggerInterface> TestLoggerFactory::NewLogger(uint32_t /*day_index*/) {
   return nullptr;
 }
 
@@ -251,15 +114,15 @@ const ProjectContext* TestLoggerFactory::project_context() { return project_cont
 // Tests of the TestApp class.
 class TestAppTest : public ::testing::Test {
  public:
-  void SetUp() {
+  void SetUp() override {
     auto cobalt_registry = std::make_unique<CobaltRegistry>();
     ASSERT_TRUE(PopulateCobaltRegistry(cobalt_registry.get()));
     ProjectContextFactory project_context_factory(std::move(cobalt_registry));
     ASSERT_TRUE(project_context_factory.is_single_project());
     project_context_ = project_context_factory.TakeSingleProjectContext();
-    std::unique_ptr<LoggerFactory> logger_factory(new TestLoggerFactory(project_context_.get()));
-    test_app_.reset(new TestApp(std::move(logger_factory), kErrorOccurredMetricName,
-                                TestApp::kInteractive, &output_stream_));
+    test_app_ =
+        std::make_unique<TestApp>(std::make_unique<TestLoggerFactory>(project_context_.get()),
+                                  kErrorOccurredMetricName, TestApp::kInteractive, &output_stream_);
   }
 
  protected:
@@ -273,7 +136,7 @@ class TestAppTest : public ::testing::Test {
 
   // Does the current contents of the TestApp's output stream contain the
   // given text.
-  bool OutputContains(const std::string text) {
+  bool OutputContains(const std::string& text) {
     return std::string::npos != output_stream_.str().find(text);
   }
 
@@ -802,6 +665,6 @@ TEST_F(TestAppTest, GenerateAndReset) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  INIT_LOGGING(argv[0]);
   return RUN_ALL_TESTS();
 }

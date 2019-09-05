@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "gflags/gflags.h"
-#include "glog/logging.h"
 #include "src/lib/clearcut/curl_http_client.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/consistent_proto_store.h"
@@ -29,11 +28,13 @@
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
+#include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/pb/observation2.pb.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project_configs.h"
+#include "src/registry/report_definition.pb.h"
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
@@ -266,6 +267,7 @@ TestApp::Mode ParseMode() {
     return TestApp::kAutomatic;
   }
   LOG(FATAL) << "Unrecognized mode: " << FLAGS_mode;
+  std::exit(-1);
 }
 
 // Reads the specified serialized CobaltRegistry pb file. Returns a
@@ -502,7 +504,7 @@ TestApp::TestApp(std::unique_ptr<LoggerFactory> logger_factory,
   CHECK(logger_factory_->project_context());
   CHECK(ostream_);
   CHECK(SetMetric(initial_metric_name));
-  clock_ = new SystemClock();
+  clock_ = std::make_unique<SystemClock>();
 }
 
 bool TestApp::SetMetric(const std::string& metric_name) {
@@ -1136,6 +1138,69 @@ void TestApp::Send(const std::vector<std::string>& command) {
   }
 }
 
+#ifdef PROTO_LITE
+namespace {
+
+std::string PrintMetricType(MetricDefinition_MetricType type) {
+  switch (type) {
+    case MetricDefinition::UNSET:
+      return "UNSET";
+    case MetricDefinition::EVENT_OCCURRED:
+      return "EVENT_OCCURRED";
+    case MetricDefinition::EVENT_COUNT:
+      return "EVENT_COUNT";
+    case MetricDefinition::ELAPSED_TIME:
+      return "ELAPSED_TIME";
+    case MetricDefinition::FRAME_RATE:
+      return "FRAME_RATE";
+    case MetricDefinition::MEMORY_USAGE:
+      return "MEMORY_USAGE";
+    case MetricDefinition::INT_HISTOGRAM:
+      return "INT_HISTOGRAM";
+    case MetricDefinition::STRING_USED:
+      return "STRING_USED";
+    case MetricDefinition::CUSTOM:
+      return "CUSTOM";
+    default:
+      LOG(FATAL) << "Invalid metric type encountered";
+      std::exit(-1);
+  }
+}
+
+std::string PrintReportType(ReportDefinition_ReportType type) {
+  switch (type) {
+    case ReportDefinition::REPORT_TYPE_UNSET:
+      return "REPORT_TYPE_UNSET";
+    case ReportDefinition::SIMPLE_OCCURRENCE_COUNT:
+      return "SIMPLE_OCCURRENCE_COUNT";
+    case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT:
+      return "EVENT_COMPONENT_OCCURRENCE_COUNT";
+    case ReportDefinition::NUMERIC_AGGREGATION:
+      return "NUMERIC_AGGREGATION";
+    case ReportDefinition::INT_RANGE_HISTOGRAM:
+      return "INT_RANGE_HISTOGRAM";
+    case ReportDefinition::HIGH_FREQUENCY_STRING_COUNTS:
+      return "HIGH_FREQUENCY_STRING_COUNTS";
+    case ReportDefinition::STRING_COUNTS_WITH_THRESHOLD:
+      return "STRING_COUNTS_WITH_THRESHOLD";
+    case ReportDefinition::NUMERIC_PERF_RAW_DUMP:
+      return "NUMERIC_PERF_RAW_DUMP";
+    case ReportDefinition::UNIQUE_N_DAY_ACTIVES:
+      return "UNIQUE_N_DAY_ACTIVES";
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+      return "PER_DEVICE_NUMERIC_STATS";
+    case ReportDefinition::CUSTOM_RAW_DUMP:
+      return "CUSTOM_RAW_DUMP";
+    default:
+      LOG(FATAL) << "Invalid report type encountered";
+      std::exit(-1);
+  }
+}
+
+}  // namespace
+
+#endif  // PROTO_LITE
+
 void TestApp::Show(const std::vector<std::string>& command) {
   // show config is currently the only show command.
   if (command.size() != 2 || command[1] != "config") {
@@ -1150,6 +1215,14 @@ void TestApp::Show(const std::vector<std::string>& command) {
     *ostream_ << "-----------------" << std::endl;
 #ifndef PROTO_LITE
     *ostream_ << current_metric_->DebugString();
+#else
+    *ostream_ << "metric_name: \"" << current_metric_->metric_name() << "\"" << std::endl;
+    *ostream_ << "metric_type: " << PrintMetricType(current_metric_->metric_type()) << std::endl;
+
+    for (const auto& report : current_metric_->reports()) {
+      *ostream_ << std::endl << "report_name: \"" << report.report_name() << "\"" << std::endl;
+      *ostream_ << "report_type: " << PrintReportType(report.report_type()) << std::endl;
+    }
 #endif
     *ostream_ << std::endl;
   }
