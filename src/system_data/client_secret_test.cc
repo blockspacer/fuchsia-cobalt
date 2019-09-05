@@ -19,8 +19,7 @@
 
 #include "src/gtest.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 // Tests the basic functionality of ClientSecret.
 TEST(ClientSecretTest, BasicTest) {
@@ -59,5 +58,4 @@ TEST(ClientSecretTest, BasicTest) {
   EXPECT_EQ(std::string(), invalid_secret.GetToken());
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

@@ -12,8 +12,7 @@
 #include "src/registry/project.pb.h"
 #include "src/registry/project_configs.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
 
@@ -77,5 +76,4 @@ std::unique_ptr<ProjectContext> ProjectContextFactory::TakeSingleProjectContext(
   return project_context;
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

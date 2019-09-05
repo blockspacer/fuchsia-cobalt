@@ -4,11 +4,9 @@
 
 #include "src/lib/util/status.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 const Status& Status::OK = Status();
 const Status& Status::CANCELLED = Status(StatusCode::CANCELLED, "");
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

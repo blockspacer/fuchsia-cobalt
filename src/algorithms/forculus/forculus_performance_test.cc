@@ -25,8 +25,7 @@
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using encoder::ClientSecret;
 
@@ -137,8 +136,7 @@ TEST(ForculusPerformanceTest, OneMillionObservations) {
   std::cout << "\n=================================================\n";
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);

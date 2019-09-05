@@ -15,8 +15,7 @@
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 using ::cobalt::util::SystemClock;
 
@@ -166,6 +165,4 @@ Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
 void Logger::PauseInternalLogging() { internal_metrics_->PauseLogging(); }
 void Logger::ResumeInternalLogging() { internal_metrics_->ResumeLogging(); }
 
-}  // namespace logger
-
-}  // namespace cobalt
+}  // namespace cobalt::logger

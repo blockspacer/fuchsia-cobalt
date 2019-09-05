@@ -4,8 +4,7 @@
 
 #include "src/algorithms/rappor/lasso_runner_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using cobalt_lossmin::InstanceSet;
 using cobalt_lossmin::LabelSet;
@@ -305,5 +304,4 @@ TEST_F(LassoRunnerTest, SecondStepErrors) {
   EXPECT_LE((estimated_errs - errors_to_compare).norm() / errors_to_compare.norm(), 0.5);
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

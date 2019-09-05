@@ -10,8 +10,7 @@
 #include "src/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
 
@@ -363,5 +362,4 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_TRUE(project_configs->TakeSingleProjectConfig() == nullptr);
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

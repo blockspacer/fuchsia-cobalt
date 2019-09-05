@@ -23,9 +23,7 @@
 #include "src/lib/crypto_util/random.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace crypto {
-namespace hmac {
+namespace cobalt::crypto::hmac {
 
 // This is just a smoke test of the hmac function. We invoke it 101 times
 // using a key length ranging from 0 to 100 and a data length ranging from
@@ -76,8 +74,4 @@ TEST(HmacTest, EqualAndNotEqual) {
   checkEqualHmacs(key1, key2, data1, data1, false);
 }
 
-}  // namespace hmac
-
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto::hmac

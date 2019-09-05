@@ -16,8 +16,7 @@
 #include "src/logger/test_registries/project_context_factory_test_registry/c.cb.h"
 #include "src/logging.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
 
@@ -144,5 +143,4 @@ TEST(ProjectContextFactoryTest, ReleaseStage) {
   EXPECT_EQ(FISHFOOD, context->project().release_stage());
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

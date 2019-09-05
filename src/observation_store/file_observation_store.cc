@@ -15,8 +15,7 @@
 #include "src/tracing.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 using statusor::StatusOr;
 using util::FileSystem;
@@ -407,5 +406,4 @@ size_t FileObservationStore::FileEnvelopeHolder::Size() {
   return cached_file_size_;
 }
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store

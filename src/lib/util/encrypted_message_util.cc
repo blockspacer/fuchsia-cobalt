@@ -19,8 +19,7 @@
 #include "third_party/tink/cc/hybrid_encrypt.h"
 #include "third_party/tink/cc/keyset_handle.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::HybridCipher;
@@ -212,5 +211,4 @@ bool MessageDecrypter::DecryptMessage(const EncryptedMessage& encrypted_message,
   return true;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

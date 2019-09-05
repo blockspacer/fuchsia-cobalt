@@ -18,9 +18,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace crypto {
-namespace hash {
+namespace cobalt::crypto::hash {
 
 TEST(HashTest, TestHash) {
   std::string data =
@@ -48,8 +46,4 @@ TEST(HashTest, TestHash) {
             stream.str());
 }
 
-}  // namespace hash
-
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto::hash

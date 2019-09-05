@@ -9,9 +9,7 @@
 #include <memory>
 #include <string>
 
-namespace cobalt {
-namespace util {
-namespace clearcut {
+namespace cobalt::util::clearcut {
 
 CurlHandle::CurlHandle() {
   handle_ = curl_easy_init();
@@ -101,6 +99,4 @@ StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url, std::string body
   }
 }
 
-}  // namespace clearcut
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util::clearcut

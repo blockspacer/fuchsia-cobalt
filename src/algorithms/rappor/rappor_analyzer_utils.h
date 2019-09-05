@@ -11,8 +11,7 @@
 
 #include "third_party/eigen/Eigen/SparseCore"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Constructs a submatrix of |full_matrix| composed of columns corresponding to
 // indices in |second_step_cols|. |num_cohorts| and |num_hashes| are needed to
@@ -22,7 +21,6 @@ void PrepareSecondRapporStepMatrix(cobalt_lossmin::InstanceSet* second_step_matr
                                    const cobalt_lossmin::InstanceSet& full_matrix, int num_cohorts,
                                    int num_hashes);
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 #endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ANALYZER_UTILS_H_

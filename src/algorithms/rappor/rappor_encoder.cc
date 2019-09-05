@@ -25,8 +25,7 @@
 #include "src/logging.h"
 #include "src/tracing.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using crypto::byte;
 using crypto::hmac::HMAC;
@@ -290,5 +289,4 @@ Status BasicRapporEncoder::InitializeObservationData(std::string* data) {
   return kOK;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

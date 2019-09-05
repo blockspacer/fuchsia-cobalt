@@ -9,8 +9,7 @@
 #include "src/registry/metrics.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 // Test the case in which no buckets configuration was set.
 TEST(IntegerBucketConfigTest, BucketsNotSetTest) {
@@ -268,5 +267,4 @@ TEST(IntegerBucketConfigTest, ExponentialTestLarge) {
   EXPECT_EQ(uint32_t(18), int_bucket_config->BucketIndex(1994356000000));
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

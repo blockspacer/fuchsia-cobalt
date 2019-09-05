@@ -23,8 +23,7 @@
 #include "src/lib/crypto_util/cipher.h"
 #include "src/lib/crypto_util/mac.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using crypto::SymmetricCipher;
 using crypto::hmac::HMAC;
@@ -205,5 +204,4 @@ ForculusEncrypter::Status ForculusEncrypter::Encrypt(const std::string& plaintex
   return kOK;
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

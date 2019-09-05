@@ -6,8 +6,7 @@
 
 #include "src/logging.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 uint32_t IntegerBucketConfig::BucketIndex(int64_t val) const {
   // 0 is the underflow bucket.
@@ -92,5 +91,4 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateExponential(
   }
   return std::unique_ptr<IntegerBucketConfig>(new IntegerBucketConfig(floors));
 }
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

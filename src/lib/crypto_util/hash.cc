@@ -16,14 +16,10 @@
 
 #include <openssl/sha.h>
 
-namespace cobalt {
-namespace crypto {
-namespace hash {
+namespace cobalt::crypto::hash {
 
 bool Hash(const byte *data, const size_t data_len, byte out[DIGEST_SIZE]) {
   return nullptr != SHA256(const_cast<uint8_t *>(data), data_len, static_cast<uint8_t *>(out));
 }
 
-}  // namespace hash
-}  // namespace crypto
-}  // namespace cobalt
+}  // namespace cobalt::crypto::hash

@@ -16,8 +16,7 @@
 
 #include <ctime>
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 namespace {
 
@@ -222,5 +221,4 @@ std::chrono::system_clock::time_point FromUnixSeconds(int64_t seconds) {
       std::chrono::system_clock::duration(std::chrono::seconds(seconds)));
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

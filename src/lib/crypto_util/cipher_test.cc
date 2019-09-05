@@ -28,8 +28,7 @@
 #include "src/lib/crypto_util/random.h"
 #include "src/lib/crypto_util/types.h"
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
 
 constexpr char const* kLine1 = "The woods are lovely, dark and deep,\n";
 constexpr char const* kLine2 = "But I have promises to keep,\n";
@@ -159,6 +158,4 @@ TEST(HybridCipherTest, Test) {
   }
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto

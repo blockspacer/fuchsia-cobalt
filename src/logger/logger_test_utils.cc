@@ -30,8 +30,7 @@ using encoder::ClientSecret;
 using rappor::BasicRapporEncoder;
 using util::MessageDecrypter;
 
-namespace logger {
-namespace testing {
+namespace logger::testing {
 
 namespace {
 
@@ -497,6 +496,5 @@ bool CheckPerDeviceNumericObservations(
   return expected_report_participation_obs.empty();
 }
 
-}  // namespace testing
-}  // namespace logger
+}  // namespace logger::testing
 }  // namespace cobalt

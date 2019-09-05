@@ -11,8 +11,7 @@
 #include "src/logging.h"
 #include "src/pb/clearcut_extensions.pb.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using observation_store::ObservationStore;
 using EnvelopeHolder = ObservationStore::EnvelopeHolder;
@@ -347,5 +346,4 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
   });
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

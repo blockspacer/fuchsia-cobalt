@@ -20,8 +20,7 @@
 #include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 using cobalt::clearcut_extensions::LogEventExtension;
 using observation_store::MemoryObservationStore;
@@ -492,5 +491,4 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
   EXPECT_TRUE(captured_success_arg);
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder

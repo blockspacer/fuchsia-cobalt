@@ -19,8 +19,7 @@
 #include "src/lib/util/log_based_metrics.h"
 #include "src/logging.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 // Stackdriver metric constants
 namespace {
@@ -141,5 +140,4 @@ size_t ForculusAnalyzer::KeyHasher::operator()(const DecrypterGroupKey& key) con
   return std::hash<std::string>()(key.ciphertext);
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

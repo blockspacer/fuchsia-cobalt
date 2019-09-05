@@ -22,8 +22,7 @@
 #include "src/lib/crypto_util/random_test_utils.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
 
 // Returns the number of bits of the size bytes in x that are set to one.
 int NumBitsSet(byte* x, std::size_t size) {
@@ -131,6 +130,4 @@ TEST(RandomTest, TestRandomBitsStatisticalTests) {
   }
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto

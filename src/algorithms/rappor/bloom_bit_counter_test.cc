@@ -27,8 +27,7 @@
 #include "src/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 namespace {
 // Makes a RapporConfig with the given data (and num_hashes=2).
@@ -392,5 +391,4 @@ TEST_F(BloomBitCounterTest, OneBitTestN5000P005Q05) {
   }
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

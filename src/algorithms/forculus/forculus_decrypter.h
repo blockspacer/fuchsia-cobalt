@@ -23,8 +23,7 @@
 #include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 // Decrypts a set of Forculus observations with the same ciphertext, if
 // the number of such distinct observations exceeds the threshold. This is
@@ -108,7 +107,6 @@ class ForculusDecrypter {
   std::map<FieldElement, FieldElement> points_;
 };
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_DECRYPTER_H_

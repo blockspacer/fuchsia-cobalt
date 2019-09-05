@@ -16,8 +16,7 @@
 #include "src/registry/metric_config.h"
 #include "src/registry/metrics.pb.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
 std::string ErrorMessage(Status status) {
@@ -139,5 +138,4 @@ void ClientConfig::DetermineIfSingleProject() {
   }
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

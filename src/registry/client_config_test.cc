@@ -17,8 +17,7 @@
 #include "src/registry/metrics.pb.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
 constexpr uint32_t kNonexistentId = 41;
@@ -126,5 +125,4 @@ TEST(ClientConfigTest, CreateFromCobaltRegistry) {
   EXPECT_FALSE(client_config->is_single_project());
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

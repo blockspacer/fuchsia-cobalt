@@ -4,8 +4,7 @@
 
 #include "src/registry/packed_event_codes.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 namespace {
 
@@ -46,5 +45,4 @@ std::vector<uint32_t> UnpackEventCodes(uint64_t packed_event_codes) {
   return event_codes;
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

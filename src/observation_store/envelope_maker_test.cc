@@ -10,8 +10,7 @@
 #include "src/logging.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 namespace {
 
@@ -328,5 +327,4 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
                  expected_this_batch_size, ObservationStore::kOk);
 }
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store

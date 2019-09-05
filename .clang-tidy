@@ -14,7 +14,6 @@ Checks: >
   -modernize-use-equals-delete,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
-  -modernize-concat-nested-namespaces,
   performance-*,
   readability-*,
   -readability-implicit-bool-conversion,

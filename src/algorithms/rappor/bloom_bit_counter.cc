@@ -22,8 +22,7 @@
 
 #include "src/lib/util/log_based_metrics.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Stackdriver metric constants
 namespace {
@@ -136,5 +135,4 @@ const std::vector<CohortCounts>& BloomBitCounter::EstimateCounts() {
   return estimated_bloom_counts_;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

@@ -11,8 +11,7 @@
 #include <memory>
 #include <sstream>
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 using statusor::StatusOr;
 using util::Status;
@@ -68,5 +67,4 @@ bool PosixFileSystem::Rename(const std::string &from, const std::string &to) {
   return std::rename(from.c_str(), to.c_str()) == 0;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

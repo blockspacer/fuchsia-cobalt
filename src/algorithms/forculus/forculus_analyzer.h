@@ -25,8 +25,7 @@
 #include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 // A ForculusAnalyzer is constructed for the purpose of performing a single
 // Forculus analysis.
@@ -172,7 +171,6 @@ class ForculusAnalyzer {
   std::unordered_map<DecrypterGroupKey, DecrypterResult, KeyHasher> decryption_map_;
 };
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_ANALYZER_H_

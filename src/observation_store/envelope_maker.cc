@@ -19,8 +19,7 @@
 
 #include "src/logging.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 EnvelopeMaker::EnvelopeMaker(size_t max_bytes_each_observation, size_t max_num_bytes)
     : max_bytes_each_observation_(max_bytes_each_observation), max_num_bytes_(max_num_bytes) {}
@@ -106,5 +105,4 @@ void EnvelopeMaker::MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> 
   other->Clear();
 }
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store

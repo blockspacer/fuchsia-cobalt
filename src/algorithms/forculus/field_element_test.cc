@@ -16,8 +16,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 /****************************** Notice *************************************
  *
@@ -230,5 +229,4 @@ TEST(FieldElementTest, TestArithmetic) {
   EXPECT_EQ(FieldElement(true), y0 * x1 / (x1 - x0) + y1 * x0 / (x0 - x1));
 }
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus

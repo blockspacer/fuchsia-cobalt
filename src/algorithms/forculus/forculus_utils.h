@@ -20,8 +20,7 @@
 
 // Common utilities used in the encoder and analyzer.
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using util::kInvalidIndex;
 
@@ -29,7 +28,6 @@ using util::kInvalidIndex;
 // the given |epoch_type|.
 uint32_t EpochIndexFromDayIndex(uint32_t day_index, const EpochType& epoch_type);
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_UTILS_H_

@@ -4,8 +4,7 @@
 
 #include "src/algorithms/rappor/rappor_analyzer_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Comparison of Analyze and simple least squares.
 // It invokes Analyze() in a few very simple cases, checks that the the
@@ -241,5 +240,4 @@ TEST_F(RapporAnalyzerTest, KOutOfNExperiment) {
                             true_candidate_counts, print_estimates);
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

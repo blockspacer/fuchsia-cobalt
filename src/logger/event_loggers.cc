@@ -19,9 +19,7 @@
 #include "src/registry/report_definition.pb.h"
 #include "src/tracing.h"
 
-namespace cobalt {
-namespace logger {
-namespace internal {
+namespace cobalt::logger::internal {
 
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::util::TimeToDayIndex;
@@ -749,8 +747,4 @@ Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(const ReportD
   }
 }
 
-}  // namespace internal
-
-}  // namespace logger
-
-}  // namespace cobalt
+}  // namespace cobalt::logger::internal

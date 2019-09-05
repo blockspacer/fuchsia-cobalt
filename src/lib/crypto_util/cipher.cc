@@ -33,8 +33,7 @@
 #include "src/lib/crypto_util/errors.h"
 #include "src/lib/crypto_util/random.h"
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
 
 namespace {
 // Note(pseudorandom) Curve constants are defined in
@@ -452,5 +451,4 @@ bool HybridCipher::DecryptInternal(const byte public_key_part[PUBLIC_KEY_SIZE],
   return true;
 }
 
-}  // namespace crypto
-}  // namespace cobalt
+}  // namespace cobalt::crypto

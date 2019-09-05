@@ -56,8 +56,6 @@ This list tracks the reasons for which we disabled in particular [checks]:
     with a mix of private and public members, but all public is fine.
  - `modernize-avoid-c-arrays` - Cobalt makes use of raw C arrays in some performance critical
     calculations.
- - `modernize-concat-nested-namespaces` - Cobalt currently needs to maintain compatibility with
-    c++11, which does not support nested namespaces.
  - `modernize-deprecated-headers` - Cobalt uses old-style C headers
  - `modernize-raw-string-literal` - the check was suggesting to convert `\xFF`
     literals, which we'd rather keep in the escaped form.

@@ -23,8 +23,7 @@
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 class ForculusConfigValidator;
 
@@ -92,7 +91,6 @@ class ForculusEncrypter {
   encoder::ClientSecret client_secret_;
 };
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FORCULUS_ENCRYPTER_H_

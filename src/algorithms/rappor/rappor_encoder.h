@@ -26,8 +26,7 @@
 #include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 enum Status {
   kOK = 0,
@@ -148,7 +147,6 @@ class BasicRapporEncoder {
   encoder::ClientSecret client_secret_;
 };
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 #endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_ENCODER_H_

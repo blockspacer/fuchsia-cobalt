@@ -27,8 +27,7 @@
 #include "src/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using encoder::ClientSecret;
 
@@ -587,8 +586,7 @@ TEST_F(BasicRapporAnalyzerTest, OneCategoryTest) {
   }
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

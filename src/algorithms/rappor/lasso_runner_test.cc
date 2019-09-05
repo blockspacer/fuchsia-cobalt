@@ -4,8 +4,7 @@
 
 #include "src/algorithms/rappor/lasso_runner_test.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 using cobalt_lossmin::InstanceSet;
 using cobalt_lossmin::LabelSet;
@@ -103,5 +102,4 @@ InstanceSet LassoRunnerTest::RandomMatrix(const int m, const int n, const int nu
   return matrix;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

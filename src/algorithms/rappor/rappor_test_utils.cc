@@ -16,8 +16,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 constexpr uint32_t bits_per_byte = 8;
 
@@ -114,5 +113,4 @@ RapporObservation RapporObservationFromString(uint32_t cohort, const std::string
   return obs;
 }
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor

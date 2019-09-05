@@ -8,8 +8,7 @@
 
 #include "src/logging.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 namespace {
 
@@ -131,5 +130,4 @@ std::string ProjectContext::FullMetricName(const MetricDefinition& metric_defini
   return FullMetricName(project_, metric_definition);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

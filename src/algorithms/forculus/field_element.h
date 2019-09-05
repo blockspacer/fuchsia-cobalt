@@ -26,8 +26,7 @@
 #include "src/lib/crypto_util/cipher.h"
 #include "src/lib/crypto_util/types.h"
 
-namespace cobalt {
-namespace forculus {
+namespace cobalt::forculus {
 
 using crypto::byte;
 
@@ -123,7 +122,6 @@ class FieldElement {
 
 std::ostream& operator<<(std::ostream& os, const FieldElement& el);
 
-}  // namespace forculus
-}  // namespace cobalt
+}  // namespace cobalt::forculus
 
 #endif  // COBALT_SRC_ALGORITHMS_FORCULUS_FIELD_ELEMENT_H_

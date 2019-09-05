@@ -16,8 +16,7 @@
 #include "src/registry/packed_event_codes.h"
 #include "src/tracing.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
@@ -354,5 +353,4 @@ Encoder::Result Encoder::MakeObservation(MetricRef metric, const ReportDefinitio
   return result;
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

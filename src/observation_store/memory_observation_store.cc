@@ -9,8 +9,7 @@
 #include "src/logger/logger_interface.h"
 #include "src/logging.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 namespace {
 
@@ -134,5 +133,4 @@ bool MemoryObservationStore::Empty() const {
   return current_envelope_->Empty() && finalized_envelopes_.empty();
 }
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store

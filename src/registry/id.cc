@@ -6,8 +6,7 @@
 
 #include <string>
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 constexpr uint32_t kFnvPrime = 0x1000193;
 constexpr uint32_t kFnvOffsetBasis = 0x811c9dc5;
@@ -21,5 +20,4 @@ uint32_t IdFromName(const std::string &name) {
   return hash;
 }
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config

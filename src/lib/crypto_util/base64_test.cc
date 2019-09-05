@@ -18,8 +18,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace crypto {
+namespace cobalt::crypto {
 
 // Tests the basic functionality of Base64Encode and Base64Decode.
 TEST(Base64Test, BasicFunctionality) {
@@ -60,6 +59,4 @@ TEST(Base64Test, RegexEncode) {
   EXPECT_FALSE(RegexDecode(encoded, &decoded));
 }
 
-}  // namespace crypto
-
-}  // namespace cobalt
+}  // namespace cobalt::crypto
