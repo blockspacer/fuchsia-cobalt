@@ -8,19 +8,16 @@
 #include <vector>
 
 #include "google/protobuf/message_lite.h"
+#include "src/lib/crypto_util/cipher.h"
+#include "src/lib/util/status.h"
+#include "src/lib/util/status_codes.h"
 #include "src/logging.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "src/pb/key.pb.h"
 #include "src/tracing.h"
 #include "third_party/tink/cc/hybrid/hybrid_config.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++11-compat"
 #include "third_party/tink/cc/keyset_handle.h"
-#pragma clang diagnostic pop
-#include "src/lib/crypto_util/cipher.h"
-#include "src/lib/util/status.h"
-#include "src/lib/util/status_codes.h"
 
 namespace cobalt {
 namespace util {

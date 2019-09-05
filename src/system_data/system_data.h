@@ -13,11 +13,7 @@
 
 #include "src/pb/observation_batch.pb.h"
 #include "src/registry/metric_definition.pb.h"
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++11-compat"
 #include "third_party/abseil-cpp/absl/synchronization/mutex.h"
-#pragma clang diagnostic pop
 
 namespace cobalt {
 namespace encoder {

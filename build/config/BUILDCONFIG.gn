@@ -66,7 +66,6 @@ _shared_binary_target_configs = [
   "//build/config:cobalt_standalone",
   "//build/config:default_warnings",
   "//build/config:shared_library_config",
-  "//build/config:c++11-compat",
   "//build/config:werror",
 ]
 
