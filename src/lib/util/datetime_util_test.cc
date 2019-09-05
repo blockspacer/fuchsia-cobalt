@@ -18,8 +18,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 // This is an alternate definition of CalendarDateToDayIndex from the one
 // in datetime_util.cc. It appears to be simpler than the one we chose. The
@@ -38,8 +37,8 @@ uint32_t CalendarDateToDayIndexAltImpl(const CalendarDate& calendar_date) {
   time_info.tm_min = 0;
   time_info.tm_hour = 0;
   time_info.tm_mday = calendar_date.day_of_month;
-  time_info.tm_mon = calendar_date.month - 1;
-  time_info.tm_year = calendar_date.year - 1900;
+  time_info.tm_mon = static_cast<int>(calendar_date.month) - 1;
+  time_info.tm_year = static_cast<int>(calendar_date.year) - 1900;
   time_t unix_time = timegm(&time_info);
   return unix_time / kNumUnixSecondsPerDay;
 }
@@ -417,5 +416,4 @@ TEST(DatetimeUtilTest, TimeToDayIndexTest) {
   }
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

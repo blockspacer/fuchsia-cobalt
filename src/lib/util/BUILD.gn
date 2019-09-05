@@ -60,6 +60,18 @@ static_library("datetime_util") {
   ]
 }
 
+source_set("datetime_util_test") {
+  testonly = true
+  sources = [
+    "datetime_util_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":datetime_util",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 static_library("file_util") {
   sources = [
     "file_util.cc",
@@ -173,5 +185,6 @@ group("tests") {
   testonly = true
   deps = [
     ":consistent_proto_store_test",
+    ":datetime_util_test",
   ]
 }
