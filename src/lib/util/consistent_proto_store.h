@@ -41,6 +41,8 @@ class ConsistentProtoStore {
   virtual Status Read(google::protobuf::MessageLite *proto);
 
  private:
+  friend class TestConsistentProtoStore;
+
   virtual Status WriteToTmp(const google::protobuf::MessageLite &proto);
   virtual Status MoveTmpToOverride();
   virtual Status DeletePrimary();

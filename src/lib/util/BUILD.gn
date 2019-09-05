@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//third_party/protobuf/proto_library.gni")
+
 source_set("clock") {
   sources = [
     "clock.h",
@@ -117,7 +119,34 @@ static_library("consistent_proto_store") {
     ":status",
     "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/third_party/statusor",
+  ]
+  public_deps = [
     "//third_party/protobuf:protobuf_lite",
+  ]
+}
+
+proto_library("consistent_proto_store_test_proto") {
+  sources = [
+    "consistent_proto_store_test.proto",
+  ]
+  cc_generator_options = "lite"
+  extra_configs = [
+    "$cobalt_root/src/registry:proto_config",
+    "$cobalt_root:cobalt_config",
+  ]
+}
+
+source_set("consistent_proto_store_test") {
+  testonly = true
+  sources = [
+    "consistent_proto_store_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":consistent_proto_store",
+    ":consistent_proto_store_test_proto",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "//third_party/googletest:gtest",
   ]
 }
 
@@ -142,4 +171,7 @@ source_set("protected_fields") {
 
 group("tests") {
   testonly = true
+  deps = [
+    ":consistent_proto_store_test",
+  ]
 }

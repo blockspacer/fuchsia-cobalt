@@ -10,8 +10,7 @@
 #include "src/lib/util/consistent_proto_store_test.pb.h"
 #include "src/lib/util/posix_file_system.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 int path_suffix = 0;
 constexpr char test_dir_base[] = "/tmp/cps_test";
@@ -30,14 +29,14 @@ std::string GetTestDirName(const std::string &base) {
 
 class TestConsistentProtoStore : public ConsistentProtoStore {
  public:
-  explicit TestConsistentProtoStore(std::string filename)
+  explicit TestConsistentProtoStore(const std::string &filename)
       : ConsistentProtoStore(filename, std::make_unique<PosixFileSystem>()),
         fail_write_tmp_(false),
         fail_move_tmp_(false),
         fail_delete_primary_(false),
         fail_move_override_to_primary_(false) {}
 
-  ~TestConsistentProtoStore() {}
+  ~TestConsistentProtoStore() override = default;
 
   void FailNextWriteToTmp() { fail_write_tmp_ = true; }
   void FailNextMoveTmpToOverride() { fail_move_tmp_ = true; }
@@ -97,7 +96,7 @@ class ConsistentProtoStoreTest : public ::testing::Test {
     // Clean up the directory
     PosixFileSystem fs;
     auto files = fs.ListFiles(directory_).ConsumeValueOr({});
-    for (auto file : files) {
+    for (const auto &file : files) {
       fs.Delete(directory_ + "/" + file);
     }
     fs.Delete(directory_);
@@ -252,5 +251,4 @@ TEST_F(ConsistentProtoStoreTest, TestFailures) {
   EXPECT_EQ(pread.i(), p.i() - 1);
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util
