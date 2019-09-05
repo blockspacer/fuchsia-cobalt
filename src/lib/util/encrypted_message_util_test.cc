@@ -21,17 +21,14 @@
 #include "third_party/tink/cc/hybrid_encrypt_factory.h"
 #include "third_party/tink/cc/hybrid_key_templates.h"
 #include "third_party/tink/cc/keyset_handle.h"
-#include "third_party/tink/include/proto/tink.pb.h"
+#include "third_party/tink/proto/tink.pb.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 constexpr char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
 constexpr char kAnalyzerContextInfo[] = "cobalt-1.0-analyzer";
 
-using crypto::HybridCipher;
-
-Observation MakeDummyObservation(std::string part_name) {
+Observation MakeDummyObservation(const std::string& part_name) {
   Observation observation;
   (*observation.mutable_parts())[part_name] = ObservationPart();
   return observation;
@@ -69,7 +66,7 @@ TEST(EncryptedMessageUtilTest, NoEncryption) {
 class EncryptedMessageMakerTest : public ::testing::Test {
  public:
   // Get a serialized Keyset proto for a public key.
-  std::string GetPublicKeysetBytes() const {
+  [[nodiscard]] std::string GetPublicKeysetBytes() const {
     // Get the keyset protobuf message itself.
     const google::crypto::tink::Keyset public_keyset =
         ::crypto::tink::CleartextKeysetHandle::GetKeyset(*GetPublicKeysetHandle());
@@ -93,7 +90,7 @@ class EncryptedMessageMakerTest : public ::testing::Test {
   }
 
  protected:
-  void SetUp() {
+  void SetUp() override {
     auto status = ::crypto::tink::HybridConfig::Register();
     EXPECT_TRUE(status.ok());
 
@@ -105,7 +102,7 @@ class EncryptedMessageMakerTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<::crypto::tink::KeysetHandle> GetPublicKeysetHandle() const {
+  [[nodiscard]] std::unique_ptr<::crypto::tink::KeysetHandle> GetPublicKeysetHandle() const {
     auto public_keyset_handle_result = keyset_handle_->GetPublicKeysetHandle();
     EXPECT_TRUE(public_keyset_handle_result.ok());
     return std::move(public_keyset_handle_result.ValueOrDie());
@@ -237,5 +234,5 @@ TEST_F(EncryptedMessageMakerTest, NotRealSerializedKey) {
   result = EncryptedMessageMaker::MakeForObservations(key_bytes);
   EXPECT_EQ(INVALID_ARGUMENT, result.status().error_code());
 }
-}  // namespace util
-}  // namespace cobalt
+
+}  // namespace cobalt::util

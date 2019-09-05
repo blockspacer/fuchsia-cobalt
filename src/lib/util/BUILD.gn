@@ -49,6 +49,23 @@ source_set("encrypted_message_util") {
   ]
 }
 
+source_set("encrypted_message_util_test") {
+  testonly = true
+  sources = [
+    "encrypted_message_util_test.cc",
+  ]
+  configs -= [ "//build/config:no_rtti" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":encrypted_message_util",
+    "$cobalt_root/src/lib/crypto_util",
+    "//third_party/googletest:gtest",
+    "//third_party/tink/cc:cleartext_keyset_handle",
+    "//third_party/tink/cc/hybrid:hybrid_key_templates",
+    "//third_party/tink/proto:tink_proto",
+  ]
+}
+
 static_library("datetime_util") {
   sources = [
     "datetime_util.cc",
@@ -186,5 +203,6 @@ group("tests") {
   deps = [
     ":consistent_proto_store_test",
     ":datetime_util_test",
+    ":encrypted_message_util_test",
   ]
 }
