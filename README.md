@@ -64,7 +64,12 @@ further.
   * `./cobaltb.py clean`
   * `./cobaltb.py build`
 
-The Cobalt build uses CMake.
+The Cobalt build uses GN and ninja.
+
+## Linting
+  * `./cobaltb.py lint`
+
+See: [clang-tidy](docs/clang-tidy.md) for an explanation of clang-tidy configuration options.
 
 ## Run the Tests
   * `./cobaltb.py test` This runs the whole suite of tests finally running the
