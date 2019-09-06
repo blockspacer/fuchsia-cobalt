@@ -7,6 +7,7 @@ syntax = "proto3";
 package cobalt;
 
 import "src/pb/observation.proto";
+import "src/registry/aggregation_window.proto";
 
 // An Observation is a piece of data sent from a Cobalt client to the Cobalt
 // server as input to a Report.
@@ -149,8 +150,10 @@ message UniqueActivesObservation {
   // or non-occurrence of |event_code| during the window associated with this
   // Observation.
   BasicRapporObservation basic_rappor_obs = 1;
-  // The size in days of the rolling window associated with this Observation.
+  // The size in days of the rolling window associated with this Observation (deprecated).
   uint32 window_size = 2;
+  // The size in days or hours of the rolling window associated with this Observation.
+  OnDeviceAggregationWindow aggregation_window = 4;
   // The event codes for each of the metric_dimensions of this observation.
   // Multiple event codes are packed together into the bits of this value.
   uint64 event_code = 3;
@@ -174,8 +177,10 @@ message PerDeviceNumericObservation {
   // An IntegerEventObservation containing the event code, component,
   // and occurrence count associated with this Observation.
   IntegerEventObservation integer_event_obs = 1;
-  // The size in days of the rolling window associated with this Observation.
+  // The size in days of the rolling window associated with this Observation (deprecated).
   uint32 window_size = 2;
+  // The size in days or hours of the rolling window associated with this Observation.
+  OnDeviceAggregationWindow aggregation_window = 3;
 };
 
 // A value for a single dimension of a Cobalt custom metric. Both CustomEvent

@@ -23,6 +23,7 @@ proto_library("pb") {
   generate_python = false
   cc_generator_options = "lite"
   deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/third_party/clearcut:clearcut_proto",
     "//third_party/boringssl",
   ]
