@@ -27,6 +27,7 @@ source_set("tests") {
 
   sources = [
     "shipping_manager_test.cc",
+    "upload_scheduler_test.cc",
   ]
 
   deps = [

@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "src/system_data/upload_scheduler.h"
+#include "src/uploader/upload_scheduler.h"
 
 #include "src/gtest.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::encoder {
 
 TEST(UploadScheduler, NoBackoff) {
   auto scheduler = UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0));
@@ -53,5 +52,4 @@ TEST(UploadScheduler, LongBackoff) {
   EXPECT_EQ(scheduler.Interval(), std::chrono::seconds(3600));
 }
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::encoder
