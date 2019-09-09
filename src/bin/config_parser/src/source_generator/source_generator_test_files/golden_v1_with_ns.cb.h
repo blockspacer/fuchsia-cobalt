@@ -3,8 +3,9 @@
 #ifndef COBALT_REGISTRY_CUSTOMER_PROJECT_NS1_NS2_GEN_
 #define COBALT_REGISTRY_CUSTOMER_PROJECT_NS1_NS2_GEN_
 
-namespace ns1 {
-namespace ns2 {
+#include <cstdint>
+
+namespace ns1::ns2 {
 const char kCustomerName[] = "customer";
 const char kProjectName[] = "project";
 // Metric ID Constants
@@ -23,7 +24,7 @@ enum Enum {
   AThirdEvent = 2,
 };
 }  // the_other_metric_name_metric_dimension_0_scope
-typedef the_other_metric_name_metric_dimension_0_scope::Enum TheOtherMetricNameMetricDimension0;
+using TheOtherMetricNameMetricDimension0 = the_other_metric_name_metric_dimension_0_scope::Enum;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnEvent = TheOtherMetricNameMetricDimension0::AnEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnotherEvent = TheOtherMetricNameMetricDimension0::AnotherEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AThirdEvent = TheOtherMetricNameMetricDimension0::AThirdEvent;
@@ -36,7 +37,7 @@ enum Enum {
   AThirdEvent = 2,
 };
 }  // event_groups_metric_dimension_the_first_group_scope
-typedef event_groups_metric_dimension_the_first_group_scope::Enum EventGroupsMetricDimensionTheFirstGroup;
+using EventGroupsMetricDimensionTheFirstGroup = event_groups_metric_dimension_the_first_group_scope::Enum;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
@@ -50,7 +51,7 @@ enum Enum {
   Test = 4,
 };
 }  // event_groups_metric_dimension_a_second_group_scope
-typedef event_groups_metric_dimension_a_second_group_scope::Enum EventGroupsMetricDimensionASecondGroup;
+using EventGroupsMetricDimensionASecondGroup = event_groups_metric_dimension_a_second_group_scope::Enum;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
@@ -65,7 +66,7 @@ enum Enum {
   Alias = HasNo,
 };
 }  // event_groups_metric_dimension_2_scope
-typedef event_groups_metric_dimension_2_scope::Enum EventGroupsMetricDimension2;
+using EventGroupsMetricDimension2 = event_groups_metric_dimension_2_scope::Enum;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
@@ -73,6 +74,6 @@ const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Alias = EventGroup
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 const char kConfig[] = "KoAECghjdXN0b21lchAKGvEDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXM=";
-}
-}
+}  // ns1::ns2
+
 #endif  // COBALT_REGISTRY_CUSTOMER_PROJECT_NS1_NS2_GEN_

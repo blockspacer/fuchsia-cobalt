@@ -3,6 +3,8 @@
 #ifndef COBALT_REGISTRY_CUSTOMER_PROJECT_GEN_
 #define COBALT_REGISTRY_CUSTOMER_PROJECT_GEN_
 
+#include <cstdint>
+
 const char kCustomerName[] = "customer";
 const char kProjectName[] = "project";
 // Metric ID Constants
@@ -21,7 +23,7 @@ enum Enum {
   AThirdEvent = 2,
 };
 }  // the_other_metric_name_metric_dimension_0_scope
-typedef the_other_metric_name_metric_dimension_0_scope::Enum TheOtherMetricNameMetricDimension0;
+using TheOtherMetricNameMetricDimension0 = the_other_metric_name_metric_dimension_0_scope::Enum;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnEvent = TheOtherMetricNameMetricDimension0::AnEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnotherEvent = TheOtherMetricNameMetricDimension0::AnotherEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AThirdEvent = TheOtherMetricNameMetricDimension0::AThirdEvent;
@@ -34,7 +36,7 @@ enum Enum {
   AThirdEvent = 2,
 };
 }  // event_groups_metric_dimension_the_first_group_scope
-typedef event_groups_metric_dimension_the_first_group_scope::Enum EventGroupsMetricDimensionTheFirstGroup;
+using EventGroupsMetricDimensionTheFirstGroup = event_groups_metric_dimension_the_first_group_scope::Enum;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
@@ -48,7 +50,7 @@ enum Enum {
   Test = 4,
 };
 }  // event_groups_metric_dimension_a_second_group_scope
-typedef event_groups_metric_dimension_a_second_group_scope::Enum EventGroupsMetricDimensionASecondGroup;
+using EventGroupsMetricDimensionASecondGroup = event_groups_metric_dimension_a_second_group_scope::Enum;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
@@ -63,7 +65,7 @@ enum Enum {
   Alias = HasNo,
 };
 }  // event_groups_metric_dimension_2_scope
-typedef event_groups_metric_dimension_2_scope::Enum EventGroupsMetricDimension2;
+using EventGroupsMetricDimension2 = event_groups_metric_dimension_2_scope::Enum;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
@@ -71,4 +73,5 @@ const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Alias = EventGroup
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 const char kConfig[] = "KsYDCghjdXN0b21lchAKGrcDCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcw==";
+
 #endif  // COBALT_REGISTRY_CUSTOMER_PROJECT_GEN_

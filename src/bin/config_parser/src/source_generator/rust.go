@@ -5,6 +5,8 @@
 // This file implement outputLanguage for Rust
 package source_generator
 
+import "strings"
+
 type Rust struct{}
 
 func (_ Rust) getCommentPrefix() string { return "//" }
@@ -41,12 +43,20 @@ func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
 // use EnumName::*;
 func (_ Rust) writeEnumExport(so *sourceOutputter, enumName, name []string) {}
 
-func (_ Rust) writeNamespaceBegin(so *sourceOutputter, name ...string) {
-	so.writeLineFmt("pub mod %s {", toSnakeCase(name...))
+func (_ Rust) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {
+	if len(namespaces) > 0 {
+		ns := make([]string, len(namespaces))
+		for i, v := range namespaces {
+			ns[i] = toSnakeCase(v)
+		}
+		so.writeLineFmt("pub mod %s {", strings.Join(ns, "::"))
+	}
 }
 
-func (_ Rust) writeNamespaceEnd(so *sourceOutputter) {
-	so.writeLine("}")
+func (_ Rust) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {
+	if len(namespaces) > 0 {
+		so.writeLine("}")
+	}
 }
 
 func (_ Rust) writeConstInt(so *sourceOutputter, value uint32, name ...string) {

@@ -26,8 +26,8 @@ type outputLanguage interface {
 	writeEnumAlias(so *sourceOutputter, name, from, to []string)
 	writeEnumEnd(so *sourceOutputter, name ...string)
 	writeEnumExport(so *sourceOutputter, enumName, name []string)
-	writeNamespaceBegin(so *sourceOutputter, name ...string)
-	writeNamespaceEnd(so *sourceOutputter)
+	writeNamespacesBegin(so *sourceOutputter, namespaces []string)
+	writeNamespacesEnd(so *sourceOutputter, namespaces []string)
 	writeConstInt(so *sourceOutputter, value uint32, name ...string)
 	writeStringConstant(so *sourceOutputter, value string, name ...string)
 }
@@ -243,10 +243,7 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	}
 
 	so.language.writeExtraHeader(so, customer, project, so.namespaces)
-
-	for _, name := range so.namespaces {
-		so.language.writeNamespaceBegin(so, name)
-	}
+	so.language.writeNamespacesBegin(so, so.namespaces)
 
 	if len(c.Customers) == 1 && len(c.Customers[0].Projects) == 1 {
 		if err := so.writeV1Constants(c); err != nil {
@@ -264,10 +261,7 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	so.writeComment("The base64 encoding of the bytes of a serialized CobaltRegistry proto message.")
 	so.language.writeStringConstant(so, string(b64Bytes), so.varName)
 
-	for _, _ = range so.namespaces {
-		so.language.writeNamespaceEnd(so)
-	}
-
+	so.language.writeNamespacesEnd(so, so.namespaces)
 	so.language.writeExtraFooter(so, customer, project, so.namespaces)
 
 	return nil

@@ -39,8 +39,8 @@ func (_ Dart) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	so.writeLineFmt("const int %s_%s = %s::%s;", enum, variant, enum, variant)
 }
 
-func (_ Dart) writeNamespaceBegin(so *sourceOutputter, name ...string) {}
-func (_ Dart) writeNamespaceEnd(so *sourceOutputter)                   {}
+func (_ Dart) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {}
+func (_ Dart) writeNamespacesEnd(so *sourceOutputter, namespaces []string)   {}
 
 func (_ Dart) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
 	so.writeComment("ignore: constant_identifier_names")

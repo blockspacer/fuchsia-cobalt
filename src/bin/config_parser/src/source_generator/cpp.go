@@ -33,10 +33,13 @@ func (_ CPP) writeExtraHeader(so *sourceOutputter, projectName, customerName str
 		so.writeLine("#define " + guard)
 	}
 	so.writeLine("")
+	so.writeLine("#include <cstdint>")
+	so.writeLine("")
 }
 
 func (_ CPP) writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 	if projectName != "" && customerName != "" {
+		so.writeLine("")
 		so.writeLine("#endif  // " + getHeaderGuard(projectName, customerName, namespaces))
 	}
 }
@@ -67,7 +70,7 @@ func (_ CPP) writeEnumEnd(so *sourceOutputter, name ...string) {
 	so.writeLine("};")
 	so.writeLineFmt("}  // %s", enumNamespace(name...))
 
-	so.writeLineFmt("typedef %s::Enum %s;", enumNamespace(name...), toPascalCase(name...))
+	so.writeLineFmt("using %s = %s::Enum;", toPascalCase(name...), enumNamespace(name...))
 }
 
 func (_ CPP) writeEnumExport(so *sourceOutputter, enumName, name []string) {
@@ -76,12 +79,24 @@ func (_ CPP) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	so.writeLineFmt("const %s %s_%s = %s::%s;", enum, enum, variant, enum, variant)
 }
 
-func (_ CPP) writeNamespaceBegin(so *sourceOutputter, name ...string) {
-	so.writeLineFmt("namespace %s {", toSnakeCase(name...))
+func getNamespaces(namespaces []string) string {
+	ns := make([]string, len(namespaces))
+	for i, v := range namespaces {
+		ns[i] = toSnakeCase(v)
+	}
+	return strings.Join(ns, "::")
 }
 
-func (_ CPP) writeNamespaceEnd(so *sourceOutputter) {
-	so.writeLine("}")
+func (_ CPP) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {
+	if len(namespaces) > 0 {
+		so.writeLineFmt("namespace %s {", getNamespaces(namespaces))
+	}
+}
+
+func (_ CPP) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {
+	if len(namespaces) > 0 {
+		so.writeLineFmt("}  // %s", getNamespaces(namespaces))
+	}
 }
 
 func (_ CPP) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
