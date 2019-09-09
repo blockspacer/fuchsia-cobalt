@@ -18,6 +18,14 @@ group("encoder") {
   ]
 }
 
+source_set("configuration_data") {
+  sources = [
+    "configuration_data.cc",
+    "configuration_data.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
 source_set("system_data") {
   sources = [
     "system_data.cc",

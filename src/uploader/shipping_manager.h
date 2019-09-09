@@ -20,6 +20,7 @@
 #include "src/logging.h"
 #include "src/observation_store/observation_store.h"
 #include "src/observation_store/observation_store_update_recipient.h"
+#include "src/system_data/configuration_data.h"
 #include "src/uploader/upload_scheduler.h"
 #include "third_party/clearcut/uploader.h"
 
@@ -242,13 +243,15 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 // is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
-  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
-                            observation_store::ObservationStore* observation_store,
-                            util::EncryptedMessageMaker* encrypt_to_shuffler,
-                            std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
-                            logger::LoggerInterface* internal_logger = nullptr,
-                            size_t max_attempts_per_upload = clearcut::kMaxRetries,
-                            std::string api_key = "cobalt-default-api-key");
+  ClearcutV1ShippingManager(
+      const UploadScheduler& upload_scheduler,
+      observation_store::ObservationStore* observation_store,
+      util::EncryptedMessageMaker* encrypt_to_shuffler,
+      std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+      int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
+      logger::LoggerInterface* internal_logger = nullptr,
+      size_t max_attempts_per_upload = clearcut::kMaxRetries,
+      std::string api_key = "cobalt-default-api-key");
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
@@ -270,6 +273,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;
+  const int32_t log_source_id_;
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
   const std::string api_key_;
 };

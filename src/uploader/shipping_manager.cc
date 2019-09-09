@@ -271,11 +271,12 @@ void ShippingManager::InvokeSendCallbacksLockHeld(MutexProtectedFields* fields, 
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
-    std::unique_ptr<clearcut::ClearcutUploader> clearcut, logger::LoggerInterface* internal_logger,
-    size_t max_attempts_per_upload, std::string api_key)
+    std::unique_ptr<clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
+      log_source_id_(log_source_id),
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
       api_key_(std::move(api_key)) {}
 
@@ -299,7 +300,7 @@ std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend
                                    envelope_to_send->Size());
 
   clearcut::LogRequest request;
-  request.set_log_source(clearcut::kFuchsiaCobaltShufflerInputDevel);
+  request.set_log_source(log_source_id_);
   request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
 
   util::Status status;

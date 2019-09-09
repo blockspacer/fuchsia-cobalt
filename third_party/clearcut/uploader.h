@@ -17,9 +17,6 @@
 
 namespace clearcut {
 
-static const int32_t kClearcutDemoSource = 177;
-static const int32_t kFuchsiaCobaltShufflerInputDevel = 844;
-
 static const int32_t kFuchsiaClientType = 17;
 static const int32_t kMaxRetries = 5;
 

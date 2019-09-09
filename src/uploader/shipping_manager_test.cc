@@ -96,7 +96,7 @@ class ShippingManagerTest : public ::testing::Test {
     shipping_manager_ = std::make_unique<ClearcutV1ShippingManager>(
         upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
         std::make_unique<clearcut::ClearcutUploader>("https://test.com", std::move(http_client)),
-        nullptr /* internal_logger */, 1 /*max_attempts_per_upload*/);
+        /*log_source_id=*/11, /*internal_logger=*/nullptr, /*max_attempts_per_upload=*/1);
     shipping_manager_->Start();
   }
 
