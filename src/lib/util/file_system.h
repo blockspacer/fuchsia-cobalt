@@ -5,13 +5,17 @@
 #ifndef COBALT_SRC_LIB_UTIL_FILE_SYSTEM_H_
 #define COBALT_SRC_LIB_UTIL_FILE_SYSTEM_H_
 
+#include <istream>
+#include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
+#include <google/protobuf/io/zero_copy_stream.h>
+
 #include "third_party/statusor/statusor.h"
 
-namespace cobalt {
-namespace util {
+namespace cobalt::util {
 
 // FileSystem is an abstract class used for interacting with the file system
 // in a platform independent way.
@@ -62,10 +66,51 @@ class FileSystem {
   // Returns: True if the file was renamed successfully.
   virtual bool Rename(const std::string &from, const std::string &to) = 0;
 
+  using ProtoInputStreamPtr = std::unique_ptr<::google::protobuf::io::ZeroCopyInputStream>;
+  using ProtoOutputStreamPtr = std::unique_ptr<::google::protobuf::io::ZeroCopyOutputStream>;
+
+  // Open a file for reading.
+  //
+  // |file|. An absolute path to the file to be read.
+  statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file) {
+    return NewProtoInputStream(file, -1);
+  }
+
+  // Open a file for reading.
+  //
+  // |file|. An absolute path to the file to be read.
+  // |block_size|. The block size the underlying ZeroCopyStream should use.
+  virtual statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file,
+                                                                      int block_size) = 0;
+
+  // Open a file for writing.
+  //
+  // |file|. An absolute path to the file to be written.
+  statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file) {
+    return NewProtoOutputStream(file, false, -1);
+  }
+
+  // Open a file for writing.
+  //
+  // |file|. An absolute path to the file to be written.
+  // |append|. True if the file should be opened in append mode.
+  statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
+                                                                bool append) {
+    return NewProtoOutputStream(file, append, -1);
+  }
+
+  // Open a file for writing.
+  //
+  // |file|. An absolute path to the file to be writing.
+  // |append|. True if the file should be opened in append mode.
+  // |block_size|. The block size the underlying ZeroCopyStream should use.
+  virtual statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
+                                                                        bool append,
+                                                                        int block_size) = 0;
+
   virtual ~FileSystem() = default;
 };
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util
 
 #endif  // COBALT_SRC_LIB_UTIL_FILE_SYSTEM_H_

@@ -183,6 +183,7 @@ static_library("posix_file_system") {
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
+    ":proto_serialization",
     "$cobalt_root/third_party/statusor",
   ]
 }

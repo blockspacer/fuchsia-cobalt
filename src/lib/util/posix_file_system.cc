@@ -8,8 +8,13 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#include <map>
 #include <memory>
 #include <sstream>
+
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "src/lib/util/file_system.h"
 
 namespace cobalt::util {
 
@@ -65,6 +70,36 @@ bool PosixFileSystem::FileExists(const std::string &file) {
 
 bool PosixFileSystem::Rename(const std::string &from, const std::string &to) {
   return std::rename(from.c_str(), to.c_str()) == 0;
+}
+
+statusor::StatusOr<FileSystem::ProtoInputStreamPtr> PosixFileSystem::NewProtoInputStream(
+    const std::string &file, int block_size) {
+  auto fs = open(file.c_str(), O_RDWR);
+  if (fs == -1) {
+    std::stringstream ss;
+    ss << "Unable to open file [" << file << "] in read mode.";
+    return Status(StatusCode::DATA_LOSS, ss.str(), std::strerror(errno));
+  }
+  auto stream = std::make_unique<google::protobuf::io::FileInputStream>(fs, block_size);
+  stream->SetCloseOnDelete(true);
+  return StatusOr(std::move(stream));
+}
+
+statusor::StatusOr<FileSystem::ProtoOutputStreamPtr> PosixFileSystem::NewProtoOutputStream(
+    const std::string &file, bool append, int block_size) {
+  auto flags = O_WRONLY | O_CREAT;
+  if (append) {
+    flags |= O_APPEND;
+  }
+  auto fs = open(file.c_str(), flags, S_IRUSR | S_IWUSR);
+  if (fs == -1) {
+    std::stringstream ss;
+    ss << "Unable to open file [" << file << "] in write mode.";
+    return Status(StatusCode::DATA_LOSS, ss.str(), std::strerror(errno));
+  }
+  auto stream = std::make_unique<google::protobuf::io::FileOutputStream>(fs, block_size);
+  stream->SetCloseOnDelete(true);
+  return StatusOr(std::move(stream));
 }
 
 }  // namespace cobalt::util

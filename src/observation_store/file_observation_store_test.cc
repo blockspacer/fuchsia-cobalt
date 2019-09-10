@@ -4,6 +4,7 @@
 
 #include "src/observation_store/file_observation_store.h"
 
+#include <fstream>
 #include <random>
 #include <utility>
 
@@ -130,7 +131,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
     auto envelope = store_->TakeNextEnvelopeHolder();
     ASSERT_NE(envelope, nullptr);
     auto read_env = envelope->GetEnvelope();
-    EXPECT_EQ(read_env.batch_size(), 1);
+    ASSERT_EQ(read_env.batch_size(), 1);
     EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), envelope_size);
   }
 }

@@ -4,7 +4,6 @@
 
 #include "src/lib/util/consistent_proto_store.h"
 
-#include <fstream>
 #include <iostream>
 #include <utility>
 
@@ -81,51 +80,28 @@ Status ConsistentProtoStore::Write(const MessageLite &proto) {
 
 Status ConsistentProtoStore::Read(MessageLite *proto) {
   {
-    std::ifstream new_ifstream(override_file_);
-    if (new_ifstream) {
-      google::protobuf::io::IstreamInputStream istream(&new_ifstream);
-      if (proto->ParseFromZeroCopyStream(&istream)) {
+    auto istream_or = fs_->NewProtoInputStream(override_file_);
+    if (istream_or.ok()) {
+      auto istream = istream_or.ConsumeValueOrDie();
+      if (proto->ParseFromZeroCopyStream(istream.get())) {
         return Status::OK;
       }
     }
   }
 
-  std::ifstream input(primary_file_);
-  if (!input) {
-    return Status(StatusCode::NOT_FOUND, "Unable to open the file at `" + primary_file_ + "`",
-                  strerror(errno));
-  }
-
-  google::protobuf::io::IstreamInputStream istream(&input);
-  if (!proto->ParseFromZeroCopyStream(&istream)) {
+  CB_ASSIGN_OR_RETURN(auto istream, fs_->NewProtoInputStream(primary_file_));
+  if (!proto->ParseFromZeroCopyStream(istream.get())) {
     return Status(StatusCode::INVALID_ARGUMENT,
                   "Unable to parse the protobuf from the store. Data is corrupt.");
-  }
-
-  if (!input.eof()) {
-    return Status(
-        StatusCode::DATA_LOSS,
-        "Reading from the file at `" + primary_file_ + "` did not reach the end of the file.",
-        strerror(errno));
   }
 
   return Status::OK;
 }
 
 Status ConsistentProtoStore::WriteToTmp(const MessageLite &proto) {
-  std::ofstream tmpfile(tmp_file_);
-  if (!tmpfile) {
-    return Status(StatusCode::DATA_LOSS,
-                  "Unable to open the temp file to write the proto `" + tmp_file_ + "`",
-                  strerror(errno));
-  }
-  google::protobuf::io::OstreamOutputStream outstream(&tmpfile);
-  if (!proto.SerializeToZeroCopyStream(&outstream)) {
+  CB_ASSIGN_OR_RETURN(auto outstream, fs_->NewProtoOutputStream(tmp_file_));
+  if (!proto.SerializeToZeroCopyStream(outstream.get())) {
     return Status(StatusCode::DATA_LOSS, "Unable to serialize proto to the output stream.");
-  }
-  if (!tmpfile) {
-    return Status(StatusCode::DATA_LOSS, "Writing proto to temp file (" + tmp_file_ + ") failed.",
-                  strerror(errno));
   }
   return Status::OK;
 }

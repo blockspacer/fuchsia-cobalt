@@ -6,7 +6,6 @@
 #define COBALT_SRC_OBSERVATION_STORE_FILE_OBSERVATION_STORE_H_
 
 #include <deque>
-#include <fstream>
 #include <memory>
 #include <random>
 #include <set>
@@ -14,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "google/protobuf/io/zero_copy_stream.h"
 #include "src/lib/util/file_system.h"
 #include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
@@ -150,8 +150,7 @@ class FileObservationStore : public ObservationStore {
     // to the active_file. If another observation comes in with an identical
     // metadata, it is not necessary to write it again.
     std::string last_written_metadata;
-    std::ofstream active_fstream;
-    std::unique_ptr<google::protobuf::io::OstreamOutputStream> active_file;
+    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> active_file;
     // files_taken lists the filenames that have been "Taken" from the store.
     // These should not be used to construct EnvelopeHolders for
     // TakeNextEnvelopeHolder(). If an EnvelopeHolder is returned, the
@@ -180,7 +179,7 @@ class FileObservationStore : public ObservationStore {
   //
   // If this function is unable to open a file (if the file system is full for
   // example) it will return nullptr.
-  google::protobuf::io::OstreamOutputStream *GetActiveFile(
+  google::protobuf::io::ZeroCopyOutputStream *GetActiveFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
   const std::unique_ptr<util::FileSystem> fs_;

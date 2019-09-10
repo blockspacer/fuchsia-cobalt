@@ -153,9 +153,6 @@ bool FileObservationStore::FinalizeActiveFile(
 
   // Close the current file (if it is open).
   f->active_file = nullptr;
-  if (f->active_fstream.is_open()) {
-    f->active_fstream.close();
-  }
   f->metadata_written = false;
 
   auto filesize = fs_->FileSize(active_file_name_);
@@ -205,21 +202,18 @@ std::string FileObservationStore::FileEnvelopeHolder::FullPath(const std::string
   return root_directory_ + "/" + filename;
 }
 
-google::protobuf::io::OstreamOutputStream *FileObservationStore::GetActiveFile(
+google::protobuf::io::ZeroCopyOutputStream *FileObservationStore::GetActiveFile(
     util::ProtectedFields<Fields>::LockedFieldsPtr *fields) {
   auto &f = *fields;
 
   if (f->active_file == nullptr) {
-    f->active_fstream.open(active_file_name_);
-
-    if (!f->active_fstream.is_open()) {
+    auto stream_or = fs_->NewProtoOutputStream(active_file_name_);
+    if (!stream_or.ok()) {
       LOG_FIRST_N(ERROR, 10) << "Failed to open file. (Perhaps the disk is full): "
-                             << active_file_name_ << " (" << std::strerror(errno) << ")";
+                             << stream_or.status().error_message();
       return nullptr;
     }
-
-    f->active_file =
-        std::make_unique<google::protobuf::io::OstreamOutputStream>(&f->active_fstream);
+    f->active_file = stream_or.ConsumeValueOrDie();
   }
   return f->active_file.get();
 }
@@ -357,11 +351,17 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
   ObservationStoreRecord stored;
 
   for (const auto &file_name : file_names_) {
-    std::ifstream ifs(FullPath(file_name), std::ifstream::in);
-    google::protobuf::io::IstreamInputStream iis(&ifs);
+    auto iis_or = fs_->NewProtoInputStream(FullPath(file_name));
+    if (!iis_or.ok()) {
+      LOG(ERROR) << "WARNING: Trying to open `" << FullPath(file_name)
+                 << "` failed with error: " << iis_or.status().error_message();
+      continue;
+    }
+    auto iis = iis_or.ConsumeValueOrDie();
 
     bool clean_eof;
-    while (google::protobuf::util::ParseDelimitedFromZeroCopyStream(&stored, &iis, &clean_eof)) {
+    while (
+        google::protobuf::util::ParseDelimitedFromZeroCopyStream(&stored, iis.get(), &clean_eof)) {
       if (stored.has_meta_data()) {
         std::unique_ptr<ObservationMetadata> current_metadata(stored.release_meta_data());
         current_metadata->SerializeToString(&serialized_metadata);
