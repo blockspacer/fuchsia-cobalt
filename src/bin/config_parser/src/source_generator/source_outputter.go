@@ -18,7 +18,8 @@ import (
 type outputLanguage interface {
 	getCommentPrefix() string
 
-	writeExtraHeader(so *sourceOutputter)
+	writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string)
+	writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string)
 	writeEnumBegin(so *sourceOutputter, name ...string)
 	writeEnumEntry(so *sourceOutputter, value uint32, name ...string)
 	writeEnumAliasesBegin(so *sourceOutputter, name ...string)
@@ -231,7 +232,17 @@ func (so *sourceOutputter) writeNames(c *config.CobaltRegistry) {
 func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	so.writeGenerationWarning()
 
-	so.language.writeExtraHeader(so)
+	customer := ""
+	project := ""
+
+	for _, cust := range c.Customers {
+		customer = strings.TrimLeft(customer+"_"+cust.CustomerName, "_")
+		for _, proj := range cust.Projects {
+			project = strings.TrimLeft(project+"_"+proj.ProjectName, "_")
+		}
+	}
+
+	so.language.writeExtraHeader(so, customer, project, so.namespaces)
 
 	for _, name := range so.namespaces {
 		so.language.writeNamespaceBegin(so, name)
@@ -256,6 +267,8 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 	for _, _ = range so.namespaces {
 		so.language.writeNamespaceEnd(so)
 	}
+
+	so.language.writeExtraFooter(so, customer, project, so.namespaces)
 
 	return nil
 }

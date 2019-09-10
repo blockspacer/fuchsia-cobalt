@@ -5,13 +5,40 @@
 // This file implements outputLanguage for C++
 package source_generator
 
+import (
+	"strings"
+)
+
 type CPP struct{}
+
+// Gets header guards of the form:
+//
+// COBALT_REGISTRY_{PROJECT_NAME}_{CUSTOMER_NAME}_{NAMESPACE}_GEN_
+func getHeaderGuard(projectName, customerName string, namespaces []string) string {
+	base := toUpperSnakeCase("cobalt", "registry", projectName, customerName)
+	if len(namespaces) > 0 {
+		base = toUpperSnakeCase(base, strings.Join(namespaces, " "))
+	}
+	return toUpperSnakeCase(base, "gen") + "_"
+}
 
 func (_ CPP) getCommentPrefix() string { return "//" }
 
-func (_ CPP) writeExtraHeader(so *sourceOutputter) {
-	so.writeLine("#pragma once")
+func (_ CPP) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+	if projectName == "" || customerName == "" {
+		so.writeLine("#pragma once")
+	} else {
+		guard := getHeaderGuard(projectName, customerName, namespaces)
+		so.writeLine("#ifndef " + guard)
+		so.writeLine("#define " + guard)
+	}
 	so.writeLine("")
+}
+
+func (_ CPP) writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+	if projectName != "" && customerName != "" {
+		so.writeLine("#endif  // " + getHeaderGuard(projectName, customerName, namespaces))
+	}
 }
 
 func enumNamespace(name ...string) string {

@@ -210,6 +210,9 @@ var cfgTests = []struct {
 	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), false},
 	{v1ProjectConfigYaml, "golden_v1.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), false},
 
+	{v1ProjectConfigYaml, "golden_v1_with_ns.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{"ns1", "ns2"}, false), false},
+	{v1ProjectConfigYaml, "golden_v1_with_ns.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{"ns1", "ns2"}, false), false},
+
 	{v1ProjectConfigYaml, "golden_v1_filtered.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", false), true},
 	{v1ProjectConfigYaml, "golden_v1_filtered.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), true},
 	{v1ProjectConfigYaml, "golden_v1_filtered.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), true},
@@ -242,6 +245,27 @@ func TestPrintConfig(t *testing.T) {
 			genFile := "/tmp/" + tt.goldenFile
 			ioutil.WriteFile(genFile, configBytes, 0644)
 			t.Errorf("Golden file %s doesn't match the generated config (%s). Diff: %s", tt.goldenFile, genFile, diff)
+		}
+	}
+}
+
+var headerGuardTests = []struct {
+	projectName  string
+	customerName string
+	namespaces   []string
+	expected     string
+}{
+	{"Project", "Customer", []string{}, "COBALT_REGISTRY_PROJECT_CUSTOMER_GEN_"},
+	{"PrOjeCt", "custOMER", []string{"single"}, "COBALT_REGISTRY_PR_OJE_CT_CUST_OMER_SINGLE_GEN_"},
+	{"Pr)j#ct", "Cu$t@m#r", []string{"123", "!@#"}, "COBALT_REGISTRY_PR_J_CT_CU_T_M_R_123_GEN_"},
+	{"AnotherProject", "AlsoCustomer", []string{"a", "very", "nested", "namespace", "for", "some", "reason"}, "COBALT_REGISTRY_ANOTHER_PROJECT_ALSO_CUSTOMER_A_VERY_NESTED_NAMESPACE_FOR_SOME_REASON_GEN_"},
+}
+
+func TestGetHeaderGuard(t *testing.T) {
+	for _, tt := range headerGuardTests {
+		result := getHeaderGuard(tt.projectName, tt.customerName, tt.namespaces)
+		if result != tt.expected {
+			t.Errorf("getHeaderGuard(%v, %v, %v), %v != %v", tt.projectName, tt.customerName, tt.namespaces, result, tt.expected)
 		}
 	}
 }

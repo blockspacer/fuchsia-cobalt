@@ -9,7 +9,10 @@ type Dart struct{}
 
 func (_ Dart) getCommentPrefix() string { return "//" }
 
-func (_ Dart) writeExtraHeader(so *sourceOutputter) {}
+func (_ Dart) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+}
+func (_ Dart) writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+}
 
 func (_ Dart) writeEnumBegin(so *sourceOutputter, name ...string) {
 	so.writeLineFmt("class %s {", toPascalCase(name...))

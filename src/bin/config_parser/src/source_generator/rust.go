@@ -9,7 +9,10 @@ type Rust struct{}
 
 func (_ Rust) getCommentPrefix() string { return "//" }
 
-func (_ Rust) writeExtraHeader(so *sourceOutputter) {}
+func (_ Rust) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+}
+func (_ Rust) writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+}
 
 func (_ Rust) writeEnumBegin(so *sourceOutputter, name ...string) {
 	so.writeLine("#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]")
