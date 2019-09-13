@@ -247,7 +247,8 @@ class ClearcutV1ShippingManager : public ShippingManager {
                             util::EncryptedMessageMaker* encrypt_to_shuffler,
                             std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
                             logger::LoggerInterface* internal_logger = nullptr,
-                            size_t max_attempts_per_upload = clearcut::kMaxRetries);
+                            size_t max_attempts_per_upload = clearcut::kMaxRetries,
+                            std::string api_key = "cobalt-default-api-key");
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
@@ -270,6 +271,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
+  const std::string api_key_;
 };
 
 }  // namespace encoder

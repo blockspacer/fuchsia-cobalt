@@ -18,4 +18,8 @@ message Envelope {
   reserved "system_profile";
 
   repeated ObservationBatch batch = 1;
+
+  // If api_key contains the right secret string, this allows Cobalt to identify
+  // that this envelope comes from a valid Cobalt client.
+  bytes api_key = 4;
 }

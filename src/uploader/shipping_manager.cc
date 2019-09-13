@@ -272,17 +272,20 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
     std::unique_ptr<clearcut::ClearcutUploader> clearcut, logger::LoggerInterface* internal_logger,
-    size_t max_attempts_per_upload)
+    size_t max_attempts_per_upload, std::string api_key)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
-      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)) {}
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
+      api_key_(std::move(api_key)) {}
 
 std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
   auto log_extension = std::make_unique<LogEventExtension>();
 
-  if (!encrypt_to_shuffler_->Encrypt(envelope_to_send->GetEnvelope(),
+  auto envelope = envelope_to_send->GetEnvelope();
+  envelope.set_api_key(api_key_);
+  if (!encrypt_to_shuffler_->Encrypt(envelope,
                                      log_extension->mutable_cobalt_encrypted_envelope())) {
     // TODO(rudominer) log
     // Drop on floor.
