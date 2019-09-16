@@ -147,6 +147,7 @@ message MetricDefinition {
     // - NUMERIC_AGGREGATION
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
+    // - PER_DEVICE_NUMERIC_STATS
     // - PER_DEVICE_HISTOGRAM
     FRAME_RATE = 4;
 
@@ -170,6 +171,7 @@ message MetricDefinition {
     // - NUMERIC_AGGREGATION
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
+    // - PER_DEVICE_NUMERIC_STATS
     // - PER_DEVICE_HISTOGRAM
     MEMORY_USAGE = 5;
 

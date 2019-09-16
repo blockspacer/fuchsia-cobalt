@@ -282,7 +282,7 @@ message ReportDefinition {
     // that component, during the window.
     //
     // Supported Input Types:
-    //    - Metric type: EVENT_COUNT, ELAPSED_TIME
+    //    - Metric type: EVENT_COUNT, ELAPSED_TIME, FRAME_RATE, MEMORY_USAGE
     //    - Encoding: component name is hashed
     //    - Observation type: PerDeviceNumericObservation
     //
