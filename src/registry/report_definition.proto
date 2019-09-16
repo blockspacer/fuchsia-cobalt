@@ -296,6 +296,28 @@ message ReportDefinition {
     // (See report_row.proto)
     PER_DEVICE_NUMERIC_STATS = 9;
 
+    // For each of a set of events, for each of a set of component labels, for
+    // a rolling window of a particular number of days, gives summary statistics
+    // of the number of occurrences on individual devices of that event, with
+    // that component, during the window.
+    //
+    // Supported Input Types:
+    //    - Metric type: EVENT_COUNT, ELAPSED_TIME, FRAME_RATE, MEMORY_USAGE
+    //    - Encoding: component name is hashed
+    //    - Observation type: PerDeviceHistogramObservation
+    //
+    // ReportDefinition fields particular to this type:
+    //    - candidate_list # All known component names.
+    //    - candidate_file # File with all known component names.
+    //    - aggregation_window # A list of desired aggregation windows in days
+    //                           or hours.
+    //    - aggregation_type # How numeric values should be aggregated on-device
+    //    - int_buckets # Definition of integer-range buckets for histogram
+    //
+    // Report row type: PerDeviceNumericStatsReportRow.
+    // (See report_row.proto)
+    PER_DEVICE_HISTOGRAM = 10;
+
     /////////////////////// Custom Raw Dump Report /////////////////////////////
 
     // Gives a raw dump of the Observations for a CustomMetric for a day.

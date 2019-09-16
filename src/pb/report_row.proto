@@ -341,3 +341,51 @@ message PerDeviceNumericStatsReportRow {
   // the ReportGenerator for this report, aggregation window size, and date.
   int64 sample_size = 200;
 }
+
+// A row of output for a report of type PER_DEVICE_HISTOGRAM.
+//
+// Gives the value for one bucket of an integer range histogram, aggregated
+// over the fleet, for a particular event code, a particular component, on a
+// particular day with a particular aggregation_window, considering only devices
+// matching a particular system profile.
+message PerDeviceHistogramReportRow {
+  // The date on which the logged events occurred, as measured on the device.
+  // This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The labels for the event codes associated with the events that occurred.
+  // There is one label for each metric_dimension in the metric definition. If
+  // an event code has not been assigned a label this will be a string of the
+  // form "<event-code-0-42>" where 0 is the dimension index, and 42 is the
+  // event code.
+  repeated string event_code = 3;
+
+  // The component string associated with the events that occurred. This string
+  // must have been pre-registered in the ReportDefinition (using the
+  // |candidate_list| or |candidate_file| fields). There are also two special
+  // values of |component|.
+  // "<NONE>" is the component associated with logged events that
+  // contained an empty component string.
+  // "<OTHER>" is the component associated with logged events that contained
+  // a non-empty component string that was not pre-registered.
+  string component = 4;
+
+  // String describing the interval of integers for this bucket, such as
+  // "10-15".
+  string bucket_name = 5;
+
+  // The count for this bucket.
+  int64 bucket_count = 6;
+
+  // The bucket index, which is useful for sorting the data in visualizations.
+  int32 bucket_index = 7;
+
+  // A string describing the aggregation window, with units in hours or days.
+  // The format is Nh (for a window of N hours) or Nd (for a window of N days).
+  string aggregation_window = 8;
+}

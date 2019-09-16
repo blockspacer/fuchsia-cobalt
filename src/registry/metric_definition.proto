@@ -100,6 +100,7 @@ message MetricDefinition {
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_AGGREGATION
     // - PER_DEVICE_NUMERIC_STATS
+    // - PER_DEVICE_HISTOGRAM
     EVENT_COUNT = 2;
 
     // Records an elapsed time.
@@ -123,6 +124,7 @@ message MetricDefinition {
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
     // - PER_DEVICE_NUMERIC_STATS
+    // - PER_DEVICE_HISTOGRAM
     ELAPSED_TIME = 3;
 
     // Records a frame-rate.
@@ -145,6 +147,7 @@ message MetricDefinition {
     // - NUMERIC_AGGREGATION
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
+    // - PER_DEVICE_HISTOGRAM
     FRAME_RATE = 4;
 
     // Records a memory-usage.
@@ -167,6 +170,7 @@ message MetricDefinition {
     // - NUMERIC_AGGREGATION
     // - INT_RANGE_HISTOGRAM
     // - NUMERIC_PERF_RAW_DUMP
+    // - PER_DEVICE_HISTOGRAM
     MEMORY_USAGE = 5;
 
     // Records a histogram over a set of integer buckets. The semantics of the
