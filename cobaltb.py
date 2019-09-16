@@ -103,16 +103,13 @@ def _compdb(args):
   # Copy the compile_commands.json to the top level for use in IDEs (CLion).
   subprocess.check_call([
       'cp',
-      '%s/compile_commands.json' % out_dir(args),
-      './compile_commands.json'])
+      '%s/compile_commands.json' % out_dir(args), './compile_commands.json'
+  ])
   # Remove the gomacc references that confuse IDEs.
   subprocess.check_call([
-      'perl',
-      '-p',
-      '-i',
-      '-e',
-      's|/[/\w]+/gomacc *||',
-      './compile_commands.json'])
+      'perl', '-p', '-i', '-e', 's|/[/\w]+/gomacc *||',
+      './compile_commands.json'
+  ])
 
 
 def _build(args):
@@ -152,8 +149,9 @@ def _build(args):
 
   # If goma isn't running, start it.
   if use_goma:
-    if not subprocess.check_output(['%s/gomacc' % goma_dir, 'port'
-                                   ]).strip().isdigit():
+    try:
+      subprocess.check_call(['%s/gomacc' % goma_dir, 'port'])
+    except subprocess.CalledProcessError:
       subprocess.check_call(['%s/goma_ctl.py' % goma_dir, 'ensure_start'])
 
   subprocess.check_call([
