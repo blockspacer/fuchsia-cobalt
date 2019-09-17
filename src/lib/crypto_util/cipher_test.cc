@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include <gtest/gtest.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
@@ -27,6 +26,7 @@
 #include "src/lib/crypto_util/errors.h"
 #include "src/lib/crypto_util/random.h"
 #include "src/lib/crypto_util/types.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::crypto {
 

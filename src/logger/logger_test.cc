@@ -11,7 +11,6 @@
 #include <google/protobuf/util/message_differencer.h>
 
 #include "src/algorithms/rappor/rappor_encoder.h"
-#include "src/gtest.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
@@ -27,6 +26,7 @@
 #include "src/registry/encodings.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 #ifndef PROTO_LITE
 using ::google::protobuf::util::MessageDifferencer;

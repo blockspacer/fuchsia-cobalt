@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/gtest.h"
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
@@ -21,6 +20,7 @@
 #include "src/logger/logger_interface.h"
 #include "src/logger/project_context.h"
 #include "src/registry/project_configs.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 namespace logger {

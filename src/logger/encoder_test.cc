@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/gtest.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
@@ -20,6 +19,7 @@
 #include "src/pb/observation2.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/fake_system_data.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 

@@ -4,7 +4,7 @@
 
 #include "src/uploader/upload_scheduler.h"
 
-#include "src/gtest.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::encoder {
 

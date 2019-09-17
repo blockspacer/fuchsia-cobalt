@@ -7,11 +7,11 @@
 #include <random>
 #include <utility>
 
-#include "src/gtest.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/logging.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::observation_store {
 

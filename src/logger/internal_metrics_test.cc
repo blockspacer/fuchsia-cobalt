@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include "src/gtest.h"
 #include "src/logger/fake_logger.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::logger {
 

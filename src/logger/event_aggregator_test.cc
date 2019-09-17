@@ -14,7 +14,6 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
-#include "src/gtest.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
@@ -23,6 +22,7 @@
 #include "src/pb/event.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/registry/project_configs.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 

@@ -10,8 +10,8 @@
 #include <string>
 #include <utility>
 
-#include "src/gtest.h"
 #include "src/logging.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::encoder {
 

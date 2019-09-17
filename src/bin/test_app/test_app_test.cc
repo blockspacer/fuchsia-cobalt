@@ -13,12 +13,12 @@
 
 #include "gflags/gflags.h"
 #include "src/bin/test_app/test_registry/test_registry.cb.h"
-#include "src/gtest.h"
 #include "src/lib/crypto_util/base64.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logging.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
 
