@@ -35,7 +35,7 @@ import "src/registry/aggregation_window.proto";
 // the |ciphertext| field of an EncryptedMessage. Many encrypted Observations
 // are transmitted together inside of an ObservationBatch.
 message Observation2 {
-  // Next observation_type ID: 8
+  // Next observation_type ID: 9
   // Next general ID: 1002;
 
   // An Observation has one of the following types.
@@ -47,6 +47,7 @@ message Observation2 {
     ForculusObservation forculus = 5;
     UniqueActivesObservation unique_actives = 6;
     PerDeviceNumericObservation per_device_numeric = 7;
+    PerDeviceHistogramObservation per_device_histogram = 8;
     CustomObservation custom = 1000;
     ReportParticipationObservation report_participation = 10000;
   }
@@ -181,6 +182,28 @@ message PerDeviceNumericObservation {
   uint32 window_size = 2;
   // The size in days or hours of the rolling window associated with this Observation.
   OnDeviceAggregationWindow aggregation_window = 3;
+};
+
+// Observations of type PerDeviceHistogramObservation are used when a MetricDefinition of type
+// EVENT_COUNT, ELAPSED_TIME, MEMORY_USAGE, or FRAME_RATE is reported with a ReportDefinition of
+// type PER_DEVICE_HISTOGRAM. An Observation of this type is created by aggregating Events on-device
+// and then creating a histogram to represent the  aggregation. Currently all supported aggregations
+// produce one number  (example: SUM) and therefore all Observations of this type will represent one
+// value.
+//
+// A PerDeviceHistogramObservation is generated each day, for each aggregation window size of
+// the ReportDefinition, for each pair (component, event code) for which an event was logged during
+// the window. In addition, for each day and for each window size, each device generates one
+// ReportParticipationObservation for that report. The number of those Observations is used by the
+// ReportGenerator to compute the number of devices on which each pair (component, event code) was
+// *not* logged during the window.
+message PerDeviceHistogramObservation {
+  // A histogram of the aggregated value(s) over the aggregation_window. This can represent a single
+  // or multiple values depending on the aggregation type.
+  HistogramObservation histogram = 1;
+
+  // The size in days or hours of the rolling window associated with this Observation.
+  OnDeviceAggregationWindow aggregation_window = 2;
 };
 
 // A value for a single dimension of a Cobalt custom metric. Both CustomEvent
