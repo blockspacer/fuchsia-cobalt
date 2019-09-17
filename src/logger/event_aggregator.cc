@@ -26,7 +26,6 @@ using util::ConsistentProtoStore;
 using util::SerializeToBase64;
 using util::StatusCode;
 using util::SteadyClock;
-using util::SystemClock;
 using util::TimeToDayIndex;
 
 namespace logger {
@@ -193,8 +192,6 @@ EventAggregator::EventAggregator(const Encoder* encoder,
   }
   steady_clock_ = std::make_unique<SteadyClock>();
 }
-
-void EventAggregator::Start() { Start(std::make_unique<SystemClock>()); }
 
 void EventAggregator::Start(std::unique_ptr<util::SystemClockInterface> clock) {
   auto locked = protected_shutdown_flag_.lock();

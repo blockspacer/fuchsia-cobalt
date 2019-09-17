@@ -110,10 +110,6 @@ class EventAggregator {
   // Shut down the worker thread before destructing the EventAggregator.
   ~EventAggregator() { ShutDown(); }
 
-  // Start the worker thread.
-  // DEPRECATED: use the Start() method below that takes the clock as input.
-  void Start();
-
   // Starts the worker thread.
   //
   // |clock| The clock that should be used by the worker thread for scheduling
