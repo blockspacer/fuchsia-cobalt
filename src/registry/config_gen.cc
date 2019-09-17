@@ -26,8 +26,8 @@
 
 #include <google/protobuf/text_format.h>
 
+#include "src/registry/encoding_config.pb.h"
 #include "src/registry/encodings.pb.h"
-#include "src/registry/metrics.pb.h"
 
 using cobalt::EncodingConfig;
 using cobalt::ForculusConfig;

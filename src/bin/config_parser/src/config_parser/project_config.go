@@ -52,28 +52,6 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 		return fmt.Errorf("Error while parsing yaml: %v", err)
 	}
 
-	// Set of encoding ids. Used to detect duplicates.
-	encodingIds := map[uint32]bool{}
-
-	for i, e := range c.ProjectConfig.EncodingConfigs {
-		if encodingIds[e.Id] {
-			return fmt.Errorf("Encoding id '%v' is repeated in encoding config entry number %v. Encoding ids must be unique.", e.Id, i)
-		}
-		encodingIds[e.Id] = true
-		e.CustomerId = c.CustomerId
-		e.ProjectId = uint32(c.ProjectId)
-	}
-
-	for _, e := range c.ProjectConfig.MetricConfigs {
-		e.CustomerId = c.CustomerId
-		e.ProjectId = uint32(c.ProjectId)
-	}
-
-	for _, e := range c.ProjectConfig.ReportConfigs {
-		e.CustomerId = c.CustomerId
-		e.ProjectId = uint32(c.ProjectId)
-	}
-
 	for _, e := range c.ProjectConfig.MetricDefinitions {
 		e.CustomerId = c.CustomerId
 		e.ProjectId = c.ProjectId

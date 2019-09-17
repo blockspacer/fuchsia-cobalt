@@ -305,31 +305,6 @@ func cmpConfigEntry(i, j interface{}) bool {
 // encoding, metric and report configs for a particular project and aggregates
 // all those into a single ProjectConfigFile proto.
 func MergeConfigs(l []ProjectConfig) (s config.CobaltRegistry) {
-	for _, c := range l {
-		s.EncodingConfigs = append(s.EncodingConfigs, c.ProjectConfig.EncodingConfigs...)
-		s.MetricConfigs = append(s.MetricConfigs, c.ProjectConfig.MetricConfigs...)
-		s.ReportConfigs = append(s.ReportConfigs, c.ProjectConfig.ReportConfigs...)
-	}
-
-	// In order to ensure that we output a stable order in the binary protobuf, we
-	// sort each slice of config entries.
-	sort.SliceStable(s.EncodingConfigs, func(i, j int) bool {
-		return cmpConfigEntry(s.EncodingConfigs[i], s.EncodingConfigs[j])
-	})
-	sort.SliceStable(s.MetricConfigs, func(i, j int) bool {
-		return cmpConfigEntry(s.MetricConfigs[i], s.MetricConfigs[j])
-	})
-	sort.SliceStable(s.ReportConfigs, func(i, j int) bool {
-		return cmpConfigEntry(s.ReportConfigs[i], s.ReportConfigs[j])
-	})
-
-	appendV1Configs(l, &s)
-
-	return s
-}
-
-// appendV1Configs appends the version 1.0 configurations from l in CobaltRegistry.
-func appendV1Configs(l []ProjectConfig, s *config.CobaltRegistry) {
 	customers := map[uint32]int{}
 
 	for _, c := range l {
@@ -356,6 +331,8 @@ func appendV1Configs(l []ProjectConfig, s *config.CobaltRegistry) {
 			return s.Customers[ci].Projects[i].ProjectId < s.Customers[ci].Projects[j].ProjectId
 		})
 	}
+
+	return s
 }
 
 // v1Projectconfig converts an internal representation of a ProjectConfig into the ProjectConfig proto.

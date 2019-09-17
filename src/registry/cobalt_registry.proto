@@ -1,16 +1,6 @@
-// Copyright 2017 The Fuchsia Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 syntax = "proto3";
 
@@ -18,18 +8,12 @@ package cobalt;
 
 option go_package = "config";
 
-import "src/registry/encodings.proto";
-import "src/registry/metrics.proto";
 import "src/registry/metric_definition.proto";
-import "src/registry/report_configs.proto";
 
 // ProjectConfigFile is a representation of a yaml config file for a single
 // cobalt project.
 message ProjectConfigFile {
-  // Cobalt 0.1 configuration.
-  repeated EncodingConfig encoding_configs = 1;
-  repeated Metric metric_configs = 2;
-  repeated ReportConfig report_configs = 3;
+  reserved 1, 2, 3;
 
   // Cobalt 1.0 registration.
   repeated MetricDefinition metric_definitions = 4;
@@ -52,30 +36,15 @@ message ProjectConfig {
 
 // CobaltRegistry holds a set of metrics and reports registered with Cobalt.
 //
-// A CobaltRegistry can be in one of three states:
+// A CobaltRegistry can be in one of two states:
 //
-// (1) It can contain data for a single Cobalt 0.1 project. In this case
-//     the |encoding_configs|, |metric_configs| and |report_configs|
-//     fields are set and the |customers| field is unset. Furthermore all
-//     of the metrics, reports and encodings will be for the same project.
+// (1) It can contain data for a single Cobalt 1.0 project. In this case, there is a single
+//     CustomerConfig which contains a single ProjectConfig.
 //
-// (2) It can contain data for a single Cobalt 1.0 project. In this case
-//     the |encoding_configs|, |metric_configs| and |report_configs|
-//     fields are unset and the |customers| field is set. Furthermore there
-//     is a single CustomerConfig and it contains a single ProjectConfig.
-//
-// (3) It can contain data for multiple Cobalt projects. In this case it
-//     may contain data for some Cobalt 0.1 projects and some Cobalt 1.0
-//     projects. The Cobalt 0.1 project data will be contained in the fields
-//     |encoding_configs|, |metric_configs| and |report_configs| and the
-//     Cobalt 1.0 project data will be contained in the field |customers|.
+// (2) It can contain data for multiple Cobalt projects. In this case, there may be any number of
+//     |customers|, which in turn may contain any number of ProjectConfigs.
 message CobaltRegistry {
-  reserved 4;
-  // Cobalt 0.1 registry.
-  repeated EncodingConfig encoding_configs = 1;
-  repeated Metric metric_configs = 2;
-  repeated ReportConfig report_configs = 3;
-
+  reserved 1, 2, 3, 4;
   // Cobalt 1.0 registration.
   repeated CustomerConfig customers = 5;
 }

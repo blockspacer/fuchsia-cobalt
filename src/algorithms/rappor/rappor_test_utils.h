@@ -19,7 +19,8 @@
 #include <vector>
 
 #include "src/pb/observation.pb.h"
-#include "src/registry/report_configs.pb.h"
+#include "src/registry/encodings.pb.h"
+#include "src/registry/report_definition.pb.h"
 
 namespace cobalt {
 namespace rappor {

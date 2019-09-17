@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 
-#include "src/registry/metrics.pb.h"
+#include "src/registry/report_definition.pb.h"
 
 namespace cobalt {
 namespace config {

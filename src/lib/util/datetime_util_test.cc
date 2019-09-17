@@ -376,9 +376,11 @@ TEST(DatetimeUtilTest, TimeToHourIndexTest) {
   static const uint32_t kPacificSummerOffHourIndex = 6;
   static const uint32_t kPacificWinterHourIndex = 16;
 
-  EXPECT_EQ(kUtcSummerExactHourIndex, TimeToHourIndex(kSummerExactHourTimestamp, Metric::UTC));
-  EXPECT_EQ(kUtcSummerOffHourIndex, TimeToHourIndex(kSummerOffHourTimestamp, Metric::UTC));
-  EXPECT_EQ(kUtcWinterHourIndex, TimeToHourIndex(kWinterTimestamp, Metric::UTC));
+  EXPECT_EQ(kUtcSummerExactHourIndex,
+            TimeToHourIndex(kSummerExactHourTimestamp, MetricDefinition::UTC));
+  EXPECT_EQ(kUtcSummerOffHourIndex,
+            TimeToHourIndex(kSummerOffHourTimestamp, MetricDefinition::UTC));
+  EXPECT_EQ(kUtcWinterHourIndex, TimeToHourIndex(kWinterTimestamp, MetricDefinition::UTC));
   // Only perform the following check when running this test in the Pacific
   // timezone. Note that |timezone| is a global variable defined in <ctime>
   // that stores difference between UTC and the latest local standard time, in
@@ -387,9 +389,10 @@ TEST(DatetimeUtilTest, TimeToHourIndexTest) {
   //                              Time-Zone-Functions.html#Time-Zone-Functions
   if (timezone / 3600 == 8) {
     EXPECT_EQ(kPacificSummerExactHourIndex,
-              TimeToHourIndex(kSummerExactHourTimestamp, Metric::LOCAL));
-    EXPECT_EQ(kPacificSummerOffHourIndex, TimeToHourIndex(kSummerOffHourTimestamp, Metric::LOCAL));
-    EXPECT_EQ(kPacificWinterHourIndex, TimeToHourIndex(kWinterTimestamp, Metric::LOCAL));
+              TimeToHourIndex(kSummerExactHourTimestamp, MetricDefinition::LOCAL));
+    EXPECT_EQ(kPacificSummerOffHourIndex,
+              TimeToHourIndex(kSummerOffHourTimestamp, MetricDefinition::LOCAL));
+    EXPECT_EQ(kPacificWinterHourIndex, TimeToHourIndex(kWinterTimestamp, MetricDefinition::LOCAL));
   }
 }
 
@@ -404,7 +407,7 @@ TEST(DatetimeUtilTest, TimeToDayIndexTest) {
   // This is the day index for Thurs Dec 1, 2016
   static const uint32_t kPacificDayIndex = 17136;
 
-  EXPECT_EQ(kUtcDayIndex, TimeToDayIndex(kSomeTimestamp, Metric::UTC));
+  EXPECT_EQ(kUtcDayIndex, TimeToDayIndex(kSomeTimestamp, MetricDefinition::UTC));
   // Only perform the following check when running this test in the Pacific
   // timezone. Note that |timezone| is a global variable defined in <ctime>
   // that stores difference between UTC and the latest local standard time, in
@@ -412,7 +415,7 @@ TEST(DatetimeUtilTest, TimeToDayIndexTest) {
   // See https://www.gnu.org/software/libc/manual/html_node/ \
   //                              Time-Zone-Functions.html#Time-Zone-Functions
   if (timezone / 3600 == 8) {
-    EXPECT_EQ(kPacificDayIndex, TimeToDayIndex(kSomeTimestamp, Metric::LOCAL));
+    EXPECT_EQ(kPacificDayIndex, TimeToDayIndex(kSomeTimestamp, MetricDefinition::LOCAL));
   }
 }
 

@@ -61,7 +61,6 @@
 
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
-#include "src/registry/metrics.pb.h"
 
 namespace cobalt {
 namespace util {
@@ -95,13 +94,11 @@ struct CalendarDate {
 // Returns the hour index (between 0 and 23 inclusive) relative to midnight
 // of day containing |time| in |time_zone|, or returns UINT32_MAX if |time_zone|
 // is not valid.
-uint32_t TimeToHourIndex(time_t time, Metric::TimeZonePolicy time_zone);
 uint32_t TimeToHourIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone);
 
 // Returns the day index corresponding to |time| in the given |time_zone|
 // or UINT32_MAX if |time_zone| is not valid. |time| must be a Unix timestamp,
 // that is a number of Unix seconds since the Unix epoch.
-uint32_t TimeToDayIndex(time_t time, Metric::TimeZonePolicy time_zone);
 uint32_t TimeToDayIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone);
 
 // Returns the Unix time for midnight of the day with the given |day_index|

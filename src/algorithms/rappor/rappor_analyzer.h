@@ -26,7 +26,7 @@
 #include "src/algorithms/rappor/rappor_config_validator.h"
 #include "src/pb/observation.pb.h"
 #include "src/registry/encodings.pb.h"
-#include "src/registry/report_configs.pb.h"
+#include "src/registry/report_definition.pb.h"
 
 #include "grpc++/grpc++.h"
 #include "third_party/eigen/Eigen/SparseCore"

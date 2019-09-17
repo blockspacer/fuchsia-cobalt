@@ -52,70 +52,7 @@ func (r *memConfigReader) SetProject(customerName string, projectName string, ya
 	r.projects[key] = yaml
 }
 
-const v0ProjectConfigYaml = `
-metric_configs:
-- id: 1
-  name: "Daily rare event counts"
-  description: "Daily counts of several events that are expected to occur rarely if ever."
-  time_zone_policy: UTC
-  parts:
-    "Event name":
-      description: "Which rare event occurred?"
-- id: 2
-  name: "Module views"
-  description: "Tracks each incidence of viewing a module by its URL."
-  time_zone_policy: UTC
-  parts:
-    "url":
-      description: "The URL of the module being launched."
-
-encoding_configs:
-- id: 1
-  basic_rappor:
-    prob_0_becomes_1: 0.0
-    prob_1_stays_1: 1.0
-    string_categories:
-      category:
-      - "Ledger-startup"
-      - "Commits-received-out-of-order"
-      - "Commits-merged"
-      - "Merged-commits-merged"
-- id: 2
-  forculus:
-    threshold: 2
-    epoch_type: MONTH
-
-report_configs:
-- id: 1
-  name: "Fuchsia Ledger Daily Rare Events"
-  description: "A daily report of events that are expected to happen rarely."
-  metric_id: 1
-  variable:
-  - metric_part: "Event name"
-  scheduling:
-    report_finalization_days: 3
-    aggregation_epoch_type: DAY
-  export_configs:
-  - csv: {}
-    gcs:
-      bucket: "fuchsia-cobalt-reports-p2-test-app"
-
-- id: 2
-  name: "Fuchsia Module Daily Launch Counts"
-  description: "A daily report of the daily counts of module launches by URL."
-  metric_id: 2
-  variable:
-  - metric_part: "url"
-  scheduling:
-    report_finalization_days: 3
-    aggregation_epoch_type: DAY
-  export_configs:
-  - csv: {}
-    gcs:
-      bucket: "fuchsia-cobalt-reports-p2-test-app"
-`
-
-const v1ProjectConfigYaml = `
+const projectConfigYaml = `
 metric_definitions:
 - metric_name: the_metric_name
   id: 100
@@ -192,44 +129,32 @@ func getConfigFrom(config string, cobalt_version config_parser.CobaltVersion) co
 }
 
 var cfgTests = []struct {
-	yaml           string
-	goldenFile     string
-	cobalt_version config_parser.CobaltVersion
-	formatter      OutputFormatter
-	hideOnClient   bool
+	goldenFile   string
+	formatter    OutputFormatter
+	hideOnClient bool
 }{
-	{v0ProjectConfigYaml, "golden_v0.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config", false), false},
-	{v0ProjectConfigYaml, "golden_v0.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}, false), false},
-	{v0ProjectConfigYaml, "golden_v0.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}, false), false},
-	{v0ProjectConfigYaml, "golden_v0.cb.go", config_parser.CobaltVersion0, GoOutputFactory("config", "package", false), false},
+	{"golden.cb.dart", DartOutputFactory("config", false), false},
+	{"golden.cb.h", CppOutputFactory("config", []string{}, false), false},
+	{"golden.cb.rs", RustOutputFactory("config", []string{}, false), false},
+	{"golden.cb.go", GoOutputFactory("config", "package", false), false},
 
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.dart", config_parser.CobaltVersion0, DartOutputFactory("config", false), true},
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.h", config_parser.CobaltVersion0, CppOutputFactory("config", []string{"a", "b"}, false), true},
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.rs", config_parser.CobaltVersion0, RustOutputFactory("config", []string{"a", "b"}, false), true},
-	{v0ProjectConfigYaml, "golden_v0_filtered.cb.go", config_parser.CobaltVersion0, GoOutputFactory("config", "package", false), true},
+	{"golden_with_ns.cb.h", CppOutputFactory("config", []string{"ns1", "ns2"}, false), false},
+	{"golden_with_ns.cb.rs", RustOutputFactory("config", []string{"ns1", "ns2"}, false), false},
 
-	{v1ProjectConfigYaml, "golden_v1.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", false), false},
-	{v1ProjectConfigYaml, "golden_v1.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), false},
-	{v1ProjectConfigYaml, "golden_v1.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), false},
-	{v1ProjectConfigYaml, "golden_v1.cb.go", config_parser.CobaltVersion1, GoOutputFactory("config", "package", false), false},
+	{"golden_filtered.cb.dart", DartOutputFactory("config", false), true},
+	{"golden_filtered.cb.h", CppOutputFactory("config", []string{}, false), true},
+	{"golden_filtered.cb.rs", RustOutputFactory("config", []string{}, false), true},
+	{"golden_filtered.cb.go", GoOutputFactory("config", "package", false), true},
 
-	{v1ProjectConfigYaml, "golden_v1_with_ns.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{"ns1", "ns2"}, false), false},
-	{v1ProjectConfigYaml, "golden_v1_with_ns.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{"ns1", "ns2"}, false), false},
-
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", false), true},
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, false), true},
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, false), true},
-	{v1ProjectConfigYaml, "golden_v1_filtered.cb.go", config_parser.CobaltVersion1, GoOutputFactory("config", "package", false), true},
-
-	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.dart", config_parser.CobaltVersion1, DartOutputFactory("config", true), false},
-	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.h", config_parser.CobaltVersion1, CppOutputFactory("config", []string{}, true), false},
-	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.rs", config_parser.CobaltVersion1, RustOutputFactory("config", []string{}, true), false},
-	{v1ProjectConfigYaml, "golden_v1_for_testing.cb.go", config_parser.CobaltVersion1, GoOutputFactory("config", "package", true), false},
+	{"golden_for_testing.cb.dart", DartOutputFactory("config", true), false},
+	{"golden_for_testing.cb.h", CppOutputFactory("config", []string{}, true), false},
+	{"golden_for_testing.cb.rs", RustOutputFactory("config", []string{}, true), false},
+	{"golden_for_testing.cb.go", GoOutputFactory("config", "package", true), false},
 }
 
 func TestPrintConfig(t *testing.T) {
 	for _, tt := range cfgTests {
-		c := getConfigFrom(tt.yaml, tt.cobalt_version)
+		c := getConfigFrom(projectConfigYaml, config_parser.CobaltVersion1)
 		filtered := proto.Clone(&c).(*config.CobaltRegistry)
 		if tt.hideOnClient {
 			config_parser.FilterHideOnClient(filtered)

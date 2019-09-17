@@ -5,9 +5,8 @@ syntax = "proto3";
 
 package cobalt;
 
-import "src/registry/metrics.proto";
-import "src/registry/report_definition.proto";
 import "src/registry/annotations.proto";
+import "src/registry/report_definition.proto";
 
 option go_package = "config";
 
@@ -377,7 +376,64 @@ enum ReleaseStage {
   GA = 99;
 }
 
-// A container for multiple MetricDefinitions.
-message MetricDefinitions {
-  repeated MetricDefinition metric = 1;
+// For mertics of type = CUSTOM, a metric may have zero or more |string| to |MetricPart| mappings,
+// that will be used when encoding an event.
+//
+// NOTE: This method of reporting custom metrics is now deprecated.
+message MetricPart {
+  enum DataType {
+    // Values for this MetricPart are human-readable strings. Cobalt may
+    // display the strings in generated reports. A |ValuePart| for this
+    // MetricPart must have its |string_value| set.
+    STRING = 0;
+
+    // Values for this MetricPart are integers. A |ValuePart| encoded for this
+    // MetricPart must have its |int_value| set.
+    INT = 1;
+
+    // Values for this MetricPart are uninterpreted sequences of bytes. Cobalt
+    // will not try to interpret or display these values. A |ValuePart| encoded
+    // for this MetricPart must have its |blob_value| set.
+    BLOB = 2;
+
+    // Values for this MetricPart are non-negative integers that are
+    // interpreted as zero-based indices into some enumerated set that is
+    // specified outside of Cobalt's configuration. Human-readable labels may
+    // be associated with the indices in a Cobalt ReportConfig for the purpose
+    // of generating reports about this metric. During report generation, in
+    // case the ReportConfig does not specify a label for an index that occurs
+    // in the data, no error will occur but rather a temporary place-holder
+    // label such as "<index 42 (undefined)>" will be generated.
+    //
+    // Additionally, a maximum value for the indices may be specified by an
+    // EncodingConfig if the associated encoding mechanism requires it.
+    //
+    // A |ValuePart| for this MetricPart must have its |index_value| set.
+    INDEX = 3;
+
+    // Values for this MetricPart are double-precision floating point numbers.
+    // A |ValuePart| encoded for this MetricPart must have its |double_value|
+    // set.
+    DOUBLE = 4;
+  }
+
+  // A human-readable description of this MetricPart. This should include
+  // a specification of the "semantic type" of this part. For example the
+  // description might include the phrase "This is an eTLD+1."
+  string description = 1;
+
+  // The data-type for this MetricPart.
+  DataType data_type = 2;
+
+  // This may only be set if |data_type| is |INT|. If this is set, a ValuePart
+  // for this MetricPart may contain a BucketDistribution instead of an int. In
+  // that case the ValuePart represents many integer observations rather than a
+  // single integer observation.
+  //
+  // Only one MetricPart per Metric may have this field set.
+  IntegerBuckets int_buckets = 3;
+
+  // ID of the defult encoding scheme to use to encode this MetricPart if no
+  // other encoding ID is given.
+  uint32 default_encoding_id = 4;
 }

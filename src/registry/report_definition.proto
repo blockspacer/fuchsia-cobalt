@@ -7,8 +7,6 @@ package cobalt;
 
 import "src/registry/aggregation_window.proto";
 import "src/registry/annotations.proto";
-import "src/registry/metrics.proto";
-import "src/registry/report_configs.proto";
 import "src/registry/window_size.proto";
 
 option go_package = "config";
@@ -496,4 +494,115 @@ message ReportDefinition {
   // This field is implementation-specific. If omitted Cobalt will use its
   // default settings to determine the location of the exported report.
   string export_location_override = 102;
+}
+
+message DifferentialPrivacyConfig {
+  float epsilon = 1;
+  float delta = 2;
+}
+
+// A specification of a field from SystemProfile. These are used in a ReportDefinition to specify
+// which fields should be included in the generated Observations and reports.
+enum SystemProfileField {
+  OS = 0;
+  ARCH = 1;
+  BOARD_NAME = 2;
+  PRODUCT_NAME = 3;
+  SYSTEM_VERSION = 4;
+  CHANNEL = 5;
+}
+
+// ExponentialIntegerBuckets is used to define a partition of the integers into
+// a finite number of exponentially increasing buckets.
+//
+// Let n = num_buckets. Then there are n+2 buckets indexed 0,...,n+1.
+//
+// The bucket boundaries are:
+// a[0] = floor
+// a[1] = floor + initial_step
+// a[2] = floor + initial_step * step_multiplier
+// a[3] = floor + initial_step * step_multiplier ^ 2
+// a[4] = floor + initial_step * step_multiplier ^ 3
+// and in general, for i = 1, 2, 3 ... n
+// a[i] = floor + initial_step * step_multiplier ^ (i-1)
+//
+// Then, the buckets are defined as follows:
+// Bucket 0 is the underflow bucket: (-infinity, floor)
+// Bucket i for 0 < i < n+1: [a[i-1], a[i])
+// Bucket n+1 is the overflow bucket: [a[n], +infinity)
+//
+// Examples:
+// floor = 0
+// num_buckets = 3
+// initial_step = 10
+// step_multiplier = 10
+// Then, the buckets are:
+// (-infinity, 0), [0, 10), [10, 100), [100, 1000), [1000, +infinity)
+//
+// floor = 0
+// num_buckets = 3
+// initial_step = 2
+// step_multiplier = 2
+// Then, the buckets are:
+// (-infinity, 0), [0, 2), [2, 4), [4, 8), [8, +infinity)
+//
+// floor = 10
+// num_buckets = 3
+// initial_step = 2
+// step_multiplier = 2
+// Then, the buckets are:
+// (-infinity, 10), [10, 12), [12, 14), [14, 18), [18, +infinity)
+//
+// floor = 0
+// num_buckets = 3
+// initial_step = 100
+// step_multiplier = 10
+// Then, the buckets are:
+// (-infinity, 0), [0, 100), [100, 1000), [1000, 10000), [10000, +infinity)
+//
+message ExponentialIntegerBuckets {
+  int64 floor = 1;
+
+  // num_buckets must be at least 1.
+  uint32 num_buckets = 2;
+
+  // Must be at least one.
+  uint32 initial_step = 3;
+
+  // Must be at least one.
+  uint32 step_multiplier = 4;
+};
+
+// LinearIntegerBuckets is used to define a partition of the integers into a
+// finite number of buckets of equal size.
+//
+// Let n = num_buckets. Then there are n+2 buckets indexed 0,...,n+1.
+// Bucket 0 is the underflow bucket: (-infinity, floor)
+// Bucket n+1 is the overflow bucket: [lower + step_size * n, +infinity)
+//
+// For i = 1 to n, the bucket i is defined as
+// [floor + step_size * (i-1), floor + step_size * i)
+//
+// Example: floor = 0, num_buckets = 3, step_size = 10.
+// (-infinity, 0), [0, 10), [10, 20), [20, 30), [30, +inifinity)
+message LinearIntegerBuckets {
+  int64 floor = 1;
+
+  // Must be at least one.
+  uint32 num_buckets = 2;
+
+  // Must be at least one.
+  uint32 step_size = 3;
+}
+
+message IntegerBuckets {
+  oneof buckets {
+    ExponentialIntegerBuckets exponential = 1;
+    LinearIntegerBuckets linear = 2;
+  }
+}
+
+// A list of candidates to use during a string RAPPOR analysis.
+message RapporCandidateList {
+  repeated string candidates = 1;
 }

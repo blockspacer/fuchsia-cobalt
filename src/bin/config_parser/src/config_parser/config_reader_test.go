@@ -80,66 +80,9 @@ const invalidCustomersYaml = `
 `
 
 const projectConfigYaml = `
-metric_configs:
-- id: 1
-  name: "Daily rare event counts"
-  description: "Daily counts of several events that are expected to occur rarely if ever."
-  time_zone_policy: UTC
-  parts:
-    "Event name":
-      description: "Which rare event occurred?"
-- id: 2
-  name: "Module views"
-  description: "Tracks each incidence of viewing a module by its URL."
-  time_zone_policy: UTC
-  parts:
-    "url":
-      description: "The URL of the module being launched."
-
-encoding_configs:
-- id: 1
-  basic_rappor:
-    prob_0_becomes_1: 0.0
-    prob_1_stays_1: 1.0
-    string_categories:
-      category:
-      - "Ledger-startup"
-      - "Commits-received-out-of-order"
-      - "Commits-merged"
-      - "Merged-commits-merged"
-- id: 2
-  forculus:
-    threshold: 2
-    epoch_type: MONTH
-
-report_configs:
-- id: 1
-  name: "Fuchsia Ledger Daily Rare Events"
-  description: "A daily report of events that are expected to happen rarely."
-  metric_id: 1
-  variable:
-  - metric_part: "Event name"
-  scheduling:
-    report_finalization_days: 3
-    aggregation_epoch_type: DAY
-  export_configs:
-  - csv: {}
-    gcs:
-      bucket: "fuchsia-cobalt-reports-p2-test-app"
-
-- id: 2
-  name: "Fuchsia Module Daily Launch Counts"
-  description: "A daily report of the daily counts of module launches by URL."
-  metric_id: 2
-  variable:
-  - metric_part: "url"
-  scheduling:
-    report_finalization_days: 3
-    aggregation_epoch_type: DAY
-  export_configs:
-  - csv: {}
-    gcs:
-      bucket: "fuchsia-cobalt-reports-p2-test-app"
+metric_definitions:
+  - id: 1
+    metric_name: "MetricB1a"
 `
 
 // Tests the ReadProjectConfig function's basic functionality.
@@ -154,16 +97,6 @@ func TestReadProjectConfig(t *testing.T) {
 	}
 	if err := ReadProjectConfig(r, &c); err != nil {
 		t.Errorf("Error reading project config: %v", err)
-	}
-
-	if 2 != len(c.ProjectConfig.EncodingConfigs) {
-		t.Errorf("Unexpected number of encoding configs: %v", len(c.ProjectConfig.EncodingConfigs))
-	}
-	if 2 != len(c.ProjectConfig.MetricConfigs) {
-		t.Errorf("Unexpected number of metric configs: %v", len(c.ProjectConfig.MetricConfigs))
-	}
-	if 2 != len(c.ProjectConfig.ReportConfigs) {
-		t.Errorf("Unexpected number of report configs: %v", len(c.ProjectConfig.ReportConfigs))
 	}
 }
 
@@ -181,18 +114,6 @@ func TestReadConfig(t *testing.T) {
 
 	if 3 != len(l) {
 		t.Errorf("Expected 3 customers. Got %v.", len(l))
-	}
-
-	for _, c := range l {
-		if 2 != len(c.ProjectConfig.EncodingConfigs) {
-			t.Errorf("Unexpected number of encoding configs for %v: %v", c.ProjectName, len(c.ProjectConfig.EncodingConfigs))
-		}
-		if 2 != len(c.ProjectConfig.MetricConfigs) {
-			t.Errorf("Unexpected number of metric configs for %v: %v", c.ProjectName, len(c.ProjectConfig.MetricConfigs))
-		}
-		if 2 != len(c.ProjectConfig.ReportConfigs) {
-			t.Errorf("Unexpected number of report configs for %v: %v", c.ProjectName, len(c.ProjectConfig.ReportConfigs))
-		}
 	}
 }
 
@@ -213,7 +134,7 @@ func TestReadInvalidConfig(t *testing.T) {
 	}
 }
 
-func TestAppendV1Config(t *testing.T) {
+func TestMergeConfigs(t *testing.T) {
 	l := []ProjectConfig{
 		ProjectConfig{
 			CustomerName:  "customer5",
@@ -241,8 +162,7 @@ func TestAppendV1Config(t *testing.T) {
 		},
 	}
 
-	s := config.CobaltRegistry{}
-	appendV1Configs(l, &s)
+	s := MergeConfigs(l)
 
 	expected := config.CobaltRegistry{
 		Customers: []*config.CustomerConfig{

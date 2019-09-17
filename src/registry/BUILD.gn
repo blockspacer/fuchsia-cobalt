@@ -16,9 +16,7 @@ proto_library("cobalt_registry_proto") {
     "cobalt_registry.proto",
     "encodings.proto",
     "metric_definition.proto",
-    "metrics.proto",
     "project.proto",
-    "report_configs.proto",
     "report_definition.proto",
     "window_size.proto",
   ]

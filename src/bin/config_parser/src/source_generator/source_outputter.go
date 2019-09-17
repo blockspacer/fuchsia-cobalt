@@ -152,35 +152,6 @@ func (so *sourceOutputter) Bytes() []byte {
 	return so.buffer.Bytes()
 }
 
-func (so *sourceOutputter) writeLegacyConstants(c *config.CobaltRegistry) {
-	metrics := make(map[uint32]string)
-	for _, metric := range c.MetricConfigs {
-		if metric.Name != "" {
-			metrics[metric.Id] = metric.Name
-		}
-	}
-	// write out the 'Metric' constants (e.g. kTestMetricId)
-	so.writeIdConstants("Metric", metrics)
-
-	reports := make(map[uint32]string)
-	for _, report := range c.ReportConfigs {
-		if report.Name != "" {
-			reports[report.Id] = report.Name
-		}
-	}
-	// write out the 'Report' constants (e.g. kTestReportId)
-	so.writeIdConstants("Report", reports)
-
-	encodings := make(map[uint32]string)
-	for _, encoding := range c.EncodingConfigs {
-		if encoding.Name != "" {
-			encodings[encoding.Id] = encoding.Name
-		}
-	}
-	// write out the 'Encoding' constants (e.g. kTestEncodingId)
-	so.writeIdConstants("Encoding", encodings)
-}
-
 func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	metrics := make(map[uint32]string)
 	reports := make(map[uint32]string)
@@ -249,8 +220,6 @@ func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {
 		if err := so.writeV1Constants(c); err != nil {
 			return err
 		}
-	} else if len(c.MetricConfigs) > 0 || len(c.ReportConfigs) > 0 || len(c.EncodingConfigs) > 0 {
-		so.writeLegacyConstants(c)
 	}
 
 	b64Bytes, err := Base64Output(c, filtered)
