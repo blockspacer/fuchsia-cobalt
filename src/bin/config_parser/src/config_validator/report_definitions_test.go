@@ -158,6 +158,27 @@ func TestValidateReportDefinitionForPerDeviceNumericStats(t *testing.T) {
 	}
 }
 
+// Test that window_size must be set if the report type is PER_DEVICE_HISTOGRAM.
+func TestValidateReportDefinitionForPerDeviceHistogram(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_PER_DEVICE_HISTOGRAM
+
+	if err := validateReportDefinition(r); err == nil {
+		t.Error("No int_buckets specified for report of type PER_DEVICE_HISTOGRAM.")
+	}
+
+	r.IntBuckets = &config.IntegerBuckets{}
+	if err := validateReportDefinition(r); err == nil {
+		t.Error("Accepted report definition of type PER_DEVICE_HISTOGRAM without window_size field.")
+	}
+
+	// Add a valid window size to window_size, but also add an UNSET window size.
+	r.WindowSize = []config.WindowSize{config.WindowSize_WINDOW_1_DAY, config.WindowSize_UNSET}
+	if err := validateReportDefinition(r); err == nil {
+		t.Error("Accepted report definition of type PER_DEVICE_HISTOGRAM with window_size field containing an UNSET window size.")
+	}
+}
+
 // Test percentiles range for NUMERIC_AGGREGATION report types.
 func TestValidateReportDefinitionForNumericAggregation(t *testing.T) {
 	r := makeValidReport()

@@ -23,24 +23,28 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 		config.ReportDefinition_INT_RANGE_HISTOGRAM:              true,
 		config.ReportDefinition_NUMERIC_AGGREGATION:              true,
 		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:         true,
+		config.ReportDefinition_PER_DEVICE_HISTOGRAM:             true,
 	},
 	config.MetricDefinition_ELAPSED_TIME: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM:      true,
 		config.ReportDefinition_NUMERIC_AGGREGATION:      true,
 		config.ReportDefinition_NUMERIC_PERF_RAW_DUMP:    true,
 		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS: true,
+		config.ReportDefinition_PER_DEVICE_HISTOGRAM:     true,
 	},
 	config.MetricDefinition_FRAME_RATE: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM:      true,
 		config.ReportDefinition_NUMERIC_AGGREGATION:      true,
 		config.ReportDefinition_NUMERIC_PERF_RAW_DUMP:    true,
 		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS: true,
+		config.ReportDefinition_PER_DEVICE_HISTOGRAM:     true,
 	},
 	config.MetricDefinition_MEMORY_USAGE: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM:      true,
 		config.ReportDefinition_NUMERIC_AGGREGATION:      true,
 		config.ReportDefinition_NUMERIC_PERF_RAW_DUMP:    true,
 		config.ReportDefinition_PER_DEVICE_NUMERIC_STATS: true,
+		config.ReportDefinition_PER_DEVICE_HISTOGRAM:     true,
 	},
 	config.MetricDefinition_INT_HISTOGRAM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM: true,
@@ -131,6 +135,8 @@ func validateReportDefinitionForType(r config.ReportDefinition) error {
 		return validateUniqueActivesReportDef(r)
 	case config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:
 		return validatePerDeviceNumericStatsReportDef(r)
+	case config.ReportDefinition_PER_DEVICE_HISTOGRAM:
+		return validatePerDeviceHistogramReportDef(r)
 	case config.ReportDefinition_NUMERIC_AGGREGATION:
 		return validateNumericAggregationReportDef(r)
 	}
@@ -166,6 +172,18 @@ func validateUniqueActivesReportDef(r config.ReportDefinition) error {
 }
 
 func validatePerDeviceNumericStatsReportDef(r config.ReportDefinition) error {
+	if err := validateWindowSize(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validatePerDeviceHistogramReportDef(r config.ReportDefinition) error {
+	if r.IntBuckets == nil {
+		return fmt.Errorf("No int_buckets specified for report of type %s.", r.ReportType)
+	}
+
 	if err := validateWindowSize(r); err != nil {
 		return err
 	}
