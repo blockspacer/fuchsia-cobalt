@@ -191,6 +191,7 @@ class EventAggregator {
   friend class UniqueActivesLoggerTest;
   friend class EventAggregatorTest;
   friend class EventAggregatorWorkerTest;
+  friend class TestEventAggregator;
 
   // Request that the worker thread shut down and wait for it to exit. The
   // worker thread backs up the LocalAggregateStore before exiting.
@@ -279,10 +280,10 @@ class EventAggregator {
   uint32_t UniqueActivesLastGeneratedDayIndex(const std::string& report_key, uint32_t event_code,
                                               uint32_t window_size) const;
 
-  // Returns the most recent day index for which an Observation was generated
-  // for a given PER_DEVICE_NUMERIC_STATS report, component, event code,
-  // and window size, according to |obs_history_|. Returns 0 if no Observation
-  // has been generated for the given arguments.
+  // Returns the most recent day index for which an Observation was generated for a given
+  // PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM report, component, event code, and window
+  // size, according to |obs_history_|. Returns 0 if no Observation has been generated for the given
+  // arguments.
   uint32_t PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
                                                  const std::string& component, uint32_t event_code,
                                                  uint32_t window_size) const;
@@ -314,37 +315,43 @@ class EventAggregator {
                                                 uint32_t obs_day_index, uint32_t event_code,
                                                 uint32_t window_size, bool was_active) const;
 
-  // For a fixed report of type PER_DEVICE_NUMERIC_STATS, generates a
-  // PerDeviceNumericObservation for each tuple (component, event code, window
-  // size) for which a numeric event was logged for that event code and
-  // component during the window of that size ending on |final_day_index|,
-  // unless an Observation with those parameters has been generated in the past.
-  // The value of the Observation is the sum, max, or min (depending on the
-  // aggregation_type field of the report definition) of all numeric events
-  // logged for that report during the window. Also generates
-  // PerDeviceNumericObservations for days in the backfill period if needed.
+  // For a fixed report of type PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM, generates a
+  // PerDeviceNumericObservation and PerDeviceHistogramObservation respectively for each
+  // tuple (component, event code, window size) for which a numeric event was logged for that event
+  // code and component during the window of that size ending on |final_day_index|, unless an
+  // Observation with those parameters has been generated in the past. The value of the Observation
+  // is the sum, max, or min (depending on the aggregation_type field of the report definition) of
+  // all numeric events logged for that report during the window. Also generates observations for
+  // days in the backfill period if needed.
   //
-  // In addition to PerDeviceNumericObservations, generates a
-  // ReportParticipationObservation for |final_day_index| and any needed days in
-  // the backfill period. These ReportParticipationObservations are used by the
-  // PerDeviceNumericStats report generator to infer the fleet-wide number of
-  // devices for which the sum of numeric events associated to each tuple
+  // In addition to PerDeviceNumericObservations or PerDeviceHistogramObservation , generates
+  // a ReportParticipationObservation for |final_day_index| and any needed days in the backfill
+  // period. These ReportParticipationObservations are used by the report generators to infer the
+  // fleet-wide number of devices for which the sum of numeric events associated to each tuple
   // (component, event code, window size) was zero.
   //
   // Observations are not generated for aggregation windows larger than
   // |kMaxAllowedAggregationWindowSize|.
-  Status GeneratePerDeviceNumericObservations(MetricRef metric_ref, const std::string& report_key,
-                                              const ReportAggregates& report_aggregates,
-                                              uint32_t final_day_index);
+  Status GenerateObsFromNumericAggregates(MetricRef metric_ref, const std::string& report_key,
+                                          const ReportAggregates& report_aggregates,
+                                          uint32_t final_day_index);
 
-  // Helper method called by GeneratePerDeviceNumericObservations() to generate
-  // and write a single Observation with value |value|.
+  // Helper method called by GenerateObsFromNumericAggregates() to generate and write a single
+  // Observation with value |value|. The method will produce a PerDeviceNumericObservation or
+  // PerDeviceHistogramObservation  depending on whether the report type is
+  // PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM respectively.
   Status GenerateSinglePerDeviceNumericObservation(
       MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
       const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const;
 
-  // Helper method called by GeneratePerDeviceNumericObservations() to generate
-  // and write a single ReportParticipationObservation.
+  // Helper method called by GenerateObsFromNumericAggregates() to generate and write a single
+  // Observation with value |value|.
+  Status GenerateSinglePerDeviceHistogramObservation(
+      MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
+      const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const;
+
+  // Helper method called by GenerateObsFromNumericAggregates() to generate and write a single
+  // ReportParticipationObservation.
   Status GenerateSingleReportParticipationObservation(MetricRef metric_ref,
                                                       const ReportDefinition* report,
                                                       uint32_t obs_day_index) const;

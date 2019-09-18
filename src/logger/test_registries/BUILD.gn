@@ -43,6 +43,19 @@ metrics_registry("per_device_numeric_stats_test_registry") {
   generate_cc = true
 }
 
+metrics_registry("per_device_histogram_test_registry") {
+  customer_id = 1
+  project_id = 1
+  skip_validation = true
+  for_testing = true
+  source = "per_device_histogram_test_registry.yaml"
+  namespace = "cobalt.logger.testing.per_device_histogram"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = false
+  generate_cc = true
+}
+
 metrics_registry("unique_actives_test_registry") {
   customer_id = 1
   project_id = 1

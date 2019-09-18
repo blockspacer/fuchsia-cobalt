@@ -291,6 +291,7 @@ source_set("testing_constants") {
     "test_registries:all_report_types_test_registry",
     "test_registries:mixed_time_zone_test_registry",
     "test_registries:per_device_numeric_stats_test_registry",
+    "test_registries:per_device_histogram_test_registry",
     "test_registries:unique_actives_noise_free_test_registry",
     "test_registries:unique_actives_test_registry",
   ]

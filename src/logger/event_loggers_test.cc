@@ -47,6 +47,7 @@ using util::TimeToDayIndex;
 
 namespace logger {
 
+using internal::EventLogger;
 using testing::CheckNumericEventObservations;
 using testing::CheckUniqueActivesObservations;
 using testing::ExpectedAggregationParams;
@@ -1334,5 +1335,272 @@ TEST_F(OccurrenceEventLoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEve
                                           observation_store_.get(), update_recipient_.get()));
 }
 
+class TestEventAggregator : public EventAggregator {
+ public:
+  TestEventAggregator(const Encoder* encoder, const ObservationWriter* observation_writer,
+                      util::ConsistentProtoStore* local_aggregate_proto_store,
+                      util::ConsistentProtoStore* obs_history_proto_store)
+      : EventAggregator(encoder, observation_writer, local_aggregate_proto_store,
+                        obs_history_proto_store) {}
+
+  uint32_t NumPerDeviceNumericAggregatesInStore() {
+    int count = 0;
+    for (const auto& aggregates :
+         protected_aggregate_store_.lock()->local_aggregate_store.by_report_key()) {
+      if (aggregates.second.has_numeric_aggregates()) {
+        count += aggregates.second.numeric_aggregates().by_component().size();
+      }
+    }
+    return count;
+  }
+};
+
+// needed for Friend class status
+namespace internal {
+
+class EventLoggersAddEventTest : public ::testing::Test {
+ public:
+  void SetUp() override {
+    // TODO(ninai): remove some of the setup once the refactor is done.
+    observation_store_ = std::make_unique<FakeObservationStore>();
+    update_recipient_ = std::make_unique<TestUpdateRecipient>();
+    observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
+    observation_writer_ = std::make_unique<ObservationWriter>(
+        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
+    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
+    local_aggregate_proto_store_ =
+        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
+    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
+    project_context_ = GetTestProject(testing::per_device_histogram::kCobaltRegistryBase64);
+    // Create a mock clock which does not increment by default when called.
+    // Set the time to 1 year after the start of Unix time so that the start
+    // date of any aggregation window falls after the start of time.
+    mock_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
+    mock_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(kYear)));
+  }
+
+  std::unique_ptr<TestEventAggregator> GetTestEventAggregator() {
+    auto event_aggregator = std::make_unique<TestEventAggregator>(
+        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+        obs_history_proto_store_.get());
+    event_aggregator->UpdateAggregationConfigs(*project_context_);
+    return event_aggregator;
+  }
+
+  std::unique_ptr<EventLogger> GetEventLoggerForMetricType(
+      MetricDefinition::MetricType metric_type, TestEventAggregator* test_event_aggregator) {
+    auto logger =
+        EventLogger::Create(metric_type, nullptr, test_event_aggregator, nullptr, nullptr);
+    return logger;
+  }
+
+  std::unique_ptr<EventRecord> GetEventRecordWithMetricType(
+      uint32_t metric_id, MetricDefinition::MetricType metric_type) {
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+
+    switch (metric_type) {
+      case (MetricDefinition::EVENT_COUNT): {
+        auto event = event_record->event()->mutable_count_event();
+        event->set_component("test");
+        event->set_period_duration_micros(10);
+        event->set_count(1);
+        break;
+      }
+      case (MetricDefinition::ELAPSED_TIME): {
+        auto event = event_record->event()->mutable_elapsed_time_event();
+        event->set_component("test");
+        event->set_elapsed_micros(10);
+        break;
+      }
+      case (MetricDefinition::MEMORY_USAGE): {
+        auto event = event_record->event()->mutable_memory_usage_event();
+        event->set_component("test");
+        event->set_bytes(10);
+        break;
+      }
+      case (MetricDefinition::FRAME_RATE): {
+        auto event = event_record->event()->mutable_frame_rate_event();
+        event->set_component("test");
+        event->set_frames_per_1000_seconds(10);
+        break;
+      }
+      default: {
+      }
+    }
+
+    return event_record;
+  }
+
+  ReportDefinition ReportDefinitionWithReportType(uint32_t report_id,
+                                                  ReportDefinition::ReportType report_type) {
+    ReportDefinition report_definition;
+    report_definition.set_report_type(report_type);
+    report_definition.set_id(report_id);
+    return report_definition;
+  }
+
+  Encoder::Result MaybeEncodeImmediateObservation(EventLogger* event_logger,
+                                                  const ReportDefinition& report,
+                                                  EventRecord* event_record) {
+    return event_logger->MaybeEncodeImmediateObservation(report, /*may_invalidate=*/false,
+                                                         event_record);
+  }
+
+  Status MaybeUpdateLocalAggregation(EventLogger* event_logger, const ReportDefinition& report,
+                                     const EventRecord& event_record) {
+    return event_logger->MaybeUpdateLocalAggregation(report, event_record);
+  }
+
+  std::unique_ptr<ObservationWriter> observation_writer_;
+  std::unique_ptr<FakeObservationStore> observation_store_;
+  std::unique_ptr<TestUpdateRecipient> update_recipient_;
+
+ private:
+  std::unique_ptr<Encoder> encoder_;
+  std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
+  std::unique_ptr<SystemDataInterface> system_data_;
+  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
+  std::unique_ptr<IncrementingSystemClock> mock_clock_;
+  std::shared_ptr<ProjectContext> project_context_;
+};
+
+TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramNoImmediateObservation) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kSettingsChangedPerDeviceHistogramReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kSettingsChangedMetricId, MetricDefinition::EVENT_COUNT);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::EVENT_COUNT, test_event_aggregator.get());
+  auto result = MaybeEncodeImmediateObservation(event_logger.get(), report, event_record.get());
+
+  EXPECT_EQ(kOK, result.status);
+  EXPECT_EQ(nullptr, result.observation);
+  EXPECT_EQ(nullptr, result.metadata);
+  EXPECT_EQ(0, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramAddToEventAggregator) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kSettingsChangedPerDeviceHistogramReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kSettingsChangedMetricId, MetricDefinition::EVENT_COUNT);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::EVENT_COUNT, test_event_aggregator.get());
+  auto status = MaybeUpdateLocalAggregation(event_logger.get(), report, *event_record);
+
+  EXPECT_EQ(kOK, status);
+  EXPECT_EQ(1, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramNoImmediateObservation) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kStreamingTimePerDeviceTotalReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kStreamingTimeMetricId, MetricDefinition::ELAPSED_TIME);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::ELAPSED_TIME, test_event_aggregator.get());
+  auto result = MaybeEncodeImmediateObservation(event_logger.get(), report, event_record.get());
+
+  EXPECT_EQ(kOK, result.status);
+  EXPECT_EQ(nullptr, result.observation);
+  EXPECT_EQ(nullptr, result.metadata);
+  EXPECT_EQ(0, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramAddToEventAggregator) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kStreamingTimePerDeviceTotalReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kStreamingTimeMetricId, MetricDefinition::ELAPSED_TIME);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::ELAPSED_TIME, test_event_aggregator.get());
+  auto status = MaybeUpdateLocalAggregation(event_logger.get(), report, *event_record);
+
+  EXPECT_EQ(kOK, status);
+  EXPECT_EQ(1, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramNoImmediateObservation) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kLoginModuleFrameRatePerDeviceMinReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kLoginModuleFrameRateMetricId, MetricDefinition::FRAME_RATE);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::FRAME_RATE, test_event_aggregator.get());
+  auto result = MaybeEncodeImmediateObservation(event_logger.get(), report, event_record.get());
+
+  EXPECT_EQ(kOK, result.status);
+  EXPECT_EQ(nullptr, result.observation);
+  EXPECT_EQ(nullptr, result.metadata);
+  EXPECT_EQ(0, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramAddToEventAggregator) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kLoginModuleFrameRatePerDeviceMinReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kLoginModuleFrameRateMetricId, MetricDefinition::FRAME_RATE);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::FRAME_RATE, test_event_aggregator.get());
+  auto status = MaybeUpdateLocalAggregation(event_logger.get(), report, *event_record);
+
+  EXPECT_EQ(kOK, status);
+  EXPECT_EQ(1, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, MemoryUsagePerDeviceHistogramNoImmediateObservation) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kLedgerMemoryUsagePerDeviceMaxReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kLedgerMemoryUsageMetricId, MetricDefinition::MEMORY_USAGE);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::MEMORY_USAGE, test_event_aggregator.get());
+  auto result = MaybeEncodeImmediateObservation(event_logger.get(), report, event_record.get());
+
+  EXPECT_EQ(kOK, result.status);
+  EXPECT_EQ(nullptr, result.observation);
+  EXPECT_EQ(nullptr, result.metadata);
+  EXPECT_EQ(0, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+TEST_F(EventLoggersAddEventTest, MemoryUsagePerDeviceHistogramAddToEventAggregator) {
+  ReportDefinition report = ReportDefinitionWithReportType(
+      testing::per_device_histogram::kLedgerMemoryUsagePerDeviceMaxReportId,
+      ReportDefinition::PER_DEVICE_HISTOGRAM);
+  auto event_record = GetEventRecordWithMetricType(
+      testing::per_device_histogram::kLedgerMemoryUsageMetricId, MetricDefinition::MEMORY_USAGE);
+
+  auto test_event_aggregator = GetTestEventAggregator();
+  auto event_logger =
+      GetEventLoggerForMetricType(MetricDefinition::MEMORY_USAGE, test_event_aggregator.get());
+  auto status = MaybeUpdateLocalAggregation(event_logger.get(), report, *event_record);
+
+  EXPECT_EQ(kOK, status);
+  EXPECT_EQ(1, test_event_aggregator->NumPerDeviceNumericAggregatesInStore());
+}
+
+}  // namespace internal
 }  // namespace logger
 }  // namespace cobalt

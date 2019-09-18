@@ -1,0 +1,100 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+##########################################################################
+#  This file contains MetricDefinitions used in Logger tests.
+#  It is compiled into per_device_histogram_test_registry.h, which is
+#  included in testing_constants.h.
+#
+#  When editing this file, also update testing_constants.h with any
+#  changes to report IDs or to local aggregation parameters.
+##########################################################################
+
+metric_definitions:
+
+- id: 1
+  metric_name: "SettingsChanged"
+  metric_type: EVENT_COUNT
+  metric_dimensions:
+    - event_codes:
+        0: SettingA
+        1: SettingB
+        2: SettingC
+  reports:
+    # Report ID: 2024497361
+    - report_name: "SettingsChanged_PerDeviceHistogram"
+      report_type: PER_DEVICE_HISTOGRAM
+      aggregation_type: SUM
+      window_size:
+        - 7
+        - 30
+
+- id: 2
+  metric_name: "ConnectionFailures"
+  metric_type: EVENT_COUNT
+  metric_dimensions:
+    - event_codes:
+        0: ErrorCode0
+        1: ErrorCode1
+        2: ErrorCode2
+  reports:
+    # Report ID: 2973951499
+    - report_name: "ConnectionFailures_GlobalCount"
+      report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
+
+- id: 3
+  metric_name: "StreamingTime"
+  metric_type: ELAPSED_TIME
+  metric_dimensions:
+    - event_codes:
+        0: StreamTypeA
+        1: StreamTypeB
+        2: StreamTypeC
+  reports:
+    # Report ID: 2917574296
+    - report_name: "StreamingTime_PerDeviceTotal"
+      report_type: PER_DEVICE_HISTOGRAM
+      aggregation_type: SUM
+      window_size:
+        - 1
+
+- id: 4
+  metric_name: "LoginModuleFrameRate"
+  metric_type: FRAME_RATE
+  metric_dimensions:
+    - dimension: status
+      event_codes:
+        0: Success
+        1: ErrorCode1
+        2: ErrorCode2
+  reports:
+    # Report ID: 63534081
+    - report_name: "LoginModuleFrameRate_PerDeviceMin"
+      report_type: PER_DEVICE_HISTOGRAM
+      aggregation_type: MIN
+      window_size:
+        - 1
+        - 7
+
+- id: 5
+  metric_name: "LedgerMemoryUsage"
+  metric_type: MEMORY_USAGE
+  metric_dimensions:
+    - dimension: status
+      event_codes:
+        0: Success
+        1: ErrorCode1
+        2: ErrorCode2
+    - dimension: action
+      event_codes:
+        0: Action0
+        1: Action1
+  reports:
+    # Report ID: 3379988036
+    - report_name: "LedgerMemoryUsage_PerDeviceMax"
+      report_type: PER_DEVICE_HISTOGRAM
+      aggregation_type: MAX
+      window_size:
+        - 1
+        - 7

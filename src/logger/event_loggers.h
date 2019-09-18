@@ -80,6 +80,8 @@ class EventLogger {
                                     const std::string& full_metric_name);
 
  private:
+  friend class EventLoggersAddEventTest;
+
   // Validate that the event is suitable for logging.
   //
   // Most of the event validation should be done here, as this occurs at the time

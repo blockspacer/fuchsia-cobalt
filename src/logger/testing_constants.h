@@ -16,6 +16,9 @@
 // Generated from per_device_numeric_stats_test_registry.yaml
 // Namespace: cobalt::logger::testing::per_device_numeric_stats
 #include "src/logger/test_registries/per_device_numeric_stats_test_registry.cb.h"
+// Generated from per_device_histogram_test_registry.yaml
+// Namespace: cobalt::logger::testing::per_device_histogram
+#include "src/logger/test_registries/per_device_histogram_test_registry.cb.h"
 // Generated from unique_actives_noise_free_test_registry.yaml
 // Namespace: cobalt::logger::testing::unique_actives_noise_free
 #include "src/logger/test_registries/unique_actives_noise_free_test_registry.cb.h"

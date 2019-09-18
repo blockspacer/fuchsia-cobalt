@@ -482,8 +482,7 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
   CHECK(event.has_count_event());
   auto* count_event = event_record->event()->mutable_count_event();
   switch (report.report_type()) {
-    // Each report type has its own logic for generating immediate
-    // observations.
+    // Each report type has its own logic for generating immediate observations.
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT:
     case ReportDefinition::INT_RANGE_HISTOGRAM:
     case ReportDefinition::NUMERIC_AGGREGATION: {
@@ -491,9 +490,10 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
           event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           count_event->event_code(), count_event->component(), count_event->count());
     }
-      // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
-      // generation of an immediate observation.
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    // Report type PER_DEVICE_NUMERIC_STATS and PER_DEVICE_HISTOGRAM are valid but should not result
+    // in generation of an immediate observation.
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       Encoder::Result result;
       result.status = kOK;
       result.observation = nullptr;
@@ -509,7 +509,8 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
 Status CountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                                      const EventRecord& event_record) {
   switch (report.report_type()) {
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       return event_aggregator()->LogCountEvent(report.id(), event_record);
     }
     default:
@@ -529,13 +530,16 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
     // observations.
     case ReportDefinition::NUMERIC_AGGREGATION:
     case ReportDefinition::NUMERIC_PERF_RAW_DUMP:
-    case ReportDefinition::INT_RANGE_HISTOGRAM:
+    case ReportDefinition::INT_RANGE_HISTOGRAM: {
       return encoder()->EncodeIntegerEventObservation(
           event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           EventCodes(event), Component(event), IntValue(event));
-      // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
-      // generation of an immediate observation.
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+      break;
+    }
+    // Report type PER_DEVICE_NUMERIC_STATS and PER_DEVICE_HISTOGRAM are valid but should not result
+    // in generation of an immediate observation.
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       Encoder::Result result;
       result.status = kOK;
       result.observation = nullptr;
@@ -574,7 +578,8 @@ Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
 Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                                            const EventRecord& event_record) {
   switch (report.report_type()) {
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       return event_aggregator()->LogElapsedTimeEvent(report.id(), event_record);
     }
     default:
@@ -609,7 +614,8 @@ Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
 Status FrameRateEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                                          const EventRecord& event_record) {
   switch (report.report_type()) {
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       return event_aggregator()->LogFrameRateEvent(report.id(), event_record);
     }
     default:
@@ -643,7 +649,8 @@ Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
 Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
                                                            const EventRecord& event_record) {
   switch (report.report_type()) {
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       return event_aggregator()->LogMemoryUsageEvent(report.id(), event_record);
     }
     default:

@@ -66,7 +66,8 @@ bool PopulateReportAggregates(const ProjectContext& project_context, const Metri
       report_aggregates->set_allocated_unique_actives_aggregates(new UniqueActivesReportAggregates);
       return true;
     }
-    case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+    case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+    case ReportDefinition::PER_DEVICE_HISTOGRAM: {
       report_aggregates->set_allocated_numeric_aggregates(new PerDeviceNumericAggregates);
       return true;
     }
@@ -230,7 +231,8 @@ Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_c
       case MetricDefinition::MEMORY_USAGE: {
         for (const auto& report : metric.reports()) {
           switch (report.report_type()) {
-            case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+            case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+            case ReportDefinition::PER_DEVICE_HISTOGRAM: {
               status = MaybeInsertReportConfigLocked(project_context, metric, report,
                                                      &(locked->local_aggregate_store));
               if (status != kOK) {
@@ -703,9 +705,10 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
       case MetricDefinition::FRAME_RATE:
       case MetricDefinition::MEMORY_USAGE: {
         switch (report.report_type()) {
-          case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
-            auto status = GeneratePerDeviceNumericObservations(metric_ref, pair.first, pair.second,
-                                                               final_day_index);
+          case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
+          case ReportDefinition::PER_DEVICE_HISTOGRAM: {
+            auto status = GenerateObsFromNumericAggregates(metric_ref, pair.first, pair.second,
+                                                           final_day_index);
             if (status != kOK) {
               return status;
             }
@@ -867,7 +870,7 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
   return kOK;
 }
 
-////////// GeneratePerDeviceNumericObservations and helper methods /////////////
+////////// GenerateObsFromNumericAggregates and helper methods /////////////
 
 uint32_t EventAggregator::PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
                                                                 const std::string& component,
@@ -909,9 +912,32 @@ uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
 Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
     const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const {
-  auto encoder_result = encoder_->EncodePerDeviceNumericObservation(
+  Encoder::Result encoder_result = encoder_->EncodePerDeviceNumericObservation(
       metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value,
       window_size);
+  if (encoder_result.status != kOK) {
+    return encoder_result.status;
+  }
+  if (encoder_result.observation == nullptr || encoder_result.metadata == nullptr) {
+    LOG(ERROR) << "Failed to encode PerDeviceNumericObservation";
+    return kOther;
+  }
+
+  const auto& writer_status = observation_writer_->WriteObservation(
+      *encoder_result.observation, std::move(encoder_result.metadata));
+  if (writer_status != kOK) {
+    return writer_status;
+  }
+  return kOK;
+}
+
+Status EventAggregator::GenerateSinglePerDeviceHistogramObservation(
+    const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
+    const std::string& component, uint32_t event_code, uint32_t /*window_size*/,
+    int64_t value) const {
+  Encoder::Result encoder_result = encoder_->EncodePerDeviceHistogramObservation(
+      metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value);
+
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -949,9 +975,10 @@ Status EventAggregator::GenerateSingleReportParticipationObservation(const Metri
   return kOK;
 }
 
-Status EventAggregator::GeneratePerDeviceNumericObservations(
-    const MetricRef metric_ref, const std::string& report_key,
-    const ReportAggregates& report_aggregates, uint32_t final_day_index) {
+Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_ref,
+                                                         const std::string& report_key,
+                                                         const ReportAggregates& report_aggregates,
+                                                         uint32_t final_day_index) {
   CHECK_GT(final_day_index, backfill_days_);
   // The first day index for which we might have to generate an Observation.
   auto backfill_period_start = uint32_t(final_day_index - backfill_days_);
@@ -1037,11 +1064,26 @@ Status EventAggregator::GeneratePerDeviceNumericObservations(
             num_days++;
           }
           if (found_value_for_window) {
-            auto status = GenerateSinglePerDeviceNumericObservation(
-                metric_ref, &report_aggregates.aggregation_config().report(), obs_day_index,
-                component, event_code, window_size, window_aggregate);
-            if (status != kOK) {
-              return status;
+            Status status;
+            const ReportDefinition* report = &report_aggregates.aggregation_config().report();
+            switch (report->report_type()) {
+              case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
+                status = GenerateSinglePerDeviceNumericObservation(
+                    metric_ref, report, obs_day_index, component, event_code, window_size,
+                    window_aggregate);
+                break;
+              }
+              case ReportDefinition::PER_DEVICE_HISTOGRAM: {
+                auto status = GenerateSinglePerDeviceHistogramObservation(
+                    metric_ref, report, obs_day_index, component, event_code, window_size,
+                    window_aggregate);
+                if (status != kOK) {
+                  return status;
+                }
+              }
+              default:
+                LOG(ERROR) << "Unexpected report type " << report->report_type();
+                return kInvalidArguments;
             }
           }
           // Update |obs_history_| with the latest date of Observation
