@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
 #include "src/logging.h"
 #include "src/observation_store/observation_store.h"
@@ -109,13 +110,15 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 
   // These diagnostic stats are mostly useful in a testing environment but
   // may possibly prove useful in production also.
-  size_t num_send_attempts();
-  size_t num_failed_attempts();
-  grpc::Status last_send_status();
+  size_t num_send_attempts() const;
+  size_t num_failed_attempts() const;
+  grpc::Status last_send_status() const;
 
  private:
+  friend class ClearcutV1ShippingManager;
+
   // Has the ShippingManager been shut down?
-  bool shut_down();
+  bool shut_down() const;
 
   // Causes the ShippingManager to shut down. Any active sends will be canceled.
   // All condition variables will be notified in order to wake up any waiting
@@ -153,14 +156,12 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   // The background worker thread that runs the method "Run()."
   std::thread worker_thread_;
 
-  // A struct that contains a mutex and all the fields we want to protect
-  // with that mutex.
-  struct MutexProtectedFields {
-    // Protects access to all variables below.
-    std::mutex mutex;
-
-    // Variables accessed by the worker thread and the API
-    // threads. These are protected by |mutex|.
+  // A struct that contains all the fields we want protected by a mutex.
+  struct UnprotectedFields {
+    explicit UnprotectedFields(observation_store::ObservationStore* store)
+        : observation_store(store) {
+      CHECK(observation_store);
+    }
 
     bool expedited_send_requested = false;
 
@@ -186,49 +187,24 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 
     observation_store::ObservationStore* observation_store;
 
-    std::condition_variable add_observation_notifier;
-    std::condition_variable expedited_send_notifier;
-    std::condition_variable shutdown_notifier;
-    std::condition_variable idle_notifier;
-    std::condition_variable waiting_for_schedule_notifier;
+    std::condition_variable_any add_observation_notifier;
+    std::condition_variable_any expedited_send_notifier;
+    std::condition_variable_any shutdown_notifier;
+    std::condition_variable_any idle_notifier;
+    std::condition_variable_any waiting_for_schedule_notifier;
   };
+  using Fields = util::ProtectedFields<UnprotectedFields>;
 
-  // Constructing a LockedFields object constructs a std::unique_lock and
-  // therefore locks the mutex in |fields|.
-  struct LockedFields {
-    explicit LockedFields(MutexProtectedFields* fields) : lock(fields->mutex), fields(fields) {}
-    std::unique_lock<std::mutex> lock;
-    MutexProtectedFields* fields;  // not owned.
-  };
-
-  // All of the fields that are accessed by multiple threads and therefore
-  // need to be protected by a mutex. Do not access this variable directly.
-  // Instead invoke the method lock() which returns a smart pointer to a
-  // |LockedFields| that wraps this field. All access to this field should
-  // be via the following idiom:
-  //
-  // auto locked = lock();
-  // locked->fields->[field_name].
-  MutexProtectedFields _mutex_protected_fields_do_not_access_directly_;
-
- protected:
-  // Provides access to the fields that are protected by a mutex while
-  // acquiring a lock on the mutex. Destroy the returned std::unique_ptr to
-  // release the mutex.
-  std::unique_ptr<LockedFields> lock() {
-    // NOLINTNEXTLINE modernize-make-unique
-    return std::unique_ptr<LockedFields>(
-        new LockedFields(&_mutex_protected_fields_do_not_access_directly_));
-  }
+  Fields protected_fields_;
 
  private:
   // Does the work of RequestSendSoon() and assumes that the fields->mutex lock
   // is held.
-  void RequestSendSoonLockHeld(MutexProtectedFields* fields);
+  void RequestSendSoonLockHeld(Fields::LockedFieldsPtr* fields);
 
   // InvokeSendCallbacksLockHeld invokes all SendCallbacks in
   // send_callback_queue, and also clears the send_callback_queue list.
-  void InvokeSendCallbacksLockHeld(MutexProtectedFields* fields, bool success);
+  void InvokeSendCallbacksLockHeld(Fields::LockedFieldsPtr* fields, bool success);
 };
 
 // A concrete subclass of ShippingManager for sending data to Clearcut, which
@@ -248,7 +224,8 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
   // Create a shipping manager that can upload data to Clearcut.
   //
-  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to use when doing so.
+  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to
+  // use when doing so.
   //
   // TODO(camrdale): remove this once the log source transition is complete.
   ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,

@@ -92,6 +92,22 @@ TEST(ProtectedFields, ConditionVariables) {
   ASSERT_EQ(true, protected_fields.const_lock()->shutdown_complete);
 }
 
+TEST(ProtectedFields, Constructor) {
+  struct ConstructableFields {
+    uint32_t value = 1000;
+    std::string other_value;
+    int32_t num;
+
+    ConstructableFields(std::string v, int32_t num) : other_value(std::move(v)), num(num) {}
+  };
+
+  ProtectedFields<ConstructableFields> protected_fields("Constructed Value", 54321);
+
+  ASSERT_EQ(1000u, protected_fields.lock()->value);
+  ASSERT_EQ("Constructed Value", protected_fields.lock()->other_value);
+  ASSERT_EQ(54321, protected_fields.lock()->num);
+}
+
 TEST(RWProtectedFields, StressTest) {
   std::vector<std::thread> threads;
   struct SafeField {

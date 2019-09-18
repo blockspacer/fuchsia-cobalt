@@ -13,6 +13,7 @@ source_set("shipping_manager") {
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/system_data",
     "$cobalt_root/src/system_data:configuration_data",
+    "$cobalt_root/src/lib/util:protected_fields",
   ]
   public_deps = [
     "$cobalt_root/src/logger:logger_interface",

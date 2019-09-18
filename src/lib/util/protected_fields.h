@@ -160,7 +160,9 @@ class BaseProtectedFields {
   Fields fields_;
 
  public:
-  explicit BaseProtectedFields(Fields initial_fields) : fields_(initial_fields) {}
+  // Forward whatever arguments passed to BaseProtectedFields onto the constructor for Fields.
+  template <class... Args>
+  explicit BaseProtectedFields(Args&&... args) : fields_(std::forward<Args>(args)...) {}
 
   BaseProtectedFields& operator=(const BaseProtectedFields&) = delete;
   BaseProtectedFields(const BaseProtectedFields&) = delete;
