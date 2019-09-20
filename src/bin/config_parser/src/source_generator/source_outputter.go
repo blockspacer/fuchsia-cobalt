@@ -274,7 +274,7 @@ func (so *sourceOutputter) getOutputFormatter() OutputFormatter {
 	}
 }
 
-func getOutputFormatter(format, namespace, varName string, forTesting bool) (OutputFormatter, error) {
+func getOutputFormatter(format, namespace, goPackageName, varName string, forTesting bool) (OutputFormatter, error) {
 	namespaceList := []string{}
 	if namespace != "" {
 		namespaceList = strings.Split(namespace, ".")
@@ -288,9 +288,14 @@ func getOutputFormatter(format, namespace, varName string, forTesting bool) (Out
 		return CppOutputFactory(varName, namespaceList, forTesting), nil
 	case "dart":
 		return DartOutputFactory(varName, forTesting), nil
+	case "go":
+		if goPackageName == "" {
+			return nil, fmt.Errorf("no package name specified for go output formatter")
+		}
+		return GoOutputFactory(varName, goPackageName, forTesting), nil
 	case "rust":
 		return RustOutputFactory(varName, namespaceList, forTesting), nil
 	default:
-		return nil, fmt.Errorf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', and 'rust' are the only valid values for out_format.", format)
+		return nil, fmt.Errorf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', 'go', and 'rust' are the only valid values for out_format.", format)
 	}
 }

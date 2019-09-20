@@ -82,6 +82,16 @@ template("metrics_registry") {
     generate_dart = false
   }
 
+  if (defined(invoker.generate_go)) {
+    generate_go = invoker.generate_go
+  } else {
+    generate_go = false
+  }
+
+  if (defined(invoker.go_package_name)) {
+    go_package_name = invoker.go_package_name
+  }
+
   if (defined(invoker.generate_rust)) {
     generate_rust = invoker.generate_rust
   } else {
@@ -154,6 +164,11 @@ template("metrics_registry") {
     rust_source_file = "$target_gen_dir/$output_name.rs"
     generated_files += [ rust_source_file ]
   }
+  if (generate_go) {
+    out_format = "${out_format}go "
+    go_source_file = "$target_gen_dir/$output_name.go"
+    generated_files += [ go_source_file ]
+  }
 
   gen_target_name = "${target_name}_gen"
   group_deps = [ ":${gen_target_name}" ]
@@ -163,7 +178,6 @@ template("metrics_registry") {
         "$cobalt_root/src/bin/config_parser/src:bin($host_toolchain)"
     config_parser_bin =
         get_label_info(config_parser_target, "root_out_dir") + "/config_parser"
-
 
     depfile = "$target_gen_dir/$output_name.d"
     outputs = generated_files
@@ -249,6 +263,13 @@ template("metrics_registry") {
       args += [
         "-dart_out_dir",
         rebase_path(dart_src_dir, root_build_dir),
+      ]
+    }
+
+    if (generate_go) {
+      args += [
+        "-go_package",
+        go_package_name,
       ]
     }
 
@@ -349,6 +370,15 @@ template("metrics_registry") {
       source_root = rust_source_file
 
       non_rust_deps = [ ":$gen_target_name" ]
+    }
+  }
+
+  if (generate_go) {
+    import("//build/go/go_library.gni")
+
+    source_dir = target_gen_dir
+    go_library("${target_name}_golib") {
+      non_go_deps = [ ":$gen_target_name" ]
     }
   }
 

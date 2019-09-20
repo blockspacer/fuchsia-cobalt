@@ -20,7 +20,8 @@ var (
 	outDir        = flag.String("out_dir", "", "The directory into which files should be written.")
 	outFormat     = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) 'dart' (a Dart library), and 'rust' (a rust crate)")
 	forTesting    = flag.Bool("for_testing", false, "Generates a constant for each report ID. Report names should be unique in the registry.")
-	namespace     = flag.String("namespace", "", "When using the 'cpp' or 'rust' output format, this will specify the period-separated namespace within which the config variable must be placed.")
+	namespace     = flag.String("namespace", "", "When using the 'cpp', 'rust', or 'go' output format, this will specify the period-separated namespace within which the config variable must be placed (this will be transformed into an underscore-separated package name for go).")
+	goPackageName = flag.String("go_package", "", "When using the 'go' output format, this will specify the package for generated code.")
 	dartOutDir    = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
 	varName       = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
 	checkOnly     = flag.Bool("check_only", false, "Only check that the configuration is valid.")
@@ -42,6 +43,14 @@ func checkFlags() error {
 
 	if (*outDir != "" || *dartOutDir != "") && *outFilename == "" {
 		return fmt.Errorf("-out_dir or -dart_out_dir require specifying -out_filename.")
+	}
+
+	for _, format := range parseOutFormatList(*outFormat) {
+		if format == "go" {
+			if *goPackageName == "" {
+				return fmt.Errorf("-go_package must be specified for the go output format")
+			}
+		}
 	}
 	return nil
 }
@@ -69,10 +78,12 @@ func WriteDepFileFromFlags(files []string, depFile string) error {
 // WriteConfigFromFlags writes the specified CobaltRegistry according to the
 // flags specified above.
 func WriteConfigFromFlags(c, filtered *config.CobaltRegistry) error {
-	checkFlags()
+	if err := checkFlags(); err != nil {
+		return err
+	}
 	generateFilename := filenameGeneratorFromFlags()
 	for _, format := range parseOutFormatList(*outFormat) {
-		outputFormatter, err := getOutputFormatter(format, *namespace, *varName, *forTesting)
+		outputFormatter, err := getOutputFormatter(format, *namespace, *goPackageName, *varName, *forTesting)
 		if err != nil {
 			return err
 		}
