@@ -149,9 +149,14 @@ def _build(args):
 
   # If goma isn't running, start it.
   if use_goma:
+    start_goma = False
     try:
-      subprocess.check_call(['%s/gomacc' % goma_dir, 'port'])
+      if not subprocess.check_output(['%s/gomacc' % goma_dir, 'port'
+                                     ]).strip().isdigit():
+        start_goma = True
     except subprocess.CalledProcessError:
+      start_goma = True
+    if start_goma:
       subprocess.check_call(['%s/goma_ctl.py' % goma_dir, 'ensure_start'])
 
   subprocess.check_call([
