@@ -14,6 +14,7 @@
 #include "src/logger/encoder.h"
 #include "src/logger/event_aggregator.h"
 #include "src/logger/internal_metrics.h"
+#include "src/logger/internal_metrics_config.cb.h"
 #include "src/logger/logger_interface.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
@@ -109,8 +110,20 @@ class Logger : public LoggerInterface {
 
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
-  InternalMetrics* internal_metrics() { return internal_metrics_.get(); }
-  const ProjectContext* project_context() { return project_context_.get(); }
+  ABSL_DEPRECATED("Use RecordLoggerCall instead") InternalMetrics* internal_metrics() {
+    return internal_metrics_.get();
+  }
+  ABSL_DEPRECATED("Use RecordLoggerCall instead") const ProjectContext* project_context() {
+    return project_context_.get();
+  }
+
+  // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
+  // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
+  // every call to Logger along with which method was called and the project
+  // that called it.
+  void RecordLoggerCall(LoggerCallsMadeMetricDimensionLoggerMethod method) {
+    internal_metrics_->LoggerCalled(method, project_context_->project());
+  }
 
   // Pauses Cobalt's internal metrics collection.
   void PauseInternalLogging();
@@ -128,7 +141,9 @@ class Logger : public LoggerInterface {
 
   void SetClock(util::SystemClockInterface* clock) { clock_.reset(clock); }
 
-  const std::unique_ptr<ProjectContext> project_context_;
+  // ProjectContext is shared as it is used in all created EventRecords, which can outlive the
+  // Logger class.
+  const std::shared_ptr<const ProjectContext> project_context_;
 
   const Encoder* encoder_;
   EventAggregator* event_aggregator_;

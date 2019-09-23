@@ -25,9 +25,7 @@
 #include "src/registry/report_definition.pb.h"
 #include "src/tracing.h"
 
-namespace cobalt {
-namespace logger {
-namespace internal {
+namespace cobalt::logger::internal {
 
 using ::google::protobuf::RepeatedField;
 
@@ -36,11 +34,10 @@ using ::google::protobuf::RepeatedField;
 // of EventLogger for each of several Metric types.
 class EventLogger {
  public:
-  EventLogger(const ProjectContext* project_context, const Encoder* encoder,
-              EventAggregator* event_aggregator, const ObservationWriter* observation_writer,
+  EventLogger(const Encoder* encoder, EventAggregator* event_aggregator,
+              const ObservationWriter* observation_writer,
               const encoder::SystemDataInterface* system_data)
-      : project_context_(project_context),
-        encoder_(encoder),
+      : encoder_(encoder),
         event_aggregator_(event_aggregator),
         observation_writer_(observation_writer),
         system_data_(system_data) {}
@@ -53,7 +50,6 @@ class EventLogger {
   //
   // The remaining parameters are passed to the EventLogger constructor.
   static std::unique_ptr<EventLogger> Create(MetricDefinition::MetricType metric_type,
-                                             const ProjectContext* project_context,
                                              const Encoder* encoder,
                                              EventAggregator* event_aggregator,
                                              const ObservationWriter* observation_writer,
@@ -71,16 +67,17 @@ class EventLogger {
                                  EventRecord* event_record);
 
  protected:
-  const ProjectContext* project_context() { return project_context_; }
   const Encoder* encoder() { return encoder_; }
   EventAggregator* event_aggregator() { return event_aggregator_; }
 
-  Encoder::Result BadReportType(const MetricDefinition& metric, const ReportDefinition& report);
+  Encoder::Result BadReportType(const std::string& full_metric_name,
+                                const ReportDefinition& report);
 
   // Validates the supplied event_codes against the defined metric dimensions
   // in the MetricDefinition.
   virtual Status ValidateEventCodes(const MetricDefinition& metric,
-                                    const RepeatedField<uint32_t>& event_codes);
+                                    const RepeatedField<uint32_t>& event_codes,
+                                    const std::string& full_metric_name);
 
  private:
   // Validate that the event is suitable for logging.
@@ -143,7 +140,6 @@ class EventLogger {
   // |trace| The string output from TraceEvent().
   void TraceLogSuccess(const EventRecord& event_record, const std::string& trace);
 
-  const ProjectContext* project_context_;
   const Encoder* encoder_;
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
@@ -280,8 +276,6 @@ class CustomEventLogger : public EventLogger {
                                                   EventRecord* event_record) override;
 };
 
-}  // namespace internal
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger::internal
 
 #endif  // COBALT_SRC_LOGGER_EVENT_LOGGERS_H_

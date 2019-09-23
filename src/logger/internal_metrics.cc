@@ -75,7 +75,43 @@ void InternalMetricsImpl::BytesStored(PerProjectBytesStoredMetricDimensionStatus
                                         component.str(), byte_count);
 
   if (status != kOK) {
-    VLOG(1) << "InternalMetricsImpl::BytesStored: LogEventCount() returned status=" << status;
+    VLOG(1) << "InternalMetricsImpl::BytesStored: LogMemoryUsage() returned status=" << status;
+  }
+}
+
+void InternalMetricsImpl::InaccurateClockEventsCached(int64_t event_count, uint32_t customer_id,
+                                                      uint32_t project_id) {
+  if (paused_) {
+    return;
+  }
+
+  std::ostringstream component;
+  component << customer_id << '/' << project_id;
+
+  auto status = logger_->LogEventCount(kInaccurateClockEventsCachedMetricId, {}, component.str(), 0,
+                                       event_count);
+
+  if (status != kOK) {
+    VLOG(1) << "InternalMetricsImpl::InaccurateClockEventsCached: LogEventCount() returned status="
+            << status;
+  }
+}
+
+void InternalMetricsImpl::InaccurateClockEventsDropped(int64_t event_count, uint32_t customer_id,
+                                                       uint32_t project_id) {
+  if (paused_) {
+    return;
+  }
+
+  std::ostringstream component;
+  component << customer_id << '/' << project_id;
+
+  auto status = logger_->LogEventCount(kInaccurateClockEventsDroppedMetricId, {}, component.str(),
+                                       0, event_count);
+
+  if (status != kOK) {
+    VLOG(1) << "InternalMetricsImpl::InaccurateClockEventsDropped: LogEventCount() returned status="
+            << status;
   }
 }
 

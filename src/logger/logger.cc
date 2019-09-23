@@ -62,9 +62,9 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* e
 Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
   VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
           << ") project=" << project_context_->FullyQualifiedName();
-  auto event_record = std::make_unique<EventRecord>();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
   internal_metrics_->LoggerCalled(LoggerMethod::LogEvent, project_context_->project());
-  auto* occurrence_event = event_record->event->mutable_occurrence_event();
+  auto* occurrence_event = event_record->event()->mutable_occurrence_event();
   occurrence_event->set_event_code(event_code);
   return Log(metric_id, MetricDefinition::EVENT_OCCURRED, std::move(event_record));
 }
@@ -73,8 +73,8 @@ Status Logger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& ev
                              const std::string& component, int64_t period_duration_micros,
                              uint32_t count) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogEventCount, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* count_event = event_record->event->mutable_count_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* count_event = event_record->event()->mutable_count_event();
   CopyEventCodesAndComponent(event_codes, component, count_event);
   count_event->set_period_duration_micros(period_duration_micros);
   count_event->set_count(count);
@@ -84,8 +84,8 @@ Status Logger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& ev
 Status Logger::LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                               const std::string& component, int64_t elapsed_micros) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogElapsedTime, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* elapsed_time_event = event_record->event->mutable_elapsed_time_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* elapsed_time_event = event_record->event()->mutable_elapsed_time_event();
   CopyEventCodesAndComponent(event_codes, component, elapsed_time_event);
   elapsed_time_event->set_elapsed_micros(elapsed_micros);
   return Log(metric_id, MetricDefinition::ELAPSED_TIME, std::move(event_record));
@@ -94,8 +94,8 @@ Status Logger::LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& e
 Status Logger::LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                             const std::string& component, float fps) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogFrameRate, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* frame_rate_event = event_record->event->mutable_frame_rate_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* frame_rate_event = event_record->event()->mutable_frame_rate_event();
   CopyEventCodesAndComponent(event_codes, component, frame_rate_event);
   // NOLINTNEXTLINE readability-magic-numbers
   frame_rate_event->set_frames_per_1000_seconds(std::round(fps * 1000.0));
@@ -105,8 +105,8 @@ Status Logger::LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& eve
 Status Logger::LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                               const std::string& component, int64_t bytes) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogMemoryUsage, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* memory_usage_event = event_record->event->mutable_memory_usage_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* memory_usage_event = event_record->event()->mutable_memory_usage_event();
   CopyEventCodesAndComponent(event_codes, component, memory_usage_event);
   memory_usage_event->set_bytes(bytes);
   return Log(metric_id, MetricDefinition::MEMORY_USAGE, std::move(event_record));
@@ -115,8 +115,8 @@ Status Logger::LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& e
 Status Logger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                                const std::string& component, HistogramPtr histogram) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogIntHistogram, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* int_histogram_event = event_record->event->mutable_int_histogram_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* int_histogram_event = event_record->event()->mutable_int_histogram_event();
   CopyEventCodesAndComponent(event_codes, component, int_histogram_event);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
   return Log(metric_id, MetricDefinition::INT_HISTOGRAM, std::move(event_record));
@@ -124,25 +124,24 @@ Status Logger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& 
 
 Status Logger::LogString(uint32_t metric_id, const std::string& str) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogString, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* string_used_event = event_record->event->mutable_string_used_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* string_used_event = event_record->event()->mutable_string_used_event();
   string_used_event->set_str(str);
   return Log(metric_id, MetricDefinition::STRING_USED, std::move(event_record));
 }
 
 Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogCustomEvent, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>();
-  auto* custom_event = event_record->event->mutable_custom_event();
+  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+  auto* custom_event = event_record->event()->mutable_custom_event();
   custom_event->mutable_values()->swap(*event_values);
   return Log(metric_id, MetricDefinition::CUSTOM, std::move(event_record));
 }
 
 Status Logger::Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
                    std::unique_ptr<EventRecord> event_record) {
-  auto event_logger =
-      internal::EventLogger::Create(metric_type, project_context_.get(), encoder_,
-                                    event_aggregator_, observation_writer_, system_data_);
+  auto event_logger = internal::EventLogger::Create(metric_type, encoder_, event_aggregator_,
+                                                    observation_writer_, system_data_);
   Status validation_result =
       event_logger->PrepareAndValidateEvent(metric_id, metric_type, event_record.get());
   if (validation_result != kOK) {

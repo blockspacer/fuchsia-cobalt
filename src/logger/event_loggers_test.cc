@@ -107,9 +107,8 @@ class EventLoggersTest : public ::testing::Test {
     mock_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(kYear)));
     project_context_ = GetTestProject(registry_base64);
     event_aggregator_->UpdateAggregationConfigs(*project_context_);
-    logger_ = std::make_unique<EventLoggerClass>(project_context_.get(), encoder_.get(),
-                                                 event_aggregator_.get(), observation_writer_.get(),
-                                                 system_data_.get());
+    logger_ = std::make_unique<EventLoggerClass>(encoder_.get(), event_aggregator_.get(),
+                                                 observation_writer_.get(), system_data_.get());
   }
 
   void TearDown() override {
@@ -142,8 +141,8 @@ class EventLoggersTest : public ::testing::Test {
   }
 
   Status LogEvent(uint32_t metric_id, uint32_t event_code) {
-    auto event_record = std::make_unique<EventRecord>();
-    event_record->event->mutable_occurrence_event()->set_event_code(event_code);
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    event_record->event()->mutable_occurrence_event()->set_event_code(event_code);
     Status valid;
     if (kOK != (valid = logger_->PrepareAndValidateEvent(
                     metric_id, MetricDefinition::EVENT_OCCURRED, event_record.get()))) {
@@ -155,8 +154,8 @@ class EventLoggersTest : public ::testing::Test {
   Status LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                        const std::string& component, int64_t period_duration_micros,
                        uint32_t count) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* count_event = event_record->event->mutable_count_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* count_event = event_record->event()->mutable_count_event();
     count_event->set_component(component);
     count_event->set_period_duration_micros(period_duration_micros);
     count_event->set_count(count);
@@ -172,8 +171,8 @@ class EventLoggersTest : public ::testing::Test {
 
   Status LogElapsedTime(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t elapsed_micros) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* elapsed_time_event = event_record->event->mutable_elapsed_time_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* elapsed_time_event = event_record->event()->mutable_elapsed_time_event();
     elapsed_time_event->set_component(component);
     elapsed_time_event->set_elapsed_micros(elapsed_micros);
     elapsed_time_event->mutable_event_code()->CopyFrom(
@@ -188,8 +187,8 @@ class EventLoggersTest : public ::testing::Test {
 
   Status LogFrameRate(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                       const std::string& component, int64_t frames_per_1000_seconds) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* frame_rate_event = event_record->event->mutable_frame_rate_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* frame_rate_event = event_record->event()->mutable_frame_rate_event();
     frame_rate_event->set_component(component);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
     frame_rate_event->mutable_event_code()->CopyFrom(
@@ -204,8 +203,8 @@ class EventLoggersTest : public ::testing::Test {
 
   Status LogMemoryUsage(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                         const std::string& component, int64_t bytes) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* memory_usage_event = event_record->event->mutable_memory_usage_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* memory_usage_event = event_record->event()->mutable_memory_usage_event();
     memory_usage_event->set_component(component);
     memory_usage_event->set_bytes(bytes);
     memory_usage_event->mutable_event_code()->CopyFrom(
@@ -221,8 +220,8 @@ class EventLoggersTest : public ::testing::Test {
   Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                          const std::string& component, const std::vector<uint32_t>& indices,
                          const std::vector<uint32_t>& counts) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* int_histogram_event = event_record->event->mutable_int_histogram_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* int_histogram_event = event_record->event()->mutable_int_histogram_event();
     int_histogram_event->set_component(component);
     int_histogram_event->mutable_buckets()->Swap(testing::NewHistogram(indices, counts).get());
     int_histogram_event->mutable_event_code()->CopyFrom(
@@ -236,8 +235,8 @@ class EventLoggersTest : public ::testing::Test {
   }
 
   Status LogString(uint32_t metric_id, const std::string& str) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* string_used_event = event_record->event->mutable_string_used_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* string_used_event = event_record->event()->mutable_string_used_event();
     string_used_event->set_str(str);
     Status valid;
     if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::STRING_USED,
@@ -249,8 +248,8 @@ class EventLoggersTest : public ::testing::Test {
 
   Status LogCustomEvent(uint32_t metric_id, const std::vector<std::string>& dimension_names,
                         const std::vector<CustomDimensionValue>& values) {
-    auto event_record = std::make_unique<EventRecord>();
-    auto* custom_event = event_record->event->mutable_custom_event();
+    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
+    auto* custom_event = event_record->event()->mutable_custom_event();
     custom_event->mutable_values()->swap(*testing::NewCustomEvent(dimension_names, values));
     Status valid;
     if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::CUSTOM,
@@ -274,7 +273,7 @@ class EventLoggersTest : public ::testing::Test {
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<IncrementingSystemClock> mock_clock_;
-  std::unique_ptr<ProjectContext> project_context_;
+  std::shared_ptr<ProjectContext> project_context_;
 };
 
 class OccurrenceEventLoggerTest : public EventLoggersTest<internal::OccurrenceEventLogger> {};

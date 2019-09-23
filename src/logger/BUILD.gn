@@ -209,6 +209,7 @@ source_set("event_loggers") {
   visibility = [
     ":event_loggers_test",
     ":logger",
+    ":undated_event_manager",
   ]
 
   sources = [
@@ -248,6 +249,29 @@ source_set("logger") {
     ":status",
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/registry:id",
+  ]
+}
+
+source_set("undated_event_manager") {
+  sources = [
+    "undated_event_manager.cc",
+    "undated_event_manager.h",
+  ]
+
+  public_configs = [ "$cobalt_root:cobalt_config" ]
+
+  public_deps = [
+    ":encoder",
+    ":event_aggregator",
+    ":event_loggers",
+    ":event_record",
+    ":internal_metrics",
+    ":logger_interface",
+    ":observation_writer",
+    ":status",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/registry:id",
+    "//third_party/protobuf:protobuf_full",
   ]
 }
 
@@ -355,6 +379,27 @@ source_set("logger_test") {
   ]
 }
 
+source_set("undated_event_manager_test") {
+  testonly = true
+
+  sources = [
+    "undated_event_manager_test.cc",
+  ]
+
+  deps = [
+    "$cobalt_root/src/logger:fake_logger",
+    "$cobalt_root/src/system_data:client_secret",
+  ]
+
+  public_deps = [
+    ":internal_metrics_config_cc",
+    ":logger_test_utils",
+    ":testing_constants",
+    ":undated_event_manager",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 source_set("encoder_test") {
   testonly = true
   sources = [
@@ -445,5 +490,6 @@ group("tests") {
     ":logger_test",
     ":project_context_factory_test",
     ":project_context_test",
+    ":undated_event_manager_test",
   ]
 }

@@ -184,19 +184,19 @@ class EventAggregatorTest : public ::testing::Test {
   // and an event code, logs an OccurrenceEvent to the EventAggregator for
   // that report, day index, and event code. If a non-null LoggedActivity map is
   // provided, updates the map with information about the logged Event.
-  Status LogUniqueActivesEvent(const ProjectContext& project_context,
+  Status LogUniqueActivesEvent(std::shared_ptr<const ProjectContext> project_context,
                                const MetricReportId& metric_report_id, uint32_t day_index,
                                uint32_t event_code, LoggedActivity* logged_activity = nullptr) {
-    EventRecord event_record;
-    event_record.metric = project_context.GetMetric(metric_report_id.first);
-    event_record.event->set_day_index(day_index);
-    event_record.event->mutable_occurrence_event()->set_event_code(event_code);
+    EventRecord event_record(std::move(project_context), metric_report_id.first);
+    event_record.event()->set_day_index(day_index);
+    event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
     auto status = event_aggregator_->LogUniqueActivesEvent(metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
       return status;
     }
     std::string key;
-    if (!SerializeToBase64(MakeAggregationKey(project_context, metric_report_id), &key)) {
+    if (!SerializeToBase64(MakeAggregationKey(*event_record.project_context(), metric_report_id),
+                           &key)) {
       return kInvalidArguments;
     }
     (*logged_activity)[key][event_code].insert(day_index);
@@ -209,14 +209,13 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a CountEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceCountEvent(const ProjectContext& project_context,
+  Status LogPerDeviceCountEvent(std::shared_ptr<const ProjectContext> project_context,
                                 const MetricReportId& metric_report_id, uint32_t day_index,
                                 const std::string& component, uint32_t event_code, int64_t count,
                                 LoggedValues* logged_values = nullptr) {
-    EventRecord event_record;
-    event_record.metric = project_context.GetMetric(metric_report_id.first);
-    event_record.event->set_day_index(day_index);
-    auto count_event = event_record.event->mutable_count_event();
+    EventRecord event_record(std::move(project_context), metric_report_id.first);
+    event_record.event()->set_day_index(day_index);
+    auto count_event = event_record.event()->mutable_count_event();
     count_event->set_component(component);
     count_event->add_event_code(event_code);
     count_event->set_count(count);
@@ -225,7 +224,8 @@ class EventAggregatorTest : public ::testing::Test {
       return status;
     }
     std::string key;
-    if (!SerializeToBase64(MakeAggregationKey(project_context, metric_report_id), &key)) {
+    if (!SerializeToBase64(MakeAggregationKey(*event_record.project_context(), metric_report_id),
+                           &key)) {
       return kInvalidArguments;
     }
     (*logged_values)[key][component][event_code][day_index].push_back(count);
@@ -238,14 +238,13 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs an ElapsedTimeEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceElapsedTimeEvent(const ProjectContext& project_context,
+  Status LogPerDeviceElapsedTimeEvent(std::shared_ptr<const ProjectContext> project_context,
                                       const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component, uint32_t event_code,
                                       int64_t micros, LoggedValues* logged_values = nullptr) {
-    EventRecord event_record;
-    event_record.metric = project_context.GetMetric(metric_report_id.first);
-    event_record.event->set_day_index(day_index);
-    auto elapsed_time_event = event_record.event->mutable_elapsed_time_event();
+    EventRecord event_record(std::move(project_context), metric_report_id.first);
+    event_record.event()->set_day_index(day_index);
+    auto elapsed_time_event = event_record.event()->mutable_elapsed_time_event();
     elapsed_time_event->set_component(component);
     elapsed_time_event->add_event_code(event_code);
     elapsed_time_event->set_elapsed_micros(micros);
@@ -254,7 +253,8 @@ class EventAggregatorTest : public ::testing::Test {
       return status;
     }
     std::string key;
-    if (!SerializeToBase64(MakeAggregationKey(project_context, metric_report_id), &key)) {
+    if (!SerializeToBase64(MakeAggregationKey(*event_record.project_context(), metric_report_id),
+                           &key)) {
       return kInvalidArguments;
     }
     (*logged_values)[key][component][event_code][day_index].push_back(micros);
@@ -267,14 +267,13 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a FrameRateEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceFrameRateEvent(const ProjectContext& project_context,
+  Status LogPerDeviceFrameRateEvent(std::shared_ptr<const ProjectContext> project_context,
                                     const MetricReportId& metric_report_id, uint32_t day_index,
                                     const std::string& component, uint32_t event_code, float fps,
                                     LoggedValues* logged_values = nullptr) {
-    EventRecord event_record;
-    event_record.metric = project_context.GetMetric(metric_report_id.first);
-    event_record.event->set_day_index(day_index);
-    auto frame_rate_event = event_record.event->mutable_frame_rate_event();
+    EventRecord event_record(std::move(project_context), metric_report_id.first);
+    event_record.event()->set_day_index(day_index);
+    auto frame_rate_event = event_record.event()->mutable_frame_rate_event();
     frame_rate_event->set_component(component);
     frame_rate_event->add_event_code(event_code);
     int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
@@ -284,7 +283,8 @@ class EventAggregatorTest : public ::testing::Test {
       return status;
     }
     std::string key;
-    if (!SerializeToBase64(MakeAggregationKey(project_context, metric_report_id), &key)) {
+    if (!SerializeToBase64(MakeAggregationKey(*event_record.project_context(), metric_report_id),
+                           &key)) {
       return kInvalidArguments;
     }
     (*logged_values)[key][component][event_code][day_index].push_back(frames_per_1000_seconds);
@@ -297,15 +297,14 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a MemoryUsageEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceMemoryUsageEvent(const ProjectContext& project_context,
+  Status LogPerDeviceMemoryUsageEvent(std::shared_ptr<const ProjectContext> project_context,
                                       const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component,
                                       const std::vector<uint32_t>& event_codes, int64_t bytes,
                                       LoggedValues* logged_values = nullptr) {
-    EventRecord event_record;
-    event_record.metric = project_context.GetMetric(metric_report_id.first);
-    event_record.event->set_day_index(day_index);
-    auto memory_usage_event = event_record.event->mutable_memory_usage_event();
+    EventRecord event_record(std::move(project_context), metric_report_id.first);
+    event_record.event()->set_day_index(day_index);
+    auto memory_usage_event = event_record.event()->mutable_memory_usage_event();
     memory_usage_event->set_component(component);
     for (auto event_code : event_codes) {
       memory_usage_event->add_event_code(event_code);
@@ -316,7 +315,8 @@ class EventAggregatorTest : public ::testing::Test {
       return status;
     }
     std::string key;
-    if (!SerializeToBase64(MakeAggregationKey(project_context, metric_report_id), &key)) {
+    if (!SerializeToBase64(MakeAggregationKey(*event_record.project_context(), metric_report_id),
+                           &key)) {
       return kInvalidArguments;
     }
     (*logged_values)[key][component][PackEventCodes(event_codes)][day_index].push_back(bytes);
@@ -705,8 +705,8 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   // EventAggregatorTest::LogUniqueActivesEvent.
   Status LogUniqueActivesEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                uint32_t event_code, LoggedActivity* logged_activity = nullptr) {
-    return EventAggregatorTest::LogUniqueActivesEvent(*project_context_, metric_report_id,
-                                                      day_index, event_code, logged_activity);
+    return EventAggregatorTest::LogUniqueActivesEvent(project_context_, metric_report_id, day_index,
+                                                      event_code, logged_activity);
   }
 
   // Logs a CountEvent for the MetricReportId of a locally
@@ -715,9 +715,8 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   Status LogPerDeviceCountEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                 const std::string& component, uint32_t event_code, int64_t count,
                                 LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceCountEvent(*project_context_, metric_report_id,
-                                                       day_index, component, event_code, count,
-                                                       logged_values);
+    return EventAggregatorTest::LogPerDeviceCountEvent(
+        project_context_, metric_report_id, day_index, component, event_code, count, logged_values);
   }
 
   // Logs an ElapsedTimeEvent for the MetricReportId of a locally
@@ -726,7 +725,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
   Status LogPerDeviceElapsedTimeEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component, uint32_t event_code,
                                       int64_t micros, LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceElapsedTimeEvent(*project_context_, metric_report_id,
+    return EventAggregatorTest::LogPerDeviceElapsedTimeEvent(project_context_, metric_report_id,
                                                              day_index, component, event_code,
                                                              micros, logged_values);
   }
@@ -738,7 +737,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
                                     const std::string& component, uint32_t event_code, float fps,
                                     LoggedValues* logged_values = nullptr) {
     return EventAggregatorTest::LogPerDeviceFrameRateEvent(
-        *project_context_, metric_report_id, day_index, component, event_code, fps, logged_values);
+        project_context_, metric_report_id, day_index, component, event_code, fps, logged_values);
   }
 
   // Logs a MemoryUsageEvent for the MetricReportId of a locally
@@ -748,7 +747,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
                                       const std::string& component,
                                       const std::vector<uint32_t>& event_codes, int64_t bytes,
                                       LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceMemoryUsageEvent(*project_context_, metric_report_id,
+    return EventAggregatorTest::LogPerDeviceMemoryUsageEvent(project_context_, metric_report_id,
                                                              day_index, component, event_codes,
                                                              bytes, logged_values);
   }
@@ -756,7 +755,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
  private:
   // A ProjectContext wrapping the MetricDefinitions passed to the
   // constructor in |metric_string|.
-  std::unique_ptr<ProjectContext> project_context_;
+  std::shared_ptr<ProjectContext> project_context_;
 };
 
 // Creates an EventAggregator and provides it with a ProjectContext generated
@@ -930,19 +929,18 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
 // proto message which is not of the appropriate event type.
 TEST_F(EventAggregatorTest, LogBadEvents) {
   // Provide the unique_actives test registry to the EventAggregator.
-  auto unique_actives_project_context =
+  std::shared_ptr<ProjectContext> unique_actives_project_context =
       GetTestProject(testing::unique_actives::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*unique_actives_project_context));
   // Attempt to log a UniqueActivesEvent for
   // |kEventsOccurredMetricReportId|, which is not in the unique_actives
   // registry. Check that the result is |kInvalidArguments|.
-  auto noise_free_project_context =
+  std::shared_ptr<ProjectContext> noise_free_project_context =
       GetTestProject(testing::unique_actives_noise_free::kCobaltRegistryBase64);
-  EventRecord bad_event_record;
-  bad_event_record.metric = noise_free_project_context->GetMetric(
-      testing::unique_actives_noise_free::kEventsOccurredMetricId);
-  bad_event_record.event->set_day_index(CurrentDayIndex());
-  bad_event_record.event->mutable_occurrence_event()->set_event_code(0u);
+  EventRecord bad_event_record(noise_free_project_context,
+                               testing::unique_actives_noise_free::kEventsOccurredMetricId);
+  bad_event_record.event()->set_day_index(CurrentDayIndex());
+  bad_event_record.event()->mutable_occurrence_event()->set_event_code(0u);
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
                 testing::unique_actives_noise_free::kEventsOccurredUniqueDevicesReportId,
@@ -950,22 +948,23 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   // Attempt to call LogUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
   // OccurrenceEvent. Check that the result is |kInvalidArguments|.
-  bad_event_record.metric =
-      unique_actives_project_context->GetMetric(testing::unique_actives::kFeaturesActiveMetricId);
-  bad_event_record.event->mutable_count_event();
+  EventRecord bad_event_record2(unique_actives_project_context,
+                                testing::unique_actives::kFeaturesActiveMetricId);
+  bad_event_record2.event()->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
-                testing::unique_actives::kFeaturesActiveUniqueDevicesReportId, bad_event_record));
+                testing::unique_actives::kFeaturesActiveUniqueDevicesReportId, bad_event_record2));
   // Attempt to call LogPerDeviceCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
   // CountEvent. Check that the result is |kInvalidArguments|.
-  bad_event_record.metric = noise_free_project_context->GetMetric(
+  EventRecord bad_event_record3(
+      noise_free_project_context,
       testing::per_device_numeric_stats::kConnectionFailuresMetricReportId.first);
-  bad_event_record.event->mutable_occurrence_event();
+  bad_event_record3.event()->mutable_occurrence_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogCountEvent(
                 testing::per_device_numeric_stats::kConnectionFailuresPerDeviceCountReportId,
-                bad_event_record));
+                bad_event_record3));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
@@ -3469,17 +3468,18 @@ TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
   event_aggregator_->Start(std::move(test_clock_));
   // Provide the EventAggregator with the all_report_types registry.
-  auto project_context = GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
+  std::shared_ptr<ProjectContext> project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Log some events.
   LoggedActivity logged_activity;
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(*project_context,
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(project_context,
                                        testing::all_report_types::kDeviceBootsMetricReportId,
                                        day_index, 0u, &logged_activity));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(*project_context,
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(project_context,
                                        testing::all_report_types::kFeaturesActiveMetricReportId,
                                        day_index, 4u, &logged_activity));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(*project_context,
+  EXPECT_EQ(kOK, LogUniqueActivesEvent(project_context,
                                        testing::all_report_types::kEventsOccurredMetricReportId,
                                        day_index, 1u, &logged_activity));
   EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));

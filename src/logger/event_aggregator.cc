@@ -250,14 +250,14 @@ Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_c
 }
 
 Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (!event_record.event->has_occurrence_event()) {
+  if (!event_record.event()->has_occurrence_event()) {
     LOG(ERROR) << "EventAggregator::LogUniqueActivesEvent can only "
                   "accept OccurrenceEvents.";
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric->customer_id(), event_record.metric->project_id(),
-                         event_record.metric->id(), report_id, &key)) {
+  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
+                         event_record.metric()->id(), report_id, &key)) {
     return kInvalidArguments;
   }
   auto locked = protected_aggregate_store_.lock();
@@ -272,76 +272,76 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRec
     return kInvalidArguments;
   }
   (*(*aggregates->second.mutable_unique_actives_aggregates()
-          ->mutable_by_event_code())[event_record.event->occurrence_event().event_code()]
-        .mutable_by_day_index())[event_record.event->day_index()]
+          ->mutable_by_event_code())[event_record.event()->occurrence_event().event_code()]
+        .mutable_by_day_index())[event_record.event()->day_index()]
       .mutable_activity_daily_aggregate()
       ->set_activity_indicator(true);
   return kOK;
 }
 
 Status EventAggregator::LogCountEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event->type_case() != Event::kCountEvent) {
+  if (event_record.event()->type_case() != Event::kCountEvent) {
     LOG(ERROR) << "EventAggregator: LogCountEvent can only accept "
                   "CountEvents.";
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric->customer_id(), event_record.metric->project_id(),
-                         event_record.metric->id(), report_id, &key)) {
+  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
+                         event_record.metric()->id(), report_id, &key)) {
     return kInvalidArguments;
   }
-  const CountEvent& count_event = event_record.event->count_event();
-  return LogNumericEvent(key, event_record.event->day_index(), count_event.component(),
+  const CountEvent& count_event = event_record.event()->count_event();
+  return LogNumericEvent(key, event_record.event()->day_index(), count_event.component(),
                          config::PackEventCodes(count_event.event_code()), count_event.count());
 }
 
 Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event->type_case() != Event::kElapsedTimeEvent) {
+  if (event_record.event()->type_case() != Event::kElapsedTimeEvent) {
     LOG(ERROR) << "EventAggregator: LogElapsedTimeEvent can only accept "
                   "ElapsedTimeEvents.";
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric->customer_id(), event_record.metric->project_id(),
-                         event_record.metric->id(), report_id, &key)) {
+  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
+                         event_record.metric()->id(), report_id, &key)) {
     return kInvalidArguments;
   }
-  const ElapsedTimeEvent& elapsed_time_event = event_record.event->elapsed_time_event();
-  return LogNumericEvent(key, event_record.event->day_index(), elapsed_time_event.component(),
+  const ElapsedTimeEvent& elapsed_time_event = event_record.event()->elapsed_time_event();
+  return LogNumericEvent(key, event_record.event()->day_index(), elapsed_time_event.component(),
                          config::PackEventCodes(elapsed_time_event.event_code()),
                          elapsed_time_event.elapsed_micros());
 }
 
 Status EventAggregator::LogFrameRateEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event->type_case() != Event::kFrameRateEvent) {
+  if (event_record.event()->type_case() != Event::kFrameRateEvent) {
     LOG(ERROR) << "EventAggregator: LogFrameRateEvent can only accept "
                   "FrameRateEvents.";
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric->customer_id(), event_record.metric->project_id(),
-                         event_record.metric->id(), report_id, &key)) {
+  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
+                         event_record.metric()->id(), report_id, &key)) {
     return kInvalidArguments;
   }
-  const FrameRateEvent& frame_rate_event = event_record.event->frame_rate_event();
-  return LogNumericEvent(key, event_record.event->day_index(), frame_rate_event.component(),
+  const FrameRateEvent& frame_rate_event = event_record.event()->frame_rate_event();
+  return LogNumericEvent(key, event_record.event()->day_index(), frame_rate_event.component(),
                          config::PackEventCodes(frame_rate_event.event_code()),
                          frame_rate_event.frames_per_1000_seconds());
 }
 
 Status EventAggregator::LogMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event->type_case() != Event::kMemoryUsageEvent) {
+  if (event_record.event()->type_case() != Event::kMemoryUsageEvent) {
     LOG(ERROR) << "EventAggregator: LogMemoryUsageEvent can only accept "
                   "MemoryUsageEvents.";
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric->customer_id(), event_record.metric->project_id(),
-                         event_record.metric->id(), report_id, &key)) {
+  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
+                         event_record.metric()->id(), report_id, &key)) {
     return kInvalidArguments;
   }
-  const MemoryUsageEvent& memory_usage_event = event_record.event->memory_usage_event();
-  return LogNumericEvent(key, event_record.event->day_index(), memory_usage_event.component(),
+  const MemoryUsageEvent& memory_usage_event = event_record.event()->memory_usage_event();
+  return LogNumericEvent(key, event_record.event()->day_index(), memory_usage_event.component(),
                          config::PackEventCodes(memory_usage_event.event_code()),
                          memory_usage_event.bytes());
 }

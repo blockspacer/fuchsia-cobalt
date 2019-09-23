@@ -30,43 +30,42 @@ using ::google::protobuf::RepeatedPtrField;
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
 std::unique_ptr<EventLogger> EventLogger::Create(MetricDefinition::MetricType metric_type,
-                                                 const ProjectContext* project_context,
                                                  const Encoder* encoder,
                                                  EventAggregator* event_aggregator,
                                                  const ObservationWriter* observation_writer,
                                                  const encoder::SystemDataInterface* system_data) {
   switch (metric_type) {
     case MetricDefinition::EVENT_OCCURRED: {
-      return std::make_unique<internal::OccurrenceEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::OccurrenceEventLogger>(encoder, event_aggregator,
+                                                               observation_writer, system_data);
     }
     case MetricDefinition::EVENT_COUNT: {
-      return std::make_unique<internal::CountEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::CountEventLogger>(encoder, event_aggregator,
+                                                          observation_writer, system_data);
     }
     case MetricDefinition::ELAPSED_TIME: {
-      return std::make_unique<internal::ElapsedTimeEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::ElapsedTimeEventLogger>(encoder, event_aggregator,
+                                                                observation_writer, system_data);
     }
     case MetricDefinition::FRAME_RATE: {
-      return std::make_unique<internal::FrameRateEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::FrameRateEventLogger>(encoder, event_aggregator,
+                                                              observation_writer, system_data);
     }
     case MetricDefinition::MEMORY_USAGE: {
-      return std::make_unique<internal::MemoryUsageEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::MemoryUsageEventLogger>(encoder, event_aggregator,
+                                                                observation_writer, system_data);
     }
     case MetricDefinition::INT_HISTOGRAM: {
-      return std::make_unique<internal::IntHistogramEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::IntHistogramEventLogger>(encoder, event_aggregator,
+                                                                 observation_writer, system_data);
     }
     case MetricDefinition::STRING_USED: {
-      return std::make_unique<internal::StringUsedEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::StringUsedEventLogger>(encoder, event_aggregator,
+                                                               observation_writer, system_data);
     }
     case MetricDefinition::CUSTOM: {
-      return std::make_unique<internal::CustomEventLogger>(
-          project_context, encoder, event_aggregator, observation_writer, system_data);
+      return std::make_unique<internal::CustomEventLogger>(encoder, event_aggregator,
+                                                           observation_writer, system_data);
     }
     default: {
       LOG(ERROR) << "Failed to process a metric type of " << metric_type;
@@ -76,11 +75,11 @@ std::unique_ptr<EventLogger> EventLogger::Create(MetricDefinition::MetricType me
 }
 
 std::string EventLogger::TraceEvent(const EventRecord& event_record) {
-  if (!event_record.metric->meta_data().also_log_locally()) {
+  if (!event_record.metric()->meta_data().also_log_locally()) {
     return "";
   }
 
-  auto event = event_record.event.get();
+  auto event = event_record.event();
 
   std::stringstream ss;
   ss << "Day index: " << event->day_index() << std::endl;
@@ -175,52 +174,53 @@ std::string EventLogger::TraceEvent(const EventRecord& event_record) {
 
 void EventLogger::TraceLogFailure(const Status& status, const EventRecord& event_record,
                                   const std::string& trace, const ReportDefinition& report) {
-  if (!event_record.metric->meta_data().also_log_locally()) {
+  if (!event_record.metric()->meta_data().also_log_locally()) {
     return;
   }
 
   LOG(INFO) << TRACE_PREFIX << "("
-            << project_context()->RefMetric(event_record.metric).FullyQualifiedName()
+            << event_record.project_context()->RefMetric(event_record.metric()).FullyQualifiedName()
             << "): Error (" << status << ")" << std::endl
             << trace << "While trying to send report: " << report.report_name() << std::endl;
 }
 
 void EventLogger::TraceLogSuccess(const EventRecord& event_record, const std::string& trace) {
-  if (!event_record.metric->meta_data().also_log_locally()) {
+  if (!event_record.metric()->meta_data().also_log_locally()) {
     return;
   }
 
   LOG(INFO) << TRACE_PREFIX << "("
-            << project_context()->RefMetric(event_record.metric).FullyQualifiedName()
+            << event_record.project_context()->RefMetric(event_record.metric()).FullyQualifiedName()
             << "):" << std::endl
             << trace;
 }
 
 Status EventLogger::Log(std::unique_ptr<EventRecord> event_record,
                         const std::chrono::system_clock::time_point& event_timestamp) {
-  TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", event_record->metric->id());
+  TRACE_DURATION("cobalt_core", "EventLogger::Log", "metric_id", event_record->metric()->id());
 
   FinalizeEvent(event_record.get(), event_timestamp);
 
   if (system_data_) {
-    if (system_data_->release_stage() > event_record->metric->meta_data().max_release_stage()) {
+    if (system_data_->release_stage() > event_record->metric()->meta_data().max_release_stage()) {
       // Quietly ignore this metric.
       LOG_FIRST_N(INFO, 10) << "Not logging metric `"
-                            << project_context()->FullMetricName(*event_record->metric)
+                            << event_record->project_context()->FullMetricName(
+                                   *event_record->metric())
                             << "` because its max_release_stage ("
-                            << event_record->metric->meta_data().max_release_stage()
+                            << event_record->metric()->meta_data().max_release_stage()
                             << ") is lower than the device's current release_stage: "
                             << system_data_->release_stage();
       return kOK;
     }
   }
 
-  int num_reports = event_record->metric->reports_size();
+  int num_reports = event_record->metric()->reports_size();
   int report_index = 0;
-  if (event_record->metric->reports_size() == 0) {
+  if (event_record->metric()->reports_size() == 0) {
     VLOG(1) << "Warning: An event was logged for a metric with no reports "
                "defined: "
-            << project_context()->FullMetricName(*event_record->metric);
+            << event_record->project_context()->FullMetricName(*event_record->metric());
   }
 
   // Store the trace before attempting to log the event. This way, if parts of
@@ -228,7 +228,7 @@ Status EventLogger::Log(std::unique_ptr<EventRecord> event_record,
   // useful information.
   auto trace = TraceEvent(*event_record);
 
-  for (const auto& report : event_record->metric->reports()) {
+  for (const auto& report : event_record->metric()->reports()) {
     auto status = MaybeUpdateLocalAggregation(report, *event_record);
     if (status != kOK) {
       TraceLogFailure(status, *event_record, trace, report);
@@ -258,14 +258,14 @@ Status EventLogger::Log(std::unique_ptr<EventRecord> event_record,
 Status EventLogger::PrepareAndValidateEvent(uint32_t metric_id,
                                             MetricDefinition::MetricType expected_type,
                                             EventRecord* event_record) {
-  event_record->metric = project_context()->GetMetric(metric_id);
-  if (event_record->metric == nullptr) {
+  if (event_record->metric() == nullptr) {
     LOG(ERROR) << "There is no metric with ID '" << metric_id << "' registered "
-               << "in project '" << project_context()->FullyQualifiedName() << "'.";
+               << "in project '" << event_record->project_context()->FullyQualifiedName() << "'.";
     return kInvalidArguments;
   }
-  if (event_record->metric->metric_type() != expected_type) {
-    LOG(ERROR) << "Metric " << project_context()->FullMetricName(*event_record->metric)
+  if (event_record->metric()->metric_type() != expected_type) {
+    LOG(ERROR) << "Metric "
+               << event_record->project_context()->FullMetricName(*event_record->metric())
                << " is not of type " << expected_type << ".";
     return kInvalidArguments;
   }
@@ -276,15 +276,17 @@ void EventLogger::FinalizeEvent(EventRecord* event_record,
                                 const std::chrono::system_clock::time_point& event_timestamp) {
   // Compute the day_index and hour index.
   auto now = std::chrono::system_clock::to_time_t(event_timestamp);
-  event_record->event->set_day_index(TimeToDayIndex(now, event_record->metric->time_zone_policy()));
-  event_record->event->set_hour_index(
-      TimeToHourIndex(now, event_record->metric->time_zone_policy()));
+  event_record->event()->set_day_index(
+      TimeToDayIndex(now, event_record->metric()->time_zone_policy()));
+  event_record->event()->set_hour_index(
+      TimeToHourIndex(now, event_record->metric()->time_zone_policy()));
 }
 
 Status EventLogger::ValidateEvent(const EventRecord& /*event_record*/) { return kOK; }
 
 Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
-                                       const RepeatedField<uint32_t>& event_codes) {
+                                       const RepeatedField<uint32_t>& event_codes,
+                                       const std::string& full_metric_name) {
   // Special case: Users of the version of the Log*() method that takes
   // a single event code as opposed to a vector of event codes use the
   // convention of passing a zero value for the single event code in the
@@ -310,8 +312,7 @@ Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
   if (event_codes.size() > metric.metric_dimensions_size()) {
     LOG(ERROR) << "The number of event_codes given, " << event_codes.size()
                << ", is more than the number of metric_dimensions, "
-               << metric.metric_dimensions_size() << ", for metric "
-               << project_context()->FullMetricName(metric) << ".";
+               << metric.metric_dimensions_size() << ", for metric " << full_metric_name << ".";
     return kInvalidArguments;
   }
   for (int i = 0; i < event_codes.size(); i++) {
@@ -329,7 +330,7 @@ Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
       if (code > dim.max_event_code()) {
         LOG(ERROR) << "The event_code given for dimension " << i << ", " << code
                    << ", exceeds the max_event_code for that dimension, " << dim.max_event_code()
-                   << ", for metric " << project_context()->FullMetricName(metric);
+                   << ", for metric " << full_metric_name;
         return kInvalidArguments;
       }
     } else {
@@ -346,7 +347,7 @@ Status EventLogger::ValidateEventCodes(const MetricDefinition& metric,
                    << ", is not a valid event code for that dimension."
                    << ". You must either define this event code in"
                       " the metric_dimension, or set max_event_code >= "
-                   << code << ", for metric " << project_context()->FullMetricName(metric);
+                   << code << ", for metric " << full_metric_name;
         return kInvalidArguments;
       }
     }
@@ -389,11 +390,10 @@ Encoder::Result EventLogger::MaybeEncodeImmediateObservation(const ReportDefinit
   return result;
 }
 
-Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
+Encoder::Result EventLogger::BadReportType(const std::string& full_metric_name,
                                            const ReportDefinition& report) {
   LOG(ERROR) << "Invalid Cobalt config: Report " << report.report_name() << " for metric "
-             << project_context()->FullMetricName(metric)
-             << " is not of an appropriate type for the metric type.";
+             << full_metric_name << " is not of an appropriate type for the metric type.";
   Encoder::Result encoder_result;
   encoder_result.status = kInvalidConfig;
   return encoder_result;
@@ -402,20 +402,22 @@ Encoder::Result EventLogger::BadReportType(const MetricDefinition& metric,
 /////////////// OccurrenceEventLogger method implementations ///////////////////
 
 Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.event->has_occurrence_event());
-  if (event_record.metric->metric_dimensions_size() != 1) {
-    LOG(ERROR) << "The Metric " << project_context()->FullMetricName(*event_record.metric)
+  CHECK(event_record.event()->has_occurrence_event());
+  if (event_record.metric()->metric_dimensions_size() != 1) {
+    LOG(ERROR) << "The Metric "
+               << event_record.project_context()->FullMetricName(*event_record.metric())
                << " has the wrong number of metric_dimensions. A metric of "
                   "type EVENT_OCCURRED must have exactly one metric_dimension.";
     return kInvalidConfig;
   }
 
-  const auto& occurrence_event = event_record.event->occurrence_event();
-  if (occurrence_event.event_code() > event_record.metric->metric_dimensions(0).max_event_code()) {
+  const auto& occurrence_event = event_record.event()->occurrence_event();
+  if (occurrence_event.event_code() >
+      event_record.metric()->metric_dimensions(0).max_event_code()) {
     LOG(ERROR) << "The event_code " << occurrence_event.event_code() << " exceeds "
-               << event_record.metric->metric_dimensions(0).max_event_code()
+               << event_record.metric()->metric_dimensions(0).max_event_code()
                << ", the max_event_code for Metric "
-               << project_context()->FullMetricName(*event_record.metric) << ".";
+               << event_record.project_context()->FullMetricName(*event_record.metric()) << ".";
     return kInvalidArguments;
   }
   return kOK;
@@ -424,8 +426,8 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "OccurrenceEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   CHECK(event.has_occurrence_event());
   const auto& occurrence_event = event.occurrence_event();
   switch (report.report_type()) {
@@ -433,7 +435,7 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
     // observations.
     case ReportDefinition::SIMPLE_OCCURRENCE_COUNT: {
       return encoder()->EncodeBasicRapporObservation(
-          project_context()->RefMetric(&metric), &report, event.day_index(),
+          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           occurrence_event.event_code(), RapporConfigHelper::BasicRapporNumCategories(metric));
     }
       // Report type UNIQUE_N_DAY_ACTIVES is valid but should not result in
@@ -447,7 +449,7 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
     }
 
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 
@@ -465,18 +467,20 @@ Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition
 ///////////// CountEventLogger method implementations //////////////////////////
 
 Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.metric);
-  return ValidateEventCodes(*event_record.metric, event_record.event->count_event().event_code());
+  CHECK(event_record.metric());
+  const auto& metric = *(event_record.metric());
+  return ValidateEventCodes(metric, event_record.event()->count_event().event_code(),
+                            event_record.project_context()->FullMetricName(metric));
 }
 
 Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDefinition& report,
                                                                   bool /*may_invalidate*/,
                                                                   EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "CountEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   CHECK(event.has_count_event());
-  auto* count_event = event_record->event->mutable_count_event();
+  auto* count_event = event_record->event()->mutable_count_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
@@ -484,7 +488,7 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
     case ReportDefinition::INT_RANGE_HISTOGRAM:
     case ReportDefinition::NUMERIC_AGGREGATION: {
       return encoder()->EncodeIntegerEventObservation(
-          project_context()->RefMetric(&metric), &report, event.day_index(),
+          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           count_event->event_code(), count_event->component(), count_event->count());
     }
       // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
@@ -498,7 +502,7 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
     }
 
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 
@@ -518,19 +522,17 @@ Status CountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& rep
 Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
     case ReportDefinition::NUMERIC_AGGREGATION:
     case ReportDefinition::NUMERIC_PERF_RAW_DUMP:
-    case ReportDefinition::INT_RANGE_HISTOGRAM: {
-      return encoder()->EncodeIntegerEventObservation(project_context()->RefMetric(&metric),
-                                                      &report, event.day_index(), EventCodes(event),
-                                                      Component(event), IntValue(event));
-      break;
-    }
+    case ReportDefinition::INT_RANGE_HISTOGRAM:
+      return encoder()->EncodeIntegerEventObservation(
+          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
+          EventCodes(event), Component(event), IntValue(event));
       // Report type PER_DEVICE_NUMERIC_STATS is valid but should not result in
       // generation of an immediate observation.
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
@@ -541,7 +543,7 @@ Encoder::Result IntegerPerformanceEventLogger::MaybeEncodeImmediateObservation(
       return result;
     }
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 
@@ -563,9 +565,10 @@ int64_t ElapsedTimeEventLogger::IntValue(const Event& event) {
 }
 
 Status ElapsedTimeEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.metric);
-  return ValidateEventCodes(*event_record.metric,
-                            event_record.event->elapsed_time_event().event_code());
+  CHECK(event_record.metric());
+  const auto& metric = *(event_record.metric());
+  return ValidateEventCodes(metric, event_record.event()->elapsed_time_event().event_code(),
+                            event_record.project_context()->FullMetricName(metric));
 }
 
 Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
@@ -597,9 +600,10 @@ int64_t FrameRateEventLogger::IntValue(const Event& event) {
 }
 
 Status FrameRateEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.metric);
-  return ValidateEventCodes(*event_record.metric,
-                            event_record.event->frame_rate_event().event_code());
+  CHECK(event_record.metric());
+  const auto& metric = *(event_record.metric());
+  return ValidateEventCodes(metric, event_record.event()->frame_rate_event().event_code(),
+                            event_record.project_context()->FullMetricName(metric));
 }
 
 Status FrameRateEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
@@ -630,9 +634,10 @@ int64_t MemoryUsageEventLogger::IntValue(const Event& event) {
 }
 
 Status MemoryUsageEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.metric);
-  return ValidateEventCodes(*event_record.metric,
-                            event_record.event->memory_usage_event().event_code());
+  CHECK(event_record.metric());
+  const auto& metric = *(event_record.metric());
+  return ValidateEventCodes(metric, event_record.event()->memory_usage_event().event_code(),
+                            event_record.project_context()->FullMetricName(metric));
 }
 
 Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
@@ -649,19 +654,20 @@ Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(const ReportDefinitio
 ///////////// IntHistogramEventLogger method implementations ///////////////////
 
 Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.event->has_int_histogram_event());
-  const auto& int_histogram_event = event_record.event->int_histogram_event();
-  CHECK(event_record.metric);
-  const auto& metric = *(event_record.metric);
+  CHECK(event_record.event()->has_int_histogram_event());
+  const auto& int_histogram_event = event_record.event()->int_histogram_event();
+  CHECK(event_record.metric());
+  const auto& metric = *(event_record.metric());
 
-  auto status = ValidateEventCodes(metric, int_histogram_event.event_code());
+  auto status = ValidateEventCodes(metric, int_histogram_event.event_code(),
+                                   event_record.project_context()->FullMetricName(metric));
   if (status != kOK) {
     return status;
   }
 
   if (!metric.has_int_buckets()) {
     LOG(ERROR) << "Invalid Cobalt config: Metric "
-               << project_context()->FullMetricName(*event_record.metric)
+               << event_record.project_context()->FullMetricName(metric)
                << " does not have an |int_buckets| field set.";
     return kInvalidConfig;
   }
@@ -676,7 +682,7 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
       break;
     case IntegerBuckets::BUCKETS_NOT_SET:
       LOG(ERROR) << "Invalid Cobalt config: Metric "
-                 << project_context()->FullMetricName(*event_record.metric)
+                 << event_record.project_context()->FullMetricName(metric)
                  << " has an invalid |int_buckets| field. Either exponential "
                     "or linear buckets must be specified.";
       return kInvalidConfig;
@@ -692,7 +698,7 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
       LOG(ERROR) << "The provided histogram is invalid. The index value of "
                  << int_histogram_event.buckets(i).index() << " in position " << i
                  << " is out of bounds for Metric "
-                 << project_context()->FullMetricName(*event_record.metric) << ".";
+                 << event_record.project_context()->FullMetricName(metric) << ".";
       return kInvalidArguments;
     }
   }
@@ -703,10 +709,10 @@ Status IntHistogramEventLogger::ValidateEvent(const EventRecord& event_record) {
 Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool may_invalidate, EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "IntHistogramEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   CHECK(event.has_int_histogram_event());
-  auto* int_histogram_event = event_record->event->mutable_int_histogram_event();
+  auto* int_histogram_event = event_record->event()->mutable_int_histogram_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
@@ -720,13 +726,13 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
         histogram->CopyFrom(int_histogram_event->buckets());
       }
       return encoder()->EncodeHistogramObservation(
-          project_context()->RefMetric(&metric), &report, event.day_index(),
+          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           int_histogram_event->event_code(), int_histogram_event->component(),
           std::move(histogram));
     }
 
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 
@@ -735,24 +741,26 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
 Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "StringUsedEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   CHECK(event.has_string_used_event());
-  const auto& string_used_event = event_record->event->string_used_event();
+  const auto& string_used_event = event_record->event()->string_used_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
     case ReportDefinition::HIGH_FREQUENCY_STRING_COUNTS: {
-      return encoder()->EncodeRapporObservation(project_context()->RefMetric(&metric), &report,
-                                                event.day_index(), string_used_event.str());
+      return encoder()->EncodeRapporObservation(event_record->project_context()->RefMetric(&metric),
+                                                &report, event.day_index(),
+                                                string_used_event.str());
     }
     case ReportDefinition::STRING_COUNTS_WITH_THRESHOLD: {
-      return encoder()->EncodeForculusObservation(project_context()->RefMetric(&metric), &report,
-                                                  event.day_index(), string_used_event.str());
+      return encoder()->EncodeForculusObservation(
+          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
+          string_used_event.str());
     }
 
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 
@@ -767,10 +775,10 @@ Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(const ReportD
                                                                    bool may_invalidate,
                                                                    EventRecord* event_record) {
   TRACE_DURATION("cobalt_core", "CustomEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric);
-  const Event& event = *(event_record->event);
+  const MetricDefinition& metric = *(event_record->metric());
+  const Event& event = *(event_record->event());
   CHECK(event.has_custom_event());
-  auto* custom_event = event_record->event->mutable_custom_event();
+  auto* custom_event = event_record->event()->mutable_custom_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
@@ -785,12 +793,13 @@ Encoder::Result CustomEventLogger::MaybeEncodeImmediateObservation(const ReportD
         event_values = std::make_unique<google::protobuf::Map<std::string, CustomDimensionValue>>(
             custom_event->values());
       }
-      return encoder()->EncodeCustomObservation(project_context()->RefMetric(&metric), &report,
-                                                event.day_index(), std::move(event_values));
+      return encoder()->EncodeCustomObservation(event_record->project_context()->RefMetric(&metric),
+                                                &report, event.day_index(),
+                                                std::move(event_values));
     }
 
     default:
-      return BadReportType(metric, report);
+      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
   }
 }
 

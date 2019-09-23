@@ -44,6 +44,16 @@ class InternalMetrics {
   virtual void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status,
                            int64_t byte_count, uint32_t customer_id, uint32_t project_id) = 0;
 
+  // cobalt_internal::metrics::inaccurate_clock_events_cached is logged when the
+  // UndatedEventManager saves an event while the clock is inaccurate.
+  virtual void InaccurateClockEventsCached(int64_t event_count, uint32_t customer_id,
+                                           uint32_t project_id) = 0;
+
+  // cobalt_internal::metrics::inaccurate_clock_events_dropped is logged when the
+  // UndatedEventManager drops a saved event while the clock is inaccurate and it runs out of space.
+  virtual void InaccurateClockEventsDropped(int64_t event_count, uint32_t customer_id,
+                                            uint32_t project_id) = 0;
+
   // After PauseLogging is called, all calls to log internal metrics will be
   // ignored.
   virtual void PauseLogging() = 0;
@@ -70,6 +80,12 @@ class NoOpInternalMetrics : public InternalMetrics {
   void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
                    uint32_t customer_id, uint32_t project_id) override {}
 
+  void InaccurateClockEventsCached(int64_t event_count, uint32_t customer_id,
+                                   uint32_t project_id) override {}
+
+  void InaccurateClockEventsDropped(int64_t event_count, uint32_t customer_id,
+                                    uint32_t project_id) override {}
+
   void PauseLogging() override {}
   void ResumeLogging() override {}
 
@@ -91,6 +107,12 @@ class InternalMetricsImpl : public InternalMetrics {
 
   void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
                    uint32_t customer_id, uint32_t project_id) override;
+
+  void InaccurateClockEventsCached(int64_t event_count, uint32_t customer_id,
+                                   uint32_t project_id) override;
+
+  void InaccurateClockEventsDropped(int64_t event_count, uint32_t customer_id,
+                                    uint32_t project_id) override;
 
   void PauseLogging() override { paused_ = true; }
   void ResumeLogging() override { paused_ = false; }
