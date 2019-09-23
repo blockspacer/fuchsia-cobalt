@@ -1189,6 +1189,8 @@ std::string PrintReportType(ReportDefinition_ReportType type) {
       return "UNIQUE_N_DAY_ACTIVES";
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
       return "PER_DEVICE_NUMERIC_STATS";
+    case ReportDefinition::PER_DEVICE_HISTOGRAM:
+      return "PER_DEVICE_HISTOGRAM";
     case ReportDefinition::CUSTOM_RAW_DUMP:
       return "CUSTOM_RAW_DUMP";
     default:
