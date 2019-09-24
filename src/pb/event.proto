@@ -55,7 +55,7 @@ message CountEvent {
   // Time over which the count was taken, in microseconds.
   int64 period_duration_micros = 3;
   // The number of times the event occurred.
-  int32 count = 4;
+  int64 count = 4;
 }
 
 // Records that an event occurred a number of times.

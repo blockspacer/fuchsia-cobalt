@@ -177,6 +177,20 @@ TEST_F(LoggerTest, LogEventCount) {
                                             observation_store_.get(), update_recipient_.get()));
 }
 
+// Tests the method LogEventCount() can accept large numbers correctly.
+TEST_F(LoggerTest, LogEventCountWithLargeCounts) {
+  std::vector<uint32_t> expected_report_ids = {
+      testing::all_report_types::kReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitStatsReportId};
+
+  int64_t large_value = 3'147'483'647;
+  ASSERT_EQ(kOK, logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, 43,
+                                        "component2", 1, large_value));
+  EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 43u, "component2", large_value,
+                                            observation_store_.get(), update_recipient_.get()));
+}
+
 // Tests the version of the method LogEventCount() that accepts a vector of
 // event codes.
 TEST_F(LoggerTest, LogEventCountMultiDimension) {
