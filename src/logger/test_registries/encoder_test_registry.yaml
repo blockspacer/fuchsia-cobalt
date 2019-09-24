@@ -90,6 +90,18 @@ metric_definitions:
         - ARCH
       window_size:
         - 30
+    - report_name: ConnectionFailures_PerDeviceHistogram
+      report_type: PER_DEVICE_HISTOGRAM
+      int_buckets:
+        linear:
+          floor: 0
+          num_buckets: 10
+          step_size: 10
+      system_profile_field:
+        - OS
+        - ARCH
+      window_size:
+        - 7
 
 - id: 11
   metric_dimensions:

@@ -285,16 +285,43 @@ class Encoder {
   // event_codes: This will be used to populate the bits of the Obseravtion's
   // |event_code|.
   //
-  // count: This will populate the |value| field of the the
+  // value: This will populate the |value| field of the the
   // IntegerEventObservation wrapped by the PerDeviceNumericObservation.
+  //
+  // TODO(pesk): add aggregation_window argument
+  Result EncodePerDeviceNumericObservation(
+      MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+      const std::string& component, const google::protobuf::RepeatedField<uint32_t>& event_codes,
+      int64_t value, uint32_t window_size) const;
+
+  // Encodes an Observation of type PerDeviceNumericHistogramObservation.
+  //
+  // metric: Provides access to the names and IDs of the customer, project and
+  // metric associated with the Observation being encoded.
+  //
+  // report: The definition of the Report associated with the Observation being
+  // encoded.
+  //
+  // day_index: The day index associated with the Observation being encoded.
+  // This is the last day (inclusive) of the rolling window associated with this
+  // Observation.
+  //
+  // component: The component associated with this Observation. The hash of this
+  // value will populate the Observation's |component_name_hash| field.
+  //
+  // event_codes: This will be used to populate the bits of the Obseravtion's
+  // |event_code|.
+  //
+  // value: This is the raw value of the aggregation. This will be used to populate HistogramBuckets
+  // field wrapped by the HistogramObservation in PerDeviceNumericObservation.
   //
   // window_size: The number of days in the window associated with the
   // Observation. This should be one of the window sizes specified in |report|,
   // but it is the caller's responsibility to ensure this.
-  Result EncodePerDeviceNumericObservation(
+  Result EncodePerDeviceHistogramObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const std::string& component, const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      int64_t count, uint32_t window_size) const;
+      int64_t value) const;
 
   // Encodes an Observation of type ReportParticipationObservation.
   //

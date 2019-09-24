@@ -13,11 +13,13 @@
 #include "src/logger/project_context.h"
 #include "src/logging.h"
 #include "src/pb/observation2.pb.h"
+#include "src/registry/buckets_config.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/tracing.h"
 
 namespace cobalt::logger {
 
+using ::cobalt::config::IntegerBucketConfig;
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
 using ::cobalt::encoder::ClientSecret;
@@ -258,14 +260,43 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(MetricRef metric,
 
 Encoder::Result Encoder::EncodePerDeviceNumericObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t count,
+    const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t value,
     uint32_t window_size) const {
   auto result =
-      EncodeIntegerEventObservation(metric, report, day_index, event_codes, component, count);
+      EncodeIntegerEventObservation(metric, report, day_index, event_codes, component, value);
   auto* integer_event_observation = result.observation->release_numeric_event();
   auto* per_device_observation = result.observation->mutable_per_device_numeric();
   per_device_observation->set_allocated_integer_event_obs(integer_event_observation);
   per_device_observation->set_window_size(window_size);
+  return result;
+}
+
+Encoder::Result Encoder::EncodePerDeviceHistogramObservation(
+    MetricRef metric, const ReportDefinition* report, uint32_t day_index,
+    const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t value) const {
+  auto result = MakeObservation(metric, report, day_index);
+  auto* observation = result.observation.get();
+  auto* histogram_observation = observation->mutable_per_device_histogram()->mutable_histogram();
+  histogram_observation->set_event_code(config::PackEventCodes(event_codes));
+  if (!HashComponentNameIfNotEmpty(component,
+                                   histogram_observation->mutable_component_name_hash())) {
+    LOG(ERROR) << "Hashing the component name failed for: Report " << report->report_name()
+               << " for metric " << metric.metric_name() << " in project "
+               << metric.ProjectDebugString() << ".";
+    result.status = kOther;
+  }
+
+  auto integer_bucket_config = IntegerBucketConfig::CreateFromProto(report->int_buckets());
+  if (integer_bucket_config == nullptr) {
+    LOG(ERROR) << "Invalid IntBucketConfig for: Report " << report->report_name() << " for metric "
+               << metric.metric_name() << " in project " << metric.ProjectDebugString() << ".";
+    result.status = kOther;
+    return result;
+  }
+  auto bucket = histogram_observation->add_buckets();
+  bucket->set_index(integer_bucket_config->BucketIndex(value));
+  bucket->set_count(1);
+
   return result;
 }
 

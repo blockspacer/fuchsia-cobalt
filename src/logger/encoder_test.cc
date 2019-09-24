@@ -379,6 +379,37 @@ TEST_F(EncoderTest, EncodePerDeviceNumericObservation) {
   EXPECT_EQ(kCount, integer_obs.value());
 }
 
+TEST_F(EncoderTest, EncodePerDeviceNumericHistogramObservation) {
+  const char kMetricName[] = "ConnectionFailures";
+  const char kReportName[] = "ConnectionFailures_PerDeviceHistogram";
+  const uint32_t kExpectedMetricId = 10;
+  const uint32_t kDayIndex = 111;
+  const char kComponent[] = "Some Component";
+  const uint32_t kEventCode = 0;
+  const int64_t kCount = 41;
+  const int64_t kExpectedBucket = 5;
+  auto pair = GetMetricAndReport(kMetricName, kReportName);
+
+  google::protobuf::RepeatedField<uint32_t> event_codes;
+  *event_codes.Add() = kEventCode;
+
+  auto result = encoder_->EncodePerDeviceHistogramObservation(project_context_->RefMetric(pair.first),
+                                                            pair.second, kDayIndex, kComponent,
+                                                            event_codes, kCount);
+  CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceHistogramReportId, kDayIndex);
+  // In the SystemProfile only the OS and ARCH should be set.
+  CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
+  ASSERT_TRUE(result.observation->has_per_device_histogram());
+  // TODO(ninai) add aggregation window check
+  ASSERT_TRUE(result.observation->per_device_histogram().has_histogram());
+  auto histogram = result.observation->per_device_histogram().histogram();
+  EXPECT_EQ(kEventCode, histogram.event_code());
+  EXPECT_EQ(32u, histogram.component_name_hash().size());
+  EXPECT_EQ(1, histogram.buckets_size());
+  EXPECT_EQ(kExpectedBucket, histogram.buckets(0).index());
+  EXPECT_EQ(1, histogram.buckets(0).count());
+}
+
 TEST_F(EncoderTest, EncodeReportParticipationObservation) {
   const char kMetricName[] = "ConnectionFailures";
   const char kReportName[] = "ConnectionFailures_PerDeviceCount";
