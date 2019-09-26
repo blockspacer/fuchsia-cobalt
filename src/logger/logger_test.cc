@@ -38,6 +38,7 @@ using encoder::ClientSecret;
 using encoder::SystemDataInterface;
 
 using util::EncryptedMessageMaker;
+using util::FakeValidatedClock;
 using util::IncrementingSystemClock;
 using util::TimeToDayIndex;
 
@@ -91,15 +92,22 @@ class LoggerTest : public ::testing::Test {
                                                           local_aggregate_proto_store_.get(),
                                                           obs_history_proto_store_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
-    logger_ = std::make_unique<Logger>(GetTestProject(registry_base64), encoder_.get(),
-                                       event_aggregator_.get(), observation_writer_.get(),
-                                       system_data_.get(), internal_logger_.get());
+
     // Create a mock clock which does not increment by default when called.
     // Set the time to 1 year after the start of Unix time so that the start
     // date of any aggregation window falls after the start of time.
-    mock_clock_ = new IncrementingSystemClock(std::chrono::system_clock::duration(0));
+    mock_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     mock_clock_->set_time(std::chrono::system_clock::time_point(std::chrono::seconds(kYear)));
-    logger_->SetClock(mock_clock_);
+    validated_clock_ = std::make_unique<FakeValidatedClock>(mock_clock_.get());
+    validated_clock_->SetAccurate(true);
+
+    undated_event_manager_ = std::make_shared<UndatedEventManager>(
+        encoder_.get(), event_aggregator_.get(), observation_writer_.get(), system_data_.get());
+
+    logger_ = std::make_unique<Logger>(GetTestProject(registry_base64), encoder_.get(),
+                                       event_aggregator_.get(), observation_writer_.get(),
+                                       system_data_.get(), validated_clock_.get(),
+                                       undated_event_manager_, internal_logger_.get());
   }
 
   void TearDown() override {
@@ -130,6 +138,8 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<testing::FakeLogger> internal_logger_;
   std::unique_ptr<ObservationWriter> observation_writer_;
   std::unique_ptr<FakeObservationStore> observation_store_;
+  std::unique_ptr<FakeValidatedClock> validated_clock_;
+  std::shared_ptr<UndatedEventManager> undated_event_manager_;
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   ExpectedAggregationParams expected_aggregation_params_;
 
@@ -140,7 +150,7 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
-  IncrementingSystemClock* mock_clock_;
+  std::unique_ptr<IncrementingSystemClock> mock_clock_;
 };
 
 // Creates a Logger for a ProjectContext where each of the metrics
@@ -476,6 +486,140 @@ TEST_F(LoggerTest, TestPausingLogging) {
   logger_->ResumeInternalLogging();
   ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
   ASSERT_EQ(internal_logger_->call_count(), 4);
+}
+
+// Tests the events are not sent to the UndatedEventManager.
+TEST_F(LoggerTest, AccurateClockEventsLogged) {
+  validated_clock_->SetAccurate(true);
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that only an Observation is generated, no events are cached.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+  CHECK_EQ(0, undated_event_manager_->NumSavedEvents());
+}
+
+// Tests the diversion of events to the UndatedEventManager.
+TEST_F(LoggerTest, InaccurateClockEventsSaved) {
+  validated_clock_->SetAccurate(false);
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that no immediate Observations were generated, and an event is cached.
+  CHECK_EQ(0, observation_store_->num_observations_added());
+  CHECK_EQ(1, undated_event_manager_->NumSavedEvents());
+}
+
+// Tests the diversion of events to the UndatedEventManager stops once the clock becomes accurate.
+TEST_F(LoggerTest, InaccurateClockEventsSavedOnlyWhileClockIsInaccurate) {
+  validated_clock_->SetAccurate(false);
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that no immediate Observations were generated, and an event is cached.
+  CHECK_EQ(0, observation_store_->num_observations_added());
+  CHECK_EQ(1, undated_event_manager_->NumSavedEvents());
+
+  // Clock becomes accurate.
+  validated_clock_->SetAccurate(true);
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that now Observations are generated, the one event is still cached.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+  CHECK_EQ(1, undated_event_manager_->NumSavedEvents());
+}
+
+// Tests the error when the UndatedEventManager was deleted early and the clock is invalid.
+TEST_F(LoggerTest, AlreadyDeletedError) {
+  validated_clock_->SetAccurate(false);
+  // Delete the UndatedEventManager.
+  undated_event_manager_.reset();
+  // Error is returned because the clock should become accurate if the UndatedEventManager is
+  // deleted.
+  ASSERT_EQ(kOther, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that no immediate Observations were generated, and no events are cached.
+  CHECK_EQ(0, observation_store_->num_observations_added());
+}
+
+// Tests the race condition when the UndatedEventManager is deleted and the clock becomes valid.
+TEST_F(LoggerTest, AlreadyDeletedRaceCondition) {
+  // Clock is initially invalid, but becomes valid on subsequent attempts.
+  validated_clock_->SetAccurate({false, true});
+  // Delete the UndatedEventManager.
+  undated_event_manager_.reset();
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that the immediate Observation was generated.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+}
+
+// Tests the UndatedEventManager forwarding events when it has been flushed before the call to
+// Save().
+TEST_F(LoggerTest, AlreadyFlushedError) {
+  validated_clock_->SetAccurate(false);
+  IncrementingSystemClock system_clock;
+  undated_event_manager_->Flush(&system_clock, internal_logger_.get());
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that one immediate Observation was generated, and no events are cached.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+  CHECK_EQ(0, undated_event_manager_->NumSavedEvents());
+}
+
+// Tests the race condition when the UndatedEventManager is being flushed while the event is being
+// logged.
+TEST_F(LoggerTest, ClockBecomesAccurateRaceCondition) {
+  // Clock is initially invalid, but becomes valid on subsequent attempts.
+  validated_clock_->SetAccurate({false, true});
+  IncrementingSystemClock system_clock;
+  undated_event_manager_->Flush(&system_clock, internal_logger_.get());
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that an immediate Observation is generated, and no events are cached after Flush.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+  CHECK_EQ(0, undated_event_manager_->NumSavedEvents());
+}
+
+class NoValidatedClockLoggerTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    observation_store_ = std::make_unique<FakeObservationStore>();
+    update_recipient_ = std::make_unique<TestUpdateRecipient>();
+    observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
+    observation_writer_ = std::make_unique<ObservationWriter>(
+        observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
+    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
+    local_aggregate_proto_store_ =
+        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
+    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
+    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
+                                                          local_aggregate_proto_store_.get(),
+                                                          obs_history_proto_store_.get());
+    internal_logger_ = std::make_unique<testing::FakeLogger>();
+
+    logger_ =
+        std::make_unique<Logger>(GetTestProject(testing::all_report_types::kCobaltRegistryBase64),
+                                 encoder_.get(), event_aggregator_.get(), observation_writer_.get(),
+                                 system_data_.get(), internal_logger_.get());
+  }
+
+  void TearDown() override {
+    event_aggregator_.reset();
+    logger_.reset();
+  }
+
+  std::unique_ptr<Logger> logger_;
+  std::unique_ptr<testing::FakeLogger> internal_logger_;
+  std::unique_ptr<ObservationWriter> observation_writer_;
+  std::unique_ptr<FakeObservationStore> observation_store_;
+  std::unique_ptr<TestUpdateRecipient> update_recipient_;
+
+ private:
+  std::unique_ptr<Encoder> encoder_;
+  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
+  std::unique_ptr<SystemDataInterface> system_data_;
+  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
+  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
+};
+
+// Tests the events are logged to the event loggers.
+TEST_F(NoValidatedClockLoggerTest, AccurateClockEventsLogged) {
+  ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
+  // Check that an Observation is generated.
+  CHECK_EQ(1, observation_store_->num_observations_added());
+  // Verify a reasonable day index is generated by the logger's system clock.
+  CHECK_GT(observation_store_->metadata_received[0]->day_index(), 18000);
 }
 
 }  // namespace logger

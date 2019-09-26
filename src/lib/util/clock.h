@@ -8,6 +8,7 @@
 #include <chrono>
 #include <iomanip>
 #include <optional>
+#include <queue>
 #include <sstream>
 #include <string>
 
@@ -128,9 +129,7 @@ class IncrementingSteadyClock : public SteadyClockInterface {
   std::chrono::steady_clock::time_point peek_now() { return time_; }
 
   // Set the value by which the clock is incremented each time it is called.
-  void set_increment(std::chrono::steady_clock::duration increment) {
-    increment_ = increment;
-  }
+  void set_increment(std::chrono::steady_clock::duration increment) { increment_ = increment; }
 
   // Increment the clock's current time once.
   void increment_by(std::chrono::steady_clock::duration increment) {
@@ -156,11 +155,54 @@ class IncrementingSteadyClock : public SteadyClockInterface {
 
  private:
   std::chrono::steady_clock::time_point time_ =
-      std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration(
-          0));
-  std::chrono::steady_clock::duration
-      increment_ = std::chrono::steady_clock::duration(1);
+      std::chrono::steady_clock::time_point(std::chrono::steady_clock::duration(0));
+  std::chrono::steady_clock::duration increment_ = std::chrono::steady_clock::duration(1);
   std::function<void(std::chrono::steady_clock::time_point)> callback_;
+};
+
+// A wrapper for a SystemClockInterface that is always accurate.
+class AlwaysAccurateClock : public util::ValidatedClockInterface {
+ public:
+  explicit AlwaysAccurateClock(std::unique_ptr<SystemClockInterface> system_clock)
+      : system_clock_(std::move(system_clock)) {}
+
+  std::optional<std::chrono::system_clock::time_point> now() override {
+    return system_clock_->now();
+  }
+
+ private:
+  std::unique_ptr<SystemClockInterface> system_clock_;
+};
+
+// A wrapper for a SystemClockInterface that allows a test to control whether the clock is accurate.
+class FakeValidatedClock : public util::ValidatedClockInterface {
+ public:
+  explicit FakeValidatedClock(SystemClockInterface* incrementing_clock)
+      : incrementing_clock_(incrementing_clock) {}
+
+  std::optional<std::chrono::system_clock::time_point> now() override {
+    bool accurate = accurate_sequence_.front();
+    if (accurate_sequence_.size() > 1) {
+      accurate_sequence_.pop_front();
+    }
+    if (accurate) {
+      return incrementing_clock_->now();
+    }
+    return std::nullopt;
+  }
+
+  void SetAccurate(bool accurate) { accurate_sequence_ = std::deque<bool>({accurate}); }
+
+  // Set the sequence of accurate/inaccurate responses this clock should return.
+  // If more calls are made than are in this sequence, the last item in the sequence continues to be
+  // returned.
+  void SetAccurate(const std::vector<bool>& accurate_sequence) {
+    accurate_sequence_ = std::deque<bool>(accurate_sequence.begin(), accurate_sequence.end());
+  }
+
+ private:
+  SystemClockInterface* incrementing_clock_;
+  std::deque<bool> accurate_sequence_{false};
 };
 
 }  // namespace util

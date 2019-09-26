@@ -80,6 +80,10 @@ class UndatedEventManager {
     steady_clock_.reset(steady_clock);
   }
 
+  Status FlushSavedRecord(std::unique_ptr<SavedEventRecord> saved_record,
+                          const std::chrono::system_clock::time_point& reference_system_time,
+                          const std::chrono::steady_clock::time_point& reference_monotonic_time);
+
   // Used only to construct EventLogger instances.
   const Encoder* encoder_;
   EventAggregator* event_aggregator_;
@@ -99,6 +103,14 @@ class UndatedEventManager {
     // Mapping of identifiers of ProjectContexts to the stats for them.
     std::map<std::pair<uint32_t, uint32_t>, int64_t> num_events_cached_;
     std::map<std::pair<uint32_t, uint32_t>, int64_t> num_events_dropped_;
+
+    // Whether Flush() has already been called on this object.
+    bool flushed = false;
+
+    // If |flushed_| is true, these will contain the reference clock values at the time of the
+    // flush.
+    std::chrono::system_clock::time_point reference_system_time_;
+    std::chrono::steady_clock::time_point reference_monotonic_time_;
   };
   util::ProtectedFields<SavedRecordsFields> protected_saved_records_fields_;
 };

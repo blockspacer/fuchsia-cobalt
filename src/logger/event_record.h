@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include <third_party/abseil-cpp/absl/strings/str_cat.h>
+
 #include "src/pb/event.pb.h"
 #include "src/registry/metric_definition.pb.h"
 
@@ -30,6 +32,10 @@ class EventRecord {
 
   // Get the Event that is to be logged.
   [[nodiscard]] Event* event() const { return event_.get(); }
+
+  [[nodiscard]] std::string GetLogDetails() const {
+    return absl::StrCat("project_id:", metric_->project_id(), " metric_id:", metric_->id());
+  }
 
  private:
   const std::shared_ptr<const ProjectContext> project_context_;

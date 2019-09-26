@@ -275,5 +275,35 @@ TEST_F(UndatedEventManagerTest, TooManyEventsToStore) {
             internal_logger_->last_event_logged().metric_id());
 }
 
+TEST_F(UndatedEventManagerTest, SaveAfterFlush) {
+  std::shared_ptr<ProjectContext> project_context =
+      GetTestProject(testing::all_report_types::kCobaltRegistryBase64);
+
+  // Flush the empty manager, this will not generate any observations.
+  ASSERT_EQ(kOK, undated_event_manager_->Flush(mock_system_clock_.get(), internal_logger_.get()));
+  EXPECT_EQ(0, observation_store_->num_observations_added());
+  EXPECT_EQ(0, undated_event_manager_->NumSavedEvents());
+
+  // Create an event and try to save it.
+  auto event_record = std::make_unique<EventRecord>(
+      project_context, testing::all_report_types::kErrorOccurredMetricId);
+  event_record->event()->mutable_occurrence_event()->set_event_code(42);
+  ASSERT_NE(nullptr, event_record->metric());
+
+  // One day later, the clock is finally accurate, try to save an event, this will generate
+  // observations. (This scenario is not very likely, as the clock should report accurate around the
+  // same time as the flush, but this allows us to verify the steady clock time being after the
+  // flush time results in a correct date setting.)
+  mock_steady_clock_->increment_by(std::chrono::hours(24));
+  ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
+  EXPECT_EQ(0, undated_event_manager_->NumSavedEvents());
+  // Now there should be an observation.
+  EXPECT_EQ(1, observation_store_->num_observations_added());
+  // Day index is from the previous day, due to the monotonic time advancing one day.
+  EXPECT_EQ(kDayIndex + 1, observation_store_->metadata_received[0]->day_index());
+  // No internal metric calls for the number of cached events.
+  EXPECT_EQ(0, internal_logger_->call_count());
+}
+
 }  // namespace logger
 }  // namespace cobalt

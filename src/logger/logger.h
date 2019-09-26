@@ -19,6 +19,7 @@
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
+#include "src/logger/undated_event_manager.h"
 
 namespace cobalt {
 
@@ -39,7 +40,7 @@ namespace logger {
 // service for each FIDL connection from a client project.
 class Logger : public LoggerInterface {
  public:
-  // Constructor
+  // Constructor for a Logger when the system clock is, and will remain, accurate.
   //
   // |project_context| The ProjectContext of the client-side project for which
   // the Logger will log events. Must not be null.
@@ -65,6 +66,41 @@ class Logger : public LoggerInterface {
   Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
          EventAggregator* event_aggregator, ObservationWriter* observation_writer,
          encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger = nullptr);
+
+  // Constructor for a Logger when the clock is not yet accurate.
+  //
+  // |project_context| The ProjectContext of the client-side project for which
+  // the Logger will log events. Must not be null.
+  //
+  // |encoder| The system's singleton instance of Encoder. This must remain
+  // valid as long as the Logger is being used. The Logger uses this to
+  // encode immediate Observations.
+  //
+  // |event_aggregator| The system's singleton instance of EventAggregator.
+  // This must remain valid as long as the Logger is being used. The Logger
+  // uses this to aggregate values derived from Events and to produce locally
+  // aggregated Observations.
+  //
+  // |observation_writer| An instance of ObservationWriter, used by the Logger
+  // to write immediate Observations to an ObservationStore. Must remain valid
+  // as long as the Logger is in use.
+  //
+  // |system_data| A pointer to a SystemDataInterface.
+  //
+  // |validated_clock| An instance of a clock that refuses to provide the time if a quality
+  // condition is not satisfied.
+  //
+  // |undated_event_manager| An instance of UndatedEventManager to use to save events until the
+  // clock becomes accurate.
+  //
+  // |internal_logger| An instance of LoggerInterface, used internally by the
+  // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
+  // internal logging will be performed by this Logger.
+  Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
+         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
+         encoder::SystemDataInterface* system_data, util::ValidatedClockInterface* validated_clock,
+         std::weak_ptr<UndatedEventManager> undated_event_manager,
+         LoggerInterface* internal_logger = nullptr);
 
   ~Logger() override = default;
 
@@ -139,8 +175,6 @@ class Logger : public LoggerInterface {
   Status Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
              std::unique_ptr<EventRecord> event_record);
 
-  void SetClock(util::SystemClockInterface* clock) { clock_.reset(clock); }
-
   // ProjectContext is shared as it is used in all created EventRecords, which can outlive the
   // Logger class.
   const std::shared_ptr<const ProjectContext> project_context_;
@@ -149,7 +183,9 @@ class Logger : public LoggerInterface {
   EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
-  std::unique_ptr<util::SystemClockInterface> clock_;
+  util::ValidatedClockInterface* validated_clock_;
+  std::unique_ptr<util::ValidatedClockInterface> local_validated_clock_;
+  std::weak_ptr<UndatedEventManager> undated_event_manager_;
 
   std::unique_ptr<InternalMetrics> internal_metrics_;
 };

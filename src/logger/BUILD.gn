@@ -248,6 +248,7 @@ source_set("logger") {
     ":logger_interface",
     ":observation_writer",
     ":status",
+    ":undated_event_manager",
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/registry:id",
   ]

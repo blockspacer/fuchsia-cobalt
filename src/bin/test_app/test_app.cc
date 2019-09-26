@@ -28,6 +28,7 @@
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
+#include "src/logger/undated_event_manager.h"
 #include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/pb/observation2.pb.h"
@@ -58,12 +59,15 @@ using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::ProjectContextFactory;
 using logger::Status;
+using logger::UndatedEventManager;
 using observation_store::MemoryObservationStore;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
+using util::FakeValidatedClock;
 using util::IncrementingSystemClock;
 using util::PosixFileSystem;
 using util::SystemClock;
+using util::SystemClockInterface;
 using util::TimeToDayIndex;
 
 // There are three modes of operation of the Cobalt TestClient program
@@ -346,6 +350,9 @@ class RealLoggerFactory : public LoggerFactory {
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<ObservationWriter> observation_writer_;
   std::unique_ptr<EventAggregator> event_aggregator_;
+  std::shared_ptr<UndatedEventManager> undated_event_manager_;
+  std::unique_ptr<FakeValidatedClock> validated_clock_;
+  std::unique_ptr<SystemClockInterface> mock_clock_;
 };
 
 RealLoggerFactory::RealLoggerFactory(
@@ -374,18 +381,24 @@ RealLoggerFactory::RealLoggerFactory(
   event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
                                                         local_aggregate_proto_store_.get(),
                                                         obs_history_proto_store_.get());
+  undated_event_manager_ = std::make_shared<UndatedEventManager>(
+      encoder_.get(), event_aggregator_.get(), observation_writer_.get(), system_data_.get());
 }
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index) {
-  std::unique_ptr<Logger> logger = std::make_unique<Logger>(
-      project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
-      event_aggregator_.get(), observation_writer_.get(), system_data_.get());
   if (day_index != 0u) {
-    auto mock_clock = new IncrementingSystemClock();
+    auto mock_clock = std::make_unique<IncrementingSystemClock>();
     mock_clock->set_time(
         std::chrono::system_clock::time_point(std::chrono::seconds(kDay * day_index)));
-    logger->SetClock(mock_clock);
+    mock_clock_ = std::move(mock_clock);
+  } else {
+    mock_clock_ = std::make_unique<SystemClock>();
   }
+  validated_clock_ = std::make_unique<FakeValidatedClock>(mock_clock_.get());
+  std::unique_ptr<Logger> logger = std::make_unique<Logger>(
+      project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
+      event_aggregator_.get(), observation_writer_.get(), system_data_.get(),
+      validated_clock_.get(), undated_event_manager_);
   return std::move(logger);
 }
 

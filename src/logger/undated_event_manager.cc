@@ -38,8 +38,16 @@ Status UndatedEventManager::Save(std::unique_ptr<EventRecord> event_record) {
   std::unique_ptr<SavedEventRecord> saved_record = std::make_unique<SavedEventRecord>(
       SavedEventRecord{steady_clock_->now(), std::move(event_record)});
 
-  // Save the event record to the FIFO queue.
   auto lock = protected_saved_records_fields_.lock();
+
+  if (lock->flushed) {
+    LOG(WARNING) << "Event saved after the queue has been flushed for metric: "
+                 << saved_record->event_record->GetLogDetails();
+    return FlushSavedRecord(std::move(saved_record), lock->reference_system_time_,
+                            lock->reference_monotonic_time_);
+  }
+
+  // Save the event record to the FIFO queue.
   if (lock->saved_records_.size() >= max_saved_events_) {
     auto dropped_record = std::move(lock->saved_records_.front());
     lock->saved_records_.pop_front();
@@ -61,34 +69,19 @@ Status UndatedEventManager::Flush(util::SystemClockInterface* system_clock,
 
   // Get reference times that will be used to convert the saved event record's monotonic time to an
   // accurate system time.
-  std::chrono::system_clock::time_point reference_system_time = system_clock->now();
-  std::chrono::steady_clock::time_point reference_monotonic_time = steady_clock_->now();
-  std::chrono::system_clock::time_point event_timestamp;
-  std::unique_ptr<SavedEventRecord> saved_record;
+  lock->reference_system_time_ = system_clock->now();
+  lock->reference_monotonic_time_ = steady_clock_->now();
 
+  std::unique_ptr<SavedEventRecord> saved_record;
   while (!lock->saved_records_.empty()) {
     saved_record = std::move(lock->saved_records_.front());
+    auto log_details = saved_record->event_record->GetLogDetails();
+    Status result = FlushSavedRecord(std::move(saved_record), lock->reference_system_time_,
+                                     lock->reference_monotonic_time_);
     lock->saved_records_.pop_front();
-
-    // Convert the recorded monotonic time to a system time.
-    const std::chrono::seconds& time_shift = std::chrono::duration_cast<std::chrono::seconds>(
-        reference_monotonic_time - saved_record->monotonic_time);
-    if (time_shift < std::chrono::seconds(0)) {
-      LOG(ERROR) << "Dropping saved event that occurs in the future for metric type: "
-                 << saved_record->event_record->metric()->metric_type();
-      continue;
-    }
-    event_timestamp = reference_system_time - time_shift;
-
-    auto event_logger =
-        internal::EventLogger::Create(saved_record->event_record->metric()->metric_type(), encoder_,
-                                      event_aggregator_, observation_writer_, system_data_);
-
-    if (event_logger == nullptr) {
-      LOG(ERROR) << "Failed to process a metric type of "
-                 << saved_record->event_record->metric()->metric_type();
-    } else {
-      event_logger->Log(std::move(saved_record->event_record), event_timestamp);
+    if (result != Status::kOK) {
+      LOG(ERROR) << "Error " << result
+                 << " occurred while processing a saved event for metric: " << log_details;
     }
   }
 
@@ -108,7 +101,28 @@ Status UndatedEventManager::Flush(util::SystemClockInterface* system_clock,
   }
   lock->num_events_dropped_.clear();
 
+  lock->flushed = true;
+
   return Status::kOK;
+}
+
+Status UndatedEventManager::FlushSavedRecord(
+    std::unique_ptr<SavedEventRecord> saved_record,
+    const std::chrono::system_clock::time_point& reference_system_time,
+    const std::chrono::steady_clock::time_point& reference_monotonic_time) {
+  // Convert the recorded monotonic time to a system time.
+  const std::chrono::seconds& time_shift = std::chrono::duration_cast<std::chrono::seconds>(
+      reference_monotonic_time - saved_record->monotonic_time);
+  std::chrono::system_clock::time_point event_timestamp = reference_system_time - time_shift;
+
+  auto event_logger =
+      internal::EventLogger::Create(saved_record->event_record->metric()->metric_type(), encoder_,
+                                    event_aggregator_, observation_writer_, system_data_);
+
+  if (event_logger == nullptr) {
+    return Status::kInvalidArguments;
+  }
+  return event_logger->Log(std::move(saved_record->event_record), event_timestamp);
 }
 
 int UndatedEventManager::NumSavedEvents() const {

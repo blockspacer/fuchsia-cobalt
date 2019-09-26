@@ -17,8 +17,6 @@
 
 namespace cobalt::logger {
 
-using ::cobalt::util::SystemClock;
-
 using LoggerMethod = LoggerCallsMadeMetricDimensionLoggerMethod;
 
 namespace {
@@ -37,16 +35,31 @@ void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
 Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
                EventAggregator* event_aggregator, ObservationWriter* observation_writer,
                encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger)
+    : Logger(std::move(project_context), encoder, event_aggregator, observation_writer, system_data,
+             nullptr, std::weak_ptr<UndatedEventManager>(), internal_logger) {}
+
+Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
+               EventAggregator* event_aggregator, ObservationWriter* observation_writer,
+               encoder::SystemDataInterface* system_data,
+               util::ValidatedClockInterface* validated_clock,
+               std::weak_ptr<UndatedEventManager> undated_event_manager,
+               LoggerInterface* internal_logger)
     : project_context_(std::move(project_context)),
       encoder_(encoder),
       event_aggregator_(event_aggregator),
       observation_writer_(observation_writer),
       system_data_(system_data),
-      clock_(new SystemClock()) {
+      validated_clock_(validated_clock),
+      undated_event_manager_(std::move(undated_event_manager)) {
   CHECK(project_context_);
   CHECK(encoder_);
   CHECK(event_aggregator_);
   CHECK(observation_writer_);
+  if (!validated_clock_) {
+    local_validated_clock_ =
+        std::make_unique<util::AlwaysAccurateClock>(std::make_unique<util::SystemClock>());
+    validated_clock_ = local_validated_clock_.get();
+  }
   if (internal_logger) {
     internal_metrics_ = std::make_unique<InternalMetricsImpl>(internal_logger);
   } else {
@@ -147,7 +160,29 @@ Status Logger::Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
   if (validation_result != kOK) {
     return validation_result;
   }
-  return event_logger->Log(std::move(event_record), clock_->now());
+
+  auto now = validated_clock_->now();
+  if (!now) {
+    // Missing system time means that the clock is not valid, so save the event until it is.
+    auto undated_event_manager = undated_event_manager_.lock();
+    if (undated_event_manager) {
+      return undated_event_manager->Save(std::move(event_record));
+    }
+    // A missing UndatedEventManager is handled by retrying the clock, which should now be valid.
+
+    // If we fall through to here, then a race condition has occurred in which the clock that we
+    // thought was not validated, has become validated. Retrying the clock should succeed.
+    now = validated_clock_->now();
+    if (!now) {
+      // This should never happen, if it does then it's a bug.
+      LOG(ERROR) << "Clock is invalid but there is no UndatedEventManager that will save the "
+                    "event, dropping event for metric: "
+                 << metric_id;
+      return Status::kOther;
+    }
+  }
+
+  return event_logger->Log(std::move(event_record), *now);
 }
 
 void Logger::PauseInternalLogging() { internal_metrics_->PauseLogging(); }
