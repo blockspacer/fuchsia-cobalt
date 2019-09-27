@@ -33,36 +33,6 @@ proto_library("cobalt_registry_proto") {
   ]
 }
 
-static_library("client_config") {
-  sources = [
-    "client_config.cc",
-    "client_config.h",
-  ]
-  configs += [ "$cobalt_root:cobalt_config" ]
-
-  deps = [
-    ":cobalt_registry_proto",
-    "$cobalt_root/src:logging",
-    "$cobalt_root/src/lib/crypto_util",
-    "$cobalt_root/src/pb",
-  ]
-}
-
-source_set("client_config_test") {
-  testonly = true
-  sources = [
-    "client_config_test.cc",
-  ]
-  deps = [
-    ":client_config",
-    ":cobalt_registry_proto",
-    "$cobalt_root/src:logging",
-    "$cobalt_root/src/lib/crypto_util",
-    "//third_party/googletest:gtest",
-  ]
-  configs += [ "$cobalt_root:cobalt_config" ]
-}
-
 source_set("buckets_config") {
   sources = [
     "buckets_config.cc",
@@ -172,7 +142,6 @@ group("tests") {
 
   deps = [
     ":buckets_config_test",
-    ":client_config_test",
     ":id_test",
     ":packed_event_codes_test",
     ":project_configs_test",

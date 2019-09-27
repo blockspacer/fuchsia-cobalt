@@ -13,7 +13,6 @@ group("encoder") {
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/observation_store",
-    "$cobalt_root/src/registry:client_config",
     "$cobalt_root/src/uploader:shipping_manager",
   ]
 }
