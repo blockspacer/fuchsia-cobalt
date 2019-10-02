@@ -370,7 +370,7 @@ class EventAggregator {
 
   struct ShutDownFlag {
     bool shut_down = true;
-    std::condition_variable shutdown_notifier;
+    std::condition_variable_any shutdown_notifier;
   };
 
   const Encoder* encoder_;

@@ -112,7 +112,7 @@ class UndatedEventManager {
     std::chrono::system_clock::time_point reference_system_time_;
     std::chrono::steady_clock::time_point reference_monotonic_time_;
   };
-  util::ProtectedFields<SavedRecordsFields> protected_saved_records_fields_;
+  util::RWProtectedFields<SavedRecordsFields> protected_saved_records_fields_;
 };
 
 }  // namespace cobalt::logger

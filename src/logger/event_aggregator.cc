@@ -457,9 +457,8 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
     // Sleep until the next scheduled backup of the LocalAggregateStore or
     // until notified of shutdown. Back up the LocalAggregateStore after
     // waking.
-    auto shutdown_requested =
-        locked.wait_for_with(&(locked->shutdown_notifier), aggregate_backup_interval_,
-                             [&locked]() { return locked->shut_down; });
+    auto shutdown_requested = locked->shutdown_notifier.wait_for(
+        locked, aggregate_backup_interval_, [&locked]() { return locked->shut_down; });
     BackUpLocalAggregateStore();
     // If the worker thread was woken up by a shutdown request, exit.
     // Otherwise, complete any scheduled Observation generation and garbage

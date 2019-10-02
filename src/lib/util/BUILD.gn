@@ -198,11 +198,23 @@ source_set("protected_fields") {
   ]
 }
 
+source_set("protected_fields_test") {
+  testonly = true
+  sources = [
+    "protected_fields_test.cc",
+  ]
+  deps = [
+    ":protected_fields",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 group("tests") {
   testonly = true
   deps = [
     ":consistent_proto_store_test",
     ":datetime_util_test",
     ":encrypted_message_util_test",
+    ":protected_fields_test",
   ]
 }
