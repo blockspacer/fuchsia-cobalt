@@ -83,12 +83,12 @@ Encoder::Result Encoder::EncodeBasicRapporObservation(MetricRef metric,
   auto* observation = result.observation.get();
   auto* basic_rappor_observation = observation->mutable_basic_rappor();
 
-  BasicRapporConfig basic_rappor_config;
-  basic_rappor_config.set_prob_rr(RapporConfigHelper::kProbRR);
-  basic_rappor_config.mutable_indexed_categories()->set_num_categories(num_categories);
+  rappor::BasicRapporConfig basic_rappor_config;
+  basic_rappor_config.prob_rr = RapporConfigHelper::kProbRR;
+  basic_rappor_config.categories.set_indexed(num_categories);
   float prob_bit_flip = RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
-  basic_rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  basic_rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
+  basic_rappor_config.prob_0_becomes_1 = prob_bit_flip;
+  basic_rappor_config.prob_1_stays_1 = 1.0f - prob_bit_flip;
 
   // TODO(rudominer) Stop copying the client_secret_ on each Encode*()
   // operation.
@@ -106,14 +106,14 @@ Encoder::Result Encoder::EncodeRapporObservation(MetricRef metric, const ReportD
   auto* observation = result.observation.get();
   auto* rappor_observation = observation->mutable_string_rappor();
 
-  RapporConfig rappor_config;
-  rappor_config.set_num_hashes(RapporConfigHelper::kNumHashes);
-  rappor_config.set_num_cohorts(RapporConfigHelper::StringRapporNumCohorts(*report));
-  rappor_config.set_num_bloom_bits(RapporConfigHelper::StringRapporNumBloomBits(*report));
-  rappor_config.set_prob_rr(RapporConfigHelper::kProbRR);
+  rappor::RapporConfig rappor_config;
+  rappor_config.num_hashes = RapporConfigHelper::kNumHashes;
+  rappor_config.num_cohorts = RapporConfigHelper::StringRapporNumCohorts(*report);
+  rappor_config.num_bloom_bits = RapporConfigHelper::StringRapporNumBloomBits(*report);
+  rappor_config.prob_rr = RapporConfigHelper::kProbRR;
   float prob_bit_flip = RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
-  rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
+  rappor_config.prob_0_becomes_1 = prob_bit_flip;
+  rappor_config.prob_1_stays_1 = 1.0f - prob_bit_flip;
 
   RapporEncoder rappor_encoder(rappor_config, client_secret_);
   ValuePart string_value;
@@ -145,7 +145,7 @@ Encoder::Result Encoder::EncodeForculusObservation(MetricRef metric, const Repor
   auto result = MakeObservation(metric, report, day_index);
   auto* observation = result.observation.get();
   auto* forculus_observation = observation->mutable_forculus();
-  ForculusConfig forculus_config;
+  forculus::ForculusConfig forculus_config;
   if (report->threshold() < 2) {
     LOG(ERROR) << "Invalid Cobalt config: Report " << report->report_name() << " for metric "
                << metric.metric_name() << " in project " << metric.ProjectDebugString()
@@ -153,8 +153,8 @@ Encoder::Result Encoder::EncodeForculusObservation(MetricRef metric, const Repor
     result.status = kInvalidConfig;
     return result;
   }
-  forculus_config.set_threshold(report->threshold());
-  forculus_config.set_epoch_type(DAY);
+  forculus_config.threshold = report->threshold();
+  forculus_config.epoch_type = forculus::DAY;
   ValuePart string_value;
   string_value.set_string_value(str);
   ForculusEncrypter forculus_encrypter(forculus_config, metric.project().customer_id(),
@@ -317,12 +317,12 @@ Encoder::Result Encoder::EncodeNullBasicRapporObservation(MetricRef metric,
   auto* observation = result.observation.get();
   auto* basic_rappor_observation = observation->mutable_basic_rappor();
 
-  BasicRapporConfig basic_rappor_config;
-  basic_rappor_config.set_prob_rr(RapporConfigHelper::kProbRR);
-  basic_rappor_config.mutable_indexed_categories()->set_num_categories(num_categories);
+  rappor::BasicRapporConfig basic_rappor_config;
+  basic_rappor_config.prob_rr = RapporConfigHelper::kProbRR;
+  basic_rappor_config.categories.set_indexed(num_categories);
   float prob_bit_flip = RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
-  basic_rappor_config.set_prob_0_becomes_1(prob_bit_flip);
-  basic_rappor_config.set_prob_1_stays_1(1.0f - prob_bit_flip);
+  basic_rappor_config.prob_0_becomes_1 = prob_bit_flip;
+  basic_rappor_config.prob_1_stays_1 = 1.0f - prob_bit_flip;
 
   // TODO(rudominer) Stop copying the client_secret_ on each Encode*()
   // operation.

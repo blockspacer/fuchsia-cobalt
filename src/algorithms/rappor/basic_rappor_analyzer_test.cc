@@ -45,10 +45,10 @@ BasicRapporObservation BasicRapporObservationFromString(const std::string& binar
 // Makes a BasicRapporConfig with the given data.
 BasicRapporConfig Config(int num_categories, float p, float q) {
   BasicRapporConfig config;
-  config.set_prob_0_becomes_1(p);
-  config.set_prob_1_stays_1(q);
+  config.prob_0_becomes_1 = p;
+  config.prob_1_stays_1 = q;
   for (int i = 0; i < num_categories; i++) {
-    config.mutable_string_categories()->add_category(CategoryName(i));
+    config.categories.add_string(CategoryName(i));
   }
   return config;
 }

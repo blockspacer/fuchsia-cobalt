@@ -14,7 +14,6 @@ proto_library("cobalt_registry_proto") {
     "aggregation_window.proto",
     "annotations.proto",
     "cobalt_registry.proto",
-    "encodings.proto",
     "metric_definition.proto",
     "project.proto",
     "report_definition.proto",

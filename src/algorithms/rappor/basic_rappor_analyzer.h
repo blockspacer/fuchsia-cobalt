@@ -20,7 +20,6 @@
 
 #include "src/algorithms/rappor/rappor_config_validator.h"
 #include "src/pb/observation.pb.h"
-#include "src/registry/encodings.pb.h"
 
 namespace cobalt {
 namespace rappor {

@@ -117,7 +117,7 @@ func GetConfigFilesListFromConfigDir(rootDir string) (files []string, err error)
 
 	files = append(files, r.CustomersFilePath())
 
-	for i, _ := range l {
+	for i := range l {
 		c := &(l[i])
 		files = append(files, r.projectFilePath(c.CustomerName, c.ProjectName))
 	}
@@ -254,7 +254,7 @@ func ReadConfig(r configReader, l *[]ProjectConfig) (err error) {
 	}
 
 	// Then, based on the customer list, we read and parse all the project configs.
-	for i, _ := range *l {
+	for i := range *l {
 		c := &((*l)[i])
 		if err = ReadProjectConfig(r, c); err != nil {
 			return fmt.Errorf("Error reading config for %v %v: %v", c.CustomerName, c.ProjectName, err)

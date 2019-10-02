@@ -19,8 +19,8 @@
 #include <string>
 #include <utility>
 
+#include "src/algorithms/forculus/forculus_config.h"
 #include "src/pb/observation.pb.h"
-#include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 
 namespace cobalt::forculus {

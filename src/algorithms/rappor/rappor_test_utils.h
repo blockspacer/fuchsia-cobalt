@@ -18,12 +18,11 @@
 #include <string>
 #include <vector>
 
+#include "src/algorithms/rappor/rappor_config.h"
 #include "src/pb/observation.pb.h"
-#include "src/registry/encodings.pb.h"
 #include "src/registry/report_definition.pb.h"
 
-namespace cobalt {
-namespace rappor {
+namespace cobalt::rappor {
 
 // Returns whether or not the bit with the given |bit_index| is set in
 // |data|. The bits are indexed "from right-to-left", i.e. from least
@@ -66,7 +65,6 @@ RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_
 // bytes whose binary representation is given by the string.
 RapporObservation RapporObservationFromString(uint32_t cohort, const std::string& binary_string);
 
-}  // namespace rappor
-}  // namespace cobalt
+}  // namespace cobalt::rappor
 
 #endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_

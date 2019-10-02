@@ -33,7 +33,7 @@ static const uint32_t kDayIndex = 12345;
 ForculusObservation Encrypt(const std::string& plaintext) {
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(kThreshold);
+  config.threshold = kThreshold;
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
@@ -50,7 +50,7 @@ ForculusObservation Encrypt(const std::string& plaintext) {
 ForculusObservation EncryptValue(const ValuePart& value) {
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(kThreshold);
+  config.threshold = kThreshold;
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());

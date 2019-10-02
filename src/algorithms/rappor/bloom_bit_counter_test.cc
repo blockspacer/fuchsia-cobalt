@@ -33,11 +33,11 @@ namespace {
 // Makes a RapporConfig with the given data (and num_hashes=2).
 RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, float p, float q) {
   RapporConfig config;
-  config.set_num_bloom_bits(num_bloom_bits);
-  config.set_num_hashes(2);
-  config.set_num_cohorts(num_cohorts);
-  config.set_prob_0_becomes_1(p);
-  config.set_prob_1_stays_1(q);
+  config.num_bloom_bits = num_bloom_bits;
+  config.num_hashes = 2;
+  config.num_cohorts = num_cohorts;
+  config.prob_0_becomes_1 = p;
+  config.prob_1_stays_1 = q;
   return config;
 }
 

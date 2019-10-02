@@ -19,7 +19,6 @@
 #include "src/logging.h"
 #include "src/pb/observation.pb.h"
 #include "src/pb/observation2.pb.h"
-#include "src/registry/encodings.pb.h"
 #include "src/system_data/client_secret.h"
 
 namespace cobalt {
@@ -319,10 +318,10 @@ bool CheckUniqueActivesObservations(const ExpectedUniqueActivesObservations& exp
       expected_values;
   // Form Basic RAPPOR-encoded bits from the expected activity
   // indicators and populate |expected_params| and |expected_values|.
-  BasicRapporConfig basic_rappor_config;
-  basic_rappor_config.set_prob_0_becomes_1(0.0);
-  basic_rappor_config.set_prob_1_stays_1(1.0);
-  basic_rappor_config.mutable_indexed_categories()->set_num_categories(1u);
+  rappor::BasicRapporConfig basic_rappor_config;
+  basic_rappor_config.prob_0_becomes_1 = 0.0;
+  basic_rappor_config.prob_1_stays_1 = 1.0;
+  basic_rappor_config.categories.set_indexed(1u);
   std::unique_ptr<BasicRapporEncoder> encoder(
       new BasicRapporEncoder(basic_rappor_config, ClientSecret::GenerateNewSecret()));
   for (const auto& id_pair : expected_obs) {

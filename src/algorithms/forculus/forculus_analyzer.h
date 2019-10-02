@@ -21,9 +21,9 @@
 #include <unordered_map>
 #include <utility>
 
+#include "src/algorithms/forculus/forculus_config.h"
 #include "src/algorithms/forculus/forculus_decrypter.h"
 #include "src/pb/observation.pb.h"
-#include "src/registry/encodings.pb.h"
 
 namespace cobalt::forculus {
 
@@ -56,7 +56,7 @@ class ForculusAnalyzer {
  public:
   // Constructs a ForculusAnalyzer for the given config. All of the observations
   // added via AddObservation() must have been encoded using this config.
-  explicit ForculusAnalyzer(cobalt::ForculusConfig config);
+  explicit ForculusAnalyzer(ForculusConfig config);
 
   // Adds an additional observation to be analyzed. All of the observations
   // added must be for the same metric part and must have been encoded using

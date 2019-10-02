@@ -95,11 +95,11 @@ void PopulateRapporCandidateList(uint32_t num_candidates, RapporCandidateList* c
 RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes, float p,
                     float q) {
   RapporConfig config;
-  config.set_num_bloom_bits(num_bloom_bits);
-  config.set_num_hashes(num_hashes);
-  config.set_num_cohorts(num_cohorts);
-  config.set_prob_0_becomes_1(p);
-  config.set_prob_1_stays_1(q);
+  config.num_bloom_bits = num_bloom_bits;
+  config.num_hashes = num_hashes;
+  config.num_cohorts = num_cohorts;
+  config.prob_0_becomes_1 = p;
+  config.prob_1_stays_1 = q;
   return config;
 }
 

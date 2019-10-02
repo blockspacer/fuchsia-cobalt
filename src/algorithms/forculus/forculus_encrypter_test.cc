@@ -31,7 +31,7 @@ void TestEncrypterValidation(uint32_t threshold, bool use_valid_token,
 
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(threshold);
+  config.threshold = threshold;
 
   // Construct the Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::FromToken(client_secret_token));
@@ -74,8 +74,8 @@ ForculusObservation Encrypt(const std::string& plaintext, uint32_t threshold, ui
                             EpochType epoch_type) {
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(threshold);
-  config.set_epoch_type(epoch_type);
+  config.threshold = threshold;
+  config.epoch_type = epoch_type;
 
   // Construct the Encrypter.
   ForculusEncrypter encrypter(config, customer_id, project_id, metric_id,
@@ -226,7 +226,7 @@ TEST(ForculusEncrypterTest, EncryptValue) {
 
   // Construct an Encrypter.
   ForculusConfig config;
-  config.set_threshold(kThreshold);
+  config.threshold = kThreshold;
   ForculusEncrypter encrypter(config, 1, 1, 1, "", ClientSecret::GenerateNewSecret());
 
   // Construct three values.

@@ -92,7 +92,7 @@ constexpr uint32_t kMaxThreshold = 1000000;
 class ForculusConfigValidator {
  public:
   ForculusConfigValidator(const ForculusConfig& config, const ClientSecret& client_secret)
-      : threshold_(config.threshold()), epoch_type_(config.epoch_type()) {
+      : threshold_(config.threshold), epoch_type_(config.epoch_type) {
     valid_ = false;
     if (!client_secret.valid()) {
       return;

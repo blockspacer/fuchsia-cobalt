@@ -20,8 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/algorithms/rappor/rappor_config.h"
 #include "src/pb/observation.pb.h"
-#include "src/registry/encodings.pb.h"
 
 namespace cobalt {
 namespace rappor {

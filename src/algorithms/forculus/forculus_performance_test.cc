@@ -36,8 +36,8 @@ namespace {
 ForculusObservation Encrypt(const std::string& plaintext, double* wall_timer, double* cpu_timer) {
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(kThreshold);
-  config.set_epoch_type(DAY);
+  config.threshold = kThreshold;
+  config.epoch_type = DAY;
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
@@ -88,7 +88,7 @@ void AddObservations(ForculusAnalyzer* forculus_analyzer, const std::string& pla
 // statistics at the end.
 TEST(ForculusPerformanceTest, OneMillionObservations) {
   ForculusConfig forculus_config;
-  forculus_config.set_threshold(kThreshold);
+  forculus_config.threshold = kThreshold;
   ForculusAnalyzer forculus_analyzer(forculus_config);
   std::ifstream stream("src/algorithms/forculus/word_counts.txt", std::ifstream::in);
   std::string line;

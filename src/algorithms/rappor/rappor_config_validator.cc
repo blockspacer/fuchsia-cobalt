@@ -52,13 +52,13 @@ constexpr int64_t max_num_categories = 1024;
 // support string and integer categories and we use ValueParts to represent
 // these two uniformly. Returns true if |config| is valid or  false otherwise.
 bool ExtractCategories(const BasicRapporConfig& config, std::vector<ValuePart>* categories) {
-  switch (config.categories_case()) {
+  switch (config.categories.categories_case()) {
     case BasicRapporConfig::kStringCategories: {
-      int64_t num_categories = config.string_categories().category_size();
+      int64_t num_categories = config.categories.strings().size();
       if (num_categories <= 1 || num_categories >= max_num_categories) {
         return false;
       }
-      for (const auto& category : config.string_categories().category()) {
+      for (const auto& category : config.categories.strings()) {
         if (category.empty()) {
           return false;
         }
@@ -68,8 +68,8 @@ bool ExtractCategories(const BasicRapporConfig& config, std::vector<ValuePart>* 
       }
     } break;
     case BasicRapporConfig::kIntRangeCategories: {
-      int64_t first = config.int_range_categories().first();
-      int64_t last = config.int_range_categories().last();
+      int64_t first = config.categories.int_range().first;
+      int64_t last = config.categories.int_range().last;
       int64_t num_categories = last - first + 1;
       if (last <= first || num_categories >= max_num_categories) {
         return false;
@@ -81,7 +81,7 @@ bool ExtractCategories(const BasicRapporConfig& config, std::vector<ValuePart>* 
       }
     } break;
     case BasicRapporConfig::kIndexedCategories: {
-      int64_t num_categories = config.indexed_categories().num_categories();
+      int64_t num_categories = config.categories.indexed();
       if (num_categories >= max_num_categories) {
         LOG(ERROR) << "BasicRappor: The maximum number of categories is 1024";
         return false;
@@ -116,15 +116,15 @@ uint32_t RapporConfigValidator::MinPower2Above(uint16_t x) {
 constexpr uint32_t max_num_hashes = 8;
 // Constructor for String RAPPOR
 RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
-    : prob_0_becomes_1_(config.prob_0_becomes_1()),
-      prob_1_stays_1_(config.prob_1_stays_1()),
-      num_bits_(config.num_bloom_bits()),
-      num_hashes_(config.num_hashes()),
-      num_cohorts_(config.num_cohorts()),
+    : prob_0_becomes_1_(config.prob_0_becomes_1),
+      prob_1_stays_1_(config.prob_1_stays_1),
+      num_bits_(config.num_bloom_bits),
+      num_hashes_(config.num_hashes),
+      num_cohorts_(config.num_cohorts),
       // num_cohorts_2_power_ is computed below.
       num_cohorts_2_power_(0) {
   valid_ = false;
-  if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr())) {
+  if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr)) {
     return;
   }
   if (num_bits_ <= 1 || num_bits_ > max_num_categories) {
@@ -159,13 +159,13 @@ RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
 
 // Constructor for Basic RAPPOR
 RapporConfigValidator::RapporConfigValidator(const BasicRapporConfig& config)
-    : prob_0_becomes_1_(config.prob_0_becomes_1()),
-      prob_1_stays_1_(config.prob_1_stays_1()),
+    : prob_0_becomes_1_(config.prob_0_becomes_1),
+      prob_1_stays_1_(config.prob_1_stays_1),
       num_bits_(0),
       num_hashes_(0),
       num_cohorts_(1) {
   valid_ = false;
-  if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr())) {
+  if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr)) {
     return;
   }
   if (!ExtractCategories(config, &categories_)) {

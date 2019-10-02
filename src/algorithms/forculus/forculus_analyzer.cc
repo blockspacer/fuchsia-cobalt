@@ -40,11 +40,11 @@ std::string ErrorString(const ForculusObservation& obs) {
 
 }  // namespace
 
-ForculusAnalyzer::ForculusAnalyzer(cobalt::ForculusConfig config) : config_(std::move(config)) {}
+ForculusAnalyzer::ForculusAnalyzer(ForculusConfig config) : config_(config) {}
 
 bool ForculusAnalyzer::AddObservation(uint32_t day_index, const ForculusObservation& obs) {
   // Compute the epoch_index from the day_index.
-  uint32_t epoch_index = EpochIndexFromDayIndex(day_index, config_.epoch_type());
+  uint32_t epoch_index = EpochIndexFromDayIndex(day_index, config_.epoch_type);
 
   // Look in decryption_map for our (day_index, obs) pair.
   DecrypterGroupKey group_key(epoch_index, obs.ciphertext());
@@ -54,7 +54,7 @@ bool ForculusAnalyzer::AddObservation(uint32_t day_index, const ForculusObservat
     // There was no entry for this group_key in decryption_map. Create a
     // new ForculusDecrypter and a new entry.
     std::unique_ptr<ForculusDecrypter> decrypter(
-        new ForculusDecrypter(config_.threshold(), obs.ciphertext()));
+        new ForculusDecrypter(config_.threshold, obs.ciphertext()));
     decrypter->AddObservation(obs);
     decryption_map_.emplace(group_key, DecrypterResult(std::move(decrypter)));
   } else {
@@ -83,7 +83,7 @@ bool ForculusAnalyzer::AddObservation(uint32_t day_index, const ForculusObservat
         observation_errors_++;
         return false;
       }
-      if (decrypter_result.decrypter->size() >= config_.threshold()) {
+      if (decrypter_result.decrypter->size() >= config_.threshold) {
         // We are now able to decrypt the ciphertext.
         std::string recovered_text;
         if (decrypter_result.decrypter->Decrypt(&recovered_text) != ForculusDecrypter::kOK) {

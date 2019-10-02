@@ -36,8 +36,8 @@ ForculusObservation Encrypt(uint32_t day_index, const EpochType& epoch_type,
                             const std::string& plaintext) {
   // Make a config with the given threshold
   ForculusConfig config;
-  config.set_threshold(kThreshold);
-  config.set_epoch_type(epoch_type);
+  config.threshold = kThreshold;
+  config.epoch_type = epoch_type;
 
   // Construct an Encrypter.
   ForculusEncrypter encrypter(config, 0, 0, 0, "", ClientSecret::GenerateNewSecret());
@@ -70,7 +70,7 @@ void AddObservations(ForculusAnalyzer* forculus_analyzer, uint32_t day_index,
 // times on the same day.
 TEST(ForculusAnalyzerTest, NoErrors) {
   ForculusConfig forculus_config;
-  forculus_config.set_threshold(kThreshold);
+  forculus_config.threshold = kThreshold;
   ForculusAnalyzer forculus_analyzer(forculus_config);
 
   const std::string plaintext1("The woods are lovely, dark and deep,");
@@ -126,7 +126,7 @@ TEST(ForculusAnalyzerTest, NoErrors) {
 // We test Forculus encryption and analysis using DAY, WEEK and MONTH epochs.
 TEST(ForculusAnalyzerTest, TestEpochTypes) {
   ForculusConfig forculus_config;
-  forculus_config.set_threshold(kThreshold);
+  forculus_config.threshold = kThreshold;
   std::unique_ptr<ForculusAnalyzer> forculus_analyzer(new ForculusAnalyzer(forculus_config));
 
   const std::string plaintext("Some text");
@@ -144,7 +144,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
   EXPECT_EQ(0u, results.size());
 
   // Next we test with a WEEK epoch
-  forculus_config.set_epoch_type(WEEK);
+  forculus_config.epoch_type = WEEK;
   forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
@@ -171,7 +171,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
   EXPECT_EQ(0u, results.size());
 
   // Next we test with a MONTH epoch
-  forculus_config.set_epoch_type(MONTH);
+  forculus_config.epoch_type = MONTH;
   forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
@@ -185,7 +185,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
   EXPECT_EQ(1u, results.size());
 
   // Finally we test with a MONTH epoch but two days in different months.
-  forculus_config.set_epoch_type(MONTH);
+  forculus_config.epoch_type = MONTH;
   forculus_analyzer = std::make_unique<ForculusAnalyzer>(forculus_config);
 
   // Add 10 observations on day 0,
@@ -203,7 +203,7 @@ TEST(ForculusAnalyzerTest, TestEpochTypes) {
 // Tests the use of a ForculusAnalyzer when fed observations with errors.
 TEST(ForculusAnalyzerTest, WithErrors) {
   ForculusConfig forculus_config;
-  forculus_config.set_threshold(3);
+  forculus_config.threshold = 3;
   ForculusAnalyzer forculus_analyzer(forculus_config);
 
   ForculusObservation obs;

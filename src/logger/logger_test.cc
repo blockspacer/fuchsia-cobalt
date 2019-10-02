@@ -23,7 +23,6 @@
 #include "src/logger/testing_constants.h"
 #include "src/pb/observation.pb.h"
 #include "src/pb/observation2.pb.h"
-#include "src/registry/encodings.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
