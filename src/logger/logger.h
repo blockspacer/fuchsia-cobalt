@@ -146,13 +146,6 @@ class Logger : public LoggerInterface {
 
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
-  ABSL_DEPRECATED("Use RecordLoggerCall instead") InternalMetrics* internal_metrics() {
-    return internal_metrics_.get();
-  }
-  ABSL_DEPRECATED("Use RecordLoggerCall instead") const ProjectContext* project_context() {
-    return project_context_.get();
-  }
-
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
   // every call to Logger along with which method was called and the project
