@@ -59,12 +59,8 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   //
   // observation_store: The ObservationStore from which Envelopes will be
   // retrieved.
-  //
-  // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
-  // Envelopes to the shuffler.
   ShippingManager(const UploadScheduler& upload_scheduler,
-                  observation_store::ObservationStore* observation_store,
-                  util::EncryptedMessageMaker* encrypt_to_shuffler);
+                  observation_store::ObservationStore* observation_store);
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
@@ -153,10 +149,6 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   // protected by a mutex.
   std::chrono::system_clock::time_point next_scheduled_send_time_;
 
- protected:
-  // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
-  util::EncryptedMessageMaker* encrypt_to_shuffler_;
-
  private:
   // The background worker thread that runs the method "Run()."
   std::thread worker_thread_;
@@ -243,6 +235,7 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 // is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
+  // Create a shipping manager that uploads data to a Clearcut log source.
   ClearcutV1ShippingManager(
       const UploadScheduler& upload_scheduler,
       observation_store::ObservationStore* observation_store,
@@ -253,9 +246,32 @@ class ClearcutV1ShippingManager : public ShippingManager {
       size_t max_attempts_per_upload = clearcut::kMaxRetries,
       std::string api_key = "cobalt-default-api-key");
 
+  // Create a shipping manager that can upload data to Clearcut.
+  //
+  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to use when doing so.
+  //
+  // TODO(camrdale): remove this once the log source transition is complete.
+  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
+                            observation_store::ObservationStore* observation_store,
+                            std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+                            logger::LoggerInterface* internal_logger = nullptr,
+                            size_t max_attempts_per_upload = clearcut::kMaxRetries,
+                            std::string api_key = "cobalt-default-api-key");
+
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
   ~ClearcutV1ShippingManager() override = default;
+
+  // Add a Clearcut log source to write to, and the encryption key to use when doing so.
+  //
+  // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
+  // Envelopes to the shuffler.
+  //
+  // log_source_id: the Clearcut log source to write to.
+  //
+  // TODO(camrdale): remove this once the log source transition is complete.
+  void AddClearcutDestination(util::EncryptedMessageMaker* encrypt_to_shuffler,
+                              int32_t log_source_id);
 
   // Resets the internal metrics to use the provided logger.
   void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr) {
@@ -267,15 +283,23 @@ class ClearcutV1ShippingManager : public ShippingManager {
       std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> envelope_to_send)
       override;
 
+  struct ClearcutDestination {
+    util::EncryptedMessageMaker* encrypt_to_shuffler_;
+    const int32_t log_source_id_;
+  };
+
+  util::Status SendEnvelopeToClearcutDestination(const Envelope& envelope, size_t envelope_size,
+                                                 const ClearcutDestination& clearcut_destination);
+
   [[nodiscard]] std::string name() const override { return "ClearcutV1ShippingManager"; }
 
   const size_t max_attempts_per_upload_;
 
   std::mutex clearcut_mutex_;
   std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;
-  const int32_t log_source_id_;
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
   const std::string api_key_;
+  std::vector<ClearcutDestination> clearcut_destinations_;
 };
 
 }  // namespace encoder

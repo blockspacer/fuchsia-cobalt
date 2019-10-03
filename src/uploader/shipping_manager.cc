@@ -36,11 +36,9 @@ grpc::Status CobaltStatusToGrpcStatus(const util::Status& status) {
 }  // namespace
 
 ShippingManager::ShippingManager(const UploadScheduler& upload_scheduler,
-                                 ObservationStore* observation_store,
-                                 util::EncryptedMessageMaker* encrypt_to_shuffler)
+                                 ObservationStore* observation_store)
     : upload_scheduler_(upload_scheduler),
-      next_scheduled_send_time_(std::chrono::system_clock::now() + upload_scheduler_.Interval()),
-      encrypt_to_shuffler_(encrypt_to_shuffler) {
+      next_scheduled_send_time_(std::chrono::system_clock::now() + upload_scheduler_.Interval()) {
   CHECK(observation_store);
   _mutex_protected_fields_do_not_access_directly_.observation_store = observation_store;
 }
@@ -273,34 +271,67 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     util::EncryptedMessageMaker* encrypt_to_shuffler,
     std::unique_ptr<clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
-    : ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler),
+    : ClearcutV1ShippingManager(upload_scheduler, observation_store, std::move(clearcut),
+                                internal_logger, max_attempts_per_upload, std::move(api_key)) {
+  clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
+}
+
+ClearcutV1ShippingManager::ClearcutV1ShippingManager(
+    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+    std::unique_ptr<clearcut::ClearcutUploader> clearcut, logger::LoggerInterface* internal_logger,
+    size_t max_attempts_per_upload, std::string api_key)
+    : ShippingManager(upload_scheduler, observation_store),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
-      log_source_id_(log_source_id),
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
       api_key_(std::move(api_key)) {}
 
+void ClearcutV1ShippingManager::AddClearcutDestination(
+    util::EncryptedMessageMaker* encrypt_to_shuffler, int32_t log_source_id) {
+  clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
+}
+
 std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
-  auto log_extension = std::make_unique<LogEventExtension>();
-
   auto envelope = envelope_to_send->GetEnvelope();
   envelope.set_api_key(api_key_);
-  if (!encrypt_to_shuffler_->Encrypt(envelope,
-                                     log_extension->mutable_cobalt_encrypted_envelope())) {
+
+  bool error_occurred = false;
+  for (const auto& clearcut_destination : clearcut_destinations_) {
+    util::Status status =
+        SendEnvelopeToClearcutDestination(envelope, envelope_to_send->Size(), clearcut_destination);
+    if (!status.ok()) {
+      error_occurred = true;
+      VLOG(4) << name() << ": Cobalt send to Shuffler failed: (" << status.error_code() << ") "
+              << status.error_message() << ". Observations have been re-enqueued for later.";
+    }
+  }
+  if (error_occurred) {
+    return envelope_to_send;
+  }
+  return nullptr;
+}
+
+util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
+    const Envelope& envelope, size_t envelope_size,
+    const ClearcutDestination& clearcut_destination) {
+  auto log_extension = std::make_unique<LogEventExtension>();
+
+  if (!clearcut_destination.encrypt_to_shuffler_->Encrypt(
+          envelope, log_extension->mutable_cobalt_encrypted_envelope())) {
     // TODO(rudominer) log
     // Drop on floor.
-    return nullptr;
+    return util::Status::OK;
   }
 
-  VLOG(5) << name() << " worker: Sending Envelope of size " << envelope_to_send->Size()
+  VLOG(5) << name() << " worker: Sending Envelope of size " << envelope_size
           << " bytes to clearcut.";
 
   internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
-                                   envelope_to_send->Size());
+                                   envelope_size);
 
   clearcut::LogRequest request;
-  request.set_log_source(log_source_id_);
+  request.set_log_source(clearcut_destination.log_source_id_);
   request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
 
   util::Status status;
@@ -318,16 +349,10 @@ std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
-
     internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
-                                     envelope_to_send->Size());
-
-    return nullptr;
+                                     envelope_size);
   }
-
-  VLOG(4) << name() << ": Cobalt send to Shuffler failed: (" << status.error_code() << ") "
-          << status.error_message() << ". Observations have been re-enqueued for later.";
-  return envelope_to_send;
+  return status;
 }
 
 void ShippingManager::WaitUntilIdle(std::chrono::seconds max_wait) {
