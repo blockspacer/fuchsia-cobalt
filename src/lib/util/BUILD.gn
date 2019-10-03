@@ -196,6 +196,7 @@ source_set("protected_fields") {
   sources = [
     "protected_fields.h",
   ]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("protected_fields_test") {
@@ -203,6 +204,7 @@ source_set("protected_fields_test") {
   sources = [
     "protected_fields_test.cc",
   ]
+  configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":protected_fields",
     "//third_party/googletest:gtest",
