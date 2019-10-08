@@ -2,23 +2,32 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/go/go_library.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 config("proto_config") {
   defines = [ "PROTO_LITE" ]
 }
 
+_registry_protos = [
+  "aggregation_window",
+  "annotations",
+  "cobalt_registry",
+  "metric_definition",
+  "project",
+  "report_definition",
+  "window_size",
+]
+
 proto_library("cobalt_registry_proto") {
   proto_in_dir = "$cobalt_root"
-  sources = [
-    "aggregation_window.proto",
-    "annotations.proto",
-    "cobalt_registry.proto",
-    "metric_definition.proto",
-    "project.proto",
-    "report_definition.proto",
-    "window_size.proto",
-  ]
+
+  sources = []
+
+  foreach(name, _registry_protos) {
+    sources += [ "${name}.proto" ]
+  }
+
   import_dirs = [ "//third_party/protobuf/src" ]
   generate_python = false
   generate_go = true
@@ -27,6 +36,20 @@ proto_library("cobalt_registry_proto") {
   extra_configs = [
     ":proto_config",
     "$cobalt_root:cobalt_config",
+  ]
+}
+
+go_library("cobalt_registry_proto_go") {
+  name = "config"
+  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/registry"
+  non_go_deps = [ ":cobalt_registry_proto" ]
+  sources = []
+
+  foreach(name, _registry_protos) {
+    sources += [ "${name}.pb.go" ]
+  }
+  deps = [
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
   ]
 }
 

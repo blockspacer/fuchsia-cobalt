@@ -9,6 +9,7 @@ template("golib") {
     name = target_name
     source_dir = "//third_party/golibs/$name"
     forward_variables_from(invoker, [ "deps" ])
+    no_sources = true
   }
 }
 

@@ -7,12 +7,6 @@ import("//build/go/go_library.gni")
 import("//build/go/go_test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
-go_library("config") {
-  name = "config"
-  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/registry"
-  non_go_deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
-}
-
 proto_library("yamlpb_test_proto") {
   generate_cc = false
   generate_go = true
@@ -31,19 +25,137 @@ go_library("yamlpb_test_lib") {
   name = "config/config_parser/src/yamlpb"
   source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/bin/config_parser/src/yamlpb"
   non_go_deps = [ ":yamlpb_test_proto" ]
+  sources = [
+    "yamlpb_test.pb.go",
+  ]
 }
 
-_source_packages = [
-  "config_parser",
-  "config_validator",
-  "source_generator",
-  "yamlpb",
-]
-foreach(pkg, _source_packages) {
-  go_library(pkg) {
-    name = pkg
-    source_dir = pkg
-  }
+go_library("config_parser") {
+  source_dir = "config_parser"
+
+  sources = [
+    "config_parser.go",
+    "config_reader.go",
+    "filter.go",
+    "git.go",
+    "id.go",
+    "project_config.go",
+    "project_list.go",
+  ]
+
+  # Add test files
+  sources += [
+    "config_reader_test.go",
+    "filter_test.go",
+    "id_test.go",
+    "project_config_test.go",
+    "project_list_test.go",
+  ]
+
+  deps = [
+    ":yamlpb",
+    "$cobalt_root/src/registry:cobalt_registry_proto_go",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+  ]
+}
+
+go_test("config_parser_test") {
+  gopackages = [ "config_parser" ]
+
+  deps = [
+    ":config_parser",
+  ]
+}
+
+go_library("config_validator") {
+  source_dir = "config_validator"
+  sources = [
+    "metric_definitions.go",
+    "report_definitions.go",
+    "validator.go",
+  ]
+
+  # Add test files
+  sources += [
+    "metric_definitions_test.go",
+    "report_definitions_test.go",
+  ]
+
+  deps = [
+    ":config_parser",
+  ]
+}
+go_test("config_validator_test") {
+  gopackages = [ "config_validator" ]
+
+  deps = [
+    ":config_validator",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+  ]
+}
+
+go_library("source_generator") {
+  source_dir = "source_generator"
+  sources = [
+    "cpp.go",
+    "dart.go",
+    "dep.go",
+    "go.go",
+    "ident.go",
+    "rust.go",
+    "simple.go",
+    "source_outputter.go",
+    "utils.go",
+    "writer.go",
+  ]
+
+  # Add test go files
+  sources += [
+    "dep_test.go",
+    "ident_test.go",
+    "source_generator_test.go",
+    "source_generator_test_files",
+    "source_outputter_test.go",
+    "utils_test.go",
+  ]
+
+  deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto_go",
+  ]
+}
+
+go_test("source_generator_test") {
+  gopackages = [ "source_generator" ]
+
+  deps = [
+    ":config_parser",
+    ":source_generator",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+    "//garnet/public/go/third_party:github.com/google/go-cmp",
+  ]
+}
+
+go_library("yamlpb") {
+  source_dir = "yamlpb"
+  sources = [
+    "yamlpb.go",
+    "yamlpb_test.go",
+  ]
+
+  deps = [
+    "//garnet/public/go/third_party:github.com/go-yaml/yaml",
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
+  ]
+}
+
+go_test("yamlpb_test") {
+  gopackages = [ "yamlpb" ]
+
+  deps = [
+    ":yamlpb",
+    ":yamlpb_test_lib",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+  ]
 }
 
 # This duplicates some source paths, but main needs to be relocated into a
@@ -51,8 +163,19 @@ foreach(pkg, _source_packages) {
 go_library("main") {
   name = "main"
 
-  # sources = ["config_parser_main.go"]
   source_dir = "."
+  sources = [
+    "config_parser_main.go",
+  ]
+
+  deps = [
+    ":config_parser",
+    ":config_validator",
+    ":source_generator",
+    "$cobalt_root/src/registry:cobalt_registry_proto_go",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
+  ]
 }
 
 go_binary("bin") {
@@ -60,44 +183,17 @@ go_binary("bin") {
   output_name = "config_parser"
 
   deps = [
-    ":config",
     ":main",
-    "//garnet/public/go/third_party:github.com/go-yaml/yaml",
-    "//garnet/public/go/third_party:github.com/golang/glog",
-    "//garnet/public/go/third_party:github.com/golang/protobuf",
   ]
-  foreach(pkg, _source_packages) {
-    deps += [ ":$pkg" ]
-  }
-}
-
-foreach(pkg, _source_packages) {
-  go_test("${pkg}_test") {
-    gopackages = [ pkg ]
-
-    deps = [
-      ":$pkg",
-      ":config_parser",
-      ":yamlpb",
-      "//garnet/public/go/third_party:github.com/go-yaml/yaml",
-      "//garnet/public/go/third_party:github.com/golang/glog",
-      "//garnet/public/go/third_party:github.com/golang/protobuf",
-      "//garnet/public/go/third_party:github.com/google/go-cmp",
-    ]
-
-    if (pkg == "yamlpb") {
-      deps += [ ":yamlpb_test_lib" ]
-    } else {
-      deps += [ ":config" ]
-    }
-  }
 }
 
 group("tests") {
   testonly = true
 
-  deps = []
-  foreach(pkg, _source_packages) {
-    deps += [ ":${pkg}_test" ]
-  }
+  deps = [
+    ":config_parser_test",
+    ":config_validator_test",
+    ":source_generator_test",
+    ":yamlpb_test",
+  ]
 }

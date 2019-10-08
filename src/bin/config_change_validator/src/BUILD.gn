@@ -6,28 +6,32 @@ import("//build/go/go_binary.gni")
 import("//build/go/go_library.gni")
 import("//build/go/go_test.gni")
 
-go_library("config") {
-  name = "config"
-  source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/registry"
-  non_go_deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
+go_library("validator") {
+  source_dir = "validator"
+  sources = [
+    "customers.go",
+    "escape_hatch.go",
+    "metrics.go",
+    "projects.go",
+    "registries.go",
+  ]
+
+  # Test files
+  sources += [
+    "escape_hatch_test.go",
+    "metrics_test.go",
+    "projects_test.go",
+  ]
 }
 
-_source_packages = [ "validator" ]
-foreach(pkg, _source_packages) {
-  go_library(pkg) {
-    name = pkg
-    source_dir = pkg
-  }
-
-  go_test("${pkg}_test") {
-    gopackages = [ pkg ]
-    deps = [
-      ":$pkg",
-      ":config",
-      "//garnet/public/go/third_party:github.com/golang/glog",
-      "//garnet/public/go/third_party:github.com/golang/protobuf",
-    ]
-  }
+go_test("validator_test") {
+  gopackages = [ "validator" ]
+  deps = [
+    ":validator",
+    "$cobalt_root/src/registry:cobalt_registry_proto_go",
+    "//garnet/public/go/third_party:github.com/golang/glog",
+    "//garnet/public/go/third_party:github.com/golang/protobuf",
+  ]
 }
 
 # This duplicates some source paths, but main needs to be relocated into a
@@ -35,7 +39,9 @@ foreach(pkg, _source_packages) {
 go_library("main") {
   name = "main"
 
-  # sources = ["config_change_validator_main.go"]
+  sources = [
+    "config_change_validator_main.go",
+  ]
   source_dir = "."
 }
 
@@ -44,21 +50,16 @@ go_binary("bin") {
   output_name = "config_change_validator"
 
   deps = [
-    ":config",
     ":main",
+    ":validator",
+    "$cobalt_root/src/registry:cobalt_registry_proto_go",
     "//garnet/public/go/third_party:github.com/golang/glog",
     "//garnet/public/go/third_party:github.com/golang/protobuf",
   ]
-  foreach(pkg, _source_packages) {
-    deps += [ ":$pkg" ]
-  }
 }
 
 group("tests") {
   testonly = true
 
-  deps = []
-  foreach(pkg, _source_packages) {
-    deps += [ ":${pkg}_test" ]
-  }
+  deps = [":validator_test"]
 }

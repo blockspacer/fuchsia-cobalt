@@ -61,9 +61,13 @@ template("go_library") {
     source_dir = invoker.source_dir
   }
 
+  assert(defined(invoker.sources) || defined(invoker.no_sources), "sources or no_sources is required")
+
   go_sources = []
   if (defined(invoker.sources)) {
     go_sources = invoker.sources
+  } else if (defined(invoker.no_sources)) {
+    not_needed(invoker, ["no_sources"])
   }
 
   action(target_name) {
