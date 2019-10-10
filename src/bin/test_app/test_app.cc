@@ -97,7 +97,7 @@ DEFINE_string(config_bin_proto_path, "",
               "Path to the serialized CobaltRegistry proto from which the "
               "configuration is to be read. (Optional)");
 
-DEFINE_string(clearcut_endpoint, "https://jmt17.google.com/log",
+DEFINE_string(clearcut_endpoint, "https://play.googleapis.com/staging/log",
               "The URL to send clearcut requests to.");
 
 DEFINE_string(local_aggregate_backup_file, "", "Back up local aggregates of events to this file.");
