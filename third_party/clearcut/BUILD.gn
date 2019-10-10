@@ -4,6 +4,8 @@
 
 import("//third_party/protobuf/proto_library.gni")
 
+#TODO(rudominer) Move this module out of //third_party. fxb/38558.
+
 proto_library("clearcut_proto") {
   sources = [
     "clearcut.proto",
@@ -23,7 +25,30 @@ source_set("clearcut") {
   public_deps = [
     ":clearcut_proto",
     "$cobalt_root/src:logging",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/lib/util:sleeper",
+    "$cobalt_root/src/lib/util:status",
     "$cobalt_root/third_party/statusor:statusor",
     "//third_party/abseil-cpp",
+  ]
+}
+
+source_set("uploader_test") {
+  testonly = true
+  sources = [
+    "uploader_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":clearcut",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":uploader_test",
   ]
 }

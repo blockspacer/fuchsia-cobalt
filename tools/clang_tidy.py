@@ -32,11 +32,34 @@ SKIP_LINT_DIRS = [
                  'source_generator', 'source_generator_test_files'),
 ]
 
+# A list of directory prefixes that extend directory prefixes from SKIP_LINT_DIRS
+# but that should not be skipped.
+# TODO(rudominer) Can eliminate third_party/clearcut below when
+# fxb/38558 is resolved.
+OVERRIDE_SKIP_LINT_DIRS = [
+    os.path.join(SRC_ROOT_DIR, 'third_party', 'clearcut')
+]
+
 TEST_FILE_REGEX = re.compile('.*_(unit)?tests?.cc$')
 TEST_FILE_CLANG_TIDY_CHECKS = [
     '-readability-magic-numbers',
     '-misc-non-private-member-variables-in-classes'
 ]
+
+
+# Given a directory's parent path and name, returns a boolean indicating whether
+# or not the directory should be skipped for liniting.
+def should_skip_dir(parent_path, name):
+  if name.startswith('.'):
+    return True
+  full_path = os.path.join(parent_path, name)
+  for p in OVERRIDE_SKIP_LINT_DIRS:
+    if p.startswith(full_path):
+      return False
+  for p in SKIP_LINT_DIRS:
+    if full_path.startswith(p):
+      return True
+  return False
 
 
 def main(only_directories=[]):
@@ -62,10 +85,7 @@ def main(only_directories=[]):
           clang_tidy_files.append(full_path)
 
     # Before recursing into directories remove the ones we want to skip.
-    dirs_to_skip = [
-        dir for dir in dirs
-        if dir.startswith('.') or os.path.join(root, dir) in SKIP_LINT_DIRS
-    ]
+    dirs_to_skip = [dir for dir in dirs if should_skip_dir(root, dir)]
     for d in dirs_to_skip:
       dirs.remove(d)
 
@@ -74,26 +94,29 @@ def main(only_directories=[]):
       if f.endswith('.h') and not os.path.islink(f)
   ]
   print('Running check-header-guards.py on %d files' % len(header_files))
-  try:
-    subprocess.check_call([CHECK_HEADER_GUARDS] + header_files)
-  except:
-    status += 1
+  if len(header_files) > 0:
+    try:
+      subprocess.check_call([CHECK_HEADER_GUARDS] + header_files)
+    except:
+      status += 1
 
   clang_tidy_command = [CLANG_TIDY, '-quiet', '-p', OUT_DIR]
   print('Running clang-tidy on %d source files' % len(clang_tidy_files))
-  try:
-    subprocess.check_call(clang_tidy_command + clang_tidy_files)
-  except:
-    status += 1
+  if len(clang_tidy_files) > 0:
+    try:
+      subprocess.check_call(clang_tidy_command + clang_tidy_files)
+    except:
+      status += 1
 
   print('Running clang-tidy on %d test files' % len(clang_tidy_test_files))
-  try:
-    subprocess.check_call(
-        clang_tidy_command +
-        ['-checks=%s' % ','.join(TEST_FILE_CLANG_TIDY_CHECKS)] +
-        clang_tidy_test_files)
-  except:
-    status += 1
+  if len(clang_tidy_test_files) > 0:
+    try:
+      subprocess.check_call(
+          clang_tidy_command +
+          ['-checks=%s' % ','.join(TEST_FILE_CLANG_TIDY_CHECKS)] +
+          clang_tidy_test_files)
+    except:
+      status += 1
 
   return status
 

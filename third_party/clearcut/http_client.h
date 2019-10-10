@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_
-#define THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_
+#ifndef COBALT_THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_
+#define COBALT_THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_
 
 #include <future>
 #include <map>
@@ -24,10 +24,15 @@ class HTTPResponse {
   std::string response;
   Status status;
   int64_t http_code;
+  std::map<std::string, std::string> headers;
 
   HTTPResponse() {}
-  HTTPResponse(std::string response, Status status, int64_t http_code)
-      : response(std::move(response)), status(status), http_code(http_code) {}
+  HTTPResponse(std::string response, Status status, int64_t http_code,
+               std::map<std::string, std::string> headers = std::map<std::string, std::string>())
+      : response(std::move(response)),
+        status(status),
+        http_code(http_code),
+        headers(std::move(headers)) {}
 
   HTTPResponse(HTTPResponse&&) = default;
   HTTPResponse& operator=(HTTPResponse&&) = default;
@@ -65,4 +70,4 @@ class HTTPClient {
 
 }  // namespace clearcut
 
-#endif  // THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_
+#endif  // COBALT_THIRD_PARTY_CLEARCUT_HTTP_CLIENT_H_

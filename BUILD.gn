@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/test.gni")
-import("$cobalt_root/metrics_registry.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("$cobalt_root/metrics_registry.gni")
 
 declare_args() {
   extra_package_labels = []
@@ -33,6 +33,7 @@ group("tests") {
   deps = [
     "keys:tests",
     "src:tests",
+    "$cobalt_root/third_party/clearcut:tests",
   ]
 }
 

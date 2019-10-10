@@ -186,8 +186,17 @@ IGNORED_FILES = [
     "src/bin/config_parser/src/source_generator/source_generator_test_files",
 ]
 
+# A list of file prefixes that extend file prefixes from IGNORED_FILES
+# but that should not be ignored.
+# TODO(rudominer) Can eliminate third_party/clearcut below when
+# fxb/38558 is resolved.
+OVERRIDE_IGNORED_FILES = ["third_party/clearcut"]
+
 
 def _ignored_file(f):
+  for name in OVERRIDE_IGNORED_FILES:
+    if f.startswith(name):
+      return False
   for name in IGNORED_FILES:
     if f.startswith(name):
       return True
@@ -230,7 +239,7 @@ def fmt(also_fmt_last_commit, also_fmt_all_tracked, repo_path=None):
     session = FormattingSession(repo_path)
     session.format_changed(changes)
   finally:
-    os.chdir(repo_path)
+    os.chdir(cwd)
 
 
 if __name__ == "__main__":
