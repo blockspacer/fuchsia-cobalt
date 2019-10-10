@@ -10,6 +10,27 @@ source_set("clock") {
   ]
 }
 
+source_set("sleeper") {
+  sources = [
+    "sleeper.h",
+  ]
+  public_deps = [
+    ":clock",
+  ]
+}
+
+source_set("sleeper_test") {
+  testonly = true
+  sources = [
+    "sleeper_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":sleeper",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 source_set("proto_serialization") {
   sources = [
     # Sources from protobuf that are not included in protobuf lite
@@ -218,5 +239,6 @@ group("tests") {
     ":datetime_util_test",
     ":encrypted_message_util_test",
     ":protected_fields_test",
+    ":sleeper_test",
   ]
 }

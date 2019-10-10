@@ -125,8 +125,13 @@ class IncrementingSteadyClock : public SteadyClockInterface {
     return time_;
   }
 
-  // Return the current value of time_ without advancing time.
+  // Returns the current value of time_ without advancing time.
   std::chrono::steady_clock::time_point peek_now() { return time_; }
+
+  // Returns the value that now() would return without advancing time. This is
+  // different than peek_now() which returns instead the last value that now()
+  // would have already returned that previous time it was invoked.
+  std::chrono::steady_clock::time_point peek_later() { return time_ + increment_; }
 
   // Set the value by which the clock is incremented each time it is called.
   void set_increment(std::chrono::steady_clock::duration increment) { increment_ = increment; }
