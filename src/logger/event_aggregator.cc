@@ -195,7 +195,7 @@ EventAggregator::EventAggregator(const Encoder* encoder,
 }
 
 void EventAggregator::Start(std::unique_ptr<util::SystemClockInterface> clock) {
-  auto locked = protected_shutdown_flag_.lock();
+  auto locked = protected_worker_thread_controller_.lock();
   locked->shut_down = false;
   std::thread t(std::bind(
       [this](std::unique_ptr<util::SystemClockInterface>& clock) { this->Run(std::move(clock)); },
@@ -429,13 +429,13 @@ Status EventAggregator::BackUpObservationHistory() {
 void EventAggregator::ShutDown() {
   if (worker_thread_.joinable()) {
     {
-      auto locked = protected_shutdown_flag_.lock();
+      auto locked = protected_worker_thread_controller_.lock();
       locked->shut_down = true;
       locked->shutdown_notifier.notify_all();
     }
     worker_thread_.join();
   } else {
-    protected_shutdown_flag_.lock()->shut_down = true;
+    protected_worker_thread_controller_.lock()->shut_down = true;
   }
 }
 
@@ -446,7 +446,7 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
   // Schedule garbage collection to happen |gc_interval_| seconds from now.
   next_gc_ = steady_time + gc_interval_;
   // Acquire the mutex protecting the shutdown flag and condition variable.
-  auto locked = protected_shutdown_flag_.lock();
+  auto locked = protected_worker_thread_controller_.lock();
   while (true) {
     // If shutdown has been requested, back up the LocalAggregateStore and
     // exit.
@@ -457,13 +457,18 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
     // Sleep until the next scheduled backup of the LocalAggregateStore or
     // until notified of shutdown. Back up the LocalAggregateStore after
     // waking.
-    auto shutdown_requested = locked->shutdown_notifier.wait_for(
-        locked, aggregate_backup_interval_, [&locked]() { return locked->shut_down; });
+    locked->shutdown_notifier.wait_for(locked, aggregate_backup_interval_, [&locked]() {
+      if (locked->immediate_run_trigger) {
+        locked->immediate_run_trigger = false;
+        return true;
+      }
+      return locked->shut_down;
+    });
     BackUpLocalAggregateStore();
     // If the worker thread was woken up by a shutdown request, exit.
     // Otherwise, complete any scheduled Observation generation and garbage
     // collection.
-    if (shutdown_requested) {
+    if (locked->shut_down) {
       return;
     }
     // Check whether it is time to generate Observations or to garbage-collect

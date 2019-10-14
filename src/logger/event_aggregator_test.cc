@@ -30,6 +30,7 @@ using config::PackEventCodes;
 using encoder::ClientSecret;
 using encoder::SystemDataInterface;
 using util::EncryptedMessageMaker;
+using util::IncrementingSteadyClock;
 using util::IncrementingSystemClock;
 using util::SerializeToBase64;
 using util::TimeToDayIndex;
@@ -110,11 +111,9 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   void ResetEventAggregator() {
-    event_aggregator_ = std::make_unique<EventAggregator>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get(), /*backfill_days=*/0,
-        /*aggregate_backup_interval=*/std::chrono::seconds(1),
-        /*generate_obs_interval=*/std::chrono::seconds(1), /*gc_interval=*/std::chrono::seconds(1));
+    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
+                                                          local_aggregate_proto_store_.get(),
+                                                          obs_history_proto_store_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
     test_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     // Initilize it to 10 years after the beginning of time.
@@ -122,6 +121,8 @@ class EventAggregatorTest : public ::testing::Test {
     // Use this to advance the clock in the tests.
     unowned_test_clock_ = test_clock_.get();
     day_store_created_ = CurrentDayIndex();
+    test_steady_clock_ = new IncrementingSteadyClock(std::chrono::system_clock::duration(0));
+    event_aggregator_->SetSteadyClock(test_steady_clock_);
   }
 
   // Destruct the EventAggregator (thus calling EventAggregator::ShutDown())
@@ -132,6 +133,7 @@ class EventAggregatorTest : public ::testing::Test {
   // Advances |test_clock_| by |num_seconds| seconds.
   void AdvanceClock(int num_seconds) {
     unowned_test_clock_->increment_by(std::chrono::seconds(num_seconds));
+    test_steady_clock_->increment_by(std::chrono::seconds(num_seconds));
   }
 
   // Returns the day index of the current day according to |test_clock_|, in
@@ -160,6 +162,23 @@ class EventAggregatorTest : public ::testing::Test {
 
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
     return event_aggregator_->GarbageCollect(day_index_utc, day_index_local);
+  }
+
+  void TriggerAndWaitForDoScheduledTasks() {
+    {
+      // Acquire the lock to manually trigger the scheduled tasks.
+      auto locked = event_aggregator_->protected_worker_thread_controller_.lock();
+      locked->immediate_run_trigger = true;
+      locked->shutdown_notifier.notify_all();
+    }
+    while (true) {
+      // Reacquire the lock to make sure that the scheduled tasks have completed.
+      auto locked = event_aggregator_->protected_worker_thread_controller_.lock();
+      if (!locked->immediate_run_trigger) {
+        break;
+      }
+      std::this_thread::yield();
+    }
   }
 
   void DoScheduledTasksNow() {
@@ -676,6 +695,7 @@ class EventAggregatorTest : public ::testing::Test {
   std::unique_ptr<FakeObservationStore> observation_store_;
   std::unique_ptr<IncrementingSystemClock> test_clock_;
   IncrementingSystemClock* unowned_test_clock_;
+  IncrementingSteadyClock* test_steady_clock_;
   // The day index on which the LocalAggregateStore was last
   // garbage-collected. A value of 0 indicates that the store has never been
   // garbage-collected.
@@ -809,7 +829,7 @@ class EventAggregatorWorkerTest : public EventAggregatorTest {
   bool in_run_state() { return (!shutdown_flag_set() && worker_joinable()); }
 
   bool shutdown_flag_set() {
-    return event_aggregator_->protected_shutdown_flag_.const_lock()->shut_down;
+    return event_aggregator_->protected_worker_thread_controller_.const_lock()->shut_down;
   }
 
   bool worker_joinable() { return event_aggregator_->worker_thread_.joinable(); }
@@ -2011,9 +2031,9 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
   expected_obs[{expected_id, day_index}] = {{1, {false, true, true, true, true}},
                                             {7, {false, true, true, true, true}}};
 
-  // Wait for the initial call to DoScheduledTasks to have completed.
   event_aggregator_->Start(std::move(test_clock_));
-  std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+  // Trigger the initial call to DoScheduledTasks and wait for it to have completed.
+  TriggerAndWaitForDoScheduledTasks();
 
   // Generate some events.
   for (uint32_t event_code = 1;
@@ -2028,8 +2048,8 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
   // Clear the FakeObservationStore.
   ResetObservationStore();
 
-  // Wait for another iteration of the call to DoScheduledTasks to have completed.
-  std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+  // Trigger another iteration of the call to DoScheduledTasks and wait for it to have completed.
+  TriggerAndWaitForDoScheduledTasks();
 
   // Check the generated Observations against the expectation.
   EXPECT_TRUE(CheckUniqueActivesObservations(expected_obs, observation_store_.get(),

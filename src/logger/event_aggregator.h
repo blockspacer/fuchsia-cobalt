@@ -24,8 +24,7 @@
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 const std::chrono::hours kOneDay(24);
 
@@ -368,8 +367,25 @@ class EventAggregator {
   // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.
   void SetSteadyClock(util::SteadyClockInterface* clock) { steady_clock_.reset(clock); }
 
+  struct WorkerThreadController {
+   // Setting this value to true requests that the worker thread stop.
+   bool shut_down = true;
+
+   // Setting this value to true requests that the worker thread immediately perform its work rather than
+   // waiting for the next scheduled time to run. After the worker thread has completed its work, it
+   // will reset this value to false.
+   bool immediate_run_trigger = false;
+
+   // Used to wait on to execute periodic EventAggregator tasks.
+   std::condition_variable_any shutdown_notifier;
+  };
+
   struct ShutDownFlag {
+    // Used to trigger a shutdown of the EventAggregator.
     bool shut_down = true;
+    // Used in tests to manually trigger a run of the EventAggregator's scheduled tasks.
+    bool manual_trigger = false;
+    // Used to wait on to execute periodic EventAggregator tasks.
     std::condition_variable_any shutdown_notifier;
   };
 
@@ -383,7 +399,7 @@ class EventAggregator {
   size_t backfill_days_ = 0;
 
   std::thread worker_thread_;
-  util::ProtectedFields<ShutDownFlag> protected_shutdown_flag_;
+  util::ProtectedFields<WorkerThreadController> protected_worker_thread_controller_;
   std::chrono::seconds aggregate_backup_interval_;
   std::chrono::seconds generate_obs_interval_;
   std::chrono::seconds gc_interval_;
@@ -392,7 +408,6 @@ class EventAggregator {
   std::unique_ptr<util::SteadyClockInterface> steady_clock_;
 };
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger
 
 #endif  // COBALT_SRC_LOGGER_EVENT_AGGREGATOR_H_
