@@ -10,6 +10,8 @@
 #include "src/lib/util/status.h"
 #include "src/lib/util/status_codes.h"
 #include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/ascii.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 
 namespace cobalt::util {
 
@@ -63,6 +65,34 @@ statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_pat
   }
 
   return read_file_result;
+}
+
+statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path) {
+  auto read_file_result = ReadNonEmptyTextFile(file_path);
+  if (!read_file_result.ok()) {
+    return read_file_result;
+  }
+
+  auto hex = absl::StripAsciiWhitespace(read_file_result.ValueOrDie());
+  if (hex.size() % 2 == 1) {
+    return Status(FAILED_PRECONDITION, "Hex file has invalid size: " + file_path);
+  }
+
+  if (std::find_if_not(hex.begin(), hex.end(), absl::ascii_isxdigit) != hex.end()) {
+    return Status(FAILED_PRECONDITION, "Hex file has non-hex characters: " + file_path);
+  }
+
+  return absl::HexStringToBytes(hex);
+}
+
+std::string ReadHexFileOrDefault(const std::string& file_path, const std::string& default_string) {
+  auto read_hex_file_result = ReadHexFile(file_path);
+  if (!read_hex_file_result.ok()) {
+    VLOG(1) << "Failed to read hex file: " << read_hex_file_result.status().error_message();
+    return default_string;
+  }
+
+  return read_hex_file_result.ValueOrDie();
 }
 
 }  // namespace cobalt::util

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 source_set("clock") {
@@ -121,6 +122,34 @@ static_library("file_util") {
     "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/third_party/statusor",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
+}
+
+test("file_util_test") {
+  testonly = true
+  sources = [
+    "file_util_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":file_util",
+    ":file_util_test_files",
+    "$cobalt_root/src:logging",
+    "//third_party/abseil-cpp/absl/strings",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+copy("file_util_test_files") {
+  sources = [
+    "test_data/deadbeef",
+    "test_data/empty",
+    "test_data/hex_too_short",
+    "test_data/hex_wrong_char",
+  ]
+  outputs = [
+    "$root_out_dir/tests/cpp/file_util_test_files/{{source_file_part}}",
   ]
 }
 
@@ -238,6 +267,7 @@ group("tests") {
     ":consistent_proto_store_test",
     ":datetime_util_test",
     ":encrypted_message_util_test",
+    ":file_util_test",
     ":protected_fields_test",
     ":sleeper_test",
   ]

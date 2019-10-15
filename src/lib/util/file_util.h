@@ -15,6 +15,10 @@ statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path);
 
 statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path);
 
+statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path);
+
+std::string ReadHexFileOrDefault(const std::string& file_path, const std::string& default_string);
+
 }  // namespace util
 }  // namespace cobalt
 #endif  // COBALT_SRC_LIB_UTIL_FILE_UTIL_H_
