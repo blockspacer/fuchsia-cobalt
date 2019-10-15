@@ -4,7 +4,7 @@
 
 #include "src/lib/util/file_util.h"
 
-#include "glog/logging.h"
+#include "src/logging.h"
 #include "third_party/abseil-cpp/absl/strings/str_cat.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
