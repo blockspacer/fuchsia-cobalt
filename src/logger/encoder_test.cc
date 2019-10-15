@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "src/lib/crypto_util/base64.h"
+#include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
@@ -27,6 +28,8 @@ using encoder::ClientSecret;
 using encoder::FakeSystemData;
 using encoder::SystemDataInterface;
 using google::protobuf::RepeatedPtrField;
+using local_aggregation::MakeDayWindow;
+using local_aggregation::MakeHourWindow;
 
 namespace logger {
 
@@ -34,6 +37,9 @@ namespace {
 
 constexpr uint32_t kCustomerId = 1;
 constexpr uint32_t kProjectId = 1;
+constexpr uint32_t kDayIndex = 111;
+constexpr uint32_t kAggregationDays = 7;
+constexpr uint32_t kValue = 314159;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string cobalt_registry_bytes;
@@ -182,8 +188,6 @@ TEST_F(EncoderTest, EncodeIntegerEventObservation) {
   const char kReportName[] = "ReadCacheHitCounts";
   const uint32_t kExpectedMetricId = 2;
   const char kComponent[] = "My Component";
-  const uint32_t kValue = 314159;
-  const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 9;
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
@@ -207,8 +211,6 @@ TEST_F(EncoderTest, MultipleEventCodes) {
   const char kReportName[] = "MultiEventCodeCounts";
   const uint32_t kExpectedMetricId = 11;
   const char kComponent[] = "My Component";
-  const uint32_t kValue = 314159;
-  const uint32_t kDayIndex = 111;
   const uint32_t kEventCode1 = 7;
   const uint32_t kEventCode2 = 5;
   google::protobuf::RepeatedField<uint32_t> event_codes;
@@ -236,7 +238,6 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   const char kReportName[] = "FileSystemWriteTimes_Histogram";
   const uint32_t kExpectedMetricId = 6;
   const std::string kComponent;
-  const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 9;
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
@@ -267,7 +268,6 @@ TEST_F(EncoderTest, EncodeRapporObservation) {
   const char kMetricName[] = "ModuleDownloads";
   const char kReportName[] = "ModuleDownloads_HeavyHitters";
   const uint32_t kExpectedMetricId = 7;
-  const uint32_t kDayIndex = 111;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
   auto result = encoder_->EncodeRapporObservation(project_context_->RefMetric(pair.first),
                                                   pair.second, kDayIndex, "Supercalifragilistic");
@@ -291,7 +291,6 @@ TEST_F(EncoderTest, EncodeCustomObservation) {
   const char kMetricName[] = "ModuleInstalls";
   const char kReportName[] = "ModuleInstalls_DetailedData";
   const uint32_t kExpectedMetricId = 8;
-  const uint32_t kDayIndex = 111;
 
   CustomDimensionValue module_value, number_value;
   module_value.set_string_value("gmail");
@@ -318,62 +317,66 @@ TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
   const char kMetricName[] = "DeviceBoots";
   const char kReportName[] = "DeviceBoots_UniqueDevices";
   const uint32_t kExpectedMetricId = 9;
-  const uint32_t kDayIndex = 111;
   const uint32_t kEventCode = 0;
-  const uint32_t kWindowSize = 1;
+  const int kAggregationHours = 1;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
 
-  // Encode a valid UniqueActivesObservation of activity.
-  auto result_active =
-      encoder_->EncodeUniqueActivesObservation(project_context_->RefMetric(pair.first), pair.second,
-                                               kDayIndex, kEventCode, true, kWindowSize);
+  // Encode a valid UniqueActivesObservation of activity for a 7-day window.
+  auto result_active = encoder_->EncodeUniqueActivesObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex, kEventCode, true,
+      MakeDayWindow(kAggregationDays));
   CheckResult(result_active, kExpectedMetricId, kDeviceBootsUniqueDevicesReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result_active, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result_active.observation->has_unique_actives());
-  EXPECT_EQ(kWindowSize, result_active.observation->unique_actives().window_size());
-  EXPECT_EQ(kEventCode, result_active.observation->unique_actives().event_code());
-  ASSERT_TRUE(result_active.observation->unique_actives().has_basic_rappor_obs());
-  EXPECT_EQ(1u, result_active.observation->unique_actives().basic_rappor_obs().data().size());
+  auto active_obs = result_active.observation->unique_actives();
+  ASSERT_EQ(OnDeviceAggregationWindow::kDays, active_obs.aggregation_window().units_case());
+  EXPECT_EQ(kAggregationDays, active_obs.aggregation_window().days());
+  EXPECT_EQ(kEventCode, active_obs.event_code());
+  ASSERT_TRUE(active_obs.has_basic_rappor_obs());
+  EXPECT_EQ(1u, active_obs.basic_rappor_obs().data().size());
 
-  // Encode a valid UniqueActivesObservation of inactivity.
-  auto result_inactive =
-      encoder_->EncodeUniqueActivesObservation(project_context_->RefMetric(pair.first), pair.second,
-                                               kDayIndex, kEventCode, false, kWindowSize);
+  // Encode a valid UniqueActivesObservation of inactivity for a 1-hour window.
+  auto result_inactive = encoder_->EncodeUniqueActivesObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex, kEventCode, false,
+      MakeHourWindow(kAggregationHours));
   CheckResult(result_inactive, kExpectedMetricId, kDeviceBootsUniqueDevicesReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result_inactive, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result_inactive.observation->has_unique_actives());
-  EXPECT_EQ(kWindowSize, result_inactive.observation->unique_actives().window_size());
-  EXPECT_EQ(kEventCode, result_active.observation->unique_actives().event_code());
-  ASSERT_TRUE(result_inactive.observation->unique_actives().has_basic_rappor_obs());
-  EXPECT_EQ(1u, result_active.observation->unique_actives().basic_rappor_obs().data().size());
+  auto inactive_obs = result_inactive.observation->unique_actives();
+  ASSERT_EQ(OnDeviceAggregationWindow::kHours, inactive_obs.aggregation_window().units_case());
+  EXPECT_EQ(kAggregationHours, inactive_obs.aggregation_window().hours());
+  EXPECT_EQ(kEventCode, inactive_obs.event_code());
+  ASSERT_TRUE(inactive_obs.has_basic_rappor_obs());
+  EXPECT_EQ(1u, inactive_obs.basic_rappor_obs().data().size());
 }
 
 TEST_F(EncoderTest, EncodePerDeviceNumericObservation) {
   const char kMetricName[] = "ConnectionFailures";
   const char kReportName[] = "ConnectionFailures_PerDeviceCount";
   const uint32_t kExpectedMetricId = 10;
-  const uint32_t kDayIndex = 111;
   const char kComponent[] = "Some Component";
   const uint32_t kEventCode = 0;
   const int64_t kCount = 1728;
-  const uint32_t kWindowSize = 7;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
 
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
 
-  auto result = encoder_->EncodePerDeviceNumericObservation(project_context_->RefMetric(pair.first),
-                                                            pair.second, kDayIndex, kComponent,
-                                                            event_codes, kCount, kWindowSize);
+  auto result = encoder_->EncodePerDeviceNumericObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex, kComponent, event_codes,
+      kCount, MakeDayWindow(kAggregationDays));
   CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceCountReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_per_device_numeric());
-  EXPECT_EQ(kWindowSize, result.observation->per_device_numeric().window_size());
-  ASSERT_TRUE(result.observation->per_device_numeric().has_integer_event_obs());
-  auto integer_obs = result.observation->per_device_numeric().integer_event_obs();
+  const auto& per_device_numeric_obs = result.observation->per_device_numeric();
+  ASSERT_EQ(OnDeviceAggregationWindow::kDays,
+            per_device_numeric_obs.aggregation_window().units_case());
+  EXPECT_EQ(kAggregationDays, per_device_numeric_obs.aggregation_window().days());
+  ASSERT_TRUE(per_device_numeric_obs.has_integer_event_obs());
+  const auto& integer_obs = per_device_numeric_obs.integer_event_obs();
   EXPECT_EQ(kEventCode, integer_obs.event_code());
   EXPECT_EQ(32u, integer_obs.component_name_hash().size());
   EXPECT_EQ(kCount, integer_obs.value());
@@ -383,7 +386,6 @@ TEST_F(EncoderTest, EncodePerDeviceNumericHistogramObservation) {
   const char kMetricName[] = "ConnectionFailures";
   const char kReportName[] = "ConnectionFailures_PerDeviceHistogram";
   const uint32_t kExpectedMetricId = 10;
-  const uint32_t kDayIndex = 111;
   const char kComponent[] = "Some Component";
   const uint32_t kEventCode = 0;
   const int64_t kCount = 41;
@@ -393,14 +395,17 @@ TEST_F(EncoderTest, EncodePerDeviceNumericHistogramObservation) {
   google::protobuf::RepeatedField<uint32_t> event_codes;
   *event_codes.Add() = kEventCode;
 
-  auto result = encoder_->EncodePerDeviceHistogramObservation(project_context_->RefMetric(pair.first),
-                                                            pair.second, kDayIndex, kComponent,
-                                                            event_codes, kCount);
+  auto result = encoder_->EncodePerDeviceHistogramObservation(
+      project_context_->RefMetric(pair.first), pair.second, kDayIndex, kComponent, event_codes,
+      kCount, MakeDayWindow(kAggregationDays));
   CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceHistogramReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_per_device_histogram());
-  // TODO(ninai) add aggregation window check
+  auto per_device_histogram_obs = result.observation->per_device_histogram();
+  ASSERT_EQ(OnDeviceAggregationWindow::kDays,
+            per_device_histogram_obs.aggregation_window().units_case());
+  EXPECT_EQ(kAggregationDays, per_device_histogram_obs.aggregation_window().days());
   ASSERT_TRUE(result.observation->per_device_histogram().has_histogram());
   auto histogram = result.observation->per_device_histogram().histogram();
   EXPECT_EQ(kEventCode, histogram.event_code());
@@ -414,7 +419,6 @@ TEST_F(EncoderTest, EncodeReportParticipationObservation) {
   const char kMetricName[] = "ConnectionFailures";
   const char kReportName[] = "ConnectionFailures_PerDeviceCount";
   const uint32_t kExpectedMetricId = 10;
-  const uint32_t kDayIndex = 111;
   auto pair = GetMetricAndReport(kMetricName, kReportName);
 
   auto result = encoder_->EncodeReportParticipationObservation(

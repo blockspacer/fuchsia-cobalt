@@ -48,8 +48,9 @@ using ExpectedAggregationParams = struct ExpectedAggregationParams {
   // parent MetricDefinition.
   std::map<MetricReportId, size_t> num_event_codes;
   // Keys are the MetricReportIds of all locally aggregated reports in the
-  // registry. The value at a key is the set of window sizes of that report.
-  std::map<MetricReportId, std::set<uint32_t>> window_sizes;
+  // registry. The value at a key is the set of aggregation windows with units
+  // in days for that report.
+  std::map<MetricReportId, std::set<uint32_t>> aggregation_days;
 };
 
 // A representation of a set of expected UniqueActivesObservations. Used to
@@ -244,8 +245,10 @@ bool CheckNumericEventObservations(const std::vector<uint32_t>& expected_report_
 // Checks that the Observations contained in a FakeObservationStore are exactly
 // the UniqueActivesObservations that should be generated for a single day index
 // given a representation of the expected activity indicators for that day, for
-// each UniqueActives report, for each window size and event code, for a config
+// each UniqueActives report, for each aggregation window and event code, for a config
 // whose locally aggregated reports are all of type UNIQUE_N_DAY_ACTIVES.
+//
+// TODO(pesk): Support hourly OnDeviceAggregationWindows.
 bool CheckUniqueActivesObservations(const ExpectedUniqueActivesObservations& expected_obs,
                                     FakeObservationStore* observation_store,
                                     TestUpdateRecipient* update_recipient);
@@ -254,8 +257,10 @@ bool CheckUniqueActivesObservations(const ExpectedUniqueActivesObservations& exp
 // the PerDeviceNumericObservations and ReportParticipationObservations that
 // should be generated for a single day index given a representation of the
 // expected activity indicators for that day, for each PER_DEVICE_NUMERIC_STATS
-// report, for each window size and event code, for a config whose locally
+// report, for each aggregation window and event code, for a config whose locally
 // aggregated reports are all of type PER_DEVICE_NUMERIC_STATS.
+//
+// TODO(pesk): Support hourly OnDeviceAggregationWindows.
 bool CheckPerDeviceNumericObservations(
     ExpectedPerDeviceNumericObservations expected_per_device_numeric_obs,
     ExpectedReportParticipationObservations expected_report_participation_obs,

@@ -14,6 +14,7 @@
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
 #include "src/lib/util/status.h"
+#include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/project_context.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/packed_event_codes.h"
@@ -789,7 +790,7 @@ Status EventAggregator::GenerateSingleUniqueActivesObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
     uint32_t event_code, uint32_t window_size, bool was_active) const {
   auto encoder_result = encoder_->EncodeUniqueActivesObservation(
-      metric_ref, report, obs_day_index, event_code, was_active, window_size);
+      metric_ref, report, obs_day_index, event_code, was_active, MakeDayWindow(window_size));
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -924,7 +925,7 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const {
   Encoder::Result encoder_result = encoder_->EncodePerDeviceNumericObservation(
       metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value,
-      window_size);
+      MakeDayWindow(window_size));
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -943,10 +944,10 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
 
 Status EventAggregator::GenerateSinglePerDeviceHistogramObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
-    const std::string& component, uint32_t event_code, uint32_t /*window_size*/,
-    int64_t value) const {
+    const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const {
   Encoder::Result encoder_result = encoder_->EncodePerDeviceHistogramObservation(
-      metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value);
+      metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value,
+      MakeDayWindow(window_size));
 
   if (encoder_result.status != kOK) {
     return encoder_result.status;

@@ -260,12 +260,13 @@ class Encoder {
   // If |was_active| is false, the BasicRapporObservation field is a Basic
   // RAPPOR encoding of a 0 bit.
   //
-  // window_size: The number of days in the window associated with the
-  // Observation. This should be one of the window sizes specified in |report|,
-  // but it is the caller's responsibility to ensure this.
+  // aggregation_window: The aggregation window associated with the Observation.
+  // This should be one of the OnDeviceAggregationWindows specified in |report|
+  // (or equivalent, if |report| has a WindowSize) but it is the caller's
+  // responsibility to ensure this.
   Result EncodeUniqueActivesObservation(MetricRef metric, const ReportDefinition* report,
                                         uint32_t day_index, uint32_t event_code, bool was_active,
-                                        uint32_t window_size) const;
+                                        const OnDeviceAggregationWindow& aggregation_window) const;
 
   // Encodes an Observation of type PerDeviceNumericObservation.
   //
@@ -288,11 +289,14 @@ class Encoder {
   // value: This will populate the |value| field of the the
   // IntegerEventObservation wrapped by the PerDeviceNumericObservation.
   //
-  // TODO(pesk): add aggregation_window argument
+  // aggregation_window: The aggregation window associated with the Observation.
+  // This should be one of the OnDeviceAggregationWindows specified in |report|
+  // (or equivalent, if |report| has a WindowSize) but it is the caller's
+  // responsibility to ensure this.
   Result EncodePerDeviceNumericObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const std::string& component, const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      int64_t value, uint32_t window_size) const;
+      int64_t value, const OnDeviceAggregationWindow& aggregation_window) const;
 
   // Encodes an Observation of type PerDeviceNumericHistogramObservation.
   //
@@ -315,13 +319,14 @@ class Encoder {
   // value: This is the raw value of the aggregation. This will be used to populate HistogramBuckets
   // field wrapped by the HistogramObservation in PerDeviceNumericObservation.
   //
-  // window_size: The number of days in the window associated with the
-  // Observation. This should be one of the window sizes specified in |report|,
-  // but it is the caller's responsibility to ensure this.
+  // aggregation_window: The aggregation window associated with the Observation.
+  // This should be one of the OnDeviceAggregationWindows specified in |report|
+  // (or equivalent, if |report| has a WindowSize) but it is the caller's
+  // responsibility to ensure this.
   Result EncodePerDeviceHistogramObservation(
       MetricRef metric, const ReportDefinition* report, uint32_t day_index,
       const std::string& component, const google::protobuf::RepeatedField<uint32_t>& event_codes,
-      int64_t value) const;
+      int64_t value, const OnDeviceAggregationWindow& aggregation_window) const;
 
   // Encodes an Observation of type ReportParticipationObservation.
   //

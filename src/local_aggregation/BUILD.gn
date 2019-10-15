@@ -22,6 +22,17 @@ proto_library("cobalt_local_aggregation_proto") {
   ]
 }
 
+source_set("aggregation_utils") {
+  sources = [
+    "aggregation_utils.cc",
+    "aggregation_utils.h",
+  ]
+
+  public_deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
+}
+
 source_set("event_aggregator") {
   sources = [
     "event_aggregator.cc",
@@ -34,6 +45,7 @@ source_set("event_aggregator") {
   ]
 
   public_deps = [
+    ":aggregation_utils",
     ":cobalt_local_aggregation_proto",
     "$cobalt_root/src:logging",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
@@ -49,6 +61,19 @@ source_set("event_aggregator") {
     "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
+  ]
+}
+
+source_set("aggregation_utils_test") {
+  testonly = true
+
+  sources = [
+    "aggregation_utils_test.cc",
+  ]
+
+  public_deps = [
+    ":aggregation_utils",
+    "//third_party/googletest:gtest",
   ]
 }
 
@@ -69,6 +94,7 @@ group("tests") {
   testonly = true
 
   deps = [
+    ":aggregation_utils_test",
     ":event_aggregator_test",
   ]
 }

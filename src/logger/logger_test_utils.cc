@@ -124,11 +124,11 @@ EventValuesPtr NewCustomEvent(std::vector<std::string> dimension_names,
 ExpectedUniqueActivesObservations MakeNullExpectedUniqueActivesObservations(
     const ExpectedAggregationParams& expected_params, uint32_t day_index) {
   ExpectedUniqueActivesObservations expected_obs;
-  for (const auto& report_pair : expected_params.window_sizes) {
-    for (const auto& window_size : report_pair.second) {
+  for (const auto& report_pair : expected_params.aggregation_days) {
+    for (const auto& aggregation_days : report_pair.second) {
       for (uint32_t event_code = 0;
            event_code < expected_params.num_event_codes.at(report_pair.first); event_code++) {
-        expected_obs[{report_pair.first, day_index}][window_size].push_back(false);
+        expected_obs[{report_pair.first, day_index}][aggregation_days].push_back(false);
       }
     }
   }
@@ -139,7 +139,7 @@ ExpectedReportParticipationObservations MakeExpectedReportParticipationObservati
     const ExpectedAggregationParams& expected_params, uint32_t day_index) {
   ExpectedReportParticipationObservations expected_obs;
 
-  for (const auto& report_pair : expected_params.window_sizes) {
+  for (const auto& report_pair : expected_params.aggregation_days) {
     expected_obs.insert({report_pair.first, day_index});
   }
   return expected_obs;
@@ -313,7 +313,7 @@ bool CheckUniqueActivesObservations(const ExpectedUniqueActivesObservations& exp
   ExpectedAggregationParams expected_params;
   // A container for the strings expected to appear in the |data| field of the
   // BasicRapporObservation wrapped by the UniqueActivesObservation for a
-  // given MetricReportId, day index, window size, and event code.
+  // given MetricReportId, day index, aggregation window, and event code.
   std::map<std::pair<MetricReportId, uint32_t>, std::map<uint32_t, std::map<uint32_t, std::string>>>
       expected_values;
   // Form Basic RAPPOR-encoded bits from the expected activity
@@ -363,23 +363,27 @@ bool CheckUniqueActivesObservations(const ExpectedUniqueActivesObservations& exp
     if (expected_values.count(obs_key) == 0) {
       return false;
     }
-    uint32_t obs_window_size = observations.at(i).unique_actives().window_size();
-    if (expected_values.at(obs_key).count(obs_window_size) == 0) {
+    if (observations.at(i).unique_actives().aggregation_window().units_case() !=
+        OnDeviceAggregationWindow::kDays) {
+      return false;
+    }
+    uint32_t obs_aggregation_days = observations.at(i).unique_actives().aggregation_window().days();
+    if (expected_values.at(obs_key).count(obs_aggregation_days == 0)) {
       return false;
     }
     uint32_t obs_event_code = observations.at(i).unique_actives().event_code();
-    if (expected_values.at(obs_key).at(obs_window_size).count(obs_event_code) == 0) {
+    if (expected_values.at(obs_key).at(obs_aggregation_days).count(obs_event_code) == 0) {
       return false;
     }
     std::string obs_data = observations.at(i).unique_actives().basic_rappor_obs().data();
-    if (expected_values.at(obs_key).at(obs_window_size).at(obs_event_code) != obs_data) {
+    if (expected_values.at(obs_key).at(obs_aggregation_days).at(obs_event_code) != obs_data) {
       return false;
     }
     // Remove the bucket of |expected_values| corresponding to the
     // received Observation.
-    expected_values[obs_key][obs_window_size].erase(obs_event_code);
-    if (expected_values[obs_key][obs_window_size].empty()) {
-      expected_values[obs_key].erase(obs_window_size);
+    expected_values[obs_key][obs_aggregation_days].erase(obs_event_code);
+    if (expected_values[obs_key][obs_aggregation_days].empty()) {
+      expected_values[obs_key].erase(obs_aggregation_days);
     }
     if (expected_values[obs_key].empty()) {
       expected_values.erase(obs_key);
@@ -404,10 +408,10 @@ bool CheckPerDeviceNumericObservations(
     expected_params.metric_report_ids.insert(id_pair.first);
   }
   for (const auto& id_pair : expected_per_device_numeric_obs) {
-    for (const auto& window_size_pair : id_pair.second) {
-      auto window_size = window_size_pair.first;
-      expected_params.window_sizes[id_pair.first.first].insert(window_size);
-      for (const auto& expected_obs : window_size_pair.second) {
+    for (const auto& aggregation_days_pair : id_pair.second) {
+      auto aggregation_days = aggregation_days_pair.first;
+      expected_params.aggregation_days[id_pair.first.first].insert(aggregation_days);
+      for (const auto& expected_obs : aggregation_days_pair.second) {
         expected_params.daily_num_obs++;
         expected_params.num_obs_per_report[id_pair.first.first]++;
         const std::string& component = std::get<0>(expected_obs);
@@ -449,8 +453,12 @@ bool CheckPerDeviceNumericObservations(
       return false;
     }
     auto obs = per_device_numeric_obs.at(i);
-    uint32_t obs_window_size = obs.per_device_numeric().window_size();
-    auto window_iter = report_iter->second.find(obs_window_size);
+    if (obs.per_device_numeric().aggregation_window().units_case() !=
+        OnDeviceAggregationWindow::kDays) {
+      return false;
+    }
+    uint32_t obs_aggregation_days = obs.per_device_numeric().aggregation_window().days();
+    auto window_iter = report_iter->second.find(obs_aggregation_days);
     if (window_iter == report_iter->second.end()) {
       return false;
     }
@@ -469,9 +477,9 @@ bool CheckPerDeviceNumericObservations(
     if (obs_iter == window_iter->second.end()) {
       return false;
     }
-    expected_per_device_numeric_obs.at(obs_key).at(obs_window_size).erase(obs_tuple);
-    if (expected_per_device_numeric_obs.at(obs_key).at(obs_window_size).empty()) {
-      expected_per_device_numeric_obs.at(obs_key).erase(obs_window_size);
+    expected_per_device_numeric_obs.at(obs_key).at(obs_aggregation_days).erase(obs_tuple);
+    if (expected_per_device_numeric_obs.at(obs_key).at(obs_aggregation_days).empty()) {
+      expected_per_device_numeric_obs.at(obs_key).erase(obs_aggregation_days);
     }
     if (expected_per_device_numeric_obs.at(obs_key).empty()) {
       expected_per_device_numeric_obs.erase(obs_key);

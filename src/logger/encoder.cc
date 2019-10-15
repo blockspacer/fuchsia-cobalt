@@ -230,11 +230,9 @@ Encoder::Result Encoder::EncodeCustomObservation(MetricRef metric, const ReportD
   return result;
 }
 
-Encoder::Result Encoder::EncodeUniqueActivesObservation(MetricRef metric,
-                                                        const ReportDefinition* report,
-                                                        uint32_t day_index, uint32_t event_code,
-                                                        bool was_active,
-                                                        uint32_t window_size) const {
+Encoder::Result Encoder::EncodeUniqueActivesObservation(
+    MetricRef metric, const ReportDefinition* report, uint32_t day_index, uint32_t event_code,
+    bool was_active, const OnDeviceAggregationWindow& aggregation_window) const {
   auto result = MakeObservation(metric, report, day_index);
   Encoder::Result basic_rappor_result;
   if (was_active) {
@@ -248,9 +246,8 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(MetricRef metric,
     result.status = basic_rappor_result.status;
     return result;
   }
-  auto* observation = result.observation.get();
-  auto* activity_observation = observation->mutable_unique_actives();
-  activity_observation->set_window_size(window_size);
+  auto* activity_observation = result.observation->mutable_unique_actives();
+  *activity_observation->mutable_aggregation_window() = aggregation_window;
   activity_observation->set_event_code(event_code);
   activity_observation->mutable_basic_rappor_obs()->mutable_data()->swap(
       *(basic_rappor_result.observation->mutable_basic_rappor()->mutable_data()));
@@ -261,22 +258,24 @@ Encoder::Result Encoder::EncodeUniqueActivesObservation(MetricRef metric,
 Encoder::Result Encoder::EncodePerDeviceNumericObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
     const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t value,
-    uint32_t window_size) const {
+    const OnDeviceAggregationWindow& aggregation_window) const {
   auto result =
       EncodeIntegerEventObservation(metric, report, day_index, event_codes, component, value);
   auto* integer_event_observation = result.observation->release_numeric_event();
   auto* per_device_observation = result.observation->mutable_per_device_numeric();
   per_device_observation->set_allocated_integer_event_obs(integer_event_observation);
-  per_device_observation->set_window_size(window_size);
+  *per_device_observation->mutable_aggregation_window() = aggregation_window;
   return result;
 }
 
 Encoder::Result Encoder::EncodePerDeviceHistogramObservation(
     MetricRef metric, const ReportDefinition* report, uint32_t day_index,
-    const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t value) const {
+    const std::string& component, const RepeatedField<uint32_t>& event_codes, int64_t value,
+    const OnDeviceAggregationWindow& aggregation_window) const {
   auto result = MakeObservation(metric, report, day_index);
-  auto* observation = result.observation.get();
-  auto* histogram_observation = observation->mutable_per_device_histogram()->mutable_histogram();
+  auto* per_device_histogram_obs = result.observation->mutable_per_device_histogram();
+  *per_device_histogram_obs->mutable_aggregation_window() = aggregation_window;
+  auto* histogram_observation = per_device_histogram_obs->mutable_histogram();
   histogram_observation->set_event_code(config::PackEventCodes(event_codes));
   if (!HashComponentNameIfNotEmpty(component,
                                    histogram_observation->mutable_component_name_hash())) {
