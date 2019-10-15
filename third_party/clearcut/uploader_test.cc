@@ -278,10 +278,3 @@ TEST_F(UploaderTest, HttpResponseCodes) {
 }
 
 }  // namespace clearcut
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  INIT_LOGGING(argv[0]);
-  return RUN_ALL_TESTS();
-}
