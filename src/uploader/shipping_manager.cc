@@ -11,6 +11,7 @@
 #include "src/logger/logger_interface.h"
 #include "src/logging.h"
 #include "src/pb/clearcut_extensions.pb.h"
+#include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
 namespace cobalt::encoder {
 
@@ -371,6 +372,52 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
   }
   locked->waiting_for_schedule_notifier.wait_for(
       locked, max_wait, [&locked] { return (locked->shut_down || locked->waiting_for_schedule); });
+}
+
+LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                           std::string output_file_path,
+                                           std::unique_ptr<util::FileSystem> fs)
+    : ShippingManager({std::chrono::seconds::zero(), std::chrono::seconds::zero()},
+                      observation_store),
+      output_file_path_(std::move(output_file_path)),
+      fs_(std::move(fs)) {
+  CHECK(fs_);
+}
+
+std::unique_ptr<EnvelopeHolder> LocalShippingManager::SendEnvelopeToBackend(
+    std::unique_ptr<EnvelopeHolder> envelope_to_send) {
+  const Envelope& envelope = envelope_to_send->GetEnvelope();
+
+  VLOG(5) << name() << " worker: Saving Envelope of size " << envelope_to_send->Size()
+          << " bytes to local file.";
+
+  util::Status status = util::Status::OK;
+
+  auto ofs = fs_->NewProtoOutputStream(output_file_path_, /*append=*/true);
+  if (ofs.ok()) {
+    auto proto_output_stream = std::move(ofs.ValueOrDie());
+    if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(envelope,
+                                                                    proto_output_stream.get())) {
+      VLOG(4) << name() << ": Unable to write Envelope to local file: " << output_file_path_;
+    }
+  }
+
+  {
+    auto locked = protected_fields_.lock();
+    locked->num_send_attempts++;
+    if (!status.ok()) {
+      locked->num_failed_attempts++;
+    }
+    locked->last_send_status = CobaltStatusToGrpcStatus(status);
+  }
+  if (status.ok()) {
+    VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
+    return nullptr;
+  }
+
+  VLOG(4) << name() << ": Cobalt save to local file failed: (" << status.error_code() << ") "
+          << status.error_message() << ". Observations have been re-enqueued for later.";
+  return envelope_to_send;
 }
 
 }  // namespace cobalt::encoder

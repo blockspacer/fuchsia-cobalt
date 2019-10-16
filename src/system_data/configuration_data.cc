@@ -19,6 +19,8 @@ const char* EnvironmentString(const Environment& environment) {
       return "PROD";
     case DEVEL:
       return "DEVEL";
+    case LOCAL:
+      return "LOCAL";
   }
 }
 
@@ -32,6 +34,8 @@ int32_t ConfigurationData::GetLogSourceId() const {
       return kLogSourceIdProd;
     case DEVEL:
       return kLogSourceIdDevel;
+    case LOCAL:
+      return 0;
   }
 }
 

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "src/lib/clearcut/clearcut.pb.h"
+#include "src/lib/util/posix_file_system.h"
 #include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/observation_store/observation_store.h"
@@ -19,6 +20,7 @@
 #include "src/system_data/fake_system_data.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
 namespace cobalt::encoder {
 
@@ -81,6 +83,24 @@ class FakeHTTPClient : public lib::clearcut::HTTPClient {
   int send_call_count = 0;
   int observation_count = 0;
 };
+
+std::unique_ptr<EncryptedMessage> CreateObservationMessage(size_t num_bytes) {
+  CHECK_GT(num_bytes, 1);
+  auto message = std::make_unique<EncryptedMessage>();
+  // Because the MemoryObservationStore counts the size of an Observation
+  // to be the ciphertext size + 1, we set the ciphertext size to be
+  // num_bytes - 1.
+  message->set_ciphertext(std::string(num_bytes - 1, 'x'));
+  return message;
+}
+
+std::unique_ptr<ObservationMetadata> CreateObservationMetadata() {
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(kMetricId);
+  return metadata;
+}
 }  // namespace
 
 class ShippingManagerTest : public ::testing::Test {
@@ -103,19 +123,8 @@ class ShippingManagerTest : public ::testing::Test {
   }
 
   ObservationStore::StoreStatus AddObservation(size_t num_bytes) {
-    CHECK_GT(num_bytes, 1);
-    auto message = std::make_unique<EncryptedMessage>();
-    // Because the MemoryObservationStore counts the size of an Observation
-    // to be the ciphertext size + 1, we set the ciphertext size to be
-    // num_bytes - 1.
-    message->set_ciphertext(std::string(num_bytes - 1, 'x'));
-    auto metadata = std::make_unique<ObservationMetadata>();
-    metadata->set_customer_id(kCustomerId);
-    metadata->set_project_id(kProjectId);
-    metadata->set_metric_id(kMetricId);
-
-    auto retval =
-        observation_store_.AddEncryptedObservation(std::move(message), std::move(metadata));
+    auto retval = observation_store_.AddEncryptedObservation(CreateObservationMessage(num_bytes),
+                                                             CreateObservationMetadata());
     shipping_manager_->NotifyObservationsAdded();
     return retval;
   }
@@ -491,6 +500,78 @@ TEST_F(ShippingManagerTest, RequestSendSoonWithCallback) {
   EXPECT_EQ(8u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(6u, shipping_manager_->num_failed_attempts());
   EXPECT_TRUE(captured_success_arg);
+}
+
+constexpr char test_file_base[] = "/tmp/local_shipping_manager_test";
+
+std::string GetTestFileName(const std::string& base) {
+  std::stringstream fname;
+  fname << base << "_"
+        << std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+               .count();
+  return fname.str();
+}
+
+class LocalShippingManagerTest : public ::testing::Test {
+ public:
+  LocalShippingManagerTest()
+      : observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal),
+        test_file_name_(GetTestFileName(test_file_base)) {}
+
+ protected:
+  void SetUp() override {
+    fs_.Delete(test_file_name_);
+    shipping_manager_ = std::make_unique<LocalShippingManager>(
+        &observation_store_, test_file_name_, std::make_unique<util::PosixFileSystem>());
+    shipping_manager_->Start();
+  }
+
+  ObservationStore::StoreStatus AddObservation(size_t num_bytes) {
+    auto retval = observation_store_.AddEncryptedObservation(CreateObservationMessage(num_bytes),
+                                                             CreateObservationMetadata());
+    shipping_manager_->NotifyObservationsAdded();
+    return retval;
+  }
+
+  void CheckObservationCount(int expected_observation_count) {
+    auto ifs = fs_.NewProtoInputStream(test_file_name_);
+    ASSERT_EQ(util::StatusCode::OK, ifs.status().error_code());
+    int observation_count = 0;
+    Envelope envelope;
+    bool clean_eof = false;
+    while (google::protobuf::util::ParseDelimitedFromZeroCopyStream(
+        &envelope, ifs.ValueOrDie().get(), &clean_eof)) {
+      for (const auto& batch : envelope.batch()) {
+        observation_count += batch.encrypted_observation_size();
+      }
+      envelope.Clear();
+    }
+    EXPECT_EQ(true, clean_eof);
+    EXPECT_EQ(expected_observation_count, observation_count);
+  }
+
+ private:
+  MemoryObservationStore observation_store_;
+
+ protected:
+  std::string test_file_name_;
+  std::unique_ptr<ShippingManager> shipping_manager_;
+  util::PosixFileSystem fs_;
+};
+
+// Add multiple Observations and allow them to be saved.
+TEST_F(LocalShippingManagerTest, ScheduledSave) {
+  // Add two Observations but do not invoke RequestSendSoon() and do
+  // not add enough Observations to exceed envelope_send_threshold_size_.
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+  }
+  // Wait for the save to disk.
+  shipping_manager_->WaitUntilIdle(kMaxSeconds);
+
+  CheckObservationCount(2);
+  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
 }
 
 }  // namespace cobalt::encoder

@@ -10,7 +10,9 @@ source_set("shipping_manager") {
     "upload_scheduler.h",
   ]
   deps = [
+    "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/lib/util:protected_fields",
+    "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/system_data",
     "$cobalt_root/src/system_data:configuration_data",
@@ -34,6 +36,8 @@ source_set("tests") {
 
   deps = [
     ":shipping_manager",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/lib/util:proto_serialization",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
   ]

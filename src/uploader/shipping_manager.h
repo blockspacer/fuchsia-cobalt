@@ -17,6 +17,7 @@
 
 #include "src/lib/clearcut/uploader.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/lib/util/file_system.h"
 #include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
 #include "src/logging.h"
@@ -116,6 +117,7 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 
  private:
   friend class ClearcutV1ShippingManager;
+  friend class LocalShippingManager;
 
   // Has the ShippingManager been shut down?
   bool shut_down() const;
@@ -277,6 +279,27 @@ class ClearcutV1ShippingManager : public ShippingManager {
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
   const std::string api_key_;
   std::vector<ClearcutDestination> clearcut_destinations_;
+};
+
+// A concrete subclass of ShippingManager for capturing data locally to a file.
+class LocalShippingManager : public ShippingManager {
+ public:
+  explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                std::string output_file_path, std::unique_ptr<util::FileSystem> fs);
+
+  // The destructor will stop the worker thread and wait for it to stop
+  // before exiting.
+  ~LocalShippingManager() override = default;
+
+ private:
+  std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
+      std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> envelope_to_send)
+      override;
+
+  [[nodiscard]] std::string name() const override { return "LocalShippingManager"; }
+
+  std::string output_file_path_;
+  const std::unique_ptr<util::FileSystem> fs_;
 };
 
 }  // namespace encoder

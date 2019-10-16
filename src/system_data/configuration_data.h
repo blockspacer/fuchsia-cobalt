@@ -16,7 +16,10 @@ enum Environment {
   PROD = 0,
 
   // The devel environment.
-  DEVEL = 1
+  DEVEL = 1,
+
+  // Capture observations locally for testing purposes.
+  LOCAL = 2
 };
 
 // Convert the Environment enum to a string (for logging).
