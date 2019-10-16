@@ -8,6 +8,7 @@ group("tests") {
     "algorithms:tests",
     "bin:tests",
     "lib:tests",
+    "local_aggregation:tests",
     "logger:tests",
     "observation_store:tests",
     "registry:tests",

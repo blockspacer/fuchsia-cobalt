@@ -25,9 +25,9 @@ source_set("lib") {
   configs += [ "$cobalt_root/src/registry:proto_config" ]
 
   public_deps = [
+    "$cobalt_root/src/local_aggregation:event_aggregator",
     "$cobalt_root/src/logger",
     "$cobalt_root/src/logger:encoder",
-    "$cobalt_root/src/logger:event_aggregator",
     "$cobalt_root/src/logger:undated_event_manager",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
