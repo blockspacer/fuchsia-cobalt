@@ -1075,6 +1075,9 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
                 status = GenerateSinglePerDeviceNumericObservation(
                     metric_ref, report, obs_day_index, component, event_code, window_size,
                     window_aggregate);
+                if (status != kOK) {
+                  return status;
+                }
                 break;
               }
               case ReportDefinition::PER_DEVICE_HISTOGRAM: {
@@ -1084,6 +1087,7 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
                 if (status != kOK) {
                   return status;
                 }
+                break;
               }
               default:
                 LOG(ERROR) << "Unexpected report type " << report->report_type();

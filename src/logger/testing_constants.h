@@ -119,6 +119,41 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 }  // namespace mixed_time_zone
 
 // Constants specific to the registry defined in
+// test_registries/per_device_histogram_test_registry.yaml
+namespace per_device_histogram {
+
+// MetricReportIds of the locally aggregated reports in this registry
+constexpr MetricReportId kSettingsChangedMetricReportId =
+    MetricReportId(kSettingsChangedMetricId, kSettingsChangedPerDeviceHistogramReportId);
+constexpr MetricReportId kStreamingTimeTotalMetricReportId =
+    MetricReportId(kStreamingTimeMetricId, kStreamingTimePerDeviceTotalReportId);
+constexpr MetricReportId kLoginModuleFrameRateMinMetricReportId =
+    MetricReportId(kLoginModuleFrameRateMetricId, kLoginModuleFrameRatePerDeviceMinReportId);
+constexpr MetricReportId kLedgerMemoryUsageMaxMetricReportId =
+    MetricReportId(kLedgerMemoryUsageMetricId, kLedgerMemoryUsagePerDeviceMaxReportId);
+
+// Expected parameters of the locally aggregated reports in this registry
+const ExpectedAggregationParams kExpectedAggregationParams = {
+    4,
+
+    {kSettingsChangedMetricReportId, kStreamingTimeTotalMetricReportId,
+     kLoginModuleFrameRateMinMetricReportId, kLedgerMemoryUsageMaxMetricReportId},
+
+    {{kSettingsChangedMetricReportId, 1},
+     {kStreamingTimeTotalMetricReportId, 1},
+     {kLoginModuleFrameRateMinMetricReportId, 1},
+     {kLedgerMemoryUsageMaxMetricReportId, 1}},
+
+    {},
+
+    {{kSettingsChangedMetricReportId, {7, 30}},
+     {kStreamingTimeTotalMetricReportId, {1}},
+     {kLoginModuleFrameRateMinMetricReportId, {1, 7}},
+     {kLedgerMemoryUsageMaxMetricReportId, {1, 7}}}};
+
+}  // namespace per_device_histogram
+
+// Constants specific to the registry defined in
 // test_registries/per_device_numeric_stats_test_registry.yaml
 namespace per_device_numeric_stats {
 

@@ -25,6 +25,11 @@ metric_definitions:
     # Report ID: 2024497361
     - report_name: "SettingsChanged_PerDeviceHistogram"
       report_type: PER_DEVICE_HISTOGRAM
+      int_buckets:
+        linear:
+          floor: 0
+          num_buckets: 1000
+          step_size: 50
       aggregation_type: SUM
       window_size:
         - 7

@@ -818,6 +818,13 @@ class NoiseFreeMixedTimeZoneEventAggregatorTest : public EventAggregatorTestWith
       : EventAggregatorTestWithProjectContext(testing::mixed_time_zone::kCobaltRegistryBase64) {}
 };
 
+class PerDeviceHistogramEventAggregatorTest : public EventAggregatorTestWithProjectContext {
+ protected:
+  PerDeviceHistogramEventAggregatorTest()
+      : EventAggregatorTestWithProjectContext(
+            testing::per_device_histogram::kCobaltRegistryBase64) {}
+};
+
 class EventAggregatorWorkerTest : public EventAggregatorTest {
  protected:
   void SetUp() override { EventAggregatorTest::SetUp(); }
@@ -3311,6 +3318,85 @@ TEST_F(PerDeviceNumericEventAggregatorTest, ElapsedTimeCheckObservationValuesWit
             observation_store_.get(), update_recipient_.get()));
     }
   }
+}
+
+// Tests that the LocalAggregateStore is updated as expected when
+// EventAggregator::LogPerDeviceCountEvent() is called with valid arguments;
+// i.e., with a report ID associated to an existing key of the
+// LocalAggregateStore, and with an EventRecord which wraps a CountEvent.
+//
+// Logs some valid events each day for 35 days, checking the contents of the
+// LocalAggregateStore each day.
+TEST_F(PerDeviceHistogramEventAggregatorTest, LogEvents) {
+  LoggedValues logged_values;
+
+  auto event_count_id = testing::per_device_histogram::kSettingsChangedMetricReportId;
+  auto elapsed_time_id = testing::per_device_histogram::kStreamingTimeTotalMetricReportId;
+  auto frame_rate_id = testing::per_device_histogram::kLoginModuleFrameRateMinMetricReportId;
+  auto memory_usage_id = testing::per_device_histogram::kLedgerMemoryUsageMaxMetricReportId;
+
+  uint32_t num_days = 35;
+  for (uint32_t offset = 0; offset < num_days; offset++) {
+    auto day_index = CurrentDayIndex();
+    for (const auto& component : {"component_A", "component_B", "component_C"}) {
+      // Log 2 events with event code 0, for each component A, B, C.
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(event_count_id, day_index, component, 0u, 2, &logged_values));
+      EXPECT_EQ(
+          kOK, LogPerDeviceCountEvent(event_count_id, day_index, component, 0u, 3, &logged_values));
+    }
+    if (offset < 3) {
+      // Log 1 event for component D and event code 1.
+      EXPECT_EQ(kOK, LogPerDeviceCountEvent(event_count_id, day_index, "component_D", 1u, 4,
+                                            &logged_values));
+    }
+
+    for (const auto& component : {"component_A", "component_B", "component_C"}) {
+      // Log 2 events with event code 0, for each component A, B, C.
+      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 2,
+                                                  &logged_values));
+      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 3,
+                                                  &logged_values));
+    }
+    if (offset < 3) {
+      // Log 1 event for component D and event code 1.
+      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, "component_D", 1u, 4,
+                                                  &logged_values));
+    }
+
+    for (const auto& component : {"component_A", "component_B"}) {
+      // Log some events for a FRAME_RATE metric with a PerDeviceHistogram report.
+      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 2.25,
+                                                &logged_values));
+      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 1.75,
+                                                &logged_values));
+      // Log some events for a MEMORY_USAGE metric with a PerDeviceHistogram report.
+      EXPECT_EQ(kOK,
+                LogPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
+                                             std::vector<uint32_t>{0u, 0u}, 300, &logged_values));
+      EXPECT_EQ(kOK,
+                LogPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
+                                             std::vector<uint32_t>{1u, 0u}, 300, &logged_values));
+    }
+    EXPECT_TRUE(CheckPerDeviceNumericAggregates(logged_values, day_index));
+    AdvanceClock(kDay);
+  }
+}
+
+// Check that GenerateObservations returns an OK status after some events have been logged for a
+// PerDeviceHistogram report.
+TEST_F(PerDeviceHistogramEventAggregatorTest, GenerateObservations) {
+  const auto day_index = CurrentDayIndex();
+  // Log several events on |day_index|.
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(testing::per_device_histogram::kSettingsChangedMetricReportId,
+                                   day_index, "component_C", 0u, 5));
+  EXPECT_EQ(kOK,
+            LogPerDeviceCountEvent(testing::per_device_histogram::kSettingsChangedMetricReportId,
+                                   day_index, "component_C", 0u, 5));
+
+  // Generate locally aggregated Observations for |day_index|.
+  EXPECT_EQ(kOK, GenerateObservations(day_index));
 }
 
 // Tests GenerateObservations() and GarbageCollect() in the case where the
