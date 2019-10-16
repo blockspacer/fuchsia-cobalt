@@ -22,9 +22,9 @@
 #include "src/lib/util/file_util.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
-#include "src/local_aggregation/event_aggregator.h"
-#include "src/local_aggregation/local_aggregation.pb.h"
 #include "src/logger/encoder.h"
+#include "src/logger/event_aggregator.h"
+#include "src/logger/local_aggregation.pb.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
@@ -48,8 +48,8 @@ using encoder::ClientSecret;
 using encoder::SystemData;
 using encoder::SystemDataInterface;
 using google::protobuf::RepeatedPtrField;
-using local_aggregation::EventAggregator;
 using logger::Encoder;
+using logger::EventAggregator;
 using logger::EventValuesPtr;
 using logger::HistogramPtr;
 using logger::kOK;

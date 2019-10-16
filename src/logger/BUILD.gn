@@ -14,6 +14,24 @@ metrics_registry("internal_metrics_config") {
   generate_cc = true
 }
 
+proto_library("cobalt_local_aggregation_proto") {
+  proto_in_dir = "$cobalt_root"
+  sources = [
+    "local_aggregation.proto",
+  ]
+  import_dirs = [ "//third_party/protobuf/src" ]
+  generate_python = false
+  cc_generator_options = "lite"
+  deps = [
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
+
+  extra_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/src/registry:proto_config",
+  ]
+}
+
 source_set("status") {
   sources = [
     "status.h",
@@ -128,6 +146,7 @@ source_set("observation_writer") {
 
 source_set("event_aggregator") {
   sources = [
+    "event_aggregator.cc",
     "event_aggregator.h",
   ]
 
@@ -137,7 +156,21 @@ source_set("event_aggregator") {
   ]
 
   public_deps = [
-    "$cobalt_root/src/local_aggregation:event_aggregator",
+    ":cobalt_local_aggregation_proto",
+    ":encoder",
+    ":event_record",
+    ":observation_writer",
+    ":status",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src/algorithms/rappor:rappor_encoder",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
+    "$cobalt_root/src/lib/util:datetime_util",
+    "$cobalt_root/src/lib/util:protected_fields",
+    "$cobalt_root/src/lib/util:proto_util",
+    "$cobalt_root/src/pb",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/registry:packed_event_codes",
   ]
 }
 
@@ -189,11 +222,11 @@ source_set("event_loggers") {
 
   public_deps = [
     ":encoder",
+    ":event_aggregator",
     ":event_record",
     ":observation_writer",
     ":status",
     "$cobalt_root/src:tracing",
-    "$cobalt_root/src/local_aggregation:event_aggregator",
     "$cobalt_root/src/registry:id",
   ]
 }
@@ -208,6 +241,7 @@ source_set("logger") {
 
   public_deps = [
     ":encoder",
+    ":event_aggregator",
     ":event_loggers",
     ":event_record",
     ":internal_metrics",
@@ -230,6 +264,7 @@ source_set("undated_event_manager") {
 
   public_deps = [
     ":encoder",
+    ":event_aggregator",
     ":event_loggers",
     ":event_record",
     ":internal_metrics",
@@ -237,7 +272,6 @@ source_set("undated_event_manager") {
     ":observation_writer",
     ":status",
     "$cobalt_root/src/lib/util:clock",
-    "$cobalt_root/src/local_aggregation:event_aggregator",
     "$cobalt_root/src/registry:id",
     "//third_party/protobuf:protobuf_full",
   ]
@@ -257,8 +291,8 @@ source_set("testing_constants") {
   public_deps = [
     "test_registries:all_report_types_test_registry",
     "test_registries:mixed_time_zone_test_registry",
-    "test_registries:per_device_histogram_test_registry",
     "test_registries:per_device_numeric_stats_test_registry",
+    "test_registries:per_device_histogram_test_registry",
     "test_registries:unique_actives_noise_free_test_registry",
     "test_registries:unique_actives_test_registry",
   ]
@@ -273,11 +307,11 @@ source_set("fake_logger") {
     "fake_logger.h",
   ]
   deps = [
+    ":cobalt_local_aggregation_proto",
     ":project_context_factory",
     "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/lib/util:status",
-    "$cobalt_root/src/local_aggregation:cobalt_local_aggregation_proto",
     "$cobalt_root/src/logger:logger_interface",
     "$cobalt_root/src/registry:project_configs",
     "//third_party/googletest:gtest",
@@ -292,13 +326,13 @@ source_set("logger_test_utils") {
     "logger_test_utils.h",
   ]
   deps = [
+    ":cobalt_local_aggregation_proto",
     ":encoder",
     ":fake_logger",
     ":project_context_factory",
     "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/lib/util:posix_file_system",
-    "$cobalt_root/src/local_aggregation:cobalt_local_aggregation_proto",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
     "$cobalt_root/src/registry:project_configs",
@@ -385,6 +419,19 @@ source_set("encoder_test") {
   ]
 }
 
+source_set("event_aggregator_test") {
+  testonly = true
+  sources = [
+    "event_aggregator_test.cc",
+  ]
+  public_deps = [
+    ":event_aggregator",
+    ":testing_constants",
+    "$cobalt_root/src/logger:logger_test_utils",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 source_set("project_context_test") {
   testonly = true
   sources = [
@@ -425,9 +472,9 @@ source_set("internal_metrics_test") {
   ]
 
   public_deps = [
+    ":cobalt_local_aggregation_proto",
     ":internal_metrics",
     ":logger_test_utils",
-    "$cobalt_root/src/local_aggregation:cobalt_local_aggregation_proto",
     "//third_party/abseil-cpp",
     "//third_party/googletest:gtest",
     "//third_party/grpc:grpc++",
@@ -440,6 +487,7 @@ group("tests") {
 
   deps = [
     ":encoder_test",
+    ":event_aggregator_test",
     ":event_loggers_test",
     ":internal_metrics_test",
     ":logger_test",

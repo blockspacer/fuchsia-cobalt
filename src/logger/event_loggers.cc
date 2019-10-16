@@ -20,7 +20,6 @@
 
 namespace cobalt::logger::internal {
 
-using ::cobalt::local_aggregation::EventAggregator;
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::util::TimeToDayIndex;
 using ::cobalt::util::TimeToHourIndex;

@@ -17,8 +17,6 @@
 
 namespace cobalt::logger {
 
-using local_aggregation::EventAggregator;
-
 UndatedEventManager::UndatedEventManager(const Encoder* encoder, EventAggregator* event_aggregator,
                                          ObservationWriter* observation_writer,
                                          encoder::SystemDataInterface* system_data,

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "src/local_aggregation/event_aggregator.h"
+#include "src/logger/event_aggregator.h"
 
 #include <algorithm>
 #include <map>
@@ -21,15 +21,6 @@
 namespace cobalt {
 
 using google::protobuf::RepeatedField;
-using logger::Encoder;
-using logger::EventRecord;
-using logger::kInvalidArguments;
-using logger::kOK;
-using logger::kOther;
-using logger::MetricRef;
-using logger::ObservationWriter;
-using logger::ProjectContext;
-using logger::Status;
 using rappor::RapporConfigHelper;
 using util::ConsistentProtoStore;
 using util::SerializeToBase64;
@@ -37,7 +28,7 @@ using util::StatusCode;
 using util::SteadyClock;
 using util::TimeToDayIndex;
 
-namespace local_aggregation {
+namespace logger {
 
 namespace {
 
@@ -1125,5 +1116,5 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
   return kOK;
 }
 
-}  // namespace local_aggregation
+}  // namespace logger
 }  // namespace cobalt

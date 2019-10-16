@@ -16,7 +16,7 @@
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
-#include "src/local_aggregation/local_aggregation.pb.h"
+#include "src/logger/local_aggregation.pb.h"
 #include "src/logger/logger_interface.h"
 #include "src/logger/project_context.h"
 #include "src/registry/project_configs.h"

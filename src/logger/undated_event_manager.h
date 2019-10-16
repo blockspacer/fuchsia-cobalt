@@ -9,8 +9,8 @@
 #include <string>
 
 #include "src/lib/util/clock.h"
-#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/encoder.h"
+#include "src/logger/event_aggregator.h"
 #include "src/logger/internal_metrics.h"
 #include "src/logger/logger_interface.h"
 #include "src/logger/observation_writer.h"
@@ -54,7 +54,7 @@ class UndatedEventManager {
   //
   // |steady_clock| An optional steady clock to use to record the monotonic time of saved events.
   // Primarily for testing.
-  UndatedEventManager(const Encoder* encoder, local_aggregation::EventAggregator* event_aggregator,
+  UndatedEventManager(const Encoder* encoder, EventAggregator* event_aggregator,
                       ObservationWriter* observation_writer,
                       encoder::SystemDataInterface* system_data,
                       int32_t max_saved_events = kDefaultMaxSavedEvents);
@@ -86,7 +86,7 @@ class UndatedEventManager {
 
   // Used only to construct EventLogger instances.
   const Encoder* encoder_;
-  local_aggregation::EventAggregator* event_aggregator_;
+  EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
 

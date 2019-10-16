@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "src/lib/util/clock.h"
-#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/encoder.h"
+#include "src/logger/event_aggregator.h"
 #include "src/logger/internal_metrics.h"
 #include "src/logger/internal_metrics_config.cb.h"
 #include "src/logger/logger_interface.h"
@@ -64,9 +64,8 @@ class Logger : public LoggerInterface {
   // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
   // internal logging will be performed by this Logger.
   Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
-         local_aggregation::EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer, encoder::SystemDataInterface* system_data,
-         LoggerInterface* internal_logger = nullptr);
+         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
+         encoder::SystemDataInterface* system_data, LoggerInterface* internal_logger = nullptr);
 
   // Constructor for a Logger when the clock is not yet accurate.
   //
@@ -98,9 +97,8 @@ class Logger : public LoggerInterface {
   // Logger to send metrics about Cobalt to Cobalt. If nullptr, no such
   // internal logging will be performed by this Logger.
   Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
-         local_aggregation::EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer, encoder::SystemDataInterface* system_data,
-         util::ValidatedClockInterface* validated_clock,
+         EventAggregator* event_aggregator, ObservationWriter* observation_writer,
+         encoder::SystemDataInterface* system_data, util::ValidatedClockInterface* validated_clock,
          std::weak_ptr<UndatedEventManager> undated_event_manager,
          LoggerInterface* internal_logger = nullptr);
 
@@ -175,7 +173,7 @@ class Logger : public LoggerInterface {
   const std::shared_ptr<const ProjectContext> project_context_;
 
   const Encoder* encoder_;
-  local_aggregation::EventAggregator* event_aggregator_;
+  EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
   util::ValidatedClockInterface* validated_clock_;
