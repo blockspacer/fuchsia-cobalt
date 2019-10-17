@@ -22,8 +22,7 @@
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 #include "third_party/statusor/statusor.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 // FileObservationStore is an implementation of ObservationStore that persists
 // observations to a file system.
@@ -34,7 +33,7 @@ namespace observation_store {
 //
 // This object is thread safe.
 class FileObservationStore : public ObservationStore {
- public:
+ private:
   // FileEnvelopeHolder is an implementation of
   // ObservationStore::EnvelopeHolder.
   //
@@ -44,19 +43,25 @@ class FileObservationStore : public ObservationStore {
   // Note: This object is not thread safe.
   class FileEnvelopeHolder : public EnvelopeHolder {
    public:
-    // |fs|. An implementation of FileSystem used to interact with the system's
-    // filesystem.
+    // |fs|. An implementation of FileSystem used to interact with the system's filesystem.
     //
-    // |root_directory|. The absolute path to the directory where the
-    // observation files are written. (e.g. /system/data/cobalt_legacy)
+    // |store|. A pointer to the store from which this envelope holder came from.
+    //          NOTE: This value cannot be null, and it is expected that the ObservationStore will
+    //          outlive the FileEnvelopeHolder object.
+    //
+    // |root_directory|. The absolute path to the directory where the observation files are written.
+    // (e.g. /system/data/cobalt_legacy)
     //
     // |file_name|. The file name for the file containing the observations.
-    FileEnvelopeHolder(util::FileSystem *fs, std::string root_directory,
-                       const std::string &file_name)
+    FileEnvelopeHolder(util::FileSystem *fs, FileObservationStore *store,
+                       std::string root_directory, const std::string &file_name)
         : fs_(fs),
+          store_(store),
           root_directory_(std::move(root_directory)),
           file_names_({file_name}),
-          envelope_read_(false) {}
+          envelope_read_(false) {
+      CHECK(store_);
+    }
 
     ~FileEnvelopeHolder() override;
 
@@ -70,6 +75,7 @@ class FileObservationStore : public ObservationStore {
     std::string FullPath(const std::string &filename) const;
 
     util::FileSystem *fs_;
+    FileObservationStore *store_;
     const std::string root_directory_;
 
     // file_names contains a set of file names that contain observations.
@@ -81,6 +87,7 @@ class FileObservationStore : public ObservationStore {
     size_t cached_file_size_ = 0;
   };
 
+ public:
   class FilenameGenerator {
    public:
     // Default constructor: Uses std::chrono::system_clock to calculate the
@@ -185,7 +192,6 @@ class FileObservationStore : public ObservationStore {
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 };
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_FILE_OBSERVATION_STORE_H_

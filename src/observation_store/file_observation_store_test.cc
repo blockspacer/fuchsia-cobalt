@@ -9,6 +9,7 @@
 
 #include "src/lib/util/posix_file_system.h"
 #include "src/logging.h"
+#include "src/observation_store/observation_store.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
@@ -143,14 +144,55 @@ TEST_F(FileObservationStoreTest, Add2FullAndReturn1) {
   ASSERT_NE(first_envelope, nullptr);
   auto second_envelope = store_->TakeNextEnvelopeHolder();
   ASSERT_NE(second_envelope, nullptr);
-  EXPECT_TRUE(store_->Empty());
+
+  // The envelopes were returned, but not dropped, so they stil count in the store.
+  EXPECT_FALSE(store_->Empty());
 
   // Delete the second envelope
   second_envelope = nullptr;
-  EXPECT_TRUE(store_->Empty());
+  // One envelope was dropped, but the other wasn't.
+  EXPECT_FALSE(store_->Empty());
 
   store_->ReturnEnvelopeHolder(std::move(first_envelope));
   EXPECT_FALSE(store_->Empty());
+
+  // If we remove the envelope holder again, and drop it, the store should now be empty.
+  first_envelope = store_->TakeNextEnvelopeHolder();
+  first_envelope = nullptr;
+  EXPECT_TRUE(store_->Empty());
+}
+
+TEST_F(FileObservationStoreTest, AddWhileEnvelopeTaken) {
+  constexpr int kObservationSize = 100;
+
+  // Note that kNumObservationsThatWillFit is discovered by experiment
+  // since the precise size of an observation is awkward to arrange since
+  // it depends on protobuf serialization.
+  constexpr int kNumObservationsThatWillFit = 94;
+
+  // Fill the store until its full.
+  for (int i = 0; i < kNumObservationsThatWillFit; i++) {
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(kObservationSize)) << "i=" << i;
+  }
+
+  // Check that kStoreFull is returned repeatedly.
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
+  }
+
+  // Now, we take an envelope_holder from the store.
+  auto envelope = store_->TakeNextEnvelopeHolder();
+
+  // The store should still be considered full.
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(kObservationSize)) << "i=" << i;
+  }
+
+  // Now we drop the envelope.
+  envelope = nullptr;
+
+  // We should be able to add observations again.
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(kObservationSize));
 }
 
 // Tests that kStoreFull is returned when the store becomes full.

@@ -285,8 +285,7 @@ std::unique_ptr<ObservationStore::EnvelopeHolder> FileObservationStore::TakeNext
 
   auto oldest_file_name = oldest_file_name_or.ConsumeValueOrDie();
   fields->files_taken.insert(oldest_file_name);
-  fields->finalized_bytes -= fs_->FileSize(FullPath(oldest_file_name)).ConsumeValueOr(0);
-  return std::make_unique<FileEnvelopeHolder>(fs_.get(), root_directory_, oldest_file_name);
+  return std::make_unique<FileEnvelopeHolder>(fs_.get(), this, root_directory_, oldest_file_name);
 }
 
 void FileObservationStore::ReturnEnvelopeHolder(
@@ -297,7 +296,6 @@ void FileObservationStore::ReturnEnvelopeHolder(
   auto fields = protected_fields_.lock();
   for (const auto &file_name : env->file_names()) {
     fields->files_taken.erase(file_name);
-    fields->finalized_bytes += fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
   }
   env->clear();
 }
@@ -326,7 +324,9 @@ void FileObservationStore::Delete() {
 }
 
 FileObservationStore::FileEnvelopeHolder::~FileEnvelopeHolder() {
+  auto fields = store_->protected_fields_.lock();
   for (const auto &file_name : file_names_) {
+    fields->finalized_bytes -= fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
     fs_->Delete(FullPath(file_name));
   }
 }
