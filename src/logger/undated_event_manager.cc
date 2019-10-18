@@ -80,8 +80,9 @@ Status UndatedEventManager::Flush(util::SystemClockInterface* system_clock,
                                      lock->reference_monotonic_time_);
     lock->saved_records_.pop_front();
     if (result != Status::kOK) {
-      LOG(ERROR) << "Error " << result
-                 << " occurred while processing a saved event for metric: " << log_details;
+      LOG_FIRST_N(ERROR, 10) << "Error " << result
+                             << " occurred while processing a saved event for metric: "
+                             << log_details;
     }
   }
 
