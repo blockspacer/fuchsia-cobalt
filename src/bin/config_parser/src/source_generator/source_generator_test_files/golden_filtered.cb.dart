@@ -2,6 +2,25 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 const String customerName = 'customer';
 const String projectName = 'project';
+
+// Linear bucket constants for linear buckets
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsFloor = 0;
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsNumBuckets = 140;
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsStepSize = 5;
+
+// Exponential bucket constants for exponential buckets report
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsFloor = 0;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsNumBuckets = 3;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsInitialStep = 2;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsStepMultiplier = 2;
+
 // Metric ID Constants
 // the_metric_name
 // ignore: constant_identifier_names
@@ -12,6 +31,12 @@ const int theOtherMetricNameMetricId = 200;
 // event groups
 // ignore: constant_identifier_names
 const int eventGroupsMetricId = 300;
+// linear buckets
+// ignore: constant_identifier_names
+const int linearBucketsMetricId = 400;
+// exponential buckets
+// ignore: constant_identifier_names
+const int exponentialBucketsMetricId = 500;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 class TheOtherMetricNameMetricDimension0 {
@@ -58,4 +83,4 @@ const int EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
 const int EventGroupsMetricDimension2_Alias = EventGroupsMetricDimension2::Alias;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const String config = 'KsYDCghjdXN0b21lchAKGrcDCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcw==';
+const String config = 'KqAECghjdXN0b21lchAKGpEECgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAg==';

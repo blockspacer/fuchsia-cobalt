@@ -2,6 +2,18 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 pub const CUSTOMER_NAME: &str = "customer";
 pub const PROJECT_NAME: &str = "project";
+
+// Linear bucket constants for linear buckets
+pub const LINEAR_BUCKETS_INT_BUCKETS_FLOOR: i64 = 0;
+pub const LINEAR_BUCKETS_INT_BUCKETS_NUM_BUCKETS: u32 = 140;
+pub const LINEAR_BUCKETS_INT_BUCKETS_STEP_SIZE: u32 = 5;
+
+// Exponential bucket constants for exponential buckets report
+pub const EXPONENTIAL_BUCKETS_REPORT_INT_BUCKETS_FLOOR: i64 = 0;
+pub const EXPONENTIAL_BUCKETS_REPORT_INT_BUCKETS_NUM_BUCKETS: u32 = 3;
+pub const EXPONENTIAL_BUCKETS_REPORT_INT_BUCKETS_INITIAL_STEP: u32 = 2;
+pub const EXPONENTIAL_BUCKETS_REPORT_INT_BUCKETS_STEP_MULTIPLIER: u32 = 2;
+
 // Metric ID Constants
 // the_metric_name
 pub const THE_METRIC_NAME_METRIC_ID: u32 = 100;
@@ -9,12 +21,18 @@ pub const THE_METRIC_NAME_METRIC_ID: u32 = 100;
 pub const THE_OTHER_METRIC_NAME_METRIC_ID: u32 = 200;
 // event groups
 pub const EVENT_GROUPS_METRIC_ID: u32 = 300;
+// linear buckets
+pub const LINEAR_BUCKETS_METRIC_ID: u32 = 400;
+// exponential buckets
+pub const EXPONENTIAL_BUCKETS_METRIC_ID: u32 = 500;
 
 // Report ID Constants
 // the_other_report
 pub const THE_OTHER_REPORT_REPORT_ID: u32 = 492006986;
 // the_report
 pub const THE_REPORT_REPORT_ID: u32 = 2384646843;
+// report
+pub const REPORT_REPORT_ID: u32 = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -54,4 +72,4 @@ impl EventGroupsMetricDimension2 {
 }
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-pub const CONFIG: &str = "KoAECghjdXN0b21lchAKGvEDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXM=";
+pub const CONFIG: &str = "KoAFCghjdXN0b21lchAKGvEECgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXMaMwoObGluZWFyIGJ1Y2tldHMQChgFIJADQgcSBRCMARgFcghjdXN0b21lcnoHcHJvamVjdBpJChNleHBvbmVudGlhbCBidWNrZXRzEAoYBSD0A2IYCgZyZXBvcnQQu4WkgwlSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdA==";

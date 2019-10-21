@@ -7,6 +7,18 @@
 
 const char kCustomerName[] = "customer";
 const char kProjectName[] = "project";
+
+// Linear bucket constants for linear buckets
+const int64_t kLinearBucketsIntBucketsFloor = 0;
+const uint32_t kLinearBucketsIntBucketsNumBuckets = 140;
+const uint32_t kLinearBucketsIntBucketsStepSize = 5;
+
+// Exponential bucket constants for exponential buckets report
+const int64_t kExponentialBucketsReportIntBucketsFloor = 0;
+const uint32_t kExponentialBucketsReportIntBucketsNumBuckets = 3;
+const uint32_t kExponentialBucketsReportIntBucketsInitialStep = 2;
+const uint32_t kExponentialBucketsReportIntBucketsStepMultiplier = 2;
+
 // Metric ID Constants
 // the_metric_name
 const uint32_t kTheMetricNameMetricId = 100;
@@ -14,6 +26,10 @@ const uint32_t kTheMetricNameMetricId = 100;
 const uint32_t kTheOtherMetricNameMetricId = 200;
 // event groups
 const uint32_t kEventGroupsMetricId = 300;
+// linear buckets
+const uint32_t kLinearBucketsMetricId = 400;
+// exponential buckets
+const uint32_t kExponentialBucketsMetricId = 500;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 namespace the_other_metric_name_metric_dimension_0_scope {
@@ -72,6 +88,6 @@ const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroups
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Alias = EventGroupsMetricDimension2::Alias;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const char kConfig[] = "KoAECghjdXN0b21lchAKGvEDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXM=";
+const char kConfig[] = "KoAFCghjdXN0b21lchAKGvEECgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXMaMwoObGluZWFyIGJ1Y2tldHMQChgFIJADQgcSBRCMARgFcghjdXN0b21lcnoHcHJvamVjdBpJChNleHBvbmVudGlhbCBidWNrZXRzEAoYBSD0A2IYCgZyZXBvcnQQu4WkgwlSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdA==";
 
 #endif  // COBALT_REGISTRY_CUSTOMER_PROJECT_GEN_

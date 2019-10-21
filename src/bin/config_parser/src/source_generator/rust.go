@@ -59,8 +59,12 @@ func (_ Rust) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {
 	}
 }
 
-func (_ Rust) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
+func (_ Rust) writeConstUint32(so *sourceOutputter, value uint32, name ...string) {
 	so.writeLineFmt("pub const %s: u32 = %d;", toUpperSnakeCase(name...), value)
+}
+
+func (_ Rust) writeConstInt64(so *sourceOutputter, value int64, name ...string) {
+	so.writeLineFmt("pub const %s: i64 = %d;", toUpperSnakeCase(name...), value)
 }
 
 func (_ Rust) writeStringConstant(so *sourceOutputter, value string, name ...string) {

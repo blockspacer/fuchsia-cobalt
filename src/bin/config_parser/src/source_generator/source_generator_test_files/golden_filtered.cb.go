@@ -3,6 +3,18 @@
 package package
 const CustomerName string = "customer";
 const ProjectName string = "project";
+
+// Linear bucket constants for linear buckets
+const LinearBucketsIntBucketsFloor int64 = 0;
+const LinearBucketsIntBucketsNumBuckets uint32 = 140;
+const LinearBucketsIntBucketsStepSize uint32 = 5;
+
+// Exponential bucket constants for exponential buckets report
+const ExponentialBucketsReportIntBucketsFloor int64 = 0;
+const ExponentialBucketsReportIntBucketsNumBuckets uint32 = 3;
+const ExponentialBucketsReportIntBucketsInitialStep uint32 = 2;
+const ExponentialBucketsReportIntBucketsStepMultiplier uint32 = 2;
+
 // Metric ID Constants
 // the_metric_name
 const TheMetricNameMetricId uint32 = 100;
@@ -10,6 +22,10 @@ const TheMetricNameMetricId uint32 = 100;
 const TheOtherMetricNameMetricId uint32 = 200;
 // event groups
 const EventGroupsMetricId uint32 = 300;
+// linear buckets
+const LinearBucketsMetricId uint32 = 400;
+// exponential buckets
+const ExponentialBucketsMetricId uint32 = 500;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 type TheOtherMetricNameMetricDimension0 uint32
@@ -49,4 +65,4 @@ _ EventGroupsMetricDimension2 = iota
 )
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const Config string = "KsYDCghjdXN0b21lchAKGrcDCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcw==";
+const Config string = "KqAECghjdXN0b21lchAKGpEECgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAg==";

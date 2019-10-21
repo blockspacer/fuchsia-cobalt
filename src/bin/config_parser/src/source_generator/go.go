@@ -42,8 +42,12 @@ func (_ Go) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {}
 
 func (_ Go) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {}
 
-func (_ Go) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
+func (_ Go) writeConstUint32(so *sourceOutputter, value uint32, name ...string) {
 	so.writeLineFmt("const %s uint32 = %d;", toPascalCase(name...), value)
+}
+
+func (_ Go) writeConstInt64(so *sourceOutputter, value int64, name ...string) {
+	so.writeLineFmt("const %s int64 = %d;", toPascalCase(name...), value)
 }
 
 func (_ Go) writeStringConstant(so *sourceOutputter, value string, name ...string) {

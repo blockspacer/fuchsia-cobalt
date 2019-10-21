@@ -42,7 +42,12 @@ func (_ Dart) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 func (_ Dart) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {}
 func (_ Dart) writeNamespacesEnd(so *sourceOutputter, namespaces []string)   {}
 
-func (_ Dart) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
+func (_ Dart) writeConstUint32(so *sourceOutputter, value uint32, name ...string) {
+	so.writeComment("ignore: constant_identifier_names")
+	so.writeLineFmt("const int %s = %d;", toCamelCase(name...), value)
+}
+
+func (_ Dart) writeConstInt64(so *sourceOutputter, value int64, name ...string) {
 	so.writeComment("ignore: constant_identifier_names")
 	so.writeLineFmt("const int %s = %d;", toCamelCase(name...), value)
 }

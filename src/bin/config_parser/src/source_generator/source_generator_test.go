@@ -101,6 +101,23 @@ metric_definitions:
   reports:
   - report_name: the_report
     report_type: NUMERIC_PERF_RAW_DUMP
+- id: 400
+  metric_name: "linear buckets"
+  int_buckets:
+    linear:
+      floor: 0
+      num_buckets: 140
+      step_size: 5
+- id: 500
+  metric_name: "exponential buckets"
+  reports:
+  - report_name: report
+    int_buckets:
+      exponential:
+        floor: 0
+        num_buckets: 3
+        initial_step: 2
+        step_multiplier: 2
 `
 
 func readGoldenFile(filename string) (string, error) {

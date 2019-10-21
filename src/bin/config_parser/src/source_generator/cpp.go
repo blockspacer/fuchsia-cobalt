@@ -99,9 +99,14 @@ func (_ CPP) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {
 	}
 }
 
-func (_ CPP) writeConstInt(so *sourceOutputter, value uint32, name ...string) {
+func (_ CPP) writeConstUint32(so *sourceOutputter, value uint32, name ...string) {
 	name = append([]string{"k"}, name...)
 	so.writeLineFmt("const uint32_t %s = %d;", toCamelCase(name...), value)
+}
+
+func (_ CPP) writeConstInt64(so *sourceOutputter, value int64, name ...string) {
+	name = append([]string{"k"}, name...)
+	so.writeLineFmt("const int64_t %s = %d;", toCamelCase(name...), value)
 }
 
 func (_ CPP) writeStringConstant(so *sourceOutputter, value string, name ...string) {

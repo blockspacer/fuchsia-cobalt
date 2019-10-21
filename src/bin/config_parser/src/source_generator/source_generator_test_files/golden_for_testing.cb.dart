@@ -2,6 +2,25 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 const String customerName = 'customer';
 const String projectName = 'project';
+
+// Linear bucket constants for linear buckets
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsFloor = 0;
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsNumBuckets = 140;
+// ignore: constant_identifier_names
+const int linearBucketsIntBucketsStepSize = 5;
+
+// Exponential bucket constants for exponential buckets report
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsFloor = 0;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsNumBuckets = 3;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsInitialStep = 2;
+// ignore: constant_identifier_names
+const int exponentialBucketsReportIntBucketsStepMultiplier = 2;
+
 // Metric ID Constants
 // the_metric_name
 // ignore: constant_identifier_names
@@ -12,6 +31,12 @@ const int theOtherMetricNameMetricId = 200;
 // event groups
 // ignore: constant_identifier_names
 const int eventGroupsMetricId = 300;
+// linear buckets
+// ignore: constant_identifier_names
+const int linearBucketsMetricId = 400;
+// exponential buckets
+// ignore: constant_identifier_names
+const int exponentialBucketsMetricId = 500;
 
 // Report ID Constants
 // the_other_report
@@ -20,6 +45,9 @@ const int theOtherReportReportId = 492006986;
 // the_report
 // ignore: constant_identifier_names
 const int theReportReportId = 2384646843;
+// report
+// ignore: constant_identifier_names
+const int reportReportId = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 class TheOtherMetricNameMetricDimension0 {
@@ -66,4 +94,4 @@ const int EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
 const int EventGroupsMetricDimension2_Alias = EventGroupsMetricDimension2::Alias;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const String config = 'KoAECghjdXN0b21lchAKGvEDCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXM=';
+const String config = 'KoAFCghjdXN0b21lchAKGvEECgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXMaMwoObGluZWFyIGJ1Y2tldHMQChgFIJADQgcSBRCMARgFcghjdXN0b21lcnoHcHJvamVjdBpJChNleHBvbmVudGlhbCBidWNrZXRzEAoYBSD0A2IYCgZyZXBvcnQQu4WkgwlSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdA==';

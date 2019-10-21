@@ -28,7 +28,8 @@ type outputLanguage interface {
 	writeEnumExport(so *sourceOutputter, enumName, name []string)
 	writeNamespacesBegin(so *sourceOutputter, namespaces []string)
 	writeNamespacesEnd(so *sourceOutputter, namespaces []string)
-	writeConstInt(so *sourceOutputter, value uint32, name ...string)
+	writeConstUint32(so *sourceOutputter, value uint32, name ...string)
+	writeConstInt64(so *sourceOutputter, value int64, name ...string)
 	writeStringConstant(so *sourceOutputter, value string, name ...string)
 }
 
@@ -100,7 +101,7 @@ func (so *sourceOutputter) writeIdConstants(constType string, entries map[uint32
 	for _, id := range keys {
 		name := entries[id]
 		so.writeComment(name)
-		so.language.writeConstInt(so, id, name, constType, "id")
+		so.language.writeConstUint32(so, id, name, constType, "id")
 	}
 	so.writeLine("")
 }
@@ -152,6 +153,29 @@ func (so *sourceOutputter) Bytes() []byte {
 	return so.buffer.Bytes()
 }
 
+func (so *sourceOutputter) writeIntBuckets(buckets *config.IntegerBuckets, name ...string) {
+	linear := buckets.GetLinear()
+	if linear != nil {
+		so.writeCommentFmt("Linear bucket constants for %s", strings.Join(name, " "))
+		name = append(name, "int buckets")
+		so.language.writeConstInt64(so, linear.Floor, append(name, "floor")...)
+		so.language.writeConstUint32(so, linear.NumBuckets, append(name, "num buckets")...)
+		so.language.writeConstUint32(so, linear.StepSize, append(name, "step size")...)
+		so.writeLine("")
+	}
+
+	exponential := buckets.GetExponential()
+	if exponential != nil {
+		so.writeCommentFmt("Exponential bucket constants for %s", strings.Join(name, " "))
+		name = append(name, "int buckets")
+		so.language.writeConstInt64(so, exponential.Floor, append(name, "floor")...)
+		so.language.writeConstUint32(so, exponential.NumBuckets, append(name, "num buckets")...)
+		so.language.writeConstUint32(so, exponential.InitialStep, append(name, "initial step")...)
+		so.language.writeConstUint32(so, exponential.StepMultiplier, append(name, "step multiplier")...)
+		so.writeLine("")
+	}
+}
+
 func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	metrics := make(map[uint32]string)
 	reports := make(map[uint32]string)
@@ -159,16 +183,22 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 		return fmt.Errorf("Cobalt v1.0 output can only be used with a single project config.")
 	}
 	so.writeNames(c)
+	so.writeLine("")
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		if metric.MetricName != "" {
+			so.writeIntBuckets(metric.GetIntBuckets(), metric.MetricName)
+
 			metrics[metric.Id] = metric.MetricName
 			for _, report := range metric.Reports {
 				if report.ReportName != "" {
+					so.writeIntBuckets(report.GetIntBuckets(), metric.MetricName, report.ReportName)
+
 					reports[report.Id] = fmt.Sprintf("%s", report.ReportName)
 				}
 			}
 		}
 	}
+
 	so.writeIdConstants("Metric", metrics)
 	if so.forTesting {
 		so.writeIdConstants("Report", reports)
