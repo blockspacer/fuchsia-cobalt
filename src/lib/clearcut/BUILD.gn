@@ -2,6 +2,55 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//third_party/protobuf/proto_library.gni")
+
+proto_library("clearcut_proto") {
+  sources = [
+    "clearcut.proto",
+  ]
+  import_dirs = [ "//third_party/protobuf/src" ]
+  generate_python = false
+  cc_generator_options = "lite"
+}
+
+source_set("clearcut") {
+  sources = [
+    "http_client.h",
+    "uploader.cc",
+    "uploader.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  public_deps = [
+    ":clearcut_proto",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/lib/util:sleeper",
+    "$cobalt_root/src/lib/util:status",
+    "$cobalt_root/third_party/statusor:statusor",
+    "//third_party/abseil-cpp",
+  ]
+}
+
+source_set("uploader_test") {
+  testonly = true
+  sources = [
+    "uploader_test.cc",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":clearcut",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":uploader_test",
+  ]
+}
+
 source_set("curl_http_client") {
   sources = [
     "curl_http_client.cc",
@@ -12,7 +61,7 @@ source_set("curl_http_client") {
     "//third_party/curl:libcurl",
   ]
 
-  configs += ["$cobalt_root:cobalt_config"]
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("curl_handle") {
@@ -24,6 +73,6 @@ source_set("curl_handle") {
     "//third_party/curl:libcurl",
   ]
 
-  configs += ["$cobalt_root:cobalt_config"]
-  configs -= ["//build/config:no_exceptions"]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  configs -= [ "//build/config:no_exceptions" ]
 }

@@ -4,7 +4,7 @@
 
 syntax = "proto2";
 
-package clearcut;
+package cobalt.lib.clearcut;
 
 message ClientInfo {
   optional int32 client_type = 1;

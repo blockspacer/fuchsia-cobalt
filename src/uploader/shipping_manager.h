@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 
+#include "src/lib/clearcut/uploader.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
@@ -23,7 +24,6 @@
 #include "src/observation_store/observation_store_update_recipient.h"
 #include "src/system_data/configuration_data.h"
 #include "src/uploader/upload_scheduler.h"
-#include "third_party/clearcut/uploader.h"
 
 #include "grpc++/grpc++.h"
 
@@ -216,10 +216,10 @@ class ClearcutV1ShippingManager : public ShippingManager {
       const UploadScheduler& upload_scheduler,
       observation_store::ObservationStore* observation_store,
       util::EncryptedMessageMaker* encrypt_to_shuffler,
-      std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+      std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
       int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
       logger::LoggerInterface* internal_logger = nullptr,
-      size_t max_attempts_per_upload = clearcut::kMaxRetries,
+      size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
       std::string api_key = "cobalt-default-api-key");
 
   // Create a shipping manager that can upload data to Clearcut.
@@ -230,9 +230,9 @@ class ClearcutV1ShippingManager : public ShippingManager {
   // TODO(camrdale): remove this once the log source transition is complete.
   ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
                             observation_store::ObservationStore* observation_store,
-                            std::unique_ptr<::clearcut::ClearcutUploader> clearcut,
+                            std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
                             logger::LoggerInterface* internal_logger = nullptr,
-                            size_t max_attempts_per_upload = clearcut::kMaxRetries,
+                            size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
                             std::string api_key = "cobalt-default-api-key");
 
   // The destructor will stop the worker thread and wait for it to stop
@@ -273,7 +273,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
   const size_t max_attempts_per_upload_;
 
   std::mutex clearcut_mutex_;
-  std::unique_ptr<::clearcut::ClearcutUploader> clearcut_;
+  std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut_;
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
   const std::string api_key_;
   std::vector<ClearcutDestination> clearcut_destinations_;

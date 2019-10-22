@@ -11,15 +11,13 @@
 
 #include <curl/curl.h>
 
+#include "src/lib/clearcut/http_client.h"
 #include "src/lib/util/status.h"
-#include "third_party/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"
 
-namespace cobalt {
-namespace util {
-namespace clearcut {
+namespace cobalt::lib::clearcut {
 
-using ::clearcut::HTTPResponse;
+using clearcut::HTTPResponse;
 using statusor::StatusOr;
 using util::Status;
 
@@ -52,8 +50,6 @@ class CurlHandle {
   CurlHandle &operator=(const CurlHandle &) = delete;
 };
 
-}  // namespace clearcut
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::lib::clearcut
 
 #endif  // COBALT_SRC_LIB_CLEARCUT_CURL_HANDLE_H_

@@ -33,7 +33,6 @@ group("tests") {
   deps = [
     "keys:tests",
     "src:tests",
-    "$cobalt_root/third_party/clearcut:tests",
   ]
 }
 

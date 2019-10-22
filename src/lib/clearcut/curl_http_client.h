@@ -5,16 +5,11 @@
 #ifndef COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
 #define COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
 
-#include "third_party/clearcut/http_client.h"
+#include "src/lib/clearcut/http_client.h"
 #include "third_party/statusor/statusor.h"
 
-namespace cobalt {
-namespace util {
-namespace clearcut {
+namespace cobalt::lib::clearcut {
 
-using ::clearcut::HTTPClient;
-using ::clearcut::HTTPRequest;
-using ::clearcut::HTTPResponse;
 using statusor::StatusOr;
 
 // CurlHTTPClient implements clearcut::HTTPClient with a curl backend. This is
@@ -30,8 +25,6 @@ class CurlHTTPClient : public clearcut::HTTPClient {
   static bool global_init_called_;
 };
 
-}  // namespace clearcut
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::lib::clearcut
 
 #endif  // COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_

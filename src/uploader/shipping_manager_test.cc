@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "src/lib/clearcut/clearcut.pb.h"
 #include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/observation_store/observation_store.h"
 #include "src/pb/clearcut_extensions.pb.h"
 #include "src/system_data/fake_system_data.h"
-#include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -42,14 +42,15 @@ const std::chrono::seconds kMaxSeconds = UploadScheduler::kMaxSeconds;
 constexpr int kHttpOk = 200;
 constexpr int kHttpInternalServerError = 500;
 
-class FakeHTTPClient : public clearcut::HTTPClient {
+class FakeHTTPClient : public lib::clearcut::HTTPClient {
  public:
-  std::future<StatusOr<clearcut::HTTPResponse>> Post(
-      clearcut::HTTPRequest request, std::chrono::steady_clock::time_point /*ignored*/) override {
+  std::future<StatusOr<lib::clearcut::HTTPResponse>> Post(
+      lib::clearcut::HTTPRequest request,
+      std::chrono::steady_clock::time_point /*ignored*/) override {
     std::unique_lock<std::mutex> lock(mutex);
     util::MessageDecrypter decrypter("");
 
-    clearcut::LogRequest req;
+    lib::clearcut::LogRequest req;
     req.ParseFromString(request.body);
     EXPECT_GT(req.log_event_size(), 0);
     for (const auto& event : req.log_event()) {
@@ -64,12 +65,12 @@ class FakeHTTPClient : public clearcut::HTTPClient {
     }
     send_call_count++;
 
-    clearcut::HTTPResponse response;
+    lib::clearcut::HTTPResponse response;
     response.http_code = http_response_code_to_return;
-    clearcut::LogResponse resp;
+    lib::clearcut::LogResponse resp;
     resp.SerializeToString(&response.response);
 
-    std::promise<StatusOr<clearcut::HTTPResponse>> response_promise;
+    std::promise<StatusOr<lib::clearcut::HTTPResponse>> response_promise;
     response_promise.set_value(std::move(response));
 
     return response_promise.get_future();
@@ -95,7 +96,8 @@ class ShippingManagerTest : public ::testing::Test {
     http_client_ = http_client.get();
     shipping_manager_ = std::make_unique<ClearcutV1ShippingManager>(
         upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
-        std::make_unique<clearcut::ClearcutUploader>("https://test.com", std::move(http_client)),
+        std::make_unique<lib::clearcut::ClearcutUploader>("https://test.com",
+                                                          std::move(http_client)),
         /*log_source_id=*/11, /*internal_logger=*/nullptr, /*max_attempts_per_upload=*/1);
     shipping_manager_->Start();
   }

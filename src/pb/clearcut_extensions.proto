@@ -3,10 +3,10 @@ syntax = "proto2";
 package cobalt.clearcut_extensions;
 
 import "src/pb/encrypted_message.proto";
-import "third_party/clearcut/clearcut.proto";
+import "src/lib/clearcut/clearcut.proto";
 
 message LogEventExtension {
-  extend clearcut.LogEvent {
+  extend cobalt.lib.clearcut.LogEvent {
     optional LogEventExtension ext = 66566376;
   }
 

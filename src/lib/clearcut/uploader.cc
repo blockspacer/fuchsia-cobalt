@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/clearcut/uploader.h"
+#include "src/lib/clearcut/uploader.h"
 
 #include <algorithm>
 #include <cmath>
 
+#include "src/lib/clearcut/clearcut.pb.h"
 #include "src/logging.h"
-#include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/statusor/status_macros.h"
 #include "unistd.h"
 
-namespace clearcut {
+namespace cobalt::lib::clearcut {
 
 using cobalt::util::SleeperInterface;
 using cobalt::util::Status;
@@ -171,4 +171,4 @@ Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
   return Status::OK;
 }
 
-}  // namespace clearcut
+}  // namespace cobalt::lib::clearcut

@@ -269,7 +269,7 @@ void ShippingManager::InvokeSendCallbacksLockHeld(ShippingManager::Fields::Locke
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
-    std::unique_ptr<clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
+    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
     : ClearcutV1ShippingManager(upload_scheduler, observation_store, std::move(clearcut),
                                 internal_logger, max_attempts_per_upload, std::move(api_key)) {
@@ -278,8 +278,8 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
 
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
-    std::unique_ptr<clearcut::ClearcutUploader> clearcut, logger::LoggerInterface* internal_logger,
-    size_t max_attempts_per_upload, std::string api_key)
+    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
     : ShippingManager(upload_scheduler, observation_store),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
@@ -330,7 +330,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
   internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
                                    envelope_size);
 
-  clearcut::LogRequest request;
+  lib::clearcut::LogRequest request;
   request.set_log_source(clearcut_destination.log_source_id_);
   request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
 

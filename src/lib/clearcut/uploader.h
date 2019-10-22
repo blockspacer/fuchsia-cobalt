@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COBALT_SRC_LIB_UTIL_CLEARCUT_UPLOADER_H_
-#define COBALT_SRC_LIB_UTIL_CLEARCUT_UPLOADER_H_
+#ifndef COBALT_SRC_LIB_CLEARCUT_UPLOADER_H_
+#define COBALT_SRC_LIB_CLEARCUT_UPLOADER_H_
 
 #include <chrono>
 #include <memory>
@@ -65,7 +65,6 @@ class ClearcutUploader {
   const std::unique_ptr<cobalt::util::SteadyClockInterface> steady_clock_;
   const std::unique_ptr<cobalt::util::SleeperInterface> sleeper_;
 
- protected:
   friend class UploaderTest;
 
   // When we get a next_request_wait_millis from the clearcut server, we set
@@ -75,4 +74,4 @@ class ClearcutUploader {
 
 }  // namespace cobalt::lib::clearcut
 
-#endif  // COBALT_SRC_LIB_UTIL_CLEARCUT_UPLOADER_H_
+#endif  // COBALT_SRC_LIB_CLEARCUT_UPLOADER_H_

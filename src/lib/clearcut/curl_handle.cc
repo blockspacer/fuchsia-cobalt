@@ -9,12 +9,12 @@
 #include <memory>
 #include <string>
 
-namespace cobalt::util::clearcut {
+namespace cobalt::lib::clearcut {
 
 CurlHandle::CurlHandle() {
   handle_ = curl_easy_init();
   if (handle_ == nullptr) {
-    throw Status(StatusCode::INTERNAL, "curl_easy_init() returned nullptr");
+    throw Status(util::StatusCode::INTERNAL, "curl_easy_init() returned nullptr");
   }
 }
 
@@ -78,7 +78,7 @@ Status CurlHandle::CURLCodeToStatus(CURLcode code) {
   if (strlen(errbuf_) != 0) {
     details = errbuf_;
   }
-  return Status(StatusCode::INTERNAL, curl_easy_strerror(code), details);
+  return Status(util::StatusCode::INTERNAL, curl_easy_strerror(code), details);
 }
 
 StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url, std::string body) {
@@ -93,10 +93,10 @@ StatusOr<HTTPResponse> CurlHandle::Post(const std::string &url, std::string body
       curl_easy_getinfo(handle_, CURLINFO_RESPONSE_CODE, &response_code);
       return HTTPResponse(response_body_, Status::OK, response_code);
     case CURLE_OPERATION_TIMEDOUT:
-      return Status(StatusCode::DEADLINE_EXCEEDED, "Post request timed out.");
+      return Status(util::StatusCode::DEADLINE_EXCEEDED, "Post request timed out.");
     default:
       return CURLCodeToStatus(result);
   }
 }
 
-}  // namespace cobalt::util::clearcut
+}  // namespace cobalt::lib::clearcut

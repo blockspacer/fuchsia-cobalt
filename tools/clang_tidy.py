@@ -32,14 +32,6 @@ SKIP_LINT_DIRS = [
                  'source_generator', 'source_generator_test_files'),
 ]
 
-# A list of directory prefixes that extend directory prefixes from SKIP_LINT_DIRS
-# but that should not be skipped.
-# TODO(rudominer) Can eliminate third_party/clearcut below when
-# fxb/38558 is resolved.
-OVERRIDE_SKIP_LINT_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'third_party', 'clearcut')
-]
-
 TEST_FILE_REGEX = re.compile('.*_(unit)?tests?.cc$')
 TEST_FILE_CLANG_TIDY_CHECKS = [
     '-readability-magic-numbers',
@@ -53,9 +45,6 @@ def should_skip_dir(parent_path, name):
   if name.startswith('.'):
     return True
   full_path = os.path.join(parent_path, name)
-  for p in OVERRIDE_SKIP_LINT_DIRS:
-    if p.startswith(full_path):
-      return False
   for p in SKIP_LINT_DIRS:
     if full_path.startswith(p):
       return True

@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/clearcut/uploader.h"
+#include "src/lib/clearcut/uploader.h"
 
 #include <chrono>
 #include <thread>
 
+#include "src/lib/clearcut/clearcut.pb.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/sleeper.h"
 #include "src/logging.h"
-#include "third_party/clearcut/clearcut.pb.h"
 #include "third_party/gflags/include/gflags/gflags.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace clearcut {
+namespace cobalt::lib::clearcut {
 
 using cobalt::util::FakeSleeper;
 using cobalt::util::IncrementingSteadyClock;
@@ -277,4 +277,4 @@ TEST_F(UploaderTest, HttpResponseCodes) {
   EXPECT_EQ(fake_sleeper->last_sleep_duration().count(), kInitialBackoffMillisForTest * 4);
 }
 
-}  // namespace clearcut
+}  // namespace cobalt::lib::clearcut

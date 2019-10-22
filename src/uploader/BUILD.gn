@@ -10,16 +10,16 @@ source_set("shipping_manager") {
     "upload_scheduler.h",
   ]
   deps = [
+    "$cobalt_root/src/lib/util:protected_fields",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/system_data",
     "$cobalt_root/src/system_data:configuration_data",
-    "$cobalt_root/src/lib/util:protected_fields",
   ]
   public_deps = [
+    "$cobalt_root/src/lib/clearcut",
     "$cobalt_root/src/logger:logger_interface",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
-    "$cobalt_root/third_party/clearcut:clearcut",
     "//third_party/grpc:grpc++",
   ]
 }
