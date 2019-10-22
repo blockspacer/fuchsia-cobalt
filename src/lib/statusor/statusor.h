@@ -1,17 +1,6 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 // StatusOr<T> is the union of a Status object and a T
 // object. StatusOr models the concept of an object that is either a
@@ -68,15 +57,15 @@ limitations under the License.
 // stored value cannot invalidate the argument; in other words, the argument
 // cannot be an alias for the current value, or anything owned by the current
 // value.
-#ifndef THIRD_PARTY_STATUSOR_STATUSOR_H_
-#define THIRD_PARTY_STATUSOR_STATUSOR_H_
+#ifndef COBALT_SRC_LIB_STATUSOR_STATUSOR_H_
+#define COBALT_SRC_LIB_STATUSOR_STATUSOR_H_
 
 #include <utility>
 
+#include "src/lib/statusor/statusor_internals.h"
 #include "src/lib/util/status.h"
-#include "third_party/statusor/statusor_internals.h"
 
-namespace statusor {
+namespace cobalt::lib::statusor {
 
 using cobalt::util::Status;
 
@@ -87,16 +76,16 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   template <typename U>
   friend class StatusOr;
 
-  typedef internal_statusor::StatusOrData<T> Base;
+  using Base = internal_statusor::StatusOrData<T>;
 
  public:
-  typedef T element_type;
+  using element_type = T;
 
   // Constructs a new StatusOr with Status::UNKNOWN status.  This is marked
   // 'explicit' to try to catch cases like 'return {};', where people think
   // StatusOr<std::vector<int>> will be initialized with an empty vector,
   // instead of a Status::UNKNOWN status.
-  explicit StatusOr();  // NOLINT(runtime/explicit)
+  explicit StatusOr();  // NOLINT(google-explicit-constructor)
 
   // StatusOr<T> will be copy constructible/assignable if T is copy
   // constructible.
@@ -105,16 +94,16 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
 
   // StatusOr<T> will be move constructible/assignable if T is move
   // constructible.
-  StatusOr(StatusOr&&) = default;
-  StatusOr& operator=(StatusOr&&) = default;
+  StatusOr(StatusOr&&) noexcept = default;
+  StatusOr& operator=(StatusOr&&) noexcept = default;
 
   // Conversion copy/move constructor, T must be convertible from U.
   // TODO(b/62186717): These should not participate in overload resolution if U
   // is not convertible to T.
   template <typename U>
-  StatusOr(const StatusOr<U>& other);
+  StatusOr(const StatusOr<U>& other);  // NOLINT(google-explicit-constructor)
   template <typename U>
-  StatusOr(StatusOr<U>&& other);
+  StatusOr(StatusOr<U>&& other);  // NOLINT(google-explicit-constructor)
 
   // Conversion copy/move assignment operator, T must be convertible from U.
   template <typename U>
@@ -131,7 +120,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   // when the return type is StatusOr<T>.
   //
   // REQUIRES: T is copy constructible.
-  StatusOr(const T& value);  // NOLINT(runtime/explicit)
+  StatusOr(const T& value);  // NOLINT(google-explicit-constructor)
 
   // Constructs a new StatusOr with the given non-ok status. After calling
   // this constructor, calls to ValueOrDie() will CHECK-fail.
@@ -143,7 +132,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   // REQUIRES: !status.ok(). This requirement is DCHECKed.
   // In optimized builds, passing Status::OK here will have the effect
   // of passing tensorflow::error::INTERNAL as a fallback.
-  StatusOr(const Status& status);  // NOLINT(runtime/explicit)
+  StatusOr(const Status& status);  // NOLINT(google-explicit-constructor)
   StatusOr& operator=(const Status& status);
 
   // TODO(b/62186997): Add operator=(T) overloads.
@@ -151,34 +140,32 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   // Similar to the `const T&` overload.
   //
   // REQUIRES: T is move constructible.
-  StatusOr(T&& value);  // NOLINT(runtime/explicit)
+  StatusOr(T&& value);  // NOLINT(google-explicit-constructor)
 
   // RValue versions of the operations declared above.
-  StatusOr(Status&& status);  // NOLINT(runtime/explicit)
+  StatusOr(Status&& status);  // NOLINT(google-explicit-constructor)
   StatusOr& operator=(Status&& status);
 
   // Returns this->status().ok()
-  bool ok() const { return this->status_.ok(); }
+  [[nodiscard]] bool ok() const { return this->status_.ok(); }
 
-  const T& ValueOr(const T& other) const {
+  [[nodiscard]] const T& ValueOr(const T& other) const {
     if (ok()) {
       return ValueOrDie();
-    } else {
-      return other;
     }
+    return other;
   }
 
-  T ConsumeValueOr(T other) {
+  [[nodiscard]] T ConsumeValueOr(T other) {
     if (ok()) {
       return ConsumeValueOrDie();
-    } else {
-      return other;
     }
+    return other;
   }
 
   // Returns a reference to our status. If this contains a T, then
   // returns Status::OK.
-  const Status& status() const&;
+  [[nodiscard]] const Status& status() const&;
   Status status() &&;
 
   // Returns a reference to our current value, or CHECK-fails if !this->ok().
@@ -201,12 +188,12 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   // warnings about possible uses of the statusor object after the move.
   // C++ style guide waiver for ref-qualified overloads granted in cl/143176389
   // See go/ref-qualifiers for more details on such overloads.
-  const T& ValueOrDie() const&;
-  T& ValueOrDie() &;
-  const T&& ValueOrDie() const&&;
-  T&& ValueOrDie() &&;
+  [[nodiscard]] const T& ValueOrDie() const&;
+  [[nodiscard]] T& ValueOrDie() &;
+  [[nodiscard]] const T&& ValueOrDie() const&&;
+  [[nodiscard]] T&& ValueOrDie() &&;
 
-  T ConsumeValueOrDie() { return std::move(ValueOrDie()); }
+  [[nodiscard]] T ConsumeValueOrDie() { return std::move(ValueOrDie()); }
 
   // Ignores any errors. This method does nothing except potentially suppress
   // complaints from any tools that are checking that errors are not dropped on
@@ -252,10 +239,11 @@ inline StatusOr<T>::StatusOr(const StatusOr<U>& other)
 template <typename T>
 template <typename U>
 inline StatusOr<T>& StatusOr<T>::operator=(const StatusOr<U>& other) {
-  if (other.ok())
+  if (other.ok()) {
     this->Assign(other.ValueOrDie());
-  else
+  } else {
     this->Assign(other.status());
+  }
   return *this;
 }
 
@@ -313,6 +301,6 @@ void StatusOr<T>::IgnoreError() const {
   // no-op
 }
 
-}  // namespace statusor
+}  // namespace cobalt::lib::statusor
 
-#endif  // THIRD_PARTY_STATUSOR_STATUSOR_H_
+#endif  // COBALT_SRC_LIB_STATUSOR_STATUSOR_H_

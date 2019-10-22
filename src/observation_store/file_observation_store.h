@@ -14,13 +14,13 @@
 #include <vector>
 
 #include "google/protobuf/io/zero_copy_stream.h"
+#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/file_system.h"
 #include "src/lib/util/protected_fields.h"
 #include "src/logger/internal_metrics.h"
 #include "src/observation_store/envelope_maker.h"
 #include "src/observation_store/observation_store.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
-#include "third_party/statusor/statusor.h"
 
 namespace cobalt::observation_store {
 
@@ -165,7 +165,7 @@ class FileObservationStore : public ObservationStore {
 
   // GetOldestFinalizedFile returns a file name for the oldest file in the
   // store.
-  statusor::StatusOr<std::string> GetOldestFinalizedFile(
+  lib::statusor::StatusOr<std::string> GetOldestFinalizedFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
   // FullPath returns the absolute path to the filename by prefixing the file

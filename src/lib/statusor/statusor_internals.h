@@ -1,34 +1,22 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
-#ifndef THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_
-#define THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_
+#ifndef COBALT_SRC_LIB_STATUSOR_STATUSOR_INTERNALS_H_
+#define COBALT_SRC_LIB_STATUSOR_STATUSOR_INTERNALS_H_
 
 #include <utility>
 
 #include "src/lib/util/status.h"
 
-namespace statusor {
-namespace internal_statusor {
+namespace cobalt::lib::statusor::internal_statusor {
 
 using cobalt::util::Status;
 
 class Helper {
  public:
   // Move type-agnostic error handling to the .cc.
-  static void HandleInvalidStatusCtorArg(Status*);
+  static void HandleInvalidStatusCtorArg(Status* /*status*/);
   static void Crash(const Status& status);
 };
 
@@ -75,7 +63,7 @@ class StatusOrData {
   }
 
   template <typename U>
-  StatusOrData(const StatusOrData<U>& other) {
+  StatusOrData(const StatusOrData<U>& other) {  // NOLINT(google-explicit-constructor)
     if (other.ok()) {
       MakeValue(other.data_);
       MakeStatus();
@@ -85,7 +73,7 @@ class StatusOrData {
   }
 
   template <typename U>
-  StatusOrData(StatusOrData<U>&& other) {
+  StatusOrData(StatusOrData<U>&& other) {  // NOLINT(google-explicit-constructor)
     if (other.ok()) {
       MakeValue(std::move(other.data_));
       MakeStatus();
@@ -97,26 +85,33 @@ class StatusOrData {
   explicit StatusOrData(const T& value) : data_(value) { MakeStatus(); }
   explicit StatusOrData(T&& value) : data_(std::move(value)) { MakeStatus(); }
 
+  // NOLINTNEXTLINE(modernize-pass-by-value)
   explicit StatusOrData(const Status& status) : status_(status) { EnsureNotOk(); }
   explicit StatusOrData(Status&& status) : status_(std::move(status)) { EnsureNotOk(); }
 
   StatusOrData& operator=(const StatusOrData& other) {
-    if (this == &other)
+    if (this == &other) {
       return *this;
-    if (other.ok())
+    }
+
+    if (other.ok()) {
       Assign(other.data_);
-    else
+    } else {
       Assign(other.status_);
+    }
     return *this;
   }
 
-  StatusOrData& operator=(StatusOrData&& other) {
-    if (this == &other)
+  StatusOrData& operator=(StatusOrData&& other) noexcept {
+    if (this == &other) {
       return *this;
-    if (other.ok())
+    }
+
+    if (other.ok()) {
       Assign(std::move(other.data_));
-    else
+    } else {
       Assign(std::move(other.status_));
+    }
     return *this;
   }
 
@@ -161,7 +156,7 @@ class StatusOrData {
     EnsureNotOk();
   }
 
-  bool ok() const { return status_.ok(); }
+  [[nodiscard]] bool ok() const { return status_.ok(); }
 
  protected:
   // status_ will always be active after the constructor.
@@ -169,13 +164,13 @@ class StatusOrData {
   // waste.
   // Eg. in the copy constructor we use the default constructor of Status in
   // the ok() path to avoid an extra Ref call.
-  union {
+  union {  // NOLINT(misc-non-private-member-variables-in-classes)
     Status status_;
   };
 
   // data_ is active iff status_.ok()==true
   struct Dummy {};
-  union {
+  union {  // NOLINT(misc-non-private-member-variables-in-classes)
     // When T is const, we need some non-const object we can cast to void* for
     // the placement new. dummy_ is that object.
     Dummy dummy_;
@@ -183,18 +178,21 @@ class StatusOrData {
   };
 
   void Clear() {
-    if (ok())
+    if (ok()) {
       data_.~T();
+    }
   }
 
   void EnsureOk() const {
-    if (!ok())
+    if (!ok()) {
       Helper::Crash(status_);
+    }
   }
 
   void EnsureNotOk() {
-    if (ok())
+    if (ok()) {
       Helper::HandleInvalidStatusCtorArg(&status_);
+    }
   }
 
   // Construct the value (ie. data_) through placement new with the passed
@@ -220,9 +218,9 @@ template <bool Copy, bool Move>
 struct TraitsBase {
   TraitsBase() = default;
   TraitsBase(const TraitsBase&) = default;
-  TraitsBase(TraitsBase&&) = default;
+  TraitsBase(TraitsBase&&) noexcept = default;
   TraitsBase& operator=(const TraitsBase&) = default;
-  TraitsBase& operator=(TraitsBase&&) = default;
+  TraitsBase& operator=(TraitsBase&&) noexcept = default;
 };
 
 template <>
@@ -243,7 +241,6 @@ struct TraitsBase<false, false> {
   TraitsBase& operator=(TraitsBase&&) = delete;
 };
 
-}  // namespace internal_statusor
-}  // namespace statusor
+}  // namespace cobalt::lib::statusor::internal_statusor
 
-#endif  // THIRD_PARTY_STATUSOR_STATUSOR_INTERNALS_H_
+#endif  // COBALT_SRC_LIB_STATUSOR_STATUSOR_INTERNALS_H_

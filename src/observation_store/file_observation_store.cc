@@ -17,7 +17,7 @@
 
 namespace cobalt::observation_store {
 
-using statusor::StatusOr;
+using lib::statusor::StatusOr;
 using util::FileSystem;
 using util::Status;
 using util::StatusCode;

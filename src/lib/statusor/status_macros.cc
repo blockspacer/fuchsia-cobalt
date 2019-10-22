@@ -1,19 +1,8 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
-#include "third_party/statusor/status_macros.h"
+#include "src/lib/statusor/status_macros.h"
 
 #include <algorithm>
 
@@ -22,8 +11,7 @@ limitations under the License.
 #include "glog/logging.h"
 #include "src/lib/util/status.h"
 
-namespace statusor {
-namespace status_macros {
+namespace cobalt::lib::statusor::status_macros {
 
 using cobalt::util::Status;
 
@@ -33,8 +21,8 @@ static Status MakeStatus(cobalt::util::StatusCode code, const std::string& messa
 
 // Log the error at the given severity, optionally with a stack trace.
 // If log_severity is NUM_SEVERITIES, nothing is logged.
-static void LogError(const Status& status, const char* filename, int line, int log_severity,
-                     bool should_log_stack_trace) {
+static void LogError(const Status& status, const char* /*filename*/, int /*line*/, int log_severity,
+                     bool /*should_log_stack_trace*/) {
   if (log_severity != google::NUM_SEVERITIES) {
     std::string stack_trace;
     switch (log_severity) {
@@ -142,9 +130,8 @@ Status MakeErrorStream::Impl::GetStatus() {
                      google::protobuf::StrCat(str, "Error without message at ", file_, ":", line_),
                      true /* should_log */, google::ERROR /* log_severity */,
                      should_log_stack_trace_);
-  } else {
-    return MakeError(file_, line_, code_, str, should_log_, log_severity_, should_log_stack_trace_);
   }
+  return MakeError(file_, line_, code_, str, should_log_, log_severity_, should_log_stack_trace_);
 }
 
 void MakeErrorStream::Impl::CheckNotDone() const {
@@ -154,5 +141,4 @@ void MakeErrorStream::Impl::CheckNotDone() const {
   }
 }
 
-}  // namespace status_macros
-}  // namespace statusor
+}  // namespace cobalt::lib::statusor::status_macros

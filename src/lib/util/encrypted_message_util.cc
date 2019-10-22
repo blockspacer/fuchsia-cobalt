@@ -33,7 +33,7 @@ Status StatusFromTinkStatus(const ::crypto::tink::util::Status& tink_status) {
 }
 
 // Make a HybridTinkEncryptedMessageMaker from a serialized encoded keyset.
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeHybridTinkEncryptedMessageMaker(
+lib::statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeHybridTinkEncryptedMessageMaker(
     const std::string& public_keyset_bytes, const std::string& context_info, uint32_t key_index) {
   auto status = ::crypto::tink::HybridConfig::Register();
   if (!status.ok()) {
@@ -58,7 +58,7 @@ statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeHybridTinkEncrypt
 }
 
 // Parse and validate a serialized CobaltEncryptionKey.
-statusor::StatusOr<cobalt::CobaltEncryptionKey> ParseCobaltEncryptionKey(
+lib::statusor::StatusOr<cobalt::CobaltEncryptionKey> ParseCobaltEncryptionKey(
     const std::string& cobalt_encryption_key_bytes) {
   cobalt::CobaltEncryptionKey cobalt_encryption_key;
   if (!cobalt_encryption_key.ParseFromString(cobalt_encryption_key_bytes)) {
@@ -84,8 +84,8 @@ std::unique_ptr<EncryptedMessageMaker> EncryptedMessageMaker::MakeUnencrypted() 
   return std::make_unique<UnencryptedMessageMaker>();
 }
 
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> EncryptedMessageMaker::MakeForEnvelopes(
-    const std::string& cobalt_encryption_key_bytes) {
+lib::statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+EncryptedMessageMaker::MakeForEnvelopes(const std::string& cobalt_encryption_key_bytes) {
   auto cobalt_encryption_key_or_result = ParseCobaltEncryptionKey(cobalt_encryption_key_bytes);
   if (!cobalt_encryption_key_or_result.ok()) {
     return cobalt_encryption_key_or_result.status();
@@ -101,7 +101,7 @@ statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> EncryptedMessageMaker
                                              cobalt_encryption_key.key_index());
 }
 
-statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
+lib::statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>>
 EncryptedMessageMaker::MakeForObservations(const std::string& cobalt_encryption_key_bytes) {
   auto cobalt_encryption_key_or_result = ParseCobaltEncryptionKey(cobalt_encryption_key_bytes);
   if (!cobalt_encryption_key_or_result.ok()) {

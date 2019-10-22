@@ -17,20 +17,21 @@ namespace cobalt::util {
 class PosixFileSystem : public FileSystem {
  public:
   bool MakeDirectory(const std::string &directory) override;
-  statusor::StatusOr<std::vector<std::string>> ListFiles(const std::string &directory) override;
+  lib::statusor::StatusOr<std::vector<std::string>> ListFiles(
+      const std::string &directory) override;
   bool Delete(const std::string &file) override;
-  statusor::StatusOr<size_t> FileSize(const std::string &file) override;
+  lib::statusor::StatusOr<size_t> FileSize(const std::string &file) override;
   bool FileExists(const std::string &file) override;
   bool Rename(const std::string &from, const std::string &to) override;
 
   using FileSystem::NewProtoInputStream;
-  statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file,
-                                                              int block_size) override;
+  lib::statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file,
+                                                                   int block_size) override;
 
   using FileSystem::NewProtoOutputStream;
-  statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
-                                                                bool append,
-                                                                int block_size) override;
+  lib::statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
+                                                                     bool append,
+                                                                     int block_size) override;
 };
 
 }  // namespace cobalt::util

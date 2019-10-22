@@ -8,13 +8,13 @@
 #include <future>
 #include <map>
 
+#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/status.h"
-#include "third_party/statusor/statusor.h"
 
 namespace cobalt::lib::clearcut {
 
 using cobalt::util::Status;
-using statusor::StatusOr;
+using lib::statusor::StatusOr;
 
 // HTTPResponse contains the response from the server.
 //

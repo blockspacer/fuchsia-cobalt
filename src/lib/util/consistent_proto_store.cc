@@ -9,7 +9,7 @@
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
-#include "third_party/statusor/status_macros.h"
+#include "src/lib/statusor/status_macros.h"
 
 namespace cobalt::util {
 

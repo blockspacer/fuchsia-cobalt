@@ -11,12 +11,12 @@
 
 #include "src/lib/clearcut/clearcut.pb.h"
 #include "src/lib/clearcut/http_client.h"
+#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/sleeper.h"
 #include "src/lib/util/status.h"
 #include "src/logger/internal_metrics.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
-#include "third_party/statusor/statusor.h"
 
 namespace cobalt::lib::clearcut {
 

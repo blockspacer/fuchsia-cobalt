@@ -13,7 +13,7 @@
 
 #include <google/protobuf/io/zero_copy_stream.h>
 
-#include "third_party/statusor/statusor.h"
+#include "src/lib/statusor/statusor.h"
 
 namespace cobalt::util {
 
@@ -37,7 +37,8 @@ class FileSystem {
   //
   // Note: On unix like systems, the directories "." and ".." should not be
   // returned.
-  virtual statusor::StatusOr<std::vector<std::string>> ListFiles(const std::string &directory) = 0;
+  virtual lib::statusor::StatusOr<std::vector<std::string>> ListFiles(
+      const std::string &directory) = 0;
 
   // Delete deletes a file or an empty directory.
   //
@@ -53,7 +54,7 @@ class FileSystem {
   // Returns: A StatusOr containing the size of the file in bytes. An OK
   // status indicates that the FileSize operation succeeded, even if the
   // size_t is 0.
-  virtual statusor::StatusOr<size_t> FileSize(const std::string &file) = 0;
+  virtual lib::statusor::StatusOr<size_t> FileSize(const std::string &file) = 0;
 
   // FileExists returns true if the |file| exists.
   virtual bool FileExists(const std::string &file) = 0;
@@ -72,7 +73,7 @@ class FileSystem {
   // Open a file for reading.
   //
   // |file|. An absolute path to the file to be read.
-  statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file) {
+  lib::statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file) {
     return NewProtoInputStream(file, -1);
   }
 
@@ -80,13 +81,13 @@ class FileSystem {
   //
   // |file|. An absolute path to the file to be read.
   // |block_size|. The block size the underlying ZeroCopyStream should use.
-  virtual statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file,
-                                                                      int block_size) = 0;
+  virtual lib::statusor::StatusOr<ProtoInputStreamPtr> NewProtoInputStream(const std::string &file,
+                                                                           int block_size) = 0;
 
   // Open a file for writing.
   //
   // |file|. An absolute path to the file to be written.
-  statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file) {
+  lib::statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file) {
     return NewProtoOutputStream(file, false, -1);
   }
 
@@ -94,8 +95,8 @@ class FileSystem {
   //
   // |file|. An absolute path to the file to be written.
   // |append|. True if the file should be opened in append mode.
-  statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
-                                                                bool append) {
+  lib::statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
+                                                                     bool append) {
     return NewProtoOutputStream(file, append, -1);
   }
 
@@ -104,9 +105,8 @@ class FileSystem {
   // |file|. An absolute path to the file to be writing.
   // |append|. True if the file should be opened in append mode.
   // |block_size|. The block size the underlying ZeroCopyStream should use.
-  virtual statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(const std::string &file,
-                                                                        bool append,
-                                                                        int block_size) = 0;
+  virtual lib::statusor::StatusOr<ProtoOutputStreamPtr> NewProtoOutputStream(
+      const std::string &file, bool append, int block_size) = 0;
 
   virtual ~FileSystem() = default;
 };

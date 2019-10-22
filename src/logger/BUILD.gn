@@ -50,9 +50,9 @@ source_set("project_context") {
   public_deps = [
     ":status",
     "$cobalt_root/src:logging",
+    "$cobalt_root/src/lib/statusor",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:project_configs",
-    "$cobalt_root/third_party/statusor",
   ]
 }
 

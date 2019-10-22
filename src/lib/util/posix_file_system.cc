@@ -18,7 +18,7 @@
 
 namespace cobalt::util {
 
-using statusor::StatusOr;
+using lib::statusor::StatusOr;
 using util::Status;
 using util::StatusCode;
 
@@ -72,7 +72,7 @@ bool PosixFileSystem::Rename(const std::string &from, const std::string &to) {
   return std::rename(from.c_str(), to.c_str()) == 0;
 }
 
-statusor::StatusOr<FileSystem::ProtoInputStreamPtr> PosixFileSystem::NewProtoInputStream(
+lib::statusor::StatusOr<FileSystem::ProtoInputStreamPtr> PosixFileSystem::NewProtoInputStream(
     const std::string &file, int block_size) {
   auto fs = open(file.c_str(), O_RDWR);
   if (fs == -1) {
@@ -85,7 +85,7 @@ statusor::StatusOr<FileSystem::ProtoInputStreamPtr> PosixFileSystem::NewProtoInp
   return StatusOr(std::move(stream));
 }
 
-statusor::StatusOr<FileSystem::ProtoOutputStreamPtr> PosixFileSystem::NewProtoOutputStream(
+lib::statusor::StatusOr<FileSystem::ProtoOutputStreamPtr> PosixFileSystem::NewProtoOutputStream(
     const std::string &file, bool append, int block_size) {
   auto flags = O_WRONLY | O_CREAT;
   if (append) {

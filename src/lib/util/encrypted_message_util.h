@@ -19,8 +19,8 @@
 
 #include "google/protobuf/message_lite.h"
 #include "src/lib/crypto_util/cipher.h"
+#include "src/lib/statusor/statusor.h"
 #include "src/pb/encrypted_message.pb.h"
-#include "third_party/statusor/statusor.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
 
 namespace cobalt {
@@ -52,14 +52,14 @@ class EncryptedMessageMaker {
   // Messages will be encrypted using the scheme corresponding to the key
   // that is passed in. |cobalt_encryption_key_bytes| is a serialized
   // cobalt::CobaltEncryptionKey protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForEnvelopes(
+  static lib::statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForEnvelopes(
       const std::string& cobalt_encryption_key_bytes);
 
   // Make an EncryptedMessageMaker to encrypt Observations.
   // Messages will be encrypted using the scheme corresponding to the key
   // that is passed in. |cobalt_encryption_key_bytes| is a serialized
   // cobalt::CobaltEncryptionKey protobuf message.
-  static statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForObservations(
+  static lib::statusor::StatusOr<std::unique_ptr<EncryptedMessageMaker>> MakeForObservations(
       const std::string& cobalt_encryption_key_bytes);
 
   virtual ~EncryptedMessageMaker() = default;

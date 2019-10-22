@@ -8,8 +8,8 @@
 #include <cmath>
 
 #include "src/lib/clearcut/clearcut.pb.h"
+#include "src/lib/statusor/status_macros.h"
 #include "src/logging.h"
-#include "third_party/statusor/status_macros.h"
 #include "unistd.h"
 
 namespace cobalt::lib::clearcut {

@@ -1,21 +1,3 @@
-# Copyright 2018 The Fuchsia Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
-
-static_library("statusor") {
-  sources = [
-    "status_macros.cc",
-    "status_macros.h",
-    "statusor.cc",
-    "statusor.h",
-    "statusor_internals.h",
-  ]
-
-  public_configs = [ "$cobalt_root:cobalt_config" ]
-
-  public_deps = [
-    "$cobalt_root/src/lib/util:status",
-    "//third_party/glog:glog",
-    "//third_party/protobuf:protobuf_lite",
-  ]
+group("statusor") {
+  deps = ["$cobalt_root/src/lib/statusor"]
 }

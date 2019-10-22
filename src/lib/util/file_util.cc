@@ -19,7 +19,7 @@ namespace {
 constexpr int kMaxFileSize = 100000;
 }
 
-statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
+lib::statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
   std::string file_contents;
   if (file_path.empty()) {
     return Status(INVALID_ARGUMENT, "ReadTextFile: file_path is empty.");
@@ -54,7 +54,7 @@ statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path) {
   return file_contents;
 }
 
-statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path) {
+lib::statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path) {
   auto read_file_result = ReadTextFile(file_path);
   if (!read_file_result.ok()) {
     return read_file_result;
@@ -67,7 +67,7 @@ statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_pat
   return read_file_result;
 }
 
-statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path) {
+lib::statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path) {
   auto read_file_result = ReadNonEmptyTextFile(file_path);
   if (!read_file_result.ok()) {
     return read_file_result;

@@ -6,11 +6,11 @@
 #define COBALT_SRC_LIB_CLEARCUT_CURL_HTTP_CLIENT_H_
 
 #include "src/lib/clearcut/http_client.h"
-#include "third_party/statusor/statusor.h"
+#include "src/lib/statusor/statusor.h"
 
 namespace cobalt::lib::clearcut {
 
-using statusor::StatusOr;
+using lib::statusor::StatusOr;
 
 // CurlHTTPClient implements clearcut::HTTPClient with a curl backend. This is
 // a basic implementation that is designed to be used on linux clients (not

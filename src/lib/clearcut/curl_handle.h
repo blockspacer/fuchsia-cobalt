@@ -12,13 +12,13 @@
 #include <curl/curl.h>
 
 #include "src/lib/clearcut/http_client.h"
+#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/status.h"
-#include "third_party/statusor/statusor.h"
 
 namespace cobalt::lib::clearcut {
 
 using clearcut::HTTPResponse;
-using statusor::StatusOr;
+using lib::statusor::StatusOr;
 using util::Status;
 
 // CurlHandle wraps around a CURL * to make it easier to interact with curl.

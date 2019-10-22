@@ -25,9 +25,9 @@
 namespace cobalt::encoder {
 
 using cobalt::clearcut_extensions::LogEventExtension;
+using lib::statusor::StatusOr;
 using observation_store::MemoryObservationStore;
 using observation_store::ObservationStore;
-using statusor::StatusOr;
 using util::EncryptedMessageMaker;
 
 namespace {

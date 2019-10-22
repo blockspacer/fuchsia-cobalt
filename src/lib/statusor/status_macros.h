@@ -1,20 +1,9 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+// Copyright 2017 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
-#ifndef THIRD_PARTY_STATUSOR_STATUS_MACROS_H_
-#define THIRD_PARTY_STATUSOR_STATUS_MACROS_H_
+#ifndef COBALT_SRC_LIB_STATUSOR_STATUS_MACROS_H_
+#define COBALT_SRC_LIB_STATUSOR_STATUS_MACROS_H_
 
 #include <memory>
 #include <ostream>  // NOLINT
@@ -23,10 +12,9 @@ limitations under the License.
 #include <utility>
 #include <vector>
 
-#include "third_party/statusor/statusor.h"
+#include "src/lib/statusor/statusor.h"
 
-namespace statusor {
-namespace status_macros {
+namespace cobalt::lib::statusor::status_macros {
 
 using cobalt::util::Status;
 
@@ -65,9 +53,11 @@ class MakeErrorStream {
 
     // Implicit cast operators to Status and StatusOr.
     // Exactly one of these must be called exactly once before destruction.
-    operator Status() { return wrapped_error_stream_->GetStatus(); }
+    operator Status() {  // NOLINT(google-explicit-constructor)
+      return wrapped_error_stream_->GetStatus();
+    }
     template <typename T>
-    operator StatusOr<T>() {
+    operator StatusOr<T>() {  // NOLINT(google-explicit-constructor)
       return wrapped_error_stream_->GetStatus();
     }
 
@@ -99,17 +89,17 @@ class MakeErrorStream {
 
   // Adds RET_CHECK failure text to error message.
   MakeErrorStreamWithOutput& add_ret_check_failure(const char* condition) {
-    return *this << "RET_CHECK failure (" << impl_->file_ << ":" << impl_->line_
-                 << ") " << condition << " ";
+    return *this << "RET_CHECK failure (" << impl_->file_ << ":" << impl_->line_ << ") "
+                 << condition << " ";
   }
 
  private:
   class Impl {
    public:
-    Impl(const char* file, int line, cobalt::util::StatusCode code,
-         MakeErrorStream* error_stream, bool is_logged_by_default = true);
-    Impl(const Status& status, PriorMessageHandling prior_message_handling,
-         const char* file, int line, MakeErrorStream* error_stream);
+    Impl(const char* file, int line, cobalt::util::StatusCode code, MakeErrorStream* error_stream,
+         bool is_logged_by_default = true);
+    Impl(const Status& status, PriorMessageHandling prior_message_handling, const char* file,
+         int line, MakeErrorStream* error_stream);
 
     ~Impl();
 
@@ -145,7 +135,7 @@ class MakeErrorStream {
   void CheckNotDone() const;
 
   // Returns the status. Used by MakeErrorStreamWithOutput.
-  Status GetStatus() const { return impl_->GetStatus(); }
+  [[nodiscard]] Status GetStatus() const { return impl_->GetStatus(); }
 
   // Store the actual data on the heap to reduce stack frame sizes.
   std::unique_ptr<Impl> impl_;
@@ -168,38 +158,34 @@ class StatusAdaptorForMacros {
   Status status_;
 };
 
-}  // namespace status_macros
-}  // namespace statusor
+}  // namespace cobalt::lib::statusor::status_macros
 
-#define CB_RET_CHECK(condition)                                            \
-  while (!(condition))                                                     \
-  return util::status_macros::MakeErrorStream(__FILE__, __LINE__,          \
-                                              tensorflow::error::INTERNAL) \
-      .with_log_stack_trace()                                              \
+#define CB_RET_CHECK(condition)                                                                \
+  while (!(condition))                                                                         \
+  return util::status_macros::MakeErrorStream(__FILE__, __LINE__, tensorflow::error::INTERNAL) \
+      .with_log_stack_trace()                                                                  \
       .add_ret_check_failure(#condition)
 
-#define CB_ASSERT_OK_AND_ASSIGN(lhs, rexpr)                             \
-  CB_ASSERT_OK_AND_ASSIGN_IMPL(                                         \
-      CB_STATUS_MACROS_CONCAT_NAME(_status_or_value, __COUNTER__), lhs, \
-      rexpr);
+#define CB_ASSERT_OK_AND_ASSIGN(lhs, rexpr)                                                      \
+  CB_ASSERT_OK_AND_ASSIGN_IMPL(CB_STATUS_MACROS_CONCAT_NAME(_status_or_value, __COUNTER__), lhs, \
+                               rexpr);
 
-#define CB_ASSERT_OK_AND_ASSIGN_IMPL(statusor, lhs, rexpr)  \
-  auto statusor = (rexpr);                                  \
-  ASSERT_TRUE(statusor.status().ok()) << statusor.status(); \
-  lhs = std::move(statusor.ValueOrDie())
+#define CB_ASSERT_OK_AND_ASSIGN_IMPL(statusor, lhs, rexpr)               \
+  auto statusor = (rexpr);                                  /* NOLINT */ \
+  ASSERT_TRUE(statusor.status().ok()) << statusor.status(); /* NOLINT */ \
+  lhs = std::move(statusor.ValueOrDie())                    /* NOLINT */
 
 #define CB_STATUS_MACROS_CONCAT_NAME(x, y) CB_STATUS_MACROS_CONCAT_IMPL(x, y)
 #define CB_STATUS_MACROS_CONCAT_IMPL(x, y) x##y
 
 #define CB_ASSIGN_OR_RETURN(lhs, rexpr) \
-  CB_ASSIGN_OR_RETURN_IMPL(             \
-      CB_STATUS_MACROS_CONCAT_NAME(_status_or_value, __COUNTER__), lhs, rexpr)
+  CB_ASSIGN_OR_RETURN_IMPL(CB_STATUS_MACROS_CONCAT_NAME(_status_or_value, __COUNTER__), lhs, rexpr)
 
 #define CB_ASSIGN_OR_RETURN_IMPL(statusor, lhs, rexpr) \
-  auto statusor = (rexpr);                             \
-  if (!statusor.ok()) {                                \
-    return statusor.status();                          \
+  auto statusor = (rexpr);    /* NOLINT */             \
+  if (!statusor.ok()) {       /* NOLINT */             \
+    return statusor.status(); /* NOLINT */             \
   }                                                    \
-  lhs = std::move(statusor.ValueOrDie())
+  lhs = std::move(statusor.ValueOrDie()) /* NOLINT */
 
-#endif  // THIRD_PARTY_STATUSOR_STATUS_MACROS_H_
+#endif  // COBALT_SRC_LIB_STATUSOR_STATUS_MACROS_H_

@@ -6,16 +6,16 @@
 
 #include <string>
 
-#include "third_party/statusor/statusor.h"
+#include "src/lib/statusor/statusor.h"
 
 namespace cobalt {
 namespace util {
 
-statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path);
+lib::statusor::StatusOr<std::string> ReadTextFile(const std::string& file_path);
 
-statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path);
+lib::statusor::StatusOr<std::string> ReadNonEmptyTextFile(const std::string& file_path);
 
-statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path);
+lib::statusor::StatusOr<std::string> ReadHexFile(const std::string& file_path);
 
 std::string ReadHexFileOrDefault(const std::string& file_path, const std::string& default_string);
 

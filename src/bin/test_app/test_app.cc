@@ -16,6 +16,7 @@
 
 #include "gflags/gflags.h"
 #include "src/lib/clearcut/curl_http_client.h"
+#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/datetime_util.h"
@@ -39,7 +40,6 @@
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
-#include "third_party/statusor/statusor.h"
 
 namespace cobalt {
 
