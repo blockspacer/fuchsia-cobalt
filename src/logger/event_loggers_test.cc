@@ -16,8 +16,8 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/encoder.h"
-#include "src/logger/event_aggregator.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
@@ -36,10 +36,9 @@ using ::google::protobuf::util::MessageDifferencer;
 namespace cobalt {
 
 using config::PackEventCodes;
-
 using encoder::ClientSecret;
 using encoder::SystemDataInterface;
-
+using local_aggregation::EventAggregator;
 using util::EncryptedMessageMaker;
 using util::IncrementingSystemClock;
 using util::TimeToDayIndex;

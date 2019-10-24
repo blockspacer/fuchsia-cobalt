@@ -10,8 +10,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/encoder.h"
-#include "src/logger/event_aggregator.h"
 #include "src/logger/event_record.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
@@ -33,7 +33,7 @@ using ::google::protobuf::RepeatedField;
 // of EventLogger for each of several Metric types.
 class EventLogger {
  public:
-  EventLogger(const Encoder* encoder, EventAggregator* event_aggregator,
+  EventLogger(const Encoder* encoder, local_aggregation::EventAggregator* event_aggregator,
               const ObservationWriter* observation_writer,
               const encoder::SystemDataInterface* system_data)
       : encoder_(encoder),
@@ -50,7 +50,7 @@ class EventLogger {
   // The remaining parameters are passed to the EventLogger constructor.
   static std::unique_ptr<EventLogger> Create(MetricDefinition::MetricType metric_type,
                                              const Encoder* encoder,
-                                             EventAggregator* event_aggregator,
+                                             local_aggregation::EventAggregator* event_aggregator,
                                              const ObservationWriter* observation_writer,
                                              const encoder::SystemDataInterface* system_data);
 
@@ -67,7 +67,7 @@ class EventLogger {
 
  protected:
   const Encoder* encoder() { return encoder_; }
-  EventAggregator* event_aggregator() { return event_aggregator_; }
+  local_aggregation::EventAggregator* event_aggregator() { return event_aggregator_; }
 
   Encoder::Result BadReportType(const std::string& full_metric_name,
                                 const ReportDefinition& report);
@@ -142,7 +142,7 @@ class EventLogger {
   void TraceLogSuccess(const EventRecord& event_record, const std::string& trace);
 
   const Encoder* encoder_;
-  EventAggregator* event_aggregator_;
+  local_aggregation::EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
   const encoder::SystemDataInterface* system_data_;
 };

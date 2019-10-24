@@ -14,8 +14,8 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/encoder.h"
-#include "src/logger/event_aggregator.h"
 #include "src/logger/fake_logger.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/project_context.h"
@@ -35,7 +35,7 @@ namespace cobalt {
 
 using encoder::ClientSecret;
 using encoder::SystemDataInterface;
-
+using local_aggregation::EventAggregator;
 using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;
 using util::IncrementingSystemClock;
