@@ -18,7 +18,7 @@
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/packed_event_codes.h"
 
-namespace cobalt {
+namespace cobalt::local_aggregation {
 
 using google::protobuf::RepeatedField;
 using logger::Encoder;
@@ -36,8 +36,6 @@ using util::SerializeToBase64;
 using util::StatusCode;
 using util::SteadyClock;
 using util::TimeToDayIndex;
-
-namespace local_aggregation {
 
 namespace {
 
@@ -495,17 +493,15 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point sys
 
   // Skip the tasks (but do schedule a retry) if either day index is too small.
   uint32_t min_allowed_day_index = kMaxAllowedAggregationWindowSize + backfill_days_;
-  bool skip_tasks = (yesterday_utc < min_allowed_day_index ||
-                     yesterday_local_time < min_allowed_day_index);
-
+  bool skip_tasks =
+      (yesterday_utc < min_allowed_day_index || yesterday_local_time < min_allowed_day_index);
   if (steady_time >= next_generate_obs_) {
     next_generate_obs_ += generate_obs_interval_;
     if (skip_tasks) {
       LOG_FIRST_N(ERROR, 10) << "EventAggregator is skipping Observation generation because the "
                                 "current day index is too small.";
     } else {
-      auto obs_status =
-          GenerateObservations(yesterday_utc, yesterday_local_time);
+      auto obs_status = GenerateObservations(yesterday_utc, yesterday_local_time);
       if (obs_status == kOK) {
         BackUpObservationHistory();
       } else {
@@ -595,9 +591,9 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc, uint32_t day_inde
   CHECK_GE(day_index_local, kMaxAllowedAggregationWindowSize + backfill_days_);
 
   auto locked = protected_aggregate_store_.lock();
-  for (const auto& pair : locked->local_aggregate_store.by_report_key()) {
+  for (const auto& [report_key, aggregates] : locked->local_aggregate_store.by_report_key()) {
     uint32_t day_index;
-    switch (pair.second.aggregation_config().metric().time_zone_policy()) {
+    switch (aggregates.aggregation_config().metric().time_zone_policy()) {
       case MetricDefinition::UTC: {
         day_index = day_index_utc;
         break;
@@ -610,12 +606,12 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc, uint32_t day_inde
         LOG_FIRST_N(ERROR, 10) << "The TimeZonePolicy of this MetricDefinition is invalid.";
         continue;
     }
-    if (pair.second.aggregation_config().window_size_size() == 0) {
+    if (aggregates.aggregation_config().window_size_size() == 0) {
       LOG_FIRST_N(ERROR, 10) << "This ReportDefinition does not have a window size.";
       continue;
     }
-    uint32_t max_window_size = pair.second.aggregation_config().window_size(
-        pair.second.aggregation_config().window_size_size() - 1);
+    uint32_t max_window_size = aggregates.aggregation_config().window_size(
+        aggregates.aggregation_config().window_size_size() - 1);
     if (max_window_size == 0u || max_window_size > day_index) {
       LOG_FIRST_N(ERROR, 10) << "The maximum window size " << max_window_size
                              << " of this ReportDefinition is out of range.";
@@ -625,19 +621,19 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc, uint32_t day_inde
     // local aggregates keyed by day index. Keep buckets with day indices
     // greater than |day_index| - |backfill_days_| - |max_window_size|, and
     // remove all buckets with smaller day indices.
-    switch (pair.second.type_case()) {
+    switch (aggregates.type_case()) {
       case ReportAggregates::kUniqueActivesAggregates: {
         GarbageCollectUniqueActivesReportAggregates(
             day_index, max_window_size, backfill_days_,
             locked->local_aggregate_store.mutable_by_report_key()
-                ->at(pair.first)
+                ->at(report_key)
                 .mutable_unique_actives_aggregates());
         break;
       }
       case ReportAggregates::kNumericAggregates: {
         GarbageCollectNumericReportAggregates(day_index, max_window_size, backfill_days_,
                                               locked->local_aggregate_store.mutable_by_report_key()
-                                                  ->at(pair.first)
+                                                  ->at(report_key)
                                                   .mutable_numeric_aggregates());
         break;
       }
@@ -661,8 +657,8 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
   // Lock, copy the LocalAggregateStore, and release the lock. Use the copy to
   // generate observations.
   auto local_aggregate_store = CopyLocalAggregateStore();
-  for (auto& pair : local_aggregate_store.by_report_key()) {
-    const auto& config = pair.second.aggregation_config();
+  for (const auto& [report_key, aggregates] : local_aggregate_store.by_report_key()) {
+    const auto& config = aggregates.aggregation_config();
 
     const auto& metric = config.metric();
     auto metric_ref = MetricRef(&config.project(), &metric);
@@ -702,7 +698,7 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
 
         switch (report.report_type()) {
           case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-            auto status = GenerateUniqueActivesObservations(metric_ref, pair.first, pair.second,
+            auto status = GenerateUniqueActivesObservations(metric_ref, report_key, aggregates,
                                                             num_event_codes, final_day_index);
             if (status != kOK) {
               return status;
@@ -721,7 +717,7 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
         switch (report.report_type()) {
           case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
           case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-            auto status = GenerateObsFromNumericAggregates(metric_ref, pair.first, pair.second,
+            auto status = GenerateObsFromNumericAggregates(metric_ref, report_key, aggregates,
                                                            final_day_index);
             if (status != kOK) {
               return status;
@@ -998,11 +994,9 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
   auto backfill_period_start = uint32_t(final_day_index - backfill_days_);
 
   // Generate any necessary PerDeviceNumericObservations for this report.
-  for (const auto& component_pair : report_aggregates.numeric_aggregates().by_component()) {
-    const auto& component = component_pair.first;
-    for (const auto& event_code_pair : component_pair.second.by_event_code()) {
-      auto event_code = event_code_pair.first;
-      const auto& event_code_aggregates = event_code_pair.second;
+  for (const auto& [component, event_code_aggregates] :
+       report_aggregates.numeric_aggregates().by_component()) {
+    for (const auto& [event_code, daily_aggregates] : event_code_aggregates.by_event_code()) {
       // Populate a helper map keyed by day indices which belong to the range
       // [|backfill_period_start|, |final_day_index|]. The value at a day
       // index is the list of window sizes, in increasing order, for which an
@@ -1042,8 +1036,8 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
           while (num_days < window_size) {
             bool found_value_for_day = false;
             const auto& day_aggregates =
-                event_code_aggregates.by_day_index().find(obs_day_index - num_days);
-            if (day_aggregates != event_code_aggregates.by_day_index().end()) {
+                daily_aggregates.by_day_index().find(obs_day_index - num_days);
+            if (day_aggregates != daily_aggregates.by_day_index().end()) {
               found_value_for_day = true;
             }
             const auto& aggregation_type =
@@ -1130,5 +1124,4 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
   return kOK;
 }
 
-}  // namespace local_aggregation
-}  // namespace cobalt
+}  // namespace cobalt::local_aggregation
