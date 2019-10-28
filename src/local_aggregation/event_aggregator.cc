@@ -488,14 +488,15 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
 }
 
 void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point system_time,
-                                       std::chrono::steady_clock::time_point steady_time) {
+                                              std::chrono::steady_clock::time_point steady_time) {
   auto current_time_t = std::chrono::system_clock::to_time_t(system_time);
-  auto current_day_index_utc = TimeToDayIndex(current_time_t, MetricDefinition::UTC);
-  auto current_day_index_local = TimeToDayIndex(current_time_t, MetricDefinition::LOCAL);
+  auto yesterday_utc = TimeToDayIndex(current_time_t, MetricDefinition::UTC) - 1;
+  auto yesterday_local_time = TimeToDayIndex(current_time_t, MetricDefinition::LOCAL) - 1;
+
   // Skip the tasks (but do schedule a retry) if either day index is too small.
-  uint32_t min_allowed_day_index = kMaxAllowedAggregationWindowSize + backfill_days_ + 1;
-  bool skip_tasks = (current_day_index_utc < min_allowed_day_index ||
-                     current_day_index_local < min_allowed_day_index);
+  uint32_t min_allowed_day_index = kMaxAllowedAggregationWindowSize + backfill_days_;
+  bool skip_tasks = (yesterday_utc < min_allowed_day_index ||
+                     yesterday_local_time < min_allowed_day_index);
 
   if (steady_time >= next_generate_obs_) {
     next_generate_obs_ += generate_obs_interval_;
@@ -504,7 +505,7 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point sys
                                 "current day index is too small.";
     } else {
       auto obs_status =
-          GenerateObservations(current_day_index_utc - 1, current_day_index_local - 1);
+          GenerateObservations(yesterday_utc, yesterday_local_time);
       if (obs_status == kOK) {
         BackUpObservationHistory();
       } else {
@@ -518,7 +519,7 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point sys
       LOG_FIRST_N(ERROR, 10) << "EventAggregator is skipping garbage collection because the "
                                 "current day index is too small.";
     } else {
-      auto gc_status = GarbageCollect(current_day_index_utc - 1, current_day_index_local - 1);
+      auto gc_status = GarbageCollect(yesterday_utc, yesterday_local_time);
       if (gc_status == kOK) {
         BackUpLocalAggregateStore();
       } else {
