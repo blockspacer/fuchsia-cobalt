@@ -40,21 +40,30 @@ using util::TimeToDayIndex;
 
 namespace {
 
-// Creates an AggregationConfig from a ProjectContext, MetricDefinition, and
-// ReportDefinition and populates the aggregation_config field of a specified
-// ReportAggregates. Also sets the type of the ReportAggregates based on the
-// ReportDefinition's type.
-bool PopulateReportAggregates(const ProjectContext& project_context, const MetricDefinition& metric,
-                              const ReportDefinition& report, ReportAggregates* report_aggregates) {
+////// General helper functions.
+
+// Populates a ReportAggregationKey proto message and then populates a string
+// with the base64 encoding of the serialized proto.
+bool PopulateReportKey(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+                       uint32_t report_id, std::string* key) {
+  ReportAggregationKey key_data;
+  key_data.set_customer_id(customer_id);
+  key_data.set_project_id(project_id);
+  key_data.set_metric_id(metric_id);
+  key_data.set_report_id(report_id);
+  return SerializeToBase64(key_data, key);
+}
+
+////// Helper functions used by the constructor and UpdateAggregationConfigs().
+
+// Gets and validates the window sizes from a ReportDefinition, sorts them in increasing order, and
+// adds them to an AggregationConfig.
+bool GetSortedWindowSizesFromReport(const ReportDefinition& report,
+                                    AggregationConfig* aggregation_config) {
   if (report.window_size_size() == 0) {
     LOG(ERROR) << "Report must have at least one window size.";
     return false;
   }
-  AggregationConfig* aggregation_config = report_aggregates->mutable_aggregation_config();
-  *aggregation_config->mutable_project() = project_context.project();
-  *aggregation_config->mutable_metric() = *project_context.GetMetric(metric.id());
-  *aggregation_config->mutable_report() = report;
-
   std::vector<uint32_t> window_sizes;
   for (const uint32_t window_size : report.window_size()) {
     if (window_size == 0 || window_size > EventAggregator::kMaxAllowedAggregationWindowSize) {
@@ -65,10 +74,30 @@ bool PopulateReportAggregates(const ProjectContext& project_context, const Metri
     window_sizes.push_back(window_size);
   }
   std::sort(window_sizes.begin(), window_sizes.end());
-  for (const uint32_t window_size : window_sizes) {
+  for (auto window_size : window_sizes) {
     aggregation_config->add_window_size(window_size);
   }
+  return true;
+}
 
+// Creates an AggregationConfig from a ProjectContext, MetricDefinition, and
+// ReportDefinition and populates the aggregation_config field of a specified
+// ReportAggregates. Also sets the type of the ReportAggregates based on the
+// ReportDefinition's type.
+//
+// Accepts ReportDefinitions with either at least one WindowSize, or at least one
+// OnDeviceAggregationWindow with units in days.
+bool PopulateReportAggregates(const ProjectContext& project_context, const MetricDefinition& metric,
+                              const ReportDefinition& report, ReportAggregates* report_aggregates) {
+  if (report.window_size_size() == 0 && report.aggregation_window_size() == 0) {
+  }
+  AggregationConfig* aggregation_config = report_aggregates->mutable_aggregation_config();
+  *aggregation_config->mutable_project() = project_context.project();
+  *aggregation_config->mutable_metric() = *project_context.GetMetric(metric.id());
+  *aggregation_config->mutable_report() = report;
+  if (!GetSortedWindowSizesFromReport(report, aggregation_config)) {
+    return false;
+  }
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
       report_aggregates->set_allocated_unique_actives_aggregates(new UniqueActivesReportAggregates);
@@ -82,18 +111,6 @@ bool PopulateReportAggregates(const ProjectContext& project_context, const Metri
     default:
       return false;
   }
-}
-
-// Populates a ReportAggregationKey proto message and then populates a string
-// with the base64 encoding of the serialized proto.
-bool PopulateReportKey(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
-                       uint32_t report_id, std::string* key) {
-  ReportAggregationKey key_data;
-  key_data.set_customer_id(customer_id);
-  key_data.set_project_id(project_id);
-  key_data.set_metric_id(metric_id);
-  key_data.set_report_id(report_id);
-  return SerializeToBase64(key_data, key);
 }
 
 // Given a ProjectContext, MetricDefinition, and ReportDefinition and a pointer
@@ -259,15 +276,31 @@ Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_c
   return kOK;
 }
 
+// Helper functions for the Log*Event() methods.
+namespace {
+
+// Checks that an Event has type |expected_event_type|.
+bool ValidateEventType(Event::TypeCase expected_event_type, const Event& event) {
+  Event::TypeCase event_type = event.type_case();
+  if (event_type != expected_event_type) {
+    LOG(ERROR) << "Expected Event type is " << expected_event_type << "; found " << event_type
+               << ".";
+    return false;
+  }
+  return true;
+}
+
+}  // namespace
+
 Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (!event_record.event()->has_occurrence_event()) {
-    LOG(ERROR) << "EventAggregator::LogUniqueActivesEvent can only "
-                  "accept OccurrenceEvents.";
+  auto* event = event_record.event();
+  if (!ValidateEventType(Event::kOccurrenceEvent, *event)) {
     return kInvalidArguments;
   }
+  auto* metric = event_record.metric();
   std::string key;
-  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
-                         event_record.metric()->id(), report_id, &key)) {
+  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
+                         &key)) {
     return kInvalidArguments;
   }
   auto locked = protected_aggregate_store_.lock();
@@ -282,76 +315,76 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRec
     return kInvalidArguments;
   }
   (*(*aggregates->second.mutable_unique_actives_aggregates()
-          ->mutable_by_event_code())[event_record.event()->occurrence_event().event_code()]
-        .mutable_by_day_index())[event_record.event()->day_index()]
+          ->mutable_by_event_code())[event->occurrence_event().event_code()]
+        .mutable_by_day_index())[event->day_index()]
       .mutable_activity_daily_aggregate()
       ->set_activity_indicator(true);
   return kOK;
 }
 
 Status EventAggregator::LogCountEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event()->type_case() != Event::kCountEvent) {
-    LOG(ERROR) << "EventAggregator: LogCountEvent can only accept "
-                  "CountEvents.";
+  auto* event = event_record.event();
+  if (!ValidateEventType(Event::kCountEvent, *event)) {
     return kInvalidArguments;
   }
+  auto* metric = event_record.metric();
   std::string key;
-  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
-                         event_record.metric()->id(), report_id, &key)) {
+  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
+                         &key)) {
     return kInvalidArguments;
   }
-  const CountEvent& count_event = event_record.event()->count_event();
-  return LogNumericEvent(key, event_record.event()->day_index(), count_event.component(),
+  const CountEvent& count_event = event->count_event();
+  return LogNumericEvent(key, event->day_index(), count_event.component(),
                          config::PackEventCodes(count_event.event_code()), count_event.count());
 }
 
 Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event()->type_case() != Event::kElapsedTimeEvent) {
-    LOG(ERROR) << "EventAggregator: LogElapsedTimeEvent can only accept "
-                  "ElapsedTimeEvents.";
+  auto* event = event_record.event();
+  if (!ValidateEventType(Event::kElapsedTimeEvent, *event)) {
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
-                         event_record.metric()->id(), report_id, &key)) {
+  auto* metric = event_record.metric();
+  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
+                         &key)) {
     return kInvalidArguments;
   }
-  const ElapsedTimeEvent& elapsed_time_event = event_record.event()->elapsed_time_event();
-  return LogNumericEvent(key, event_record.event()->day_index(), elapsed_time_event.component(),
+  const ElapsedTimeEvent& elapsed_time_event = event->elapsed_time_event();
+  return LogNumericEvent(key, event->day_index(), elapsed_time_event.component(),
                          config::PackEventCodes(elapsed_time_event.event_code()),
                          elapsed_time_event.elapsed_micros());
 }
 
 Status EventAggregator::LogFrameRateEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event()->type_case() != Event::kFrameRateEvent) {
-    LOG(ERROR) << "EventAggregator: LogFrameRateEvent can only accept "
-                  "FrameRateEvents.";
+  auto* event = event_record.event();
+  if (!ValidateEventType(Event::kFrameRateEvent, *event)) {
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
-                         event_record.metric()->id(), report_id, &key)) {
+  auto* metric = event_record.metric();
+  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
+                         &key)) {
     return kInvalidArguments;
   }
-  const FrameRateEvent& frame_rate_event = event_record.event()->frame_rate_event();
-  return LogNumericEvent(key, event_record.event()->day_index(), frame_rate_event.component(),
+  const FrameRateEvent& frame_rate_event = event->frame_rate_event();
+  return LogNumericEvent(key, event->day_index(), frame_rate_event.component(),
                          config::PackEventCodes(frame_rate_event.event_code()),
                          frame_rate_event.frames_per_1000_seconds());
 }
 
 Status EventAggregator::LogMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record) {
-  if (event_record.event()->type_case() != Event::kMemoryUsageEvent) {
-    LOG(ERROR) << "EventAggregator: LogMemoryUsageEvent can only accept "
-                  "MemoryUsageEvents.";
+  auto* event = event_record.event();
+  if (!ValidateEventType(Event::kMemoryUsageEvent, *event)) {
     return kInvalidArguments;
   }
   std::string key;
-  if (!PopulateReportKey(event_record.metric()->customer_id(), event_record.metric()->project_id(),
-                         event_record.metric()->id(), report_id, &key)) {
+  auto* metric = event_record.metric();
+  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
+                         &key)) {
     return kInvalidArguments;
   }
-  const MemoryUsageEvent& memory_usage_event = event_record.event()->memory_usage_event();
-  return LogNumericEvent(key, event_record.event()->day_index(), memory_usage_event.component(),
+  const MemoryUsageEvent& memory_usage_event = event->memory_usage_event();
+  return LogNumericEvent(key, event->day_index(), memory_usage_event.component(),
                          config::PackEventCodes(memory_usage_event.event_code()),
                          memory_usage_event.bytes());
 }
