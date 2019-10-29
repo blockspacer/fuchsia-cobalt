@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "src/lib/util/sleeper.h"
+
 #include <chrono>
 
 #include "src/lib/util/clock.h"
-#include "src/lib/util/sleeper.h"
-
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 using std::chrono::milliseconds;
@@ -38,9 +38,9 @@ TEST(SleeperTest, FakeSleeperWithSteadyClock) {
 TEST(SleeperTest, FakeSleeperWithCallback) {
   FakeSleeper fake_sleeper;
   milliseconds sleep_duration(0);
-  fake_sleeper.set_callback([&sleep_duration](const milliseconds& d){sleep_duration=d;});
+  fake_sleeper.set_callback([&sleep_duration](const milliseconds& d) { sleep_duration = d; });
   fake_sleeper.sleep_for(milliseconds(17));
-  EXPECT_EQ(sleep_duration,milliseconds(17));
+  EXPECT_EQ(sleep_duration, milliseconds(17));
 }
 
 }  // namespace cobalt::util

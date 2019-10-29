@@ -487,7 +487,7 @@ void EventAggregator::Run(std::unique_ptr<util::SystemClockInterface> system_clo
 }
 
 void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point system_time,
-                                              std::chrono::steady_clock::time_point steady_time) {
+                                       std::chrono::steady_clock::time_point steady_time) {
   auto current_time_t = std::chrono::system_clock::to_time_t(system_time);
   auto yesterday_utc = TimeToDayIndex(current_time_t, MetricDefinition::UTC) - 1;
   auto yesterday_local_time = TimeToDayIndex(current_time_t, MetricDefinition::LOCAL) - 1;
