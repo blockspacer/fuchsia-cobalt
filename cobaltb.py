@@ -30,6 +30,7 @@ import tempfile
 
 import tools.clang_tidy as clang_tidy
 import tools.golint as golint
+import tools.gnlint as gnlint
 import tools.test_runner as test_runner
 import tools.gitfmt as gitfmt
 
@@ -253,6 +254,7 @@ def _lint(args):
   status = 0
   status += clang_tidy.main(args.directory)
   status += golint.main()
+  status += gnlint.main()
 
   exit(status)
 

@@ -379,8 +379,8 @@ source_set("encoder_test") {
   ]
   public_deps = [
     ":encoder",
-    "test_registries:encoder_test_registry",
     "$cobalt_root/src/local_aggregation:aggregation_utils",
+    "test_registries:encoder_test_registry",
     "//third_party/googletest:gtest",
     "//third_party/protobuf:protobuf_lite",
   ]

@@ -39,7 +39,7 @@ template("metrics_registry") {
   }
 
   if (defined(invoker.customer_id)) {
-    not_needed(["global"])
+    not_needed([ "global" ])
     customer_id = invoker.customer_id
   } else if (!global) {
     # Customer is Fuchsia
@@ -47,10 +47,10 @@ template("metrics_registry") {
   }
 
   if (defined(invoker.project_id) && !defined(invoker.project_name)) {
-    not_needed(["global"])
+    not_needed([ "global" ])
     project_id = invoker.project_id
   } else if (!defined(invoker.project_id) && defined(invoker.project_name)) {
-    not_needed(["global"])
+    not_needed([ "global" ])
     project_name = invoker.project_name
   } else {
     assert(
@@ -221,12 +221,10 @@ template("metrics_registry") {
         rebase_path(source, root_build_dir),
       ]
       if (v1_project) {
-        args += [
-        "-v1_project",
-      ]
+        args += [ "-v1_project" ]
       }
     } else {
-      not_needed(["v1_project"])
+      not_needed([ "v1_project" ])
       args += [
         "-config_dir",
         rebase_path(cobalt_config_dir, root_build_dir),

@@ -61,5 +61,7 @@ go_binary("bin") {
 group("tests") {
   testonly = true
 
-  deps = [":validator_test"]
+  deps = [
+    ":validator_test",
+  ]
 }

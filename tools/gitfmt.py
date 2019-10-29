@@ -102,7 +102,7 @@ class FormattingSession(object):
         ]),
         Formatter([".h"], ["./tools/style/check-header-guards.py", "--fix"]),
         Formatter([".go"], ["gofmt", "-w"]),
-        Formatter([".gn"], ["gn", "format", "--in-place"]),
+        Formatter([".gn", ".gni"], ["gn", "format", "--in-place"]),
         Formatter([".py"], ["pyformat", "-i"]),
     ]
     # _formatted is number of files that were succesfully formatted.
