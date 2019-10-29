@@ -219,20 +219,28 @@ def check_dir(p, fix_guards=False):
       return True
     return False
 
+  bad_files = 0
   for root, dirs, paths in os.walk(p):
     # Prune dot directories like .git
     [dirs.remove(d) for d in list(dirs) if prune(d)]
     for path in paths:
-      check_file(os.path.join(root, path), fix_guards=fix_guards)
+      if not check_file(os.path.join(root, path), fix_guards=fix_guards):
+        bad_files += 1
+
+  return bad_files
 
 
 def check_collisions():
+  collisions = 0
   for header_guard, paths in all_header_guards.iteritems():
     if len(paths) == 1:
       continue
+    collisions += 1
     print('Multiple files could use %s as a header guard:' % header_guard)
     for path in paths:
       print('    %s' % path)
+
+  return collisions
 
 
 def main():
@@ -241,13 +249,20 @@ def main():
       '--fix', help='Correct wrong header guards', action='store_true')
   (arg_results, other_args) = parser.parse_known_args()
   fix_guards = arg_results.fix
+  errors = 0
   for p in other_args:
     p = os.path.realpath(os.path.abspath(p))
     if os.path.isdir(p):
-      check_dir(p, fix_guards=fix_guards)
+      errors += check_dir(p, fix_guards=fix_guards)
     else:
-      check_file(p, fix_guards=fix_guards)
-  check_collisions()
+      if not check_file(p, fix_guards=fix_guards):
+        errors += 1
+  errors += check_collisions()
+
+  if not fix_guards:
+    return errors
+  else:
+    return 0
 
 
 if __name__ == '__main__':
