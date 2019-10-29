@@ -21,6 +21,8 @@ message ReportAggregationKey {
 // A container used by the EventAggregator to store local aggregates of
 // logged events.
 message LocalAggregateStore {
+  // The version number of the LocalAggregateStore.
+  uint32 version = 2;
   // Keyed by base64-encoded serializations of ReportAggregationKey messages.
   map<string, ReportAggregates> by_report_key = 1;
 }
@@ -105,6 +107,8 @@ message AggregationConfig {
 // A container used by the EventAggregator to store the history of generated
 // Observations, indexed by report.
 message AggregatedObservationHistoryStore {
+  // The version number of the AggregatedObservationHistoryStore.
+  uint32 version = 2;
   // Keyed by base64-encoded serializations of ReportAggregationKey messages.
   map<string, AggregatedObservationHistory> by_report_key = 1;
 }

@@ -104,6 +104,12 @@ using LoggedValues =
 // aggregation configurations.
 class EventAggregatorTest : public ::testing::Test {
  protected:
+  const uint32_t kCurrentLocalAggregateStoreVersion =
+      EventAggregator::kCurrentLocalAggregateStoreVersion;
+
+  const uint32_t kCurrentObservationHistoryStoreVersion =
+      EventAggregator::kCurrentObservationHistoryStoreVersion;
+
   void SetUp() override {
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
@@ -157,6 +163,24 @@ class EventAggregatorTest : public ::testing::Test {
   Status BackUpLocalAggregateStore() { return event_aggregator_->BackUpLocalAggregateStore(); }
 
   Status BackUpObservationHistory() { return event_aggregator_->BackUpObservationHistory(); }
+
+  LocalAggregateStore MakeNewLocalAggregateStore(
+      uint32_t version = EventAggregator::kCurrentLocalAggregateStoreVersion) {
+    return event_aggregator_->MakeNewLocalAggregateStore(version);
+  }
+
+  AggregatedObservationHistoryStore MakeNewObservationHistoryStore(
+      uint32_t version = EventAggregator::kCurrentObservationHistoryStoreVersion) {
+    return event_aggregator_->MakeNewObservationHistoryStore(version);
+  }
+
+  Status MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store) {
+    return event_aggregator_->MaybeUpgradeLocalAggregateStore(store);
+  }
+
+  Status MaybeUpgradeObservationHistoryStore(AggregatedObservationHistoryStore* store) {
+    return event_aggregator_->MaybeUpgradeObservationHistoryStore(store);
+  }
 
   LocalAggregateStore CopyLocalAggregateStore() {
     return event_aggregator_->CopyLocalAggregateStore();
@@ -866,6 +890,44 @@ TEST_F(EventAggregatorTest, BackUpProtos) {
   EXPECT_EQ(kOK, BackUpObservationHistory());
   EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
   EXPECT_EQ(1, obs_history_proto_store_->write_count_);
+}
+
+// MaybeUpgradeLocalAggregateStore should return an OK status if the version is current. The store
+// should not change.
+TEST_F(EventAggregatorTest, MaybeUpgradeLocalAggregateStoreCurrent) {
+  auto store = MakeNewLocalAggregateStore();
+  std::string store_before = SerializeAsStringDeterministic(store);
+  ASSERT_EQ(kCurrentLocalAggregateStoreVersion, store.version());
+  EXPECT_EQ(kOK, MaybeUpgradeLocalAggregateStore(&store));
+  EXPECT_EQ(store_before, SerializeAsStringDeterministic(store));
+}
+
+// MaybeUpgradeLocalAggregateStore should return kInvalidArguments if it is not possible to upgrade
+// to the current version.
+TEST_F(EventAggregatorTest, MaybeUpgradeLocalAggregateStoreUnsupported) {
+  const uint32_t kFutureVersion = kCurrentLocalAggregateStoreVersion + 1;
+  auto store = MakeNewLocalAggregateStore(kFutureVersion);
+  ASSERT_EQ(kFutureVersion, store.version());
+  EXPECT_EQ(kInvalidArguments, MaybeUpgradeLocalAggregateStore(&store));
+}
+
+// MaybeUpgradeObservationHistoryStore should return an OK status if the version is current. The
+// store should not change.
+TEST_F(EventAggregatorTest, MaybeUpgradeObservationHistoryStoreCurrent) {
+  auto store = MakeNewObservationHistoryStore();
+  std::string store_before = SerializeAsStringDeterministic(store);
+  ASSERT_EQ(kCurrentObservationHistoryStoreVersion, store.version());
+  EXPECT_EQ(kOK, MaybeUpgradeObservationHistoryStore(&store));
+  EXPECT_EQ(store_before, SerializeAsStringDeterministic(store));
+}
+
+// MaybeUpgradeObservationHistoryStore should return kInvalidArguments if it is not possible to
+// upgrade to the current version.
+TEST_F(EventAggregatorTest, MaybeUpgradeObservationHistoryStoreUnsupported) {
+  const uint32_t kFutureVersion = kCurrentObservationHistoryStoreVersion + 1;
+  auto store = MakeNewObservationHistoryStore(kFutureVersion);
+  ASSERT_EQ(kFutureVersion, store.version());
+  EXPECT_EQ(kInvalidArguments, MaybeUpgradeObservationHistoryStore(&store));
 }
 
 // Tests that an empty LocalAggregateStore is updated with

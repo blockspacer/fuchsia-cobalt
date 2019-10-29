@@ -71,6 +71,11 @@ class EventAggregator {
   // this value.
   static const uint32_t kMaxAllowedAggregationWindowSize = 365;
 
+  // The current version number of the LocalAggregateStore.
+  static const uint32_t kCurrentLocalAggregateStoreVersion = 0;
+  // The current version number of the AggregatedObservationHistoryStore.
+  static const uint32_t kCurrentObservationHistoryStoreVersion = 0;
+
   // Constructs an EventAggregator.
   //
   // An EventAggregator maintains daily aggregates of Events in a
@@ -203,6 +208,38 @@ class EventAggregator {
   friend class EventAggregatorTest;
   friend class EventAggregatorWorkerTest;
   friend class logger::TestEventAggregator;
+
+  // Make a LocalAggregateStore which is empty except that its version number is set to |version|.
+  LocalAggregateStore MakeNewLocalAggregateStore(
+      uint32_t version = kCurrentLocalAggregateStoreVersion);
+
+  // Make an AggregatedObservationHistoryStore which is empty except that its version number is set
+  // to |version|.
+  AggregatedObservationHistoryStore MakeNewObservationHistoryStore(
+      uint32_t version = kCurrentObservationHistoryStoreVersion);
+
+  // The LocalAggregateStore or AggregatedObservationHistoryStore may need to be changed in ways
+  // which are structurally but not semantically backwards-compatible. In other words, the meaning
+  // to the EventAggregator of a field in the LocalAggregateStore might change. An example is that
+  // we might deprecate one field while introducing a new one.
+  //
+  // The MaybeUpgrade*Store methods allow the EventAggregator to update the contents of its stored
+  // protos from previously meaningful values to currently meaningful values. (For example, a
+  // possible implementation would move the contents of a deprecated field to the replacement
+  // field.)
+  //
+  // These methods are called by the EventAggregator constructor immediately after reading in stored
+  // protos from disk in order to ensure that proto contents have the expected semantics.
+  //
+  // The method first checks the version number of the store. If the version number is equal to
+  // |kCurrentLocalAggregateStoreVersion| or |kCurrentObservationHistoryStoreVersion|
+  // (respectively), returns an OK status. Otherwise, if it is possible to upgrade the store to the
+  // current version, does so and returns an OK status. If not, logs an error and returns
+  // kInvalidArguments. If a non-OK status is returned, the caller should discard the contents of
+  // |store| and replace it with an empty store at the current version. The MakeNew*Store() methods
+  // may be used to create the new store.
+  logger::Status MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store);
+  logger::Status MaybeUpgradeObservationHistoryStore(AggregatedObservationHistoryStore* store);
 
   // Request that the worker thread shut down and wait for it to exit. The
   // worker thread backs up the LocalAggregateStore before exiting.

@@ -147,6 +147,40 @@ RepeatedField<uint32_t> UnpackEventCodesProto(uint64_t packed_event_codes) {
 
 }  // namespace
 
+LocalAggregateStore EventAggregator::MakeNewLocalAggregateStore(uint32_t version) {
+  LocalAggregateStore store;
+  store.set_version(version);
+  return store;
+}
+
+AggregatedObservationHistoryStore EventAggregator::MakeNewObservationHistoryStore(
+    uint32_t version) {
+  AggregatedObservationHistoryStore store;
+  store.set_version(version);
+  return store;
+}
+
+// The current version is the earliest version, so no other versions are accepted.
+Status EventAggregator::MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store) {
+  uint32_t version = store->version();
+  if (version == kCurrentLocalAggregateStoreVersion) {
+    return kOK;
+  }
+  LOG(ERROR) << "Cannot upgrade LocalAggregateStore from version " << version;
+  return kInvalidArguments;
+}
+
+// The current version is the earliest version, so no other versions are accepted.
+Status EventAggregator::MaybeUpgradeObservationHistoryStore(
+    AggregatedObservationHistoryStore* store) {
+  uint32_t version = store->version();
+  if (version == kCurrentObservationHistoryStoreVersion) {
+    return kOK;
+  }
+  LOG(ERROR) << "Cannot upgrade AggregatedObservationHistoryStore from version " << version;
+  return kInvalidArguments;
+}
+
 EventAggregator::EventAggregator(const Encoder* encoder,
                                  const ObservationWriter* observation_writer,
                                  ConsistentProtoStore* local_aggregate_proto_store,
@@ -182,7 +216,7 @@ EventAggregator::EventAggregator(const Encoder* encoder,
       VLOG(4) << "No file found for local_aggregate_proto_store. Proceeding "
                  "with empty LocalAggregateStore. File will be created on "
                  "first snapshot of the LocalAggregateStore.";
-      locked->local_aggregate_store.Clear();
+      locked->local_aggregate_store = MakeNewLocalAggregateStore();
       break;
     }
     default: {
@@ -191,9 +225,17 @@ EventAggregator::EventAggregator(const Encoder* encoder,
                  << "\nError message: " << restore_aggregates_status.error_message()
                  << "\nError details: " << restore_aggregates_status.error_details()
                  << "\nProceeding with empty LocalAggregateStore.";
-      locked->local_aggregate_store.Clear();
+      locked->local_aggregate_store = MakeNewLocalAggregateStore();
     }
   }
+  if (auto status = MaybeUpgradeLocalAggregateStore(&(locked->local_aggregate_store));
+      status != kOK) {
+    LOG(ERROR) << "Failed to upgrade LocalAggregateStore to current version with status " << status
+               << ".\nProceeding with empty "
+                  "LocalAggregateStore.";
+    locked->local_aggregate_store = MakeNewLocalAggregateStore();
+  }
+
   auto restore_history_status = obs_history_proto_store_->Read(&obs_history_);
   switch (restore_history_status.error_code()) {
     case StatusCode::OK: {
@@ -203,8 +245,7 @@ EventAggregator::EventAggregator(const Encoder* encoder,
     case StatusCode::NOT_FOUND: {
       VLOG(4) << "No file found for obs_history_proto_store. Proceeding "
                  "with empty AggregatedObservationHistoryStore. File will be "
-                 "created on first snapshot of the "
-                 "AggregatedObservationHistoryStore.";
+                 "created on first snapshot of the AggregatedObservationHistoryStore.";
       break;
     }
     default: {
@@ -212,10 +253,17 @@ EventAggregator::EventAggregator(const Encoder* encoder,
                  << restore_history_status.error_code()
                  << "\nError message: " << restore_history_status.error_message()
                  << "\nError details: " << restore_history_status.error_details()
-                 << "\nProceeding with empty AggregatedObservationHistory.";
-      obs_history_ = AggregatedObservationHistoryStore();
+                 << "\nProceeding with empty AggregatedObservationHistoryStore.";
+      obs_history_ = MakeNewObservationHistoryStore();
     }
   }
+  if (auto status = MaybeUpgradeObservationHistoryStore(&obs_history_); status != kOK) {
+    LOG(ERROR)
+        << "Failed to upgrade AggregatedObservationHistoryStore to current version with status "
+        << status << ".\nProceeding with empty AggregatedObservationHistoryStore.";
+    obs_history_ = MakeNewObservationHistoryStore();
+  }
+
   steady_clock_ = std::make_unique<SteadyClock>();
 }
 
