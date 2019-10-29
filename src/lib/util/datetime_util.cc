@@ -76,7 +76,8 @@ inline uint32_t TimeToHourIndex(time_t time, typename T::TimeZonePolicy time_zon
     default:
       return UINT32_MAX;
   }
-  return time_info.tm_hour;
+  return time_info.tm_hour +
+         (kNumHoursPerDay * CalendarDateToDayIndex(TimeInfoToCalendarDate(time_info)));
 }
 
 uint32_t TimeToHourIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone) {
@@ -172,6 +173,8 @@ uint32_t DayIndexToWeekIndex(uint32_t day_index) {
   // Day zero was a Thursday which is 4 days after Sunday.
   return (day_index + 4) / kDaysPerWeek;
 }
+
+uint32_t HourIndexToDayIndex(uint32_t hour_index) { return (hour_index / kNumHoursPerDay); }
 
 uint32_t CalendarDateToWeekIndex(const CalendarDate& calendar_date) {
   return DayIndexToWeekIndex(CalendarDateToDayIndex(calendar_date));

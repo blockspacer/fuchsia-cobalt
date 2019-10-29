@@ -69,6 +69,8 @@ namespace util {
 // a leap second.
 static const uint32_t kNumUnixSecondsPerDay = 60L * 60L * 24L;
 
+static const uint32_t kNumHoursPerDay = 24L;
+
 static const uint32_t kInvalidIndex = UINT32_MAX;
 
 static const uint32_t kDefaultCalendarYear = 1970;
@@ -91,9 +93,8 @@ struct CalendarDate {
   }
 };
 
-// Returns the hour index (between 0 and 23 inclusive) relative to midnight
-// of day containing |time| in |time_zone|, or returns UINT32_MAX if |time_zone|
-// is not valid.
+// Returns the hour index relative to the beginning of the Unix epoch of the hour containing |time|
+// in |time_zone|, or returns UINT32_MAX if |time_zone| is not valid.
 uint32_t TimeToHourIndex(time_t time, MetricDefinition::TimeZonePolicy time_zone);
 
 // Returns the day index corresponding to |time| in the given |time_zone|
@@ -119,6 +120,9 @@ CalendarDate DayIndexToCalendarDate(uint32_t day_index);
 // Given a day_index returns the index of the Cobalt week epoch
 // containing that date.
 uint32_t DayIndexToWeekIndex(uint32_t day_index);
+
+// Given an hour_index, returns the index of the Cobalt day containing that hour.
+uint32_t HourIndexToDayIndex(uint32_t hour_index);
 
 // Given a CalendarDate returns the index of the Cobalt week epoch
 // containing that date. If the fields of calendar_date do not make sense as a

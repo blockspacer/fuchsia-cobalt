@@ -360,21 +360,20 @@ TEST(DatetimeUtilTest, TimeToHourIndexTest) {
   // UTC:  00:00:00 on August 6, 2019
   // PDT:  17:00:00 on August 5, 2019
   static const time_t kSummerExactHourTimestamp = 1565049600;
+  static const uint32_t kUtcSummerExactHourIndex = 434736;
+  static const uint32_t kPacificSummerExactHourIndex = 434729;
   // This unix timestamp corresponds to:
   // UTC:  13:42:07 on August 6, 2019
   // PDT:  06:42:07 on August 5, 2019
   static const time_t kSummerOffHourTimestamp = 1565098927;
+  static const uint32_t kUtcSummerOffHourIndex = 434749;
+  static const uint32_t kPacificSummerOffHourIndex = 434742;
   // This unix timestamp corresponds to:
   // UTC:  00:00:00 on January 6, 2019
   // PST:  16:00:00 on January 5, 2019
   static const time_t kWinterTimestamp = 1546732800;
-
-  static const uint32_t kUtcSummerExactHourIndex = 0;
-  static const uint32_t kUtcSummerOffHourIndex = 13;
-  static const uint32_t kUtcWinterHourIndex = 0;
-  static const uint32_t kPacificSummerExactHourIndex = 17;
-  static const uint32_t kPacificSummerOffHourIndex = 6;
-  static const uint32_t kPacificWinterHourIndex = 16;
+  static const uint32_t kUtcWinterHourIndex = 429648;
+  static const uint32_t kPacificWinterHourIndex = 429640;
 
   EXPECT_EQ(kUtcSummerExactHourIndex,
             TimeToHourIndex(kSummerExactHourTimestamp, MetricDefinition::UTC));
@@ -394,6 +393,14 @@ TEST(DatetimeUtilTest, TimeToHourIndexTest) {
               TimeToHourIndex(kSummerOffHourTimestamp, MetricDefinition::LOCAL));
     EXPECT_EQ(kPacificWinterHourIndex, TimeToHourIndex(kWinterTimestamp, MetricDefinition::LOCAL));
   }
+}
+
+TEST(DatetimeUtilTest, HourIndexToDayIndexTest) {
+  static const uint32_t kHourIndexMidnight = 434736;
+  static const uint32_t kHourIndexNoon = 434748;
+  static const uint32_t kDayIndex = 18114;
+  EXPECT_EQ(kDayIndex, HourIndexToDayIndex(kHourIndexMidnight));
+  EXPECT_EQ(kDayIndex, HourIndexToDayIndex(kHourIndexNoon));
 }
 
 TEST(DatetimeUtilTest, TimeToDayIndexTest) {
