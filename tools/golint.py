@@ -24,25 +24,49 @@ import sys
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 
-GO_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'src/bin/config_parser'),
-    os.path.join(SRC_ROOT_DIR, 'src/bin/config_change_validator'),
+SKIP_LINT_DIRS = [
+    os.path.join(SRC_ROOT_DIR, 'out'),
+    os.path.join(SRC_ROOT_DIR, 'sysroot'),
+    os.path.join(SRC_ROOT_DIR, 'third_party'),
+    os.path.join(SRC_ROOT_DIR, 'src', 'bin', 'config_parser', 'src',
+                 'source_generator', 'source_generator_test_files'),
 ]
+
+
+# Given a directory's parent path and name, returns a boolean indicating whether
+# or not the directory should be skipped for liniting.
+def should_skip_dir(parent_path, name):
+  if name.startswith('.'):
+    return True
+  full_path = os.path.join(parent_path, name)
+  for p in SKIP_LINT_DIRS:
+    if full_path.startswith(p):
+      return True
+  return False
 
 
 def main():
   status = 0
-  for dir_path in GO_DIRS:
-    print('Linting go files in %s' % dir_path)
-    p = subprocess.Popen(['gofmt', '-l', dir_path], stdout=subprocess.PIPE)
-    out = p.communicate()[0]
+  files_to_lint = []
+  for root, dirs, files in os.walk(SRC_ROOT_DIR):
+    for f in files:
+      if f.endswith('.go'):
+        files_to_lint.append(os.path.join(root, f))
 
-    if len(out) > 0:
-      status += 1
-      print('Errors found in:\n%s' % out)
+    dirs_to_skip = [dir for dir in dirs if should_skip_dir(root, dir)]
+    for d in dirs_to_skip:
+      dirs.remove(d)
+
+  print('Linting %d go files' % len(files_to_lint))
+  p = subprocess.Popen(['gofmt', '-l'] + files_to_lint)
+  p.wait()
+
+  if p.returncode != 0:
+    print('Received non-zero return code (%s)' % p.returncode)
+    status += 1
 
   return status
 
 
 if __name__ == '__main__':
-  main()
+  exit(main())
