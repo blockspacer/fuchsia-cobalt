@@ -119,6 +119,8 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
       LOG(WARNING) << name_ << ": Unable to write metadata to `" << active_file_name_ << "`";
       return kWriteFailed;
     }
+    // Swap needed to report the customer id and project id to the internal metrics.
+    metadata->Swap(stored_metadata.mutable_meta_data());
     fields->metadata_written = true;
     fields->last_written_metadata = metadata_str;
   }
