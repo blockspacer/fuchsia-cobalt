@@ -851,11 +851,17 @@ TEST_F(PerDeviceNumericCountEventLoggerTest, CheckPerDeviceNumericObsValuesSingl
       testing::per_device_numeric_stats::kConnectionFailuresMetricReportId, day_index}][1] = {
       {"component_A", 0u, 10}, {"component_A", 1u, 5}, {"component_B", 0u, 5}};
   expected_per_device_numeric_obs[{
-      testing::per_device_numeric_stats::kSettingsChangedMetricReportId, day_index}][7] = {
-      {"component_C", 0u, 10}};
+      testing::per_device_numeric_stats::kSettingsChangedWindowSizeMetricReportId, day_index}][7] =
+      {{"component_C", 0u, 10}};
   expected_per_device_numeric_obs[{
-      testing::per_device_numeric_stats::kSettingsChangedMetricReportId, day_index}][30] = {
-      {"component_C", 0u, 10}};
+      testing::per_device_numeric_stats::kSettingsChangedWindowSizeMetricReportId, day_index}][30] =
+      {{"component_C", 0u, 10}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kSettingsChangedAggregationWindowMetricReportId,
+      day_index}][7] = {{"component_C", 0u, 10}};
+  expected_per_device_numeric_obs[{
+      testing::per_device_numeric_stats::kSettingsChangedAggregationWindowMetricReportId,
+      day_index}][30] = {{"component_C", 0u, 10}};
   EXPECT_TRUE(CheckPerDeviceNumericObservations(expected_per_device_numeric_obs,
                                                 expected_report_participation_obs,
                                                 observation_store_.get(), update_recipient_.get()));
@@ -1017,7 +1023,9 @@ TEST_F(PerDeviceNumericMemoryUsageEventLoggerTest,
 // report in the registry.
 TEST_F(PerDeviceNumericCountEventLoggerTest, CheckPerDeviceNumericObsValuesMultiDay) {
   const auto start_day_index = CurrentDayIndex(MetricDefinition::UTC);
-  const auto& expected_id = testing::per_device_numeric_stats::kSettingsChangedMetricReportId;
+  std::vector<MetricReportId> expected_ids = {
+      testing::per_device_numeric_stats::kSettingsChangedWindowSizeMetricReportId,
+      testing::per_device_numeric_stats::kSettingsChangedAggregationWindowMetricReportId};
   // Form expected Observations for the 10 days of logging.
   uint32_t num_days = 10;
   std::vector<ExpectedPerDeviceNumericObservations> expected_per_device_numeric_obs(num_days);
@@ -1027,33 +1035,34 @@ TEST_F(PerDeviceNumericCountEventLoggerTest, CheckPerDeviceNumericObsValuesMulti
         expected_aggregation_params_, start_day_index + offset);
   }
   expected_per_device_numeric_obs[0] = {};
-  expected_per_device_numeric_obs[1][{expected_id, start_day_index + 1}] = {{7, {{"A", 1u, 3}}},
-                                                                            {30, {{"A", 1u, 3}}}};
-  expected_per_device_numeric_obs[2][{expected_id, start_day_index + 2}] = {
-      {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
-      {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_numeric_obs[3][{expected_id, start_day_index + 3}] = {
-      {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
-      {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
-  expected_per_device_numeric_obs[4][{expected_id, start_day_index + 4}] = {
-      {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
-      {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[5][{expected_id, start_day_index + 5}] = {
-      {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
-      {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[6][{expected_id, start_day_index + 6}] = {
-      {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
-      {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[7][{expected_id, start_day_index + 7}] = {
-      {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
-      {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
-  expected_per_device_numeric_obs[8][{expected_id, start_day_index + 8}] = {
-      {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
-      {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
-  expected_per_device_numeric_obs[9][{expected_id, start_day_index + 9}] = {
-      {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
-      {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
-
+  for (auto expected_id : expected_ids) {
+    expected_per_device_numeric_obs[1][{expected_id, start_day_index + 1}] = {{7, {{"A", 1u, 3}}},
+                                                                              {30, {{"A", 1u, 3}}}};
+    expected_per_device_numeric_obs[2][{expected_id, start_day_index + 2}] = {
+        {7, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}},
+        {30, {{"A", 1u, 6}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+    expected_per_device_numeric_obs[3][{expected_id, start_day_index + 3}] = {
+        {7, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}},
+        {30, {{"A", 1u, 9}, {"A", 2u, 3}, {"B", 1u, 2}}}};
+    expected_per_device_numeric_obs[4][{expected_id, start_day_index + 4}] = {
+        {7, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
+        {30, {{"A", 1u, 12}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+    expected_per_device_numeric_obs[5][{expected_id, start_day_index + 5}] = {
+        {7, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}},
+        {30, {{"A", 1u, 15}, {"A", 2u, 6}, {"B", 1u, 4}, {"B", 2u, 2}}}};
+    expected_per_device_numeric_obs[6][{expected_id, start_day_index + 6}] = {
+        {7, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
+        {30, {{"A", 1u, 18}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
+    expected_per_device_numeric_obs[7][{expected_id, start_day_index + 7}] = {
+        {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}},
+        {30, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 2}}}};
+    expected_per_device_numeric_obs[8][{expected_id, start_day_index + 8}] = {
+        {7, {{"A", 1u, 21}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}},
+        {30, {{"A", 1u, 24}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
+    expected_per_device_numeric_obs[9][{expected_id, start_day_index + 9}] = {
+        {7, {{"A", 1u, 21}, {"A", 2u, 9}, {"B", 1u, 6}, {"B", 2u, 4}}},
+        {30, {{"A", 1u, 27}, {"A", 2u, 12}, {"B", 1u, 8}, {"B", 2u, 4}}}};
+  }
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex(MetricDefinition::UTC);
     for (uint32_t event_code = 1; event_code < 3; event_code++) {

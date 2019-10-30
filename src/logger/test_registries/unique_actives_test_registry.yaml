@@ -50,11 +50,19 @@ metric_definitions:
     - report_name: "NetworkActivity_GlobalCount"
       report_type: SIMPLE_OCCURRENCE_COUNT
       local_privacy_noise_level: MEDIUM
-    # Report ID: 2668029569
-    - report_name: "NetworkActivity_UniqueDevices"
+    # Report ID: 3430665491
+    - report_name: "NetworkActivity_UniqueDevices_WindowSize"
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: LARGE
       window_size:
         - 1
         - 7
         - 30
+    # Report ID: 763431326
+    - report_name: "NetworkActivity_UniqueDevices_AggregationWindow"
+      report_type: UNIQUE_N_DAY_ACTIVES
+      local_privacy_noise_level: LARGE
+      aggregation_window:
+        - days: 1
+        - days: 7
+        - days: 30

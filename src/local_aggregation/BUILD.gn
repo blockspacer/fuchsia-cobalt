@@ -83,6 +83,7 @@ source_set("event_aggregator_test") {
     "event_aggregator_test.cc",
   ]
   public_deps = [
+    ":aggregation_utils",
     ":event_aggregator",
     "$cobalt_root/src/logger:logger_test_utils",
     "$cobalt_root/src/logger:testing_constants",

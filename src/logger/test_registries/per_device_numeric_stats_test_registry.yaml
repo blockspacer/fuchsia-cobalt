@@ -22,12 +22,18 @@ metric_definitions:
         1: SettingB
         2: SettingC
   reports:
-    # Report ID: 2024497361
-    - report_name: "SettingsChanged_PerDeviceCount"
+    # Report ID: 2830512035
+    - report_name: "SettingsChanged_PerDeviceCount_WindowSize"
       report_type: PER_DEVICE_NUMERIC_STATS
       window_size:
         - 7
         - 30
+    # Report ID: 4037871566
+    - report_name: "SettingsChanged_PerDeviceCount_AggregationWindow"
+      report_type: PER_DEVICE_NUMERIC_STATS
+      aggregation_window:
+        - days: 7
+        - days: 30
 
 - id: 2
   metric_name: "ConnectionFailures"

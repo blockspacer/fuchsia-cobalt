@@ -298,6 +298,7 @@ source_set("logger_test_utils") {
     "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:encrypted_message_util",
     "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/local_aggregation:aggregation_utils",
     "$cobalt_root/src/local_aggregation:cobalt_local_aggregation_proto",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",

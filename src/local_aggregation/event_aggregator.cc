@@ -56,26 +56,61 @@ bool PopulateReportKey(uint32_t customer_id, uint32_t project_id, uint32_t metri
 
 ////// Helper functions used by the constructor and UpdateAggregationConfigs().
 
-// Gets and validates the window sizes from a ReportDefinition, sorts them in increasing order, and
+// Gets and validates the window sizes and/or aggregation windows from a ReportDefinition, converts
+// window sizes to daily aggregation windows, sorts the aggregation windows in increasing order, and
 // adds them to an AggregationConfig.
-bool GetSortedWindowSizesFromReport(const ReportDefinition& report,
-                                    AggregationConfig* aggregation_config) {
-  if (report.window_size_size() == 0) {
-    LOG(ERROR) << "Report must have at least one window size.";
+//
+// TODO(pesk): Stop looking at the window_size field of |report| once all reports have been updated
+// to have OnDeviceAggregationWindows only.
+bool GetSortedAggregationWindowsFromReport(const ReportDefinition& report,
+                                           AggregationConfig* aggregation_config) {
+  if (report.window_size_size() == 0 && report.aggregation_window_size() == 0) {
+    LOG(ERROR) << "Report must have at least one window size or aggregation window.";
     return false;
   }
-  std::vector<uint32_t> window_sizes;
+  std::vector<uint32_t> aggregation_days;
+  std::vector<uint32_t> aggregation_hours;
   for (const uint32_t window_size : report.window_size()) {
-    if (window_size == 0 || window_size > EventAggregator::kMaxAllowedAggregationWindowSize) {
+    if (window_size == 0 || window_size > EventAggregator::kMaxAllowedAggregationDays) {
       LOG(ERROR) << "Window size must be positive and cannot exceed "
-                 << EventAggregator::kMaxAllowedAggregationWindowSize;
+                 << EventAggregator::kMaxAllowedAggregationDays;
       return false;
     }
-    window_sizes.push_back(window_size);
+    aggregation_days.push_back(window_size);
   }
-  std::sort(window_sizes.begin(), window_sizes.end());
-  for (auto window_size : window_sizes) {
-    aggregation_config->add_window_size(window_size);
+  for (const auto& window : report.aggregation_window()) {
+    switch (window.units_case()) {
+      case OnDeviceAggregationWindow::kDays: {
+        uint32_t num_days = window.days();
+        if (num_days == 0 || num_days > EventAggregator::kMaxAllowedAggregationDays) {
+          LOG(ERROR) << "Daily windows must contain at least 1 and no more than "
+                     << EventAggregator::kMaxAllowedAggregationDays << " days";
+          return false;
+        }
+        aggregation_days.push_back(num_days);
+        break;
+      }
+      case OnDeviceAggregationWindow::kHours: {
+        uint32_t num_hours = window.hours();
+        if (num_hours == 0 || num_hours > EventAggregator::kMaxAllowedAggregationHours) {
+          LOG(ERROR) << "Hourly windows must contain at least 1 and no more than "
+                     << EventAggregator::kMaxAllowedAggregationHours << " hours";
+          return false;
+        }
+        aggregation_hours.push_back(num_hours);
+        break;
+      }
+      default:
+        LOG(ERROR) << "Invalid OnDeviceAggregationWindow type " << window.units_case();
+    }
+  }
+  std::sort(aggregation_hours.begin(), aggregation_hours.end());
+  std::sort(aggregation_days.begin(), aggregation_days.end());
+  for (auto num_hours : aggregation_hours) {
+    *aggregation_config->add_aggregation_window() = MakeHourWindow(num_hours);
+  }
+  for (auto num_days : aggregation_days) {
+    *aggregation_config->add_aggregation_window() = MakeDayWindow(num_days);
   }
   return true;
 }
@@ -95,7 +130,7 @@ bool PopulateReportAggregates(const ProjectContext& project_context, const Metri
   *aggregation_config->mutable_project() = project_context.project();
   *aggregation_config->mutable_metric() = *project_context.GetMetric(metric.id());
   *aggregation_config->mutable_report() = report;
-  if (!GetSortedWindowSizesFromReport(report, aggregation_config)) {
+  if (!GetSortedAggregationWindowsFromReport(report, aggregation_config)) {
     return false;
   }
   switch (report.report_type()) {
@@ -145,6 +180,33 @@ RepeatedField<uint32_t> UnpackEventCodesProto(uint64_t packed_event_codes) {
   return fields;
 }
 
+// Move all items from the |window_size| field to the |aggregation_window| field
+// of each AggregationConfig, preserving the order of the items. The |aggregation_window| field
+// should be empty if the |window_size| field is nonempty. If for some reason this is not true, log
+// an error and discard the contents of |aggregation_window| and replace them with the migrated
+// |window_size| values.
+void ConvertWindowSizesToAggregationDays(LocalAggregateStore* store) {
+  for (auto [key, aggregates] : store->by_report_key()) {
+    auto config = (*store->mutable_by_report_key())[key].mutable_aggregation_config();
+    if (config->window_size_size() > 0 && config->aggregation_window_size() > 0) {
+      LOG(ERROR) << "Config has both a window_size and an aggregation_window; discarding all "
+                    "aggregation_windows";
+      config->clear_aggregation_window();
+    }
+    for (auto window_size : config->window_size()) {
+      *config->add_aggregation_window() = MakeDayWindow(window_size);
+    }
+    config->clear_window_size();
+  }
+}
+
+// Upgrades the LocalAggregateStore from version 0 to |kCurrentLocalAggregateStoreVersion|.
+Status UpgradeLocalAggregateStoreFromVersion0(LocalAggregateStore* store) {
+  ConvertWindowSizesToAggregationDays(store);
+  store->set_version(EventAggregator::kCurrentLocalAggregateStoreVersion);
+  return kOK;
+}
+
 }  // namespace
 
 LocalAggregateStore EventAggregator::MakeNewLocalAggregateStore(uint32_t version) {
@@ -160,14 +222,20 @@ AggregatedObservationHistoryStore EventAggregator::MakeNewObservationHistoryStor
   return store;
 }
 
-// The current version is the earliest version, so no other versions are accepted.
+// We can upgrade from v0, but no other versions.
 Status EventAggregator::MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store) {
   uint32_t version = store->version();
   if (version == kCurrentLocalAggregateStoreVersion) {
     return kOK;
   }
-  LOG(ERROR) << "Cannot upgrade LocalAggregateStore from version " << version;
-  return kInvalidArguments;
+  VLOG(4) << "Attempting to upgrade LocalAggregateStore from version " << version;
+  switch (version) {
+    case 0u:
+      return UpgradeLocalAggregateStoreFromVersion0(store);
+    default:
+      LOG(ERROR) << "Cannot upgrade LocalAggregateStore from version " << version;
+      return kInvalidArguments;
+  }
 }
 
 // The current version is the earliest version, so no other versions are accepted.
@@ -574,7 +642,7 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point sys
   auto yesterday_local_time = TimeToDayIndex(current_time_t, MetricDefinition::LOCAL) - 1;
 
   // Skip the tasks (but do schedule a retry) if either day index is too small.
-  uint32_t min_allowed_day_index = kMaxAllowedAggregationWindowSize + backfill_days_;
+  uint32_t min_allowed_day_index = kMaxAllowedAggregationDays + backfill_days_;
   bool skip_tasks =
       (yesterday_utc < min_allowed_day_index || yesterday_local_time < min_allowed_day_index);
   if (steady_time >= next_generate_obs_) {
@@ -607,18 +675,18 @@ void EventAggregator::DoScheduledTasks(std::chrono::system_clock::time_point sys
   }
 }
 
-////////////////////// GarbageCollect and helper functions /////////////////////
+////////////////////// GarbageCollect and helper functions //////////////////
 
 namespace {
 
-void GarbageCollectUniqueActivesReportAggregates(uint32_t day_index, uint32_t max_window_size,
+void GarbageCollectUniqueActivesReportAggregates(uint32_t day_index, uint32_t max_aggregation_days,
                                                  uint32_t backfill_days,
                                                  UniqueActivesReportAggregates* report_aggregates) {
   auto map_by_event_code = report_aggregates->mutable_by_event_code();
   for (auto event_code = map_by_event_code->begin(); event_code != map_by_event_code->end();) {
     auto map_by_day = event_code->second.mutable_by_day_index();
     for (auto day = map_by_day->begin(); day != map_by_day->end();) {
-      if (day->first <= day_index - backfill_days - max_window_size) {
+      if (day->first <= day_index - backfill_days - max_aggregation_days) {
         day = map_by_day->erase(day);
       } else {
         ++day;
@@ -632,7 +700,7 @@ void GarbageCollectUniqueActivesReportAggregates(uint32_t day_index, uint32_t ma
   }
 }
 
-void GarbageCollectNumericReportAggregates(uint32_t day_index, uint32_t max_window_size,
+void GarbageCollectNumericReportAggregates(uint32_t day_index, uint32_t max_aggregation_days,
                                            uint32_t backfill_days,
                                            PerDeviceNumericAggregates* report_aggregates) {
   auto map_by_component = report_aggregates->mutable_by_component();
@@ -641,7 +709,7 @@ void GarbageCollectNumericReportAggregates(uint32_t day_index, uint32_t max_wind
     for (auto event_code = map_by_event_code->begin(); event_code != map_by_event_code->end();) {
       auto map_by_day = event_code->second.mutable_by_day_index();
       for (auto day = map_by_day->begin(); day != map_by_day->end();) {
-        if (day->first <= day_index - backfill_days - max_window_size) {
+        if (day->first <= day_index - backfill_days - max_aggregation_days) {
           day = map_by_day->erase(day);
         } else {
           ++day;
@@ -669,13 +737,14 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc, uint32_t day_inde
   }
   CHECK_LT(day_index_utc, UINT32_MAX);
   CHECK_LT(day_index_local, UINT32_MAX);
-  CHECK_GE(day_index_utc, kMaxAllowedAggregationWindowSize + backfill_days_);
-  CHECK_GE(day_index_local, kMaxAllowedAggregationWindowSize + backfill_days_);
+  CHECK_GE(day_index_utc, kMaxAllowedAggregationDays + backfill_days_);
+  CHECK_GE(day_index_local, kMaxAllowedAggregationDays + backfill_days_);
 
   auto locked = protected_aggregate_store_.lock();
   for (const auto& [report_key, aggregates] : locked->local_aggregate_store.by_report_key()) {
     uint32_t day_index;
-    switch (aggregates.aggregation_config().metric().time_zone_policy()) {
+    const auto& config = aggregates.aggregation_config();
+    switch (config.metric().time_zone_policy()) {
       case MetricDefinition::UTC: {
         day_index = day_index_utc;
         break;
@@ -688,32 +757,39 @@ Status EventAggregator::GarbageCollect(uint32_t day_index_utc, uint32_t day_inde
         LOG_FIRST_N(ERROR, 10) << "The TimeZonePolicy of this MetricDefinition is invalid.";
         continue;
     }
-    if (aggregates.aggregation_config().window_size_size() == 0) {
-      LOG_FIRST_N(ERROR, 10) << "This ReportDefinition does not have a window size.";
+    if (aggregates.aggregation_config().aggregation_window_size() == 0) {
+      LOG_FIRST_N(ERROR, 10) << "This ReportDefinition does not have an aggregation window.";
       continue;
     }
-    uint32_t max_window_size = aggregates.aggregation_config().window_size(
-        aggregates.aggregation_config().window_size_size() - 1);
-    if (max_window_size == 0u || max_window_size > day_index) {
-      LOG_FIRST_N(ERROR, 10) << "The maximum window size " << max_window_size
+    // PopulateReportAggregates ensured that aggregation_window has at least one element, that all
+    // aggregation windows are <= kMaxAllowedAggregationDays, and that config.aggregation_window()
+    // is sorted in increasing order.
+    uint32_t max_aggregation_days = 1u;
+    const OnDeviceAggregationWindow& largest_window =
+        config.aggregation_window(config.aggregation_window_size() - 1);
+    if (largest_window.units_case() == OnDeviceAggregationWindow::kDays) {
+      max_aggregation_days = largest_window.days();
+    }
+    if (max_aggregation_days == 0u || max_aggregation_days > day_index) {
+      LOG_FIRST_N(ERROR, 10) << "The maximum number of aggregation days " << max_aggregation_days
                              << " of this ReportDefinition is out of range.";
       continue;
     }
     // For each ReportAggregates, descend to and iterate over the sub-map of
     // local aggregates keyed by day index. Keep buckets with day indices
-    // greater than |day_index| - |backfill_days_| - |max_window_size|, and
+    // greater than |day_index| - |backfill_days_| - |max_aggregation_days|, and
     // remove all buckets with smaller day indices.
     switch (aggregates.type_case()) {
       case ReportAggregates::kUniqueActivesAggregates: {
         GarbageCollectUniqueActivesReportAggregates(
-            day_index, max_window_size, backfill_days_,
+            day_index, max_aggregation_days, backfill_days_,
             locked->local_aggregate_store.mutable_by_report_key()
                 ->at(report_key)
                 .mutable_unique_actives_aggregates());
         break;
       }
       case ReportAggregates::kNumericAggregates: {
-        GarbageCollectNumericReportAggregates(day_index, max_window_size, backfill_days_,
+        GarbageCollectNumericReportAggregates(day_index, max_aggregation_days, backfill_days_,
                                               locked->local_aggregate_store.mutable_by_report_key()
                                                   ->at(report_key)
                                                   .mutable_numeric_aggregates());
@@ -733,8 +809,8 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
   }
   CHECK_LT(final_day_index_utc, UINT32_MAX);
   CHECK_LT(final_day_index_local, UINT32_MAX);
-  CHECK_GE(final_day_index_utc, kMaxAllowedAggregationWindowSize + backfill_days_);
-  CHECK_GE(final_day_index_local, kMaxAllowedAggregationWindowSize + backfill_days_);
+  CHECK_GE(final_day_index_utc, kMaxAllowedAggregationDays + backfill_days_);
+  CHECK_GE(final_day_index_local, kMaxAllowedAggregationDays + backfill_days_);
 
   // Lock, copy the LocalAggregateStore, and release the lock. Use the copy to
   // generate observations.
@@ -760,17 +836,21 @@ Status EventAggregator::GenerateObservations(uint32_t final_day_index_utc,
     }
 
     const auto& report = config.report();
-    // PopulateReportAggregates has checked that there is at least one window
-    // size and that all window sizes are positive and <=
-    // kMaxAllowedAggregationWindowSize, and has sorted the elements of
-    // config.window_size() in increasing order.
-    if (config.window_size_size() == 0u) {
-      LOG_FIRST_N(ERROR, 10) << "This ReportDefinition has no window_size.";
+    // PopulateReportAggregates ensured that aggregation_window has at least one element, that all
+    // aggregation windows are <= kMaxAllowedAggregationDays, and that config.aggregation_window()
+    // is sorted in increasing order.
+    if (config.aggregation_window_size() == 0u) {
+      LOG_FIRST_N(ERROR, 10) << "No aggregation_window found for this report.";
       continue;
     }
-    uint32_t max_window_size = config.window_size(config.window_size_size() - 1);
-    if (max_window_size == 0u || max_window_size > final_day_index) {
-      LOG_FIRST_N(ERROR, 10) << "The maximum window size " << max_window_size
+    uint32_t max_aggregation_days = 1u;
+    const OnDeviceAggregationWindow& largest_window =
+        config.aggregation_window(config.aggregation_window_size() - 1);
+    if (largest_window.units_case() == OnDeviceAggregationWindow::kDays) {
+      max_aggregation_days = largest_window.days();
+    }
+    if (max_aggregation_days == 0u || max_aggregation_days > final_day_index) {
+      LOG_FIRST_N(ERROR, 10) << "The maximum number of aggregation days " << max_aggregation_days
                              << " of this ReportDefinition is out of range.";
       continue;
     }
@@ -827,8 +907,8 @@ namespace {
 // window on which the event code occurred. Returns 0 if the event code did
 // not occur within the window.
 uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
-                                     uint32_t obs_day_index, uint32_t window_size) {
-  for (uint32_t day_index = obs_day_index - window_size + 1; day_index <= obs_day_index;
+                                     uint32_t obs_day_index, uint32_t aggregation_days) {
+  for (uint32_t day_index = obs_day_index - aggregation_days + 1; day_index <= obs_day_index;
        day_index++) {
     auto day_aggregate = daily_aggregates.by_day_index().find(day_index);
     if (day_aggregate != daily_aggregates.by_day_index().end() &&
@@ -842,15 +922,16 @@ uint32_t FirstActiveDayIndexInWindow(const DailyAggregates& daily_aggregates,
 // Given the day index of an event occurrence and the size and end date
 // of an aggregation window, returns true if the occurrence falls within
 // the window and false if not.
-bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index, uint32_t window_size) {
-  return (active_day_index <= obs_day_index && active_day_index > obs_day_index - window_size);
+bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
+                        uint32_t aggregation_days) {
+  return (active_day_index <= obs_day_index && active_day_index > obs_day_index - aggregation_days);
 }
 
 }  // namespace
 
 uint32_t EventAggregator::UniqueActivesLastGeneratedDayIndex(const std::string& report_key,
                                                              uint32_t event_code,
-                                                             uint32_t window_size) const {
+                                                             uint32_t aggregation_days) const {
   auto report_history = obs_history_.by_report_key().find(report_key);
   if (report_history == obs_history_.by_report_key().end()) {
     return 0u;
@@ -860,18 +941,18 @@ uint32_t EventAggregator::UniqueActivesLastGeneratedDayIndex(const std::string& 
   if (event_code_history == report_history->second.unique_actives_history().by_event_code().end()) {
     return 0u;
   }
-  auto window_size_history = event_code_history->second.by_window_size().find(window_size);
-  if (window_size_history == event_code_history->second.by_window_size().end()) {
+  auto window_history = event_code_history->second.by_window_size().find(aggregation_days);
+  if (window_history == event_code_history->second.by_window_size().end()) {
     return 0u;
   }
-  return window_size_history->second;
+  return window_history->second;
 }
 
 Status EventAggregator::GenerateSingleUniqueActivesObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
-    uint32_t event_code, uint32_t window_size, bool was_active) const {
-  auto encoder_result = encoder_->EncodeUniqueActivesObservation(
-      metric_ref, report, obs_day_index, event_code, was_active, MakeDayWindow(window_size));
+    uint32_t event_code, const OnDeviceAggregationWindow& window, bool was_active) const {
+  auto encoder_result = encoder_->EncodeUniqueActivesObservation(metric_ref, report, obs_day_index,
+                                                                 event_code, was_active, window);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -904,10 +985,16 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
     // Have any events ever been logged for this report and event code?
     bool found_event_code =
         (daily_aggregates != report_aggregates.unique_actives_aggregates().by_event_code().end());
-    for (uint32_t window_size : report_aggregates.aggregation_config().report().window_size()) {
-      // Skip any window size larger than
-      // kMaxAllowedAggregationWindowSize.
-      if (window_size > kMaxAllowedAggregationWindowSize) {
+    for (const auto& window : report_aggregates.aggregation_config().aggregation_window()) {
+      // Skip all hourly windows, and all daily windows which are larger than
+      // kMaxAllowedAggregationDays.
+      //
+      // TODO(pesk): Generate observations for hourly windows.
+      if (window.units_case() != OnDeviceAggregationWindow::kDays) {
+        LOG(INFO) << "Skipping unsupported aggregation window.";
+        continue;
+      }
+      if (window.days() > kMaxAllowedAggregationDays) {
         LOG(WARNING) << "GenerateUniqueActivesObservations ignoring a window "
                         "size exceeding the maximum allowed value";
         continue;
@@ -916,7 +1003,7 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
       // been generated for this report, event code, and window size. If
       // that day index is later than |final_day_index|, no Observation is
       // generated on this invocation.
-      auto last_gen = UniqueActivesLastGeneratedDayIndex(report_key, event_code, window_size);
+      auto last_gen = UniqueActivesLastGeneratedDayIndex(report_key, event_code, window.days());
       auto first_day_index = std::max(last_gen + 1, backfill_period_start);
       // The latest day index on which |event_type| is known to have
       // occurred, so far. This value will be updated as we search
@@ -925,8 +1012,7 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
       uint32_t active_day_index = 0u;
       // Iterate over the day indices |obs_day_index| for which we need
       // to generate Observations. On each iteration, generate an
-      // Observation for the window of size |window_size| ending on
-      // |obs_day_index|.
+      // Observation for the |window| ending on |obs_day_index|.
       for (uint32_t obs_day_index = first_day_index; obs_day_index <= final_day_index;
            obs_day_index++) {
         bool was_active = false;
@@ -936,17 +1022,17 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
           // forward in the window, update |active_day_index|, and generate an
           // Observation of activity or inactivity depending on the result of
           // the search.
-          if (IsActivityInWindow(active_day_index, obs_day_index, window_size)) {
+          if (IsActivityInWindow(active_day_index, obs_day_index, window.days())) {
             was_active = true;
           } else {
             active_day_index =
-                FirstActiveDayIndexInWindow(daily_aggregates->second, obs_day_index, window_size);
-            was_active = IsActivityInWindow(active_day_index, obs_day_index, window_size);
+                FirstActiveDayIndexInWindow(daily_aggregates->second, obs_day_index, window.days());
+            was_active = IsActivityInWindow(active_day_index, obs_day_index, window.days());
           }
         }
         auto status = GenerateSingleUniqueActivesObservation(
             metric_ref, &report_aggregates.aggregation_config().report(), obs_day_index, event_code,
-            window_size, was_active);
+            window, was_active);
         if (status != kOK) {
           return status;
         }
@@ -955,7 +1041,7 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
         (*(*(*obs_history_.mutable_by_report_key())[report_key]
                 .mutable_unique_actives_history()
                 ->mutable_by_event_code())[event_code]
-              .mutable_by_window_size())[window_size] = obs_day_index;
+              .mutable_by_window_size())[window.days()] = obs_day_index;
       }
     }
   }
@@ -967,7 +1053,7 @@ Status EventAggregator::GenerateUniqueActivesObservations(const MetricRef metric
 uint32_t EventAggregator::PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
                                                                 const std::string& component,
                                                                 uint32_t event_code,
-                                                                uint32_t window_size) const {
+                                                                uint32_t aggregation_days) const {
   const auto& report_history = obs_history_.by_report_key().find(report_key);
   if (report_history == obs_history_.by_report_key().end()) {
     return 0u;
@@ -985,11 +1071,11 @@ uint32_t EventAggregator::PerDeviceNumericLastGeneratedDayIndex(const std::strin
   if (event_code_history == component_history->second.by_event_code().end()) {
     return 0u;
   }
-  const auto& window_size_history = event_code_history->second.by_window_size().find(window_size);
-  if (window_size_history == event_code_history->second.by_window_size().end()) {
+  const auto& window_history = event_code_history->second.by_window_size().find(aggregation_days);
+  if (window_history == event_code_history->second.by_window_size().end()) {
     return 0u;
   }
-  return window_size_history->second;
+  return window_history->second;
 }
 
 uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
@@ -1003,10 +1089,11 @@ uint32_t EventAggregator::ReportParticipationLastGeneratedDayIndex(
 
 Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
-    const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const {
-  Encoder::Result encoder_result = encoder_->EncodePerDeviceNumericObservation(
-      metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value,
-      MakeDayWindow(window_size));
+    const std::string& component, uint32_t event_code, const OnDeviceAggregationWindow& window,
+    int64_t value) const {
+  Encoder::Result encoder_result =
+      encoder_->EncodePerDeviceNumericObservation(metric_ref, report, obs_day_index, component,
+                                                  UnpackEventCodesProto(event_code), value, window);
   if (encoder_result.status != kOK) {
     return encoder_result.status;
   }
@@ -1025,10 +1112,11 @@ Status EventAggregator::GenerateSinglePerDeviceNumericObservation(
 
 Status EventAggregator::GenerateSinglePerDeviceHistogramObservation(
     const MetricRef metric_ref, const ReportDefinition* report, uint32_t obs_day_index,
-    const std::string& component, uint32_t event_code, uint32_t window_size, int64_t value) const {
+    const std::string& component, uint32_t event_code, const OnDeviceAggregationWindow& window,
+    int64_t value) const {
   Encoder::Result encoder_result = encoder_->EncodePerDeviceHistogramObservation(
       metric_ref, report, obs_day_index, component, UnpackEventCodesProto(event_code), value,
-      MakeDayWindow(window_size));
+      window);
 
   if (encoder_result.status != kOK) {
     return encoder_result.status;
@@ -1081,41 +1169,44 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
     for (const auto& [event_code, daily_aggregates] : event_code_aggregates.by_event_code()) {
       // Populate a helper map keyed by day indices which belong to the range
       // [|backfill_period_start|, |final_day_index|]. The value at a day
-      // index is the list of window sizes, in increasing order, for which an
+      // index is the list of windows, in increasing size order, for which an
       // Observation should be generated for that day index.
-      std::map<uint32_t, std::vector<uint32_t>> window_sizes_by_obs_day;
-      for (auto window_size : report_aggregates.aggregation_config().window_size()) {
+      std::map<uint32_t, std::vector<OnDeviceAggregationWindow>> windows_by_obs_day;
+      for (const auto& window : report_aggregates.aggregation_config().aggregation_window()) {
+        if (window.units_case() != OnDeviceAggregationWindow::kDays) {
+          LOG(INFO) << "Skipping unsupported aggregation window.";
+          continue;
+        }
         auto last_gen =
-            PerDeviceNumericLastGeneratedDayIndex(report_key, component, event_code, window_size);
+            PerDeviceNumericLastGeneratedDayIndex(report_key, component, event_code, window.days());
         auto first_day_index = std::max(last_gen + 1, backfill_period_start);
         for (auto obs_day_index = first_day_index; obs_day_index <= final_day_index;
              obs_day_index++) {
-          window_sizes_by_obs_day[obs_day_index].push_back(window_size);
+          windows_by_obs_day[obs_day_index].push_back(window);
         }
       }
       // Iterate over the day indices |obs_day_index| for which we might need
       // to generate an Observation. For each day index, generate an
-      // Observation for each needed window size.
+      // Observation for each needed window.
       //
-      // More precisely, for each needed window size, iterate over the days
-      // within that window. If at least one numeric event was logged during the
-      // window, compute the aggregate of the numeric values over the window and
-      // generate a PerDeviceNumericObservation. Whether or not a numeric event
-      // was found, update the AggregatedObservationHistory for this report,
-      // component, event code, and window size with |obs_day_index| as the most
-      // recent date of Observation generation. This reflects the fact that all
-      // needed Observations were generated for the window ending on that date.
+      // More precisely, for each needed window, iterate over the days within that window. If at
+      // least one numeric event was logged during the window, compute the aggregate of the numeric
+      // values over the window and generate a PerDeviceNumericObservation. Whether or not a numeric
+      // event was found, update the AggregatedObservationHistory for this report, component, event
+      // code, and window size with |obs_day_index| as the most recent date of Observation
+      // generation. This reflects the fact that all needed Observations were generated for the
+      // window ending on that date.
       for (auto obs_day_index = backfill_period_start; obs_day_index <= final_day_index;
            obs_day_index++) {
-        const auto& window_sizes = window_sizes_by_obs_day.find(obs_day_index);
-        if (window_sizes == window_sizes_by_obs_day.end()) {
+        const auto& windows = windows_by_obs_day.find(obs_day_index);
+        if (windows == windows_by_obs_day.end()) {
           continue;
         }
         bool found_value_for_window = false;
         int64_t window_aggregate = 0;
         uint32_t num_days = 0;
-        for (auto window_size : window_sizes->second) {
-          while (num_days < window_size) {
+        for (const auto& window : windows->second) {
+          while (num_days < window.days()) {
             bool found_value_for_day = false;
             const auto& day_aggregates =
                 daily_aggregates.by_day_index().find(obs_day_index - num_days);
@@ -1159,7 +1250,7 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
             switch (report->report_type()) {
               case ReportDefinition::PER_DEVICE_NUMERIC_STATS: {
                 status = GenerateSinglePerDeviceNumericObservation(
-                    metric_ref, report, obs_day_index, component, event_code, window_size,
+                    metric_ref, report, obs_day_index, component, event_code, window,
                     window_aggregate);
                 if (status != kOK) {
                   return status;
@@ -1168,7 +1259,7 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
               }
               case ReportDefinition::PER_DEVICE_HISTOGRAM: {
                 auto status = GenerateSinglePerDeviceHistogramObservation(
-                    metric_ref, report, obs_day_index, component, event_code, window_size,
+                    metric_ref, report, obs_day_index, component, event_code, window,
                     window_aggregate);
                 if (status != kOK) {
                   return status;
@@ -1181,13 +1272,12 @@ Status EventAggregator::GenerateObsFromNumericAggregates(const MetricRef metric_
             }
           }
           // Update |obs_history_| with the latest date of Observation
-          // generation for this report, component, event code, and window
-          // size.
+          // generation for this report, component, event code, and window.
           (*(*(*(*obs_history_.mutable_by_report_key())[report_key]
                     .mutable_per_device_numeric_history()
                     ->mutable_by_component())[component]
                   .mutable_by_event_code())[event_code]
-                .mutable_by_window_size())[window_size] = obs_day_index;
+                .mutable_by_window_size())[window.days()] = obs_day_index;
         }
       }
     }

@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package cobalt;
 
+import "src/registry/aggregation_window.proto";
 import "src/registry/metric_definition.proto";
 import "src/registry/report_definition.proto";
 import "src/registry/project.proto";
@@ -102,6 +103,8 @@ message AggregationConfig {
   ReportDefinition report = 3;
   // A list of window sizes for this report, sorted in increasing order.
   repeated uint32 window_size = 4;
+  // A list of aggregation windows for this report, sorted in increasing order.
+  repeated OnDeviceAggregationWindow aggregation_window = 5;
 }
 
 // A container used by the EventAggregator to store the history of generated

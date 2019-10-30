@@ -158,8 +158,10 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 namespace per_device_numeric_stats {
 
 // MetricReportIds of the locally aggregated reports in this registry
-constexpr MetricReportId kSettingsChangedMetricReportId =
-    MetricReportId(kSettingsChangedMetricId, kSettingsChangedPerDeviceCountReportId);
+constexpr MetricReportId kSettingsChangedWindowSizeMetricReportId =
+    MetricReportId(kSettingsChangedMetricId, kSettingsChangedPerDeviceCountWindowSizeReportId);
+constexpr MetricReportId kSettingsChangedAggregationWindowMetricReportId = MetricReportId(
+    kSettingsChangedMetricId, kSettingsChangedPerDeviceCountAggregationWindowReportId);
 constexpr MetricReportId kConnectionFailuresMetricReportId =
     MetricReportId(kConnectionFailuresMetricId, kConnectionFailuresPerDeviceCountReportId);
 constexpr MetricReportId kStreamingTimeTotalMetricReportId =
@@ -175,14 +177,15 @@ constexpr MetricReportId kLedgerMemoryUsageMaxMetricReportId =
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    7,
+    8,
 
-    {kSettingsChangedMetricReportId, kConnectionFailuresMetricReportId,
-     kStreamingTimeTotalMetricReportId, kStreamingTimeMinMetricReportId,
-     kStreamingTimeMaxMetricReportId, kLoginModuleFrameRateMinMetricReportId,
-     kLedgerMemoryUsageMaxMetricReportId},
+    {kSettingsChangedWindowSizeMetricReportId, kSettingsChangedAggregationWindowMetricReportId,
+     kConnectionFailuresMetricReportId, kStreamingTimeTotalMetricReportId,
+     kStreamingTimeMinMetricReportId, kStreamingTimeMaxMetricReportId,
+     kLoginModuleFrameRateMinMetricReportId, kLedgerMemoryUsageMaxMetricReportId},
 
-    {{kSettingsChangedMetricReportId, 1},
+    {{kSettingsChangedWindowSizeMetricReportId, 1},
+     {kSettingsChangedAggregationWindowMetricReportId, 1},
      {kConnectionFailuresMetricReportId, 1},
      {kStreamingTimeTotalMetricReportId, 1},
      {kStreamingTimeMinMetricReportId, 1},
@@ -192,7 +195,8 @@ const ExpectedAggregationParams kExpectedAggregationParams = {
 
     {},
 
-    {{kSettingsChangedMetricReportId, {7, 30}},
+    {{kSettingsChangedWindowSizeMetricReportId, {7, 30}},
+     {kSettingsChangedAggregationWindowMetricReportId, {7, 30}},
      {kConnectionFailuresMetricReportId, {1}},
      {kStreamingTimeTotalMetricReportId, {1, 7}},
      {kStreamingTimeMinMetricReportId, {1, 7}},
@@ -211,26 +215,32 @@ constexpr MetricReportId kDeviceBootsMetricReportId =
     MetricReportId(kDeviceBootsMetricId, kDeviceBootsUniqueDevicesReportId);
 constexpr MetricReportId kFeaturesActiveMetricReportId =
     MetricReportId(kFeaturesActiveMetricId, kFeaturesActiveUniqueDevicesReportId);
-constexpr MetricReportId kNetworkActivityMetricReportId =
-    MetricReportId(kNetworkActivityMetricId, kNetworkActivityUniqueDevicesReportId);
+constexpr MetricReportId kNetworkActivityWindowSizeMetricReportId =
+    MetricReportId(kNetworkActivityMetricId, kNetworkActivityUniqueDevicesWindowSizeReportId);
+constexpr MetricReportId kNetworkActivityAggregationWindowMetricReportId = MetricReportId(
+    kNetworkActivityMetricId, kNetworkActivityUniqueDevicesAggregationWindowReportId);
 
 // Expected parameters of the locally aggregated reports in this registry
 const ExpectedAggregationParams kExpectedAggregationParams = {
-    21,
+    30,
 
-    {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId, kNetworkActivityMetricReportId},
+    {kDeviceBootsMetricReportId, kFeaturesActiveMetricReportId,
+     kNetworkActivityWindowSizeMetricReportId, kNetworkActivityAggregationWindowMetricReportId},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 10},
-     {kNetworkActivityMetricReportId, 9}},
+     {kNetworkActivityWindowSizeMetricReportId, 9},
+     {kNetworkActivityAggregationWindowMetricReportId, 9}},
 
     {{kDeviceBootsMetricReportId, 2},
      {kFeaturesActiveMetricReportId, 5},
-     {kNetworkActivityMetricReportId, 3}},
+     {kNetworkActivityWindowSizeMetricReportId, 3},
+     {kNetworkActivityAggregationWindowMetricReportId, 3}},
 
     {{kDeviceBootsMetricReportId, {1}},
      {kFeaturesActiveMetricReportId, {7, 30}},
-     {kNetworkActivityMetricReportId, {1, 7, 30}}}};
+     {kNetworkActivityWindowSizeMetricReportId, {1, 7, 30}},
+     {kNetworkActivityAggregationWindowMetricReportId, {1, 7, 30}}}};
 
 }  // namespace unique_actives
 

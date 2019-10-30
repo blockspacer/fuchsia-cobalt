@@ -14,6 +14,7 @@
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/encoder.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logging.h"
@@ -26,6 +27,7 @@ namespace cobalt {
 using crypto::byte;
 using crypto::hash::DIGEST_SIZE;
 using encoder::ClientSecret;
+using local_aggregation::MakeDayWindow;
 using rappor::BasicRapporEncoder;
 using util::MessageDecrypter;
 
@@ -82,13 +84,23 @@ AggregationConfig MakeAggregationConfig(const ProjectContext& project_context,
       *config.mutable_project() = project_context.project();
       *config.mutable_metric() = *metric;
       *config.mutable_report() = report;
-      std::vector<uint32_t> window_sizes;
+      std::vector<uint32_t> aggregation_days;
       for (const auto& window_size : report.window_size()) {
-        window_sizes.push_back(window_size);
+        aggregation_days.push_back(window_size);
       }
-      std::sort(window_sizes.begin(), window_sizes.end());
-      for (const auto& window_size : window_sizes) {
-        config.add_window_size(window_size);
+      for (const auto& window : report.aggregation_window()) {
+        switch (window.units_case()) {
+          case OnDeviceAggregationWindow::kDays:
+            aggregation_days.push_back(window.days());
+            break;
+          case OnDeviceAggregationWindow::kHours:
+          default:
+            continue;
+        }
+      }
+      std::sort(aggregation_days.begin(), aggregation_days.end());
+      for (const auto& num_days : aggregation_days) {
+        *config.add_aggregation_window() = MakeDayWindow(num_days);
       }
       break;
     }
