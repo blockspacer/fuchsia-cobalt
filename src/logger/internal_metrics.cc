@@ -61,6 +61,25 @@ void InternalMetricsImpl::BytesUploaded(PerDeviceBytesUploadedMetricDimensionSta
   }
 }
 
+void InternalMetricsImpl::BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus upload_status,
+                                        int64_t byte_count, uint32_t customer_id,
+                                        uint32_t project_id) {
+  if (paused_) {
+    return;
+  }
+
+  std::ostringstream component;
+  component << customer_id << '/' << project_id;
+
+  auto status = logger_->LogEventCount(kPerProjectBytesUploadedMetricId, upload_status,
+                                       component.str(), 0, byte_count);
+
+  if (status != kOK) {
+    VLOG(1) << "InternalMetricsImpl::BytesUploaded: LogEventCount() returned "
+            << "status=" << status;
+  }
+}
+
 void InternalMetricsImpl::BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status,
                                       int64_t byte_count, uint32_t customer_id,
                                       uint32_t project_id) {

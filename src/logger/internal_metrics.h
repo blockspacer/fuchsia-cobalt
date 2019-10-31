@@ -34,10 +34,15 @@ class InternalMetrics {
                             const Project& project) = 0;
 
   // cobalt_internal::metrics::per_device_bytes_uploaded is logged when the
-  // Shipping Manager attempts or succeeds to upload observations from the
+  // Clearcut Uploader attempts or succeeds to upload observations from the
   // device.
   virtual void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
                              int64_t byte_count) = 0;
+
+  // cobalt_internal::metrics::per_project_bytes_uploaded is logged when the
+  // Shipping Manager attempts or succeeds to store observations on the device.
+  virtual void BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus upload_status,
+                             int64_t byte_count, uint32_t customer_id, uint32_t project_id) = 0;
 
   // cobalt_internal::metrics::per_project_bytes_stored is logged when the
   // Observation Store attempts or succeeds to store observations on the device.
@@ -77,6 +82,9 @@ class NoOpInternalMetrics : public InternalMetrics {
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
                      int64_t byte_count) override {}
 
+  void BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus upload_status, int64_t byte_count,
+                     uint32_t customer_id, uint32_t project_id) override {}
+
   void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
                    uint32_t customer_id, uint32_t project_id) override {}
 
@@ -104,6 +112,9 @@ class InternalMetricsImpl : public InternalMetrics {
 
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
                      int64_t byte_count) override;
+
+  void BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus upload_status, int64_t byte_count,
+                     uint32_t customer_id, uint32_t project_id) override;
 
   void BytesStored(PerProjectBytesStoredMetricDimensionStatus upload_status, int64_t byte_count,
                    uint32_t customer_id, uint32_t project_id) override;

@@ -78,6 +78,32 @@ TEST_F(InternalMetricsImplTest, BytesUploadedPauseWorks) {
   ASSERT_EQ(logger.call_count(), 0);
 }
 
+TEST_F(InternalMetricsImplTest, MegaBytesUploaded) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  ASSERT_EQ(logger.call_count(), 0);
+  metrics.BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus::Attempted, kNumBytes,
+                        kCustomerId, kProjectId);
+
+  ASSERT_EQ(logger.call_count(), 1);
+  ASSERT_TRUE(logger.last_event_logged().has_count_event());
+  ASSERT_EQ(logger.last_event_logged().count_event().count(), kNumBytes);
+}
+
+TEST_F(InternalMetricsImplTest, MegaBytesUploadedPauseWorks) {
+  testing::FakeLogger logger;
+  InternalMetricsImpl metrics(&logger);
+
+  metrics.PauseLogging();
+  for (int i = 0; i < kMany; i++) {
+    metrics.BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus::Attempted, kNumBytes,
+                          kCustomerId, kProjectId);
+  }
+  metrics.ResumeLogging();
+  ASSERT_EQ(logger.call_count(), 0);
+}
+
 TEST_F(InternalMetricsImplTest, BytesStored) {
   testing::FakeLogger logger;
   InternalMetricsImpl metrics(&logger);

@@ -330,6 +330,13 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
     return util::Status::OK;
   }
 
+  for (const auto& observation_batch : envelope.batch()) {
+    const auto& metadata = observation_batch.meta_data();
+    internal_metrics_->BytesUploaded(
+        logger::per_project_bytes_uploaded_metric_dimension_status_scope::Attempted,
+        observation_batch.ByteSizeLong(), metadata.customer_id(), metadata.project_id());
+  }
+
   VLOG(5) << name() << " worker: Sending Envelope of size " << envelope_size
           << " bytes to clearcut.";
 
@@ -352,7 +359,13 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
-    // TODO(fxb/40088) add metrics on upload stats per project.
+
+    for (const auto& observation_batch : envelope.batch()) {
+      const auto& metadata = observation_batch.meta_data();
+      internal_metrics_->BytesUploaded(
+          logger::per_project_bytes_uploaded_metric_dimension_status_scope::Succeeded,
+          observation_batch.GetCachedSize(), metadata.customer_id(), metadata.project_id());
+    }
   }
   return status;
 }

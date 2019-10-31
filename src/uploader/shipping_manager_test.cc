@@ -13,6 +13,7 @@
 
 #include "src/lib/clearcut/clearcut.pb.h"
 #include "src/lib/util/posix_file_system.h"
+#include "src/logger/fake_logger.h"
 #include "src/logging.h"
 #include "src/observation_store/memory_observation_store.h"
 #include "src/observation_store/observation_store.h"
@@ -26,6 +27,8 @@ namespace cobalt::encoder {
 
 using cobalt::clearcut_extensions::LogEventExtension;
 using lib::statusor::StatusOr;
+using logger::per_project_bytes_uploaded_metric_dimension_status_scope::Succeeded;
+using logger::testing::FakeLogger;
 using observation_store::MemoryObservationStore;
 using observation_store::ObservationStore;
 using util::EncryptedMessageMaker;
@@ -142,7 +145,7 @@ class ShippingManagerTest : public ::testing::Test {
   FakeSystemData system_data_;
 
  protected:
-  std::unique_ptr<ShippingManager> shipping_manager_;
+  std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
   FakeHTTPClient* http_client_ = nullptr;
 };
 
@@ -186,6 +189,38 @@ TEST_F(ShippingManagerTest, SendOne) {
   CheckCallCount(1, 1);
 }
 
+// Performs the same thest as SendOne but makes sure the right values were logged to the internal
+// metrics object.
+TEST_F(ShippingManagerTest, SendOneLoggedMetrics) {
+  // Init with a very long time for the regular schedule interval but
+  // zero for the minimum interval so the test doesn't have to wait.
+  Init(kMaxSeconds, std::chrono::seconds::zero());
+
+  FakeLogger logger;
+  shipping_manager_->ResetInternalMetrics(&logger);
+
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+  shipping_manager_->RequestSendSoon();
+  shipping_manager_->WaitUntilIdle(kMaxSeconds);
+
+  // Same checks as the pervious test.
+  EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
+  EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
+  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  CheckCallCount(1, 1);
+
+  // Attempt and Succeed in the Shipping Manager for a project and Attempt and
+  // Succeed in Clearcut Uploader.
+  EXPECT_EQ(4, logger.call_count());
+
+  auto event = logger.last_event_logged();  // The last Succeed for an Observation Batch.
+  EXPECT_TRUE(event.has_count_event());
+  EXPECT_EQ(1, event.count_event().event_code_size());
+  EXPECT_EQ(Succeeded, event.count_event().event_code(0));
+  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.count_event().component());
+  EXPECT_LE(40, event.count_event().count());  // This is an estimate.
+}
+
 // We add two Observations, confirm that they are not immediately sent,
 // invoke RequestSendSoon, wait for the Observations to be sent, confirm
 // that they were sent together in a single Envelope.
@@ -194,11 +229,9 @@ TEST_F(ShippingManagerTest, SendTwo) {
   // zero for the minimum interval so the test doesn't have to wait.
   Init(kMaxSeconds, std::chrono::seconds::zero());
 
-  // Add two observations.
   EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
   EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
 
-  // Confirm they have not been sent.
   CheckCallCount(0, 0);
 
   // Request send soon.
@@ -212,6 +245,39 @@ TEST_F(ShippingManagerTest, SendTwo) {
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
   EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 2);
+}
+
+// Performs the same thest as SendTwo but makes sure the right values were logged to the internal
+// metrics object.
+TEST_F(ShippingManagerTest, SendTwoLoggedMetrics) {
+  Init(kMaxSeconds, std::chrono::seconds::zero());
+
+  FakeLogger logger;
+  shipping_manager_->ResetInternalMetrics(&logger);
+
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+
+  CheckCallCount(0, 0);
+  shipping_manager_->RequestSendSoon();
+  shipping_manager_->WaitUntilIdle(kMaxSeconds);
+
+  // Same checks as the pervious test.
+  EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
+  EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
+  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  CheckCallCount(1, 2);
+
+  // Attempt and Succeed in the Shipping Manager and Attempt and Succeed in Clearcut Uploader for
+  // the envelope.
+  EXPECT_EQ(4, logger.call_count());
+
+  auto event = logger.last_event_logged();  // The last Succeed for an Observation Batch.
+  EXPECT_TRUE(event.has_count_event());
+  EXPECT_EQ(1, event.count_event().event_code_size());
+  EXPECT_EQ(Succeeded, event.count_event().event_code(0));
+  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.count_event().component());
+  EXPECT_LE(2 * 40, event.count_event().count());  // This is an estimate.
 }
 
 // Trys to add an Observation that is too big. Tests that kObservationTooBig
