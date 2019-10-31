@@ -14,6 +14,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/sleeper.h"
 #include "src/lib/util/status.h"
+#include "src/logger/internal_metrics.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/statusor/statusor.h"
 
@@ -53,6 +54,11 @@ class ClearcutUploader {
   // Uploads the |log_request|  with retries.
   Status UploadEvents(LogRequest *log_request, int32_t max_retries = kMaxRetries);
 
+  // Resets the internal metrics to use the provided logger.
+  void ResetInternalMetrics(logger::LoggerInterface *internal_logger = nullptr) {
+    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
+  }
+
  private:
   // Tries once to upload |log_request|.
   Status TryUploadEvents(LogRequest *log_request, std::chrono::steady_clock::time_point deadline);
@@ -64,6 +70,8 @@ class ClearcutUploader {
 
   const std::unique_ptr<cobalt::util::SteadyClockInterface> steady_clock_;
   const std::unique_ptr<cobalt::util::SleeperInterface> sleeper_;
+
+  std::unique_ptr<logger::InternalMetrics> internal_metrics_;
 
   friend class UploaderTest;
 

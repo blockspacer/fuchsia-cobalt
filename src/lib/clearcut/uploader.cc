@@ -29,6 +29,7 @@ ClearcutUploader::ClearcutUploader(std::string url, std::unique_ptr<HTTPClient> 
       initial_backoff_(std::chrono::milliseconds(initial_backoff_millis)),
       steady_clock_(std::move(steady_clock)),
       sleeper_(std::move(sleeper)),
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(nullptr)),
       pause_uploads_until_(steady_clock_->now())  // Set this to now() so that we
                                                   // can immediately upload.
 {
@@ -91,13 +92,19 @@ Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
   // us later. Here we keep an escaped copy of the request body just in case we need to use it
   // in an error log message later.
   std::string escaped_request_body;
+  uint32_t request_body_size;  // Needed for metrics on successful requests after Post() move.
   {
     HTTPRequest request(url_);
     if (!log_request->SerializeToString(&request.body)) {
       return Status(StatusCode::INVALID_ARGUMENT,
                     "ClearcutUploader: Unable to serialize log_request to binary proto.");
     }
+
     escaped_request_body = absl::CEscape(request.body);
+    request_body_size = request.body.size();
+    internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
+                                     request_body_size);
+
     VLOG(5) << "ClearcutUploader: Sending POST request to " << url_ << ".";
     auto response_future = client_->Post(std::move(request), deadline);
 
@@ -157,6 +164,9 @@ Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
         return Status(StatusCode::UNKNOWN, stauts_string_stream.str());
     }
   }
+
+  internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
+                                   request_body_size);
 
   LogResponse log_response;
   if (!log_response.ParseFromString(response.response)) {

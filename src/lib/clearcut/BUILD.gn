@@ -26,6 +26,7 @@ source_set("clearcut") {
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/lib/util:sleeper",
     "$cobalt_root/src/lib/util:status",
+    "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/third_party/statusor:statusor",
     "//third_party/abseil-cpp",
   ]

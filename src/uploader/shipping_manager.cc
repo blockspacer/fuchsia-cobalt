@@ -292,6 +292,11 @@ void ClearcutV1ShippingManager::AddClearcutDestination(
   clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
 }
 
+void ClearcutV1ShippingManager::ResetInternalMetrics(logger::LoggerInterface* internal_logger) {
+  internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
+  clearcut_->ResetInternalMetrics(internal_logger);
+}
+
 std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
   auto envelope = envelope_to_send->GetEnvelope();
@@ -328,9 +333,6 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
   VLOG(5) << name() << " worker: Sending Envelope of size " << envelope_size
           << " bytes to clearcut.";
 
-  internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Attempted,
-                                   envelope_size);
-
   lib::clearcut::LogRequest request;
   request.set_log_source(clearcut_destination.log_source_id_);
   request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
@@ -350,8 +352,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
-    internal_metrics_->BytesUploaded(logger::PerDeviceBytesUploadedMetricDimensionStatus::Succeeded,
-                                     envelope_size);
+    // TODO(fxb/40088) add metrics on upload stats per project.
   }
   return status;
 }

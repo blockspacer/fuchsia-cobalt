@@ -252,10 +252,9 @@ class ClearcutV1ShippingManager : public ShippingManager {
   void AddClearcutDestination(util::EncryptedMessageMaker* encrypt_to_shuffler,
                               int32_t log_source_id);
 
-  // Resets the internal metrics to use the provided logger.
-  void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr) {
-    internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
-  }
+  // Resets the internal metrics for the ShippingManager and the ClearcutUploader to use the
+  // provided logger.
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr);
 
  private:
   std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
