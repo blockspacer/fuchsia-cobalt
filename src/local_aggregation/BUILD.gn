@@ -31,6 +31,8 @@ source_set("aggregation_utils") {
   public_deps = [
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("event_aggregator") {
@@ -75,6 +77,8 @@ source_set("aggregation_utils_test") {
     ":aggregation_utils",
     "//third_party/googletest:gtest",
   ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("event_aggregator_test") {
