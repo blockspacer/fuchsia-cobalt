@@ -257,6 +257,19 @@ class ClearcutV1ShippingManager : public ShippingManager {
                             size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
                             std::string api_key = "cobalt-default-api-key");
 
+  // Create a shipping manager that can upload data to Clearcut.
+  //
+  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to
+  // use when doing so.
+  //
+  // TODO(camrdale): remove this once the log source transition is complete.
+  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
+                            observation_store::ObservationStore* observation_store,
+                            std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+                            logger::LoggerInterface* internal_logger = nullptr,
+                            size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
+                            std::string api_key = "cobalt-default-api-key");
+
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
   ~ClearcutV1ShippingManager() override = default;

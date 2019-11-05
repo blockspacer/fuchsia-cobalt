@@ -301,6 +301,16 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
       api_key_(std::move(api_key)) {}
 
+ClearcutV1ShippingManager::ClearcutV1ShippingManager(
+    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
+    : ShippingManager(upload_scheduler, observation_store, nullptr),
+      max_attempts_per_upload_(max_attempts_per_upload),
+      clearcut_(std::move(clearcut)),
+      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
+      api_key_(std::move(api_key)) {}
+
 void ClearcutV1ShippingManager::AddClearcutDestination(
     util::EncryptedMessageMaker* encrypt_to_shuffler, int32_t log_source_id) {
   clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
