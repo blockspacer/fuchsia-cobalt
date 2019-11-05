@@ -61,8 +61,13 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   //
   // observation_store: The ObservationStore from which Envelopes will be
   // retrieved.
+  //
+  // encrypt_to_analyzer: An EncryptedMessageMaker that will be used to encrypt the observations in
+  // an envelope before sending. TODO(zmbush): add nullptr check once storing unencrypted
+  // observations is enabled.
   ShippingManager(const UploadScheduler& upload_scheduler,
-                  observation_store::ObservationStore* observation_store);
+                  observation_store::ObservationStore* observation_store,
+                  util::EncryptedMessageMaker* encrypt_to_analyzer);
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
@@ -118,6 +123,8 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
  private:
   friend class ClearcutV1ShippingManager;
   friend class LocalShippingManager;
+
+  util::EncryptedMessageMaker* encrypt_to_analyzer_;
 
   // Has the ShippingManager been shut down?
   bool shut_down() const;
@@ -213,11 +220,23 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 // is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
-  // Create a shipping manager that uploads data to a Clearcut log source.
+  // DEPRECATED
+  // TODO(crbug.com/fuchsia/3752): Delete this after it is no longer used.
   ClearcutV1ShippingManager(
       const UploadScheduler& upload_scheduler,
       observation_store::ObservationStore* observation_store,
       util::EncryptedMessageMaker* encrypt_to_shuffler,
+      std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+      int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
+      logger::LoggerInterface* internal_logger = nullptr,
+      size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
+      std::string api_key = "cobalt-default-api-key");
+
+  ClearcutV1ShippingManager(
+      const UploadScheduler& upload_scheduler,
+      observation_store::ObservationStore* observation_store,
+      util::EncryptedMessageMaker* encrypt_to_shuffler,
+      util::EncryptedMessageMaker* encrypt_to_analyzer,
       std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
       int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
       logger::LoggerInterface* internal_logger = nullptr,
@@ -232,6 +251,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
   // TODO(camrdale): remove this once the log source transition is complete.
   ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
                             observation_store::ObservationStore* observation_store,
+                            util::EncryptedMessageMaker* encrypt_to_analyzer,
                             std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
                             logger::LoggerInterface* internal_logger = nullptr,
                             size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
@@ -284,6 +304,10 @@ class ClearcutV1ShippingManager : public ShippingManager {
 class LocalShippingManager : public ShippingManager {
  public:
   explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                std::string output_file_path, std::unique_ptr<util::FileSystem> fs);
+
+  explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                util::EncryptedMessageMaker* encrypt_to_analyzer,
                                 std::string output_file_path, std::unique_ptr<util::FileSystem> fs);
 
   // The destructor will stop the worker thread and wait for it to stop

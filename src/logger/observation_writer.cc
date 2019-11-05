@@ -22,10 +22,10 @@ Status ObservationWriter::WriteObservation(const Observation2 &observation,
     LOG(ERROR) << "Encryption of an Observation failed.";
     return kOther;
   }
-  auto store_status = observation_store_->AddEncryptedObservation(std::move(encrypted_observation),
-                                                                  std::move(metadata));
+  auto store_status =
+      observation_store_->StoreObservation(std::move(encrypted_observation), std::move(metadata));
   if (store_status != ObservationStoreWriterInterface::kOk) {
-    LOG_FIRST_N(ERROR, 10) << "ObservationStore::AddEncryptedObservation() failed with status "
+    LOG_FIRST_N(ERROR, 10) << "ObservationStore::StoreObservation() failed with status "
                            << store_status;
     return kOther;
   }

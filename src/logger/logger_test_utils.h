@@ -89,15 +89,19 @@ using ExpectedReportParticipationObservations = std::set<std::pair<MetricReportI
 // A mock ObservationStore.
 class FakeObservationStore : public ::cobalt::observation_store::ObservationStoreWriterInterface {
  public:
-  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
-                                      std::unique_ptr<ObservationMetadata> metadata) override {
+  using ::cobalt::observation_store::ObservationStoreWriterInterface::StoreObservation;
+
+  StoreStatus StoreObservation(
+      std::unique_ptr<::cobalt::observation_store::StoredObservation> message,
+      std::unique_ptr<ObservationMetadata> metadata) override {
     messages_received.emplace_back(std::move(message));
     metadata_received.emplace_back(std::move(metadata));
     num_observations_added_++;
     return kOk;
   }
 
-  std::vector<std::unique_ptr<EncryptedMessage>> messages_received;     // NOLINT
+  std::vector<std::unique_ptr<::cobalt::observation_store::StoredObservation>>
+      messages_received;                                                // NOLINT
   std::vector<std::unique_ptr<ObservationMetadata>> metadata_received;  // NOLINT
 
   size_t num_observations_added() { return num_observations_added_; }

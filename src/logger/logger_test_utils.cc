@@ -194,17 +194,22 @@ bool FetchObservations(std::vector<Observation2>* observations,
     if (isNull) {
       return false;
     }
-    bool successfullyDeserialized = message_decrypter.DecryptMessage(
-        *(observation_store->messages_received[i]), &(observations->at(i)));
-    EXPECT_TRUE(successfullyDeserialized);
-    if (!successfullyDeserialized) {
+    const auto& message = *observation_store->messages_received[i];
+    if (message.has_encrypted()) {
+      bool successfullyDeserialized =
+          message_decrypter.DecryptMessage(message.encrypted(), &(observations->at(i)));
+      EXPECT_TRUE(successfullyDeserialized);
+      if (!successfullyDeserialized) {
+        return false;
+      }
+    } else if (message.has_unencrypted()) {
+      observations->at(i) = message.unencrypted();
+    } else {
+      // Saw unexpected message type.
       return false;
     }
     bool has_random_id = !(observations->at(i).random_id().empty());
     EXPECT_TRUE(has_random_id);
-    if (!successfullyDeserialized) {
-      return false;
-    }
   }
   return true;
 }
@@ -261,17 +266,22 @@ bool FetchAggregatedObservations(std::vector<Observation2>* observations,
     if (isNull) {
       return false;
     }
-    bool successfullyDeserialized = message_decrypter.DecryptMessage(
-        *(observation_store->messages_received[i]), &(observations->at(i)));
-    EXPECT_TRUE(successfullyDeserialized);
-    if (!successfullyDeserialized) {
+    const auto& message = *observation_store->messages_received[i];
+    if (message.has_encrypted()) {
+      bool successfullyDeserialized =
+          message_decrypter.DecryptMessage(message.encrypted(), &(observations->at(i)));
+      EXPECT_TRUE(successfullyDeserialized);
+      if (!successfullyDeserialized) {
+        return false;
+      }
+    } else if (message.has_unencrypted()) {
+      observations->at(i) = message.unencrypted();
+    } else {
+      // Saw unexpected message type.
       return false;
     }
     bool has_random_id = !(observations->at(i).random_id().empty());
     EXPECT_TRUE(has_random_id);
-    if (!successfullyDeserialized) {
-      return false;
-    }
   }
   // Check that all expected Observations have been found.
   for (auto iter = expected_num_obs_by_id.begin(); iter != expected_num_obs_by_id.end(); iter++) {

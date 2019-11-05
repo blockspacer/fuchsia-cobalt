@@ -22,8 +22,9 @@ class MemoryObservationStore : public ObservationStore {
                          size_t max_bytes_total,
                          logger::LoggerInterface* internal_logger = nullptr);
 
-  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
-                                      std::unique_ptr<ObservationMetadata> metadata) override;
+  using ObservationStore::StoreObservation;
+  StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
+                               std::unique_ptr<ObservationMetadata> metadata) override;
   std::unique_ptr<EnvelopeHolder> TakeNextEnvelopeHolder() override;
   void ReturnEnvelopeHolder(std::unique_ptr<EnvelopeHolder> envelopes) override;
 

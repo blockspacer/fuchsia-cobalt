@@ -494,6 +494,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
   }
   auto shipping_manager = std::make_unique<ClearcutV1ShippingManager>(
       upload_scheduler, observation_store.get(), envelope_encrypter.get(),
+      observation_encrypter.get(),
       std::make_unique<lib::clearcut::ClearcutUploader>(
           FLAGS_clearcut_endpoint, std::make_unique<lib::clearcut::CurlHTTPClient>()));
   shipping_manager->Start();

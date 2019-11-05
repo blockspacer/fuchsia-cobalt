@@ -38,8 +38,10 @@ grpc::Status CobaltStatusToGrpcStatus(const util::Status& status) {
 }  // namespace
 
 ShippingManager::ShippingManager(const UploadScheduler& upload_scheduler,
-                                 ObservationStore* observation_store)
-    : upload_scheduler_(upload_scheduler),
+                                 ObservationStore* observation_store,
+                                 util::EncryptedMessageMaker* encrypt_to_analyzer)
+    : encrypt_to_analyzer_(encrypt_to_analyzer),
+      upload_scheduler_(upload_scheduler),
       next_scheduled_send_time_(std::chrono::system_clock::now() + upload_scheduler_.Interval()),
       protected_fields_(observation_store) {}
 
@@ -272,16 +274,28 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     util::EncryptedMessageMaker* encrypt_to_shuffler,
     std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
-    : ClearcutV1ShippingManager(upload_scheduler, observation_store, std::move(clearcut),
-                                internal_logger, max_attempts_per_upload, std::move(api_key)) {
-  clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
+    : ClearcutV1ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler, nullptr,
+                                std::move(clearcut), log_source_id, internal_logger,
+                                max_attempts_per_upload, std::move(api_key)) {}
+
+ClearcutV1ShippingManager::ClearcutV1ShippingManager(
+    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+    util::EncryptedMessageMaker* encrypt_to_shuffler,
+    util::EncryptedMessageMaker* encrypt_to_analyzer,
+    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
+    : ClearcutV1ShippingManager(upload_scheduler, observation_store, encrypt_to_analyzer,
+                                std::move(clearcut), internal_logger, max_attempts_per_upload,
+                                std::move(api_key)) {
+  AddClearcutDestination(encrypt_to_shuffler, log_source_id);
 }
 
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+    util::EncryptedMessageMaker* encrypt_to_analyzer,
     std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
-    : ShippingManager(upload_scheduler, observation_store),
+    : ShippingManager(upload_scheduler, observation_store, encrypt_to_analyzer),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
@@ -299,7 +313,7 @@ void ClearcutV1ShippingManager::ResetInternalMetrics(logger::LoggerInterface* in
 
 std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
-  auto envelope = envelope_to_send->GetEnvelope();
+  auto envelope = envelope_to_send->GetEnvelope(encrypt_to_analyzer_);
   envelope.set_api_key(api_key_);
 
   bool error_occurred = false;
@@ -391,8 +405,15 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
 LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* observation_store,
                                            std::string output_file_path,
                                            std::unique_ptr<util::FileSystem> fs)
+    : LocalShippingManager(observation_store, nullptr, std::move(output_file_path), std::move(fs)) {
+}
+
+LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                           util::EncryptedMessageMaker* encrypt_to_analyzer,
+                                           std::string output_file_path,
+                                           std::unique_ptr<util::FileSystem> fs)
     : ShippingManager({std::chrono::seconds::zero(), std::chrono::seconds::zero()},
-                      observation_store),
+                      observation_store, encrypt_to_analyzer),
       output_file_path_(std::move(output_file_path)),
       fs_(std::move(fs)) {
   CHECK(fs_);
@@ -400,7 +421,7 @@ LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* 
 
 std::unique_ptr<EnvelopeHolder> LocalShippingManager::SendEnvelopeToBackend(
     std::unique_ptr<EnvelopeHolder> envelope_to_send) {
-  const Envelope& envelope = envelope_to_send->GetEnvelope();
+  const Envelope& envelope = envelope_to_send->GetEnvelope(encrypt_to_analyzer_);
 
   VLOG(5) << name() << " worker: Saving Envelope of size " << envelope_to_send->Size()
           << " bytes to local file.";

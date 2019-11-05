@@ -75,9 +75,16 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
   }
 }
 
-ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
-    std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata) {
-  TRACE_DURATION("cobalt_core", "FileObservationStore::AddEncryptedObservation");
+ObservationStore::StoreStatus FileObservationStore::StoreObservation(
+    std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
+  TRACE_DURATION("cobalt_core", "FileObservationStore::StoreObservation");
+  if (!observation->has_encrypted()) {
+    LOG(WARNING) << "FileObservationStore does not yet support unencrypted observations";
+    return kWriteFailed;
+  }
+
+  auto message = observation->mutable_encrypted();
+
   auto fields = protected_fields_.lock();
 
   // "+1" below is for the |scheme| field of EncryptedMessage.
@@ -95,12 +102,12 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
 
   if (obs_size > max_bytes_per_observation_) {
     LOG(WARNING) << "An observation that was too big was passed in to "
-                    "FileObservationStore::AddEncryptedObservation(): "
+                    "FileObservationStore::StoreObservation(): "
                  << obs_size;
     return kObservationTooBig;
   }
 
-  VLOG(6) << name_ << ": AddEncryptedObservation() metric=(" << metadata->customer_id() << ","
+  VLOG(6) << name_ << ": StoreObservation() metric=(" << metadata->customer_id() << ","
           << metadata->project_id() << "," << metadata->metric_id() << "), size=" << obs_size
           << ".";
 
@@ -126,7 +133,7 @@ ObservationStore::StoreStatus FileObservationStore::AddEncryptedObservation(
   }
 
   FileObservationStoreRecord stored_message;
-  stored_message.mutable_encrypted_observation()->Swap(message.get());
+  stored_message.mutable_encrypted_observation()->Swap(message);
   if (!google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_message, active_file)) {
     LOG(WARNING) << "Unable to write encrypted_observation to `" << active_file_name_ << "`";
     return kWriteFailed;
@@ -341,7 +348,8 @@ void FileObservationStore::FileEnvelopeHolder::MergeWith(
   envelope_read_ = false;
 }
 
-const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope() {
+const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope(
+    util::EncryptedMessageMaker * /*encrypter*/) {
   if (envelope_read_) {
     return envelope_;
   }

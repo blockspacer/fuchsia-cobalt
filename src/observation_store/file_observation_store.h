@@ -66,7 +66,7 @@ class FileObservationStore : public ObservationStore {
     ~FileEnvelopeHolder() override;
 
     void MergeWith(std::unique_ptr<EnvelopeHolder> container) override;
-    const Envelope &GetEnvelope() override;
+    const Envelope &GetEnvelope(util::EncryptedMessageMaker *encrypter) override;
     size_t Size() override;
     const std::set<std::string> &file_names() { return file_names_; }
     void clear() { file_names_.clear(); }
@@ -123,8 +123,9 @@ class FileObservationStore : public ObservationStore {
                        std::string root_directory, std::string name = "FileObservationStore",
                        logger::LoggerInterface *internal_logger = nullptr);
 
-  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
-                                      std::unique_ptr<ObservationMetadata> metadata) override;
+  using ObservationStore::StoreObservation;
+  StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
+                               std::unique_ptr<ObservationMetadata> metadata) override;
   std::unique_ptr<EnvelopeHolder> TakeNextEnvelopeHolder() override;
   void ReturnEnvelopeHolder(std::unique_ptr<EnvelopeHolder> envelopes) override;
 

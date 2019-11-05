@@ -11,7 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/logger_interface.h"
+#include "src/observation_store/observation_store_internal.pb.h"
 #include "src/pb/envelope.pb.h"
 #include "src/pb/observation.pb.h"
 #include "src/pb/observation_batch.pb.h"
@@ -27,7 +29,7 @@ class ObservationStoreWriterInterface {
   virtual ~ObservationStoreWriterInterface() = default;
 
   enum StoreStatus {
-    // AddEncryptedObservation() succeeded.
+    // StoreObservation() succeeded.
     kOk = 0,
     // The Observation was not added to the store because it is too big.
     kObservationTooBig,
@@ -39,24 +41,45 @@ class ObservationStoreWriterInterface {
     kWriteFailed,
   };
 
-  virtual StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
-                                              std::unique_ptr<ObservationMetadata> metadata) = 0;
+  // StoreObservation takes a (possibly encrypted) observation, and its associated metadata and
+  // stores it in the store.
+  //
+  // The three variants below represent storing a definitely encrypted observation
+  // (EncyrptedMessage), storing a definitely unenrcypted message (Observation2) and storing a
+  // possibly encrypted message (StoredObservation).
+  //
+  // The first two are convenience methods that wrap around the third.
+
+  StoreStatus StoreObservation(std::unique_ptr<EncryptedMessage> observation,
+                               std::unique_ptr<ObservationMetadata> metadata) {
+    auto obs = std::make_unique<StoredObservation>();
+    obs->set_allocated_encrypted(observation.release());
+    return StoreObservation(std::move(obs), std::move(metadata));
+  }
+
+  StoreStatus StoreObservation(std::unique_ptr<Observation2> observation,
+                               std::unique_ptr<ObservationMetadata> metadata) {
+    auto obs = std::make_unique<StoredObservation>();
+    obs->set_allocated_unencrypted(observation.release());
+    return StoreObservation(std::move(obs), std::move(metadata));
+  }
+
+  virtual StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
+                                       std::unique_ptr<ObservationMetadata> metadata) = 0;
 };
 
-// ObservationStore is an abstract interface to an underlying store of encrypted
-// observations and their metadata. These are organized within the store into
-// Envelopes. Individual (encrypted observation, metadata) pairs are added
-// one-at-a-time via the method AddEncryptedObservation(). These pairs are
-// pooled together and will eventually be combined into an Envelope. These
-// Envelopes are then collected into a list, and will be returned one-at-a-time
-// from calls to TakeNextEnvelopeHolder(). If there are no envelopes available
-// to return, TakeNextEnvelopeHolder() will return nullptr.
+// ObservationStore is an abstract interface to an underlying store of encrypted observations and
+// their metadata. These are organized within the store into Envelopes. Individual (encrypted
+// observation, metadata) pairs are added one-at-a-time via the method StoreObservation(). These
+// pairs are pooled together and will eventually be combined into an Envelope. These Envelopes are
+// then collected into a list, and will be returned one-at-a-time from calls to
+// TakeNextEnvelopeHolder(). If there are no envelopes available to return, TakeNextEnvelopeHolder()
+// will return nullptr.
 //
-// The EnvelopeHolders that are returned from this method should be treated as
-// "owned" by the caller. When the EnvelopeHolder is destroyed, its underlying
-// data is also deleted. If the underlying data should not be deleted (e.g. if
-// the upload failed), the EnvelopeHolder should be placed back into the
-// ObservationStore using the ReturnEnvelopeHolder() method.
+// The EnvelopeHolders that are returned from this method should be treated as "owned" by the
+// caller. When the EnvelopeHolder is destroyed, its underlying data is also deleted. If the
+// underlying data should not be deleted (e.g. if the upload failed), the EnvelopeHolder should be
+// placed back into the ObservationStore using the ReturnEnvelopeHolder() method.
 class ObservationStore : public ObservationStoreWriterInterface {
  public:
   // EnvelopeHolder holds a reference to a single Envelope and its underlying
@@ -77,10 +100,16 @@ class ObservationStore : public ObservationStoreWriterInterface {
     // without deleting any underlying data.
     virtual void MergeWith(std::unique_ptr<EnvelopeHolder> other) = 0;
 
-    // Returns a const reference to the Envelope owned by this EnvelopeHolder.
-    // This is not necessarily a cheap operation and may involve reading from
-    // disk.
-    virtual const Envelope& GetEnvelope() = 0;
+    // Returns a const reference to the Envelope owned by this EnvelopeHolder.  This is not
+    // necessarily a cheap operation and may involve reading from disk or encrypting.
+    //
+    // |encrypter| Is used to encrypt observations that were not encrypted when they were added to
+    // the store. It should not be null. (n.b. It is possible that observations were added to the
+    // store with a different EncryptedMessageMaker, in this case, the envelope that is produced
+    // will have observations encrypted with two (or more) different EncryptedMessageMakers.)
+    //
+    // TODO(fxb/3842): Make ObservationStore *only* store unencrypted observations.
+    virtual const Envelope& GetEnvelope(util::EncryptedMessageMaker* encrypter) = 0;
 
     // Returns an estimated size on the wire of the resulting Envelope owned by
     // thes EnvelopeHolder.
@@ -91,20 +120,17 @@ class ObservationStore : public ObservationStoreWriterInterface {
     EnvelopeHolder& operator=(const EnvelopeHolder&) = delete;
   };
 
-  // max_bytes_per_observation. AddEncryptedObservation() will return
-  // kObservationTooBig if the given encrypted Observation's serialized size is
-  // bigger than this.
+  // max_bytes_per_observation. StoreObservation() will return kObservationTooBig if the given
+  // encrypted Observation's serialized size is bigger than this.
   //
-  // max_bytes_per_envelope. When pooling together observations into an
-  // Envelope, the ObservationStore will try not to form envelopes larger than
-  // this size. This should be used to avoid sending messages over gRPC or HTTP
-  // that are too large.
+  // max_bytes_per_envelope. When pooling together observations into an Envelope, the
+  // ObservationStore will try not to form envelopes larger than this size. This should be used to
+  // avoid sending messages over gRPC or HTTP that are too large.
   //
-  // max_bytes_total. This is the maximum size of the Observations in the store.
-  // If the size of the accumulated Observation data reaches this value then
-  // ObservationStore will not accept any more Observations:
-  // AddEncryptedObservation() will return kStoreFull, until enough observations
-  // are removed from the store.
+  // max_bytes_total. This is the maximum size of the Observations in the store.  If the size of the
+  // accumulated Observation data reaches this value then ObservationStore will not accept any more
+  // Observations: StoreObservation() will return kStoreFull, until enough observations are removed
+  // from the store.
   //
   // REQUIRED:
   // 0 <= max_bytes_per_observation <= max_bytes_per_envelope <= max_bytes_total
@@ -117,12 +143,13 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // Returns a human-readable name for the StoreStatus.
   static std::string StatusDebugString(StoreStatus status);
 
-  // Adds the given (encrypted observation, metadata) pair into the store. If
-  // this causes the pool of observations to exceed max_bytes_per_envelope, then
-  // the ObservationStore will construct an EnvelopeHolder to be returned from
-  // TakeNextEnvelopeHolder().
-  StoreStatus AddEncryptedObservation(std::unique_ptr<EncryptedMessage> message,
-                                      std::unique_ptr<ObservationMetadata> metadata) override = 0;
+  using ObservationStoreWriterInterface::StoreObservation;
+
+  // Adds the given (StoredObservation, ObservationMetadata) pair into the store. If this causes the
+  // pool of observations to exceed max_bytes_per_envelope, then the ObservationStore will construct
+  // an EnvelopeHolder to be returned from TakeNextEnvelopeHolder().
+  StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
+                               std::unique_ptr<ObservationMetadata> metadata) override = 0;
 
   // Returns the next EnvelopeHolder from the list of EnvelopeHolders in the
   // store. If there are no more EnvelopeHolders available, this will return

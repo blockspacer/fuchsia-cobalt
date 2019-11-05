@@ -26,7 +26,9 @@ const uint32_t kUtcDayIndex = 17137;
 
 class EnvelopeMakerTest : public ::testing::Test {
  public:
-  EnvelopeMakerTest() : envelope_maker_(new EnvelopeMaker()) {}
+  EnvelopeMakerTest()
+      : envelope_maker_(new EnvelopeMaker()),
+        encrypt_(util::EncryptedMessageMaker::MakeUnencrypted()) {}
 
   // Returns the current value of envelope_maker_ and resets envelope_maker_
   // to a new EnvelopeMaker constructed using the given optional arguments.
@@ -74,14 +76,15 @@ class EnvelopeMakerTest : public ::testing::Test {
     EXPECT_EQ(expected_size_change, size_after_add - size_before_add);
 
     // Check the number of batches currently in the envelope.
-    ASSERT_EQ(expected_num_batches, envelope_maker_->GetEnvelope().batch_size());
+    ASSERT_EQ(expected_num_batches, envelope_maker_->GetEnvelope(encrypt_.get()).batch_size());
 
     if (expected_status != ObservationStore::kOk) {
       return;
     }
 
     // Check the ObservationMetadata of the expected batch.
-    const auto& batch = envelope_maker_->GetEnvelope().batch(expected_this_batch_index);
+    const auto& batch =
+        envelope_maker_->GetEnvelope(encrypt_.get()).batch(expected_this_batch_index);
     EXPECT_EQ(kCustomerId, batch.meta_data().customer_id());
     EXPECT_EQ(kProjectId, batch.meta_data().project_id());
     EXPECT_EQ(metric_id, batch.meta_data().metric_id());
@@ -162,7 +165,7 @@ class EnvelopeMakerTest : public ::testing::Test {
                         expected_batch1_size);
     expected_batch1_size += 10;
 
-    const Envelope& envelope = envelope_maker_->GetEnvelope();
+    const Envelope& envelope = envelope_maker_->GetEnvelope(encrypt_.get());
     EXPECT_EQ(2, envelope.batch_size());
     for (size_t i = 0; i < 2; i++) {
       EXPECT_EQ(i + 1, envelope.batch(i).meta_data().metric_id());
@@ -173,6 +176,7 @@ class EnvelopeMakerTest : public ::testing::Test {
 
  protected:
   std::unique_ptr<EnvelopeMaker> envelope_maker_;
+  std::unique_ptr<util::EncryptedMessageMaker> encrypt_;
 };
 
 // We perform DoTest() three times with a Clear() between each turn.
@@ -228,14 +232,14 @@ TEST_F(EnvelopeMakerTest, MergeWith) {
 
   // EnvelopeMaker 1 should have three batches for Metrics 1, 2, 3
   EXPECT_FALSE(envelope_maker1->Empty());
-  ASSERT_EQ(3, envelope_maker1->GetEnvelope().batch_size());
+  ASSERT_EQ(3, envelope_maker1->GetEnvelope(encrypt_.get()).batch_size());
 
   // Iterate through each of the batches and check it.
   for (uint index = 0; index < 3; index++) {
     // Batch 0 and 2 should have 10 encrypted observations and batch
     // 1 should have 20 because batch 1 from EnvelopeMaker 2 was merged
     // into batch 1 of EnvelopeMaker 1.
-    auto& batch = envelope_maker1->GetEnvelope().batch(index);
+    auto& batch = envelope_maker1->GetEnvelope(encrypt_.get()).batch(index);
     EXPECT_EQ(index + 1, batch.meta_data().metric_id());
     auto expected_num_observations = (index == 1 ? 20 : 10);
     ASSERT_EQ(expected_num_observations, batch.encrypted_observation_size());

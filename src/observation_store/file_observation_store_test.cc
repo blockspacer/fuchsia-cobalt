@@ -43,7 +43,11 @@ std::string GetTestDirName(const std::string &base) {
 
 class FileObservationStoreTest : public ::testing::Test {
  public:
-  FileObservationStoreTest() : test_dir_name_(GetTestDirName(test_dir_base)) { MakeStore(); }
+  FileObservationStoreTest()
+      : test_dir_name_(GetTestDirName(test_dir_base)),
+        encrypt_(util::EncryptedMessageMaker::MakeUnencrypted()) {
+    MakeStore();
+  }
 
   void MakeStore() {
     store_ = std::make_unique<FileObservationStore>(
@@ -66,12 +70,13 @@ class FileObservationStoreTest : public ::testing::Test {
     metadata->set_customer_id(kCustomerId);
     metadata->set_project_id(kProjectId);
     metadata->set_metric_id(metric_id);
-    return store_->AddEncryptedObservation(std::move(message), std::move(metadata));
+    return store_->StoreObservation(std::move(message), std::move(metadata));
   }
 
  protected:
   std::string test_dir_name_;
   std::unique_ptr<FileObservationStore> store_;
+  std::unique_ptr<util::EncryptedMessageMaker> encrypt_;
 };
 
 }  // namespace
@@ -115,7 +120,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {
 
   auto envelope = store_->TakeNextEnvelopeHolder();
   ASSERT_NE(envelope, nullptr);
-  auto read_env = envelope->GetEnvelope();
+  auto read_env = envelope->GetEnvelope(encrypt_.get());
   EXPECT_EQ(read_env.batch_size(), 1);
   EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), 4);
 }
@@ -130,7 +135,7 @@ TEST_F(FileObservationStoreTest, AddRetrieveMultipleFullEnvelopes) {
   for (int i = 0; i < num_envelopes; i++) {
     auto envelope = store_->TakeNextEnvelopeHolder();
     ASSERT_NE(envelope, nullptr);
-    auto read_env = envelope->GetEnvelope();
+    auto read_env = envelope->GetEnvelope(encrypt_.get());
     ASSERT_EQ(read_env.batch_size(), 1);
     EXPECT_EQ(read_env.batch(0).encrypted_observation_size(), envelope_size);
   }
@@ -311,7 +316,7 @@ TEST_F(FileObservationStoreTest, HandlesCorruptFiles) {
   auto env = store_->TakeNextEnvelopeHolder();
   ASSERT_NE(env, nullptr);
 
-  auto read_env = env->GetEnvelope();
+  auto read_env = env->GetEnvelope(encrypt_.get());
   EXPECT_EQ(read_env.batch_size(), 0);
 }
 
@@ -336,7 +341,7 @@ TEST_F(FileObservationStoreTest, StressTest) {
       if (should_return == 1) {
         store_->ReturnEnvelopeHolder(std::move(holder));
       } else {
-        auto env = holder->GetEnvelope();
+        auto env = holder->GetEnvelope(encrypt_.get());
         ASSERT_GT(env.batch_size(), 0);
       }
     }

@@ -51,7 +51,9 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   ObservationStore::StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata);
 
-  const Envelope& GetEnvelope() override { return envelope_; }
+  const Envelope& GetEnvelope(util::EncryptedMessageMaker* /*encrypter*/) override {
+    return envelope_;
+  }
 
   bool Empty() const { return envelope_.batch_size() == 0; }
 

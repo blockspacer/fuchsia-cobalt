@@ -95,8 +95,8 @@ bool TestLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
   if (day_index > last_obs_generation_) {
     for (int i = 0; i < kNumAggregatedObservations; i++) {
       if (observation_store::ObservationStore::kOk !=
-          observation_store_->AddEncryptedObservation(std::make_unique<EncryptedMessage>(),
-                                                      std::make_unique<ObservationMetadata>())) {
+          observation_store_->StoreObservation(std::make_unique<EncryptedMessage>(),
+                                               std::make_unique<ObservationMetadata>())) {
         return false;
       }
     }

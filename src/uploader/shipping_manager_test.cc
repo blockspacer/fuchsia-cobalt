@@ -110,6 +110,7 @@ class ShippingManagerTest : public ::testing::Test {
  public:
   ShippingManagerTest()
       : encrypt_to_shuffler_(EncryptedMessageMaker::MakeUnencrypted()),
+        encrypt_to_analyzer_(EncryptedMessageMaker::MakeUnencrypted()),
         observation_store_(kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal) {}
 
  protected:
@@ -119,6 +120,7 @@ class ShippingManagerTest : public ::testing::Test {
     http_client_ = http_client.get();
     shipping_manager_ = std::make_unique<ClearcutV1ShippingManager>(
         upload_scheduler, &observation_store_, encrypt_to_shuffler_.get(),
+        encrypt_to_analyzer_.get(),
         std::make_unique<lib::clearcut::ClearcutUploader>("https://test.com",
                                                           std::move(http_client)),
         /*log_source_id=*/11, /*internal_logger=*/nullptr, /*max_attempts_per_upload=*/1);
@@ -126,8 +128,8 @@ class ShippingManagerTest : public ::testing::Test {
   }
 
   ObservationStore::StoreStatus AddObservation(size_t num_bytes) {
-    auto retval = observation_store_.AddEncryptedObservation(CreateObservationMessage(num_bytes),
-                                                             CreateObservationMetadata());
+    auto retval = observation_store_.StoreObservation(CreateObservationMessage(num_bytes),
+                                                      CreateObservationMetadata());
     shipping_manager_->NotifyObservationsAdded();
     return retval;
   }
@@ -141,6 +143,7 @@ class ShippingManagerTest : public ::testing::Test {
 
  private:
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
+  std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
   MemoryObservationStore observation_store_;
   FakeSystemData system_data_;
 
@@ -594,8 +597,8 @@ class LocalShippingManagerTest : public ::testing::Test {
   }
 
   ObservationStore::StoreStatus AddObservation(size_t num_bytes) {
-    auto retval = observation_store_.AddEncryptedObservation(CreateObservationMessage(num_bytes),
-                                                             CreateObservationMetadata());
+    auto retval = observation_store_.StoreObservation(CreateObservationMessage(num_bytes),
+                                                      CreateObservationMetadata());
     shipping_manager_->NotifyObservationsAdded();
     return retval;
   }
