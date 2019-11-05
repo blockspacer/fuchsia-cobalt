@@ -388,4 +388,10 @@ message PerDeviceHistogramReportRow {
   // A string describing the aggregation window, with units in hours or days.
   // The format is Nh (for a window of N hours) or Nd (for a window of N days).
   string aggregation_window = 8;
+
+  // The number of unique devices that contributed to this report row. This is
+  // equal to the number of ReportParticipationObservations received by
+  // the ReportGenerator for this report, aggregation window size, and date with
+  // the same SystemProfile.
+  int64 fleet_size = 9;
 }
