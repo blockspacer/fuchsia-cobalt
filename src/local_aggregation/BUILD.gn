@@ -35,6 +35,28 @@ source_set("aggregation_utils") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("event_aggregator_mgr") {
+  sources = [
+    "event_aggregator_mgr.cc",
+    "event_aggregator_mgr.h",
+  ]
+
+  public_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/src/registry:proto_config",
+  ]
+
+  public_deps = [
+    ":event_aggregator",
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
+    "$cobalt_root/src/lib/util:datetime_util",
+    "$cobalt_root/src/logger:encoder",
+    "$cobalt_root/src/logger:observation_writer",
+    "$cobalt_root/src/logger:status",
+  ]
+}
+
 source_set("event_aggregator") {
   sources = [
     "event_aggregator.cc",
@@ -95,11 +117,25 @@ source_set("event_aggregator_test") {
   ]
 }
 
+source_set("event_aggregator_mgr_test") {
+  testonly = true
+  sources = [
+    "event_aggregator_mgr_test.cc",
+  ]
+  public_deps = [
+    ":event_aggregator_mgr",
+    "$cobalt_root/src/logger:logger_test_utils",
+    "$cobalt_root/src/logger:testing_constants",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 group("tests") {
   testonly = true
 
   deps = [
     ":aggregation_utils_test",
+    ":event_aggregator_mgr_test",
     ":event_aggregator_test",
   ]
 }

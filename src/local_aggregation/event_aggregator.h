@@ -205,6 +205,8 @@ class EventAggregator {
                                               uint32_t final_day_index_local = 0u);
 
  private:
+  friend class EventAggregatorManager;  // used for transition during redesign.
+  friend class EventAggregatorManagerTest;
   friend class logger::UniqueActivesLoggerTest;
   friend class EventAggregatorTest;
   friend class EventAggregatorWorkerTest;

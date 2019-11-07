@@ -1,4 +1,4 @@
-// Copyright 2018 The Fuchsia Authors. All rights reserved.
+// Copyright 2019 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -2179,6 +2179,8 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, CheckObservationValuesWithBack
 // ------------------------------------------------------
 // (1)                           1, 2, 3, 4
 // (7)                           1, 2, 3, 4
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
   auto day_index = CurrentDayIndex();
 
@@ -3753,6 +3755,8 @@ TEST_F(NoiseFreeMixedTimeZoneEventAggregatorTest, LocalAfterUTC) {
 // explicitly shutting down the worker thread. Checks that the shutdown flag
 // and worker thread are in the expected states before and after the thread is
 // started.
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
   event_aggregator_->Start(std::move(test_clock_));
@@ -3762,6 +3766,8 @@ TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
 // Starts the worker thread, shuts down the worker thread, and destructs the
 // EventAggregator. Checks that the shutdown flag and worker thread are in the
 // expected states.
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
   event_aggregator_->Start(std::move(test_clock_));
@@ -3772,6 +3778,8 @@ TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
 
 // Starts the worker thread and immediately shuts it down. Checks that the
 // LocalAggregateStore was backed up during shutdown.
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
   event_aggregator_->Start(std::move(test_clock_));
   ShutDownWorkerThread();
@@ -3780,6 +3788,8 @@ TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
 
 // Starts the worker thread and calls
 // EventAggregator::UpdateAggregationConfigs() on the main thread.
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
   event_aggregator_->Start(std::move(test_clock_));
   // Provide the EventAggregator with the all_report_types registry.
@@ -3795,6 +3805,8 @@ TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
 // Starts the worker thread, provides a ProjectContext, logs some events, and
 // shuts down the worker thread. Checks that the LocalAggregateStore was
 // backed up at least once during the lifetime of the worker thread.
+//
+// TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
   event_aggregator_->Start(std::move(test_clock_));
