@@ -122,7 +122,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
 
   uint32_t NumberOfKVPairsInStore(EventAggregatorManager* event_aggregator_mgr) {
     return event_aggregator_mgr->GetEventAggregator()
-        ->CopyLocalAggregateStore()
+        ->aggregate_store_->CopyLocalAggregateStore()
         .by_report_key()
         .size();
   }
@@ -145,8 +145,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
 
   uint32_t GetNumberOfUniqueActivesAggregates(EventAggregatorManager* event_aggregator_mgr) {
     auto local_aggregate_store =
-        event_aggregator_mgr->GetEventAggregator()->CopyLocalAggregateStore();
-
+        event_aggregator_mgr->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
     uint32_t num_aggregates = 0;
     for (const auto& [report_key, aggregates] : local_aggregate_store.by_report_key()) {
       if (aggregates.type_case() != ReportAggregates::kUniqueActivesAggregates) {
@@ -166,8 +165,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
       const std::shared_ptr<const ProjectContext>& project_context,
       const MetricReportId& metric_report_id, uint32_t day_index, uint32_t event_code) {
     auto local_aggregate_store =
-        event_aggregator_mgr->GetEventAggregator()->CopyLocalAggregateStore();
-
+        event_aggregator_mgr->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
     std::string key;
     if (!SerializeToBase64(MakeAggregationKey(*project_context, metric_report_id), &key)) {
       return AssertionFailure() << "Could not serialize key with metric id  "

@@ -303,7 +303,7 @@ class UniqueActivesLoggerTest : public OccurrenceEventLoggerTest {
   }
 
   Status GarbageCollectAggregateStore(uint32_t day_index) {
-    return event_aggregator_->GarbageCollect(day_index);
+    return event_aggregator_->aggregate_store_->GarbageCollect(day_index);
   }
 };
 
@@ -1356,8 +1356,8 @@ class TestEventAggregator : public EventAggregator {
 
   uint32_t NumPerDeviceNumericAggregatesInStore() {
     int count = 0;
-    for (const auto& aggregates :
-         protected_aggregate_store_.lock()->local_aggregate_store.by_report_key()) {
+    for (const auto& aggregates : aggregate_store_->protected_aggregate_store_.lock()
+                                      ->local_aggregate_store.by_report_key()) {
       if (aggregates.second.has_numeric_aggregates()) {
         count += aggregates.second.numeric_aggregates().by_component().size();
       }
