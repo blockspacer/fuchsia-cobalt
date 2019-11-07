@@ -227,6 +227,7 @@ func TestPopulateProjectList(t *testing.T) {
   project_id: 10
   cobalt_version: 1
 - project_name: zircon
+  project_id: 20
   project_contact: yvonne
   cobalt_version: 1
 `
@@ -245,7 +246,7 @@ func TestPopulateProjectList(t *testing.T) {
 		},
 		ProjectConfig{
 			ProjectName:   "zircon",
-			ProjectId:     IdFromName("zircon"),
+			ProjectId:     20,
 			Contact:       "yvonne",
 			CobaltVersion: CobaltVersion1,
 		},
@@ -341,8 +342,8 @@ project_contact: ben
 cobalt_version: 1
 `
 	c = ProjectConfig{}
-	if err := parseProjectConfigForTest(y, &c); err != nil {
-		t.Errorf("Rejected a project with Cobalt version 1: %v", err)
+	if err := parseProjectConfigForTest(y, &c); err == nil {
+		t.Errorf("Accepted a project without an ID")
 	}
 
 	// Checks that an error is returned if the Cobalt version is an unexpected value.
@@ -379,8 +380,8 @@ project_contact: ben
 cobalt_version: 1
 `
 	c = ProjectConfig{}
-	if err := parseProjectConfigForTest(y, &c); err != nil {
-		t.Errorf("Rejected a Cobalt version 1 project without id.: %v", err)
+	if err := parseProjectConfigForTest(y, &c); err == nil {
+		t.Errorf("Accepted a project without an ID")
 	}
 
 	// Checks that an error is returned if the id is an invalid type.

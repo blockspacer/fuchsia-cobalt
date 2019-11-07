@@ -38,7 +38,6 @@ go_library("config_parser") {
     "config_reader.go",
     "filter.go",
     "git.go",
-    "id.go",
     "project_config.go",
     "project_list.go",
   ]
@@ -47,7 +46,6 @@ go_library("config_parser") {
   sources += [
     "config_reader_test.go",
     "filter_test.go",
-    "id_test.go",
     "project_config_test.go",
     "project_list_test.go",
   ]

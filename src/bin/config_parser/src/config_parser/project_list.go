@@ -182,23 +182,21 @@ func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err erro
 
 	if c.CobaltVersion == CobaltVersion1 {
 		v, ok := p["project_id"]
-    if !ok {
-      // TODO(zmbush): Remove once config is updated to use project_id
-      v, ok = p["id"]
-      if !ok {
-        c.ProjectId = IdFromName(c.ProjectName)
-      }
-    }
-    if ok {
-      projectId, ok := v.(int)
-      if !ok {
-        return fmt.Errorf("ID '%v' for project %v is not an integer.", v, c.ProjectName)
-      }
-      if projectId <= 0 {
-        return fmt.Errorf("ID for project %v is not a positive integer.",c.ProjectName)
-      }
-      c.ProjectId = uint32(projectId)
-    }
+		if !ok {
+			// TODO(zmbush): Remove once config is updated to use project_id
+			v, ok = p["id"]
+			if !ok {
+				return fmt.Errorf("Missing project_id for project %v.", c.ProjectName)
+			}
+		}
+		projectId, ok := v.(int)
+		if !ok {
+			return fmt.Errorf("ID '%v' for project %v is not an integer.", v, c.ProjectName)
+		}
+		if projectId <= 0 {
+			return fmt.Errorf("ID for project %v is not a positive integer.", c.ProjectName)
+		}
+		c.ProjectId = uint32(projectId)
 	}
 
 	v, ok = p["project_contact"]

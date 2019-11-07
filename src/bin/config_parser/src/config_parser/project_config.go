@@ -63,7 +63,7 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 
 		for _, r := range e.Reports {
 			if r.Id == 0 {
-				r.Id = IdFromName(r.ReportName)
+				return fmt.Errorf("Report named '%v' does not have a report id specified.", r.ReportName)
 			}
 		}
 	}
