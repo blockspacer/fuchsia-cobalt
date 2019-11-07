@@ -126,21 +126,6 @@ source_set("observation_writer") {
   ]
 }
 
-source_set("event_aggregator") {
-  sources = [
-    "event_aggregator.h",
-  ]
-
-  public_configs = [
-    "$cobalt_root:cobalt_config",
-    "$cobalt_root/src/registry:proto_config",
-  ]
-
-  public_deps = [
-    "$cobalt_root/src/local_aggregation:event_aggregator",
-  ]
-}
-
 source_set("logger_interface") {
   sources = [
     "logger_interface.h",
