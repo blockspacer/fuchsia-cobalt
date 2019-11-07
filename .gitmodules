@@ -8,7 +8,6 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://fuchsia.googlesource.com/third_party/googletest/
-	branch = cobalt
 [submodule "third_party/go/src/github.com/golang/protobuf"]
 	path = third_party/go/src/github.com/golang/protobuf
 	url = https://fuchsia.googlesource.com/third_party/github.com/golang/protobuf/
@@ -24,11 +23,9 @@
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://fuchsia.googlesource.com/third_party/gflags
-	branch = cobalt
 [submodule "third_party/glog"]
 	path = third_party/glog
 	url = https://fuchsia.googlesource.com/third_party/glog
-	branch = cobalt
 [submodule "third_party/go/src/github.com/syndtr/goleveldb"]
 	path = third_party/go/src/github.com/syndtr/goleveldb
 	url = https://fuchsia.googlesource.com/third_party/goleveldb/
@@ -41,23 +38,18 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://fuchsia.googlesource.com/third_party/protobuf/
-	branch = cobalt-v3.4.1
 [submodule "third_party/grpc"]
 	path = third_party/grpc
 	url = https://fuchsia.googlesource.com/third_party/grpc
-	branch = cobalt
 [submodule "third_party/cares"]
 	path = third_party/cares
 	url = https://fuchsia.googlesource.com/third_party/c-ares
-	branch = cobalt
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://fuchsia.googlesource.com/third_party/zlib
-	branch = cobalt
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://fuchsia.googlesource.com/third_party/benchmark
-	branch = cobalt
 [submodule "third_party/eigen"]
 	path = third_party/eigen
 	url = https://fuchsia.googlesource.com/third_party/eigen
