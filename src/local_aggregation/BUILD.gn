@@ -55,6 +55,8 @@ source_set("event_aggregator_mgr") {
     "$cobalt_root/src/logger:observation_writer",
     "$cobalt_root/src/logger:status",
   ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("event_aggregator") {
@@ -86,6 +88,8 @@ source_set("event_aggregator") {
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
   ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("aggregation_utils_test") {
