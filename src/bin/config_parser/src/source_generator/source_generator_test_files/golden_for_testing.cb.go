@@ -34,20 +34,14 @@ const SecondMetricMetricId uint32 = 601;
 // Report ID Constants
 // the_metric_name the_other_report
 const TheMetricNameTheOtherReportReportId uint32 = 492006986;
-// the_other_report
-const TheOtherReportReportId uint32 = 492006986;
 // event groups the_report
 const EventGroupsTheReportReportId uint32 = 2384646843;
 // the_metric_name the_report
 const TheMetricNameTheReportReportId uint32 = 2384646843;
 // the_other_metric_name the_report
 const TheOtherMetricNameTheReportReportId uint32 = 2384646843;
-// the_report
-const TheReportReportId uint32 = 2384646843;
 // exponential buckets report
 const ExponentialBucketsReportReportId uint32 = 2422801083;
-// report
-const ReportReportId uint32 = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 type TheOtherMetricNameMetricDimension0 uint32

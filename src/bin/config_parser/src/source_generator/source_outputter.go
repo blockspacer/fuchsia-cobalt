@@ -222,8 +222,6 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 					so.writeIntBuckets(report.GetIntBuckets(), metric.MetricName, report.ReportName)
 
 					reports[fmt.Sprintf("%s %s", metric.MetricName, report.ReportName)] = report.Id
-					// Continue to generate the legacy report ID constants until Fuchsia testapp can be updated.
-					reports[fmt.Sprintf("%s", report.ReportName)] = report.Id
 				}
 			}
 		}

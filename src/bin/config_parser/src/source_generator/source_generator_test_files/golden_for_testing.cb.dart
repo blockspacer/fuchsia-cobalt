@@ -48,9 +48,6 @@ const int secondMetricMetricId = 601;
 // the_metric_name the_other_report
 // ignore: constant_identifier_names
 const int theMetricNameTheOtherReportReportId = 492006986;
-// the_other_report
-// ignore: constant_identifier_names
-const int theOtherReportReportId = 492006986;
 // event groups the_report
 // ignore: constant_identifier_names
 const int eventGroupsTheReportReportId = 2384646843;
@@ -60,15 +57,9 @@ const int theMetricNameTheReportReportId = 2384646843;
 // the_other_metric_name the_report
 // ignore: constant_identifier_names
 const int theOtherMetricNameTheReportReportId = 2384646843;
-// the_report
-// ignore: constant_identifier_names
-const int theReportReportId = 2384646843;
 // exponential buckets report
 // ignore: constant_identifier_names
 const int exponentialBucketsReportReportId = 2422801083;
-// report
-// ignore: constant_identifier_names
-const int reportReportId = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 class TheOtherMetricNameMetricDimension0 {

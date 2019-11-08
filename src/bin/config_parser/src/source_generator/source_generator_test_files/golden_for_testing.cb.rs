@@ -33,20 +33,14 @@ pub const SECOND_METRIC_METRIC_ID: u32 = 601;
 // Report ID Constants
 // the_metric_name the_other_report
 pub const THE_METRIC_NAME_THE_OTHER_REPORT_REPORT_ID: u32 = 492006986;
-// the_other_report
-pub const THE_OTHER_REPORT_REPORT_ID: u32 = 492006986;
 // event groups the_report
 pub const EVENT_GROUPS_THE_REPORT_REPORT_ID: u32 = 2384646843;
 // the_metric_name the_report
 pub const THE_METRIC_NAME_THE_REPORT_REPORT_ID: u32 = 2384646843;
 // the_other_metric_name the_report
 pub const THE_OTHER_METRIC_NAME_THE_REPORT_REPORT_ID: u32 = 2384646843;
-// the_report
-pub const THE_REPORT_REPORT_ID: u32 = 2384646843;
 // exponential buckets report
 pub const EXPONENTIAL_BUCKETS_REPORT_REPORT_ID: u32 = 2422801083;
-// report
-pub const REPORT_REPORT_ID: u32 = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]

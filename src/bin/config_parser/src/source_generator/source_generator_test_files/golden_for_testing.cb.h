@@ -38,20 +38,14 @@ const uint32_t kSecondMetricMetricId = 601;
 // Report ID Constants
 // the_metric_name the_other_report
 const uint32_t kTheMetricNameTheOtherReportReportId = 492006986;
-// the_other_report
-const uint32_t kTheOtherReportReportId = 492006986;
 // event groups the_report
 const uint32_t kEventGroupsTheReportReportId = 2384646843;
 // the_metric_name the_report
 const uint32_t kTheMetricNameTheReportReportId = 2384646843;
 // the_other_metric_name the_report
 const uint32_t kTheOtherMetricNameTheReportReportId = 2384646843;
-// the_report
-const uint32_t kTheReportReportId = 2384646843;
 // exponential buckets report
 const uint32_t kExponentialBucketsReportReportId = 2422801083;
-// report
-const uint32_t kReportReportId = 2422801083;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 namespace __the_other_metric_name_metric_dimension_0_internal_scope_do_not_use__ {
