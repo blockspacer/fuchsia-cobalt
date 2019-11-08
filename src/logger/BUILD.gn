@@ -194,7 +194,6 @@ source_set("event_loggers") {
     ":status",
     "$cobalt_root/src:tracing",
     "$cobalt_root/src/local_aggregation:event_aggregator",
-    "$cobalt_root/src/registry:id",
   ]
 }
 
@@ -216,7 +215,6 @@ source_set("logger") {
     ":status",
     ":undated_event_manager",
     "$cobalt_root/src/lib/util:clock",
-    "$cobalt_root/src/registry:id",
   ]
 }
 
@@ -238,7 +236,6 @@ source_set("undated_event_manager") {
     ":status",
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/local_aggregation:event_aggregator",
-    "$cobalt_root/src/registry:id",
     "//third_party/protobuf:protobuf_full",
   ]
 }

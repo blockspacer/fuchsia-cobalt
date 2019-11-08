@@ -12,7 +12,6 @@
 
 #include "src/logger/event_loggers.h"
 #include "src/logger/event_record.h"
-#include "src/registry/id.h"
 #include "src/registry/metric_definition.pb.h"
 
 namespace cobalt::logger {

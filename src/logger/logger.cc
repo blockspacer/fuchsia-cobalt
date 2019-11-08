@@ -10,7 +10,6 @@
 #include "src/logger/event_loggers.h"
 #include "src/logger/event_record.h"
 #include "src/logging.h"
-#include "src/registry/id.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 
