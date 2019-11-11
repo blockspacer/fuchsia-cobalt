@@ -352,7 +352,7 @@ TEST_F(OccurrenceEventLoggerTest, Log) {
   // Now use good arguments.
   ASSERT_EQ(kOK, LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kErrorCountsByCodeReportId;
+  uint32_t expected_report_id = testing::all_report_types::kErrorOccurredErrorCountsByCodeReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_basic_rappor());
@@ -362,9 +362,9 @@ TEST_F(OccurrenceEventLoggerTest, Log) {
 // Tests the CountEventLogger.
 TEST_F(CountEventLoggerTest, Log) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
+      testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
 
   // Attempt to use an event code larger than max_event_code.
   ASSERT_EQ(kInvalidArguments, LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
@@ -388,9 +388,9 @@ TEST_F(CountEventLoggerTest, Log) {
 // Tests the CountEventLogger with multiple event codes.
 TEST_F(CountEventLoggerTest, LogMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
+      testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
 
   // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
   EXPECT_EQ(kInvalidArguments,
@@ -421,9 +421,9 @@ TEST_F(CountEventLoggerTest, LogMultiDimension) {
 // Tests the ElapsedTimeEventLogger.
 TEST_F(ElapsedTimeEventLoggerTest, Log) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
-      testing::all_report_types::kModuleLoadTimeHistogramReportId,
-      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeRawDumpReportId};
 
   // Use a non-zero event code even though the metric does not have any
   // metric dimensions defined. Expect kInvalidArgument.
@@ -442,9 +442,9 @@ TEST_F(ElapsedTimeEventLoggerTest, Log) {
 // Tests the ElapsedTimeEventLogger with multiple event codes.
 TEST_F(ElapsedTimeEventLoggerTest, LogMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
-      testing::all_report_types::kModuleLoadTimeHistogramReportId,
-      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeRawDumpReportId};
 
   // Use a non-zero event code even though the metric does not have any
   // metric dimensions defined. Expect kInvalidArgument.
@@ -468,9 +468,9 @@ TEST_F(ElapsedTimeEventLoggerTest, LogMultiDimension) {
 // Tests the FrameRateEventLogger.
 TEST_F(FrameRateEventLoggerTest, Log) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
-      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
-      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateRawDumpReportId};
 
   // There is no max_event_code set so only the specified code of 45 is allowed.
   ASSERT_EQ(kInvalidArguments,
@@ -487,9 +487,9 @@ TEST_F(FrameRateEventLoggerTest, Log) {
 // Tests the FrameRateEventLogger with multiple event codes.
 TEST_F(FrameRateEventLoggerTest, LogMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
-      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
-      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateRawDumpReportId};
 
   // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
   ASSERT_EQ(kInvalidArguments,
@@ -522,8 +522,8 @@ TEST_F(FrameRateEventLoggerTest, LogMultiDimension) {
 // Tests the MemoryUsageEventLogger.
 TEST_F(MemoryUsageEventLoggerTest, Log) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
-      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageHistogramReportId};
 
   // The simple version of LogMemoryUsage() can be used, even though the metric has two dimensions.
   ASSERT_EQ(kOK, LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId, {46},
@@ -536,8 +536,8 @@ TEST_F(MemoryUsageEventLoggerTest, Log) {
 // Tests the MemoryUsageEventLogger with multiple event codes.
 TEST_F(MemoryUsageEventLoggerTest, LogMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
-      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageHistogramReportId};
 
   // Use a metric ID for the wrong type of metric. Expect kInvalidArguments.
   ASSERT_EQ(kInvalidArguments,
@@ -601,7 +601,8 @@ TEST_F(IntHistogramEventLoggerTest, Log) {
   ASSERT_EQ(kOK, LogIntHistogram(testing::all_report_types::kFileSystemWriteTimesMetricId, {47},
                                  "component7", indices, counts));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kFileSystemWriteTimesHistogramReportId;
+  uint32_t expected_report_id =
+      testing::all_report_types::kFileSystemWriteTimesFileSystemWriteTimesHistogramReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_histogram());
@@ -622,8 +623,8 @@ TEST_F(StringUsedEventLoggerTest, Log) {
             LogString(testing::all_report_types::kModuleDownloadsMetricId, "www.mymodule.com"));
   std::vector<Observation2> observations(2);
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleDownloadsHeavyHittersReportId,
-      testing::all_report_types::kModuleDownloadsWithThresholdReportId};
+      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId,
+      testing::all_report_types::kModuleDownloadsModuleDownloadsWithThresholdReportId};
   ASSERT_TRUE(FetchObservations(&observations, expected_report_ids, observation_store_.get(),
                                 update_recipient_.get()));
 
@@ -644,7 +645,8 @@ TEST_F(CustomEventLoggerTest, LogCustomEvent) {
   ASSERT_EQ(kOK, LogCustomEvent(testing::all_report_types::kModuleInstallsMetricId, dimension_names,
                                 values));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kModuleInstallsDetailedDataReportId;
+  uint32_t expected_report_id =
+      testing::all_report_types::kModuleInstallsModuleInstallsDetailedDataReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_custom());
@@ -835,7 +837,8 @@ TEST_F(PerDeviceNumericCountEventLoggerTest, CheckPerDeviceNumericObsValuesSingl
   // generated for that report.
   std::vector<Observation2> immediate_observations(4);
   std::vector<uint32_t> expected_immediate_report_ids(
-      4, testing::per_device_numeric_stats::kConnectionFailuresGlobalCountReportId);
+      4,
+      testing::per_device_numeric_stats::kConnectionFailuresConnectionFailuresGlobalCountReportId);
   EXPECT_TRUE(FetchObservations(&immediate_observations, expected_immediate_report_ids,
                                 observation_store_.get(), update_recipient_.get()));
 
@@ -890,7 +893,8 @@ TEST_F(PerDeviceNumericFrameRateEventLoggerTest, CheckPerDeviceNumericObsValuesF
   // generated for that report.
   std::vector<Observation2> immediate_observations(6);
   std::vector<uint32_t> expected_immediate_report_ids(
-      6, testing::per_device_numeric_stats::kLoginModuleFrameRateAggregatedReportId);
+      6, testing::per_device_numeric_stats::
+             kLoginModuleFrameRateLoginModuleFrameRateAggregatedReportId);
   EXPECT_TRUE(FetchObservations(&immediate_observations, expected_immediate_report_ids,
                                 observation_store_.get(), update_recipient_.get()));
 
@@ -943,7 +947,7 @@ TEST_F(PerDeviceNumericMemoryUsageEventLoggerTest,
   // generated for that report.
   std::vector<Observation2> immediate_observations(6);
   std::vector<uint32_t> expected_immediate_report_ids(
-      6, testing::per_device_numeric_stats::kLedgerMemoryUsageAggregatedReportId);
+      6, testing::per_device_numeric_stats::kLedgerMemoryUsageLedgerMemoryUsageAggregatedReportId);
   EXPECT_TRUE(FetchObservations(&immediate_observations, expected_immediate_report_ids,
                                 observation_store_.get(), update_recipient_.get()));
 
@@ -1329,7 +1333,7 @@ TEST_F(OccurrenceEventLoggerTest, CheckNumAggregatedObsImmediateAndAggregatedEve
   // Observation.
   std::vector<Observation2> immediate_observations(3);
   std::vector<uint32_t> expected_immediate_report_ids(
-      3, testing::all_report_types::kEventsOccurredGlobalCountReportId);
+      3, testing::all_report_types::kEventsOccurredEventsOccurredGlobalCountReportId);
   ASSERT_TRUE(FetchObservations(&immediate_observations, expected_immediate_report_ids,
                                 observation_store_.get(), update_recipient_.get()));
   // Clear the FakeObservationStore.
@@ -1474,7 +1478,7 @@ class EventLoggersAddEventTest : public ::testing::Test {
 
 TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramNoImmediateObservation) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kSettingsChangedPerDeviceHistogramReportId,
+      testing::per_device_histogram::kSettingsChangedSettingsChangedPerDeviceHistogramReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kSettingsChangedMetricId, MetricDefinition::EVENT_COUNT);
@@ -1492,7 +1496,7 @@ TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramNoImmediateObservat
 
 TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramAddToEventAggregator) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kSettingsChangedPerDeviceHistogramReportId,
+      testing::per_device_histogram::kSettingsChangedSettingsChangedPerDeviceHistogramReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kSettingsChangedMetricId, MetricDefinition::EVENT_COUNT);
@@ -1508,7 +1512,7 @@ TEST_F(EventLoggersAddEventTest, EventCountPerDeviceHistogramAddToEventAggregato
 
 TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramNoImmediateObservation) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kStreamingTimePerDeviceTotalReportId,
+      testing::per_device_histogram::kStreamingTimeStreamingTimePerDeviceTotalReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kStreamingTimeMetricId, MetricDefinition::ELAPSED_TIME);
@@ -1526,7 +1530,7 @@ TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramNoImmediateObserva
 
 TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramAddToEventAggregator) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kStreamingTimePerDeviceTotalReportId,
+      testing::per_device_histogram::kStreamingTimeStreamingTimePerDeviceTotalReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kStreamingTimeMetricId, MetricDefinition::ELAPSED_TIME);
@@ -1542,7 +1546,7 @@ TEST_F(EventLoggersAddEventTest, ElapsedTimePerDeviceHistogramAddToEventAggregat
 
 TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramNoImmediateObservation) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kLoginModuleFrameRatePerDeviceMinReportId,
+      testing::per_device_histogram::kLoginModuleFrameRateLoginModuleFrameRatePerDeviceMinReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kLoginModuleFrameRateMetricId, MetricDefinition::FRAME_RATE);
@@ -1560,7 +1564,7 @@ TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramNoImmediateObservati
 
 TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramAddToEventAggregator) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kLoginModuleFrameRatePerDeviceMinReportId,
+      testing::per_device_histogram::kLoginModuleFrameRateLoginModuleFrameRatePerDeviceMinReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kLoginModuleFrameRateMetricId, MetricDefinition::FRAME_RATE);
@@ -1576,7 +1580,7 @@ TEST_F(EventLoggersAddEventTest, FrameRatePerDeviceHistogramAddToEventAggregator
 
 TEST_F(EventLoggersAddEventTest, MemoryUsagePerDeviceHistogramNoImmediateObservation) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kLedgerMemoryUsagePerDeviceMaxReportId,
+      testing::per_device_histogram::kLedgerMemoryUsageLedgerMemoryUsagePerDeviceMaxReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kLedgerMemoryUsageMetricId, MetricDefinition::MEMORY_USAGE);
@@ -1594,7 +1598,7 @@ TEST_F(EventLoggersAddEventTest, MemoryUsagePerDeviceHistogramNoImmediateObserva
 
 TEST_F(EventLoggersAddEventTest, MemoryUsagePerDeviceHistogramAddToEventAggregator) {
   ReportDefinition report = ReportDefinitionWithReportType(
-      testing::per_device_histogram::kLedgerMemoryUsagePerDeviceMaxReportId,
+      testing::per_device_histogram::kLedgerMemoryUsageLedgerMemoryUsagePerDeviceMaxReportId,
       ReportDefinition::PER_DEVICE_HISTOGRAM);
   auto event_record = GetEventRecordWithMetricType(
       testing::per_device_histogram::kLedgerMemoryUsageMetricId, MetricDefinition::MEMORY_USAGE);

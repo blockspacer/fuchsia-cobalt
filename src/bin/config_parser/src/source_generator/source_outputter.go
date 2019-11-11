@@ -81,25 +81,28 @@ YAML in the cobalt_config repository. Edit the YAML there to make changes.`)
 }
 
 // writeIdConstants prints out a list of constants to be used in testing. It
-// uses the Name attribute of each Metric, Report, and Encoding to construct the
-// constants.
+// uses the Name attribute of each Metric and Report to construct the constants.
 //
-// For a metric named "SingleString" the constant would be kSingleStringMetricId
-// For a report named "Test" the constant would be kTestReportId
-// For an encoding named "Forculus" the canstant would be kForculusEncodingId
-func (so *sourceOutputter) writeIdConstants(constType string, entries map[uint32]string) {
+// For a metric named "SingleString" the cpp constant would be kSingleStringMetricId
+// For a report named "Test" in the "SingleString" metric, the cpp constant would be kSingleStringTestReportId
+func (so *sourceOutputter) writeIdConstants(constType string, entries map[string]uint32) {
 	if len(entries) == 0 {
 		return
 	}
-	var keys []uint32
+	var keys []string
 	for k := range entries {
 		keys = append(keys, k)
 	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	sort.Slice(keys, func(i, j int) bool {
+		if entries[keys[i]] != entries[keys[j]] {
+			return entries[keys[i]] < entries[keys[j]]
+		}
+		return keys[i] < keys[j]
+	})
 
 	so.writeCommentFmt("%s ID Constants", constType)
-	for _, id := range keys {
-		name := entries[id]
+	for _, name := range keys {
+		id := entries[name]
 		so.writeComment(name)
 		so.language.writeConstUint32(so, id, name, constType, "id")
 	}
@@ -177,8 +180,8 @@ func (so *sourceOutputter) writeIntBuckets(buckets *config.IntegerBuckets, name 
 }
 
 func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
-	metrics := make(map[uint32]string)
-	reports := make(map[uint32]string)
+	metrics := make(map[string]uint32)
+	reports := make(map[string]uint32)
 	if len(c.Customers) > 1 || len(c.Customers[0].Projects) > 1 {
 		return fmt.Errorf("Cobalt v1.0 output can only be used with a single project config.")
 	}
@@ -188,12 +191,14 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 		if metric.MetricName != "" {
 			so.writeIntBuckets(metric.GetIntBuckets(), metric.MetricName)
 
-			metrics[metric.Id] = metric.MetricName
+			metrics[metric.MetricName] = metric.Id
 			for _, report := range metric.Reports {
 				if report.ReportName != "" {
 					so.writeIntBuckets(report.GetIntBuckets(), metric.MetricName, report.ReportName)
 
-					reports[report.Id] = fmt.Sprintf("%s", report.ReportName)
+					reports[fmt.Sprintf("%s %s", metric.MetricName, report.ReportName)] = report.Id
+					// Continue to generate the legacy report ID constants until Fuchsia testapp can be updated.
+					reports[fmt.Sprintf("%s", report.ReportName)] = report.Id
 				}
 			}
 		}

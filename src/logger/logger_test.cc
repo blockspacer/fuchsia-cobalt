@@ -166,7 +166,7 @@ class PerDeviceNumericLoggerTest : public LoggerTest {
 TEST_F(LoggerTest, LogEvent) {
   ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kErrorCountsByCodeReportId;
+  uint32_t expected_report_id = testing::all_report_types::kErrorOccurredErrorCountsByCodeReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_basic_rappor());
@@ -176,9 +176,9 @@ TEST_F(LoggerTest, LogEvent) {
 // Tests the method LogEventCount().
 TEST_F(LoggerTest, LogEventCount) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
+      testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
 
   ASSERT_EQ(kOK, logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, 43,
                                         "component2", 1, 303));
@@ -189,9 +189,9 @@ TEST_F(LoggerTest, LogEventCount) {
 // Tests the method LogEventCount() can accept large numbers correctly.
 TEST_F(LoggerTest, LogEventCountWithLargeCounts) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
+      testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
 
   int64_t large_value = 3'147'483'647;
   ASSERT_EQ(kOK, logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId, 43,
@@ -208,9 +208,9 @@ TEST_F(LoggerTest, LogEventCountMultiDimension) {
                                         std::vector<uint32_t>({}), "", 0, 303));
 
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kReadCacheHitCountsReportId,
-      testing::all_report_types::kReadCacheHitHistogramsReportId,
-      testing::all_report_types::kReadCacheHitStatsReportId};
+      testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+      testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
   EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 0, "", 303,
                                             observation_store_.get(), update_recipient_.get()));
   ResetObservationStore();
@@ -225,9 +225,9 @@ TEST_F(LoggerTest, LogEventCountMultiDimension) {
   EXPECT_EQ(kOK, logger_->LogEventCount(testing::all_report_types::kReadCacheHitsMetricId,
                                         std::vector<uint32_t>({43}), "", 0, 303));
 
-  expected_report_ids = {testing::all_report_types::kReadCacheHitCountsReportId,
-                         testing::all_report_types::kReadCacheHitHistogramsReportId,
-                         testing::all_report_types::kReadCacheHitStatsReportId};
+  expected_report_ids = {testing::all_report_types::kReadCacheHitsReadCacheHitCountsReportId,
+                         testing::all_report_types::kReadCacheHitsReadCacheHitHistogramsReportId,
+                         testing::all_report_types::kReadCacheHitsReadCacheHitStatsReportId};
   EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 43u, "", 303,
                                             observation_store_.get(), update_recipient_.get()));
 }
@@ -235,9 +235,9 @@ TEST_F(LoggerTest, LogEventCountMultiDimension) {
 // Tests the method LogElapsedTime().
 TEST_F(LoggerTest, LogElapsedTime) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
-      testing::all_report_types::kModuleLoadTimeHistogramReportId,
-      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeRawDumpReportId};
 
   // Use a zero event code when the metric does not have any metric dimensions
   // set. This is OK by convention. The zero will be ignored.
@@ -252,9 +252,9 @@ TEST_F(LoggerTest, LogElapsedTime) {
 // event codes.
 TEST_F(LoggerTest, LogElapsedTimeMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleLoadTimeAggregatedReportId,
-      testing::all_report_types::kModuleLoadTimeHistogramReportId,
-      testing::all_report_types::kModuleLoadTimeRawDumpReportId};
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeAggregatedReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeHistogramReportId,
+      testing::all_report_types::kModuleLoadTimeModuleLoadTimeRawDumpReportId};
 
   // Use a non-zero event code even though the metric does not have any
   // metric dimensions defined. Expect kInvalidArgument.
@@ -280,9 +280,9 @@ TEST_F(LoggerTest, LogElapsedTimeMultiDimension) {
 // Tests the method LogFrameRate().
 TEST_F(LoggerTest, LogFrameRate) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
-      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
-      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateRawDumpReportId};
   ASSERT_EQ(kOK, logger_->LogFrameRate(testing::all_report_types::kLoginModuleFrameRateMetricId, 45,
                                        "component5", 5.123));
   EXPECT_TRUE(CheckNumericEventObservations(expected_report_ids, 45u, "component5", 5123,
@@ -293,9 +293,9 @@ TEST_F(LoggerTest, LogFrameRate) {
 // event codes.
 TEST_F(LoggerTest, LogFrameRateMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLoginModuleFrameRateAggregatedReportId,
-      testing::all_report_types::kLoginModuleFrameRateHistogramReportId,
-      testing::all_report_types::kLoginModuleFrameRateRawDumpReportId};
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateAggregatedReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateHistogramReportId,
+      testing::all_report_types::kLoginModuleFrameRateLoginModuleFrameRateRawDumpReportId};
 
   // Use no event codes when the metric has one dimension. Expect kOK.
   ASSERT_EQ(kOK, logger_->LogFrameRate(testing::all_report_types::kLoginModuleFrameRateMetricId,
@@ -320,8 +320,8 @@ TEST_F(LoggerTest, LogFrameRateMultiDimension) {
 // Tests the method LogMemoryUsage().
 TEST_F(LoggerTest, LogMemoryUsage) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
-      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageHistogramReportId};
 
   // The simple version of LogMemoryUsage() works, even though the metric has 2 dimensions.
   ASSERT_EQ(kOK, logger_->LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId, 46,
@@ -334,8 +334,8 @@ TEST_F(LoggerTest, LogMemoryUsage) {
 // event codes.
 TEST_F(LoggerTest, LogMemoryUsageMultiDimension) {
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kLedgerMemoryUsageAggregatedReportId,
-      testing::all_report_types::kLedgerMemoryUsageHistogramReportId};
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageAggregatedReportId,
+      testing::all_report_types::kLedgerMemoryUsageLedgerMemoryUsageHistogramReportId};
 
   // Use no event codes when the metric has two dimension. Expect kOK.
   ASSERT_EQ(kOK, logger_->LogMemoryUsage(testing::all_report_types::kLedgerMemoryUsageMetricId,
@@ -376,7 +376,8 @@ TEST_F(LoggerTest, LogIntHistogram) {
   ASSERT_EQ(kOK, logger_->LogIntHistogram(testing::all_report_types::kFileSystemWriteTimesMetricId,
                                           47, "component7", std::move(histogram)));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kFileSystemWriteTimesHistogramReportId;
+  uint32_t expected_report_id =
+      testing::all_report_types::kFileSystemWriteTimesFileSystemWriteTimesHistogramReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_histogram());
@@ -397,8 +398,8 @@ TEST_F(LoggerTest, LogString) {
                                     "www.mymodule.com"));
   std::vector<Observation2> observations(2);
   std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleDownloadsHeavyHittersReportId,
-      testing::all_report_types::kModuleDownloadsWithThresholdReportId};
+      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId,
+      testing::all_report_types::kModuleDownloadsModuleDownloadsWithThresholdReportId};
   ASSERT_TRUE(FetchObservations(&observations, expected_report_ids, observation_store_.get(),
                                 update_recipient_.get()));
 
@@ -420,7 +421,8 @@ TEST_F(LoggerTest, LogCustomEvent) {
   ASSERT_EQ(kOK, logger_->LogCustomEvent(testing::all_report_types::kModuleInstallsMetricId,
                                          std::move(custom_event)));
   Observation2 observation;
-  uint32_t expected_report_id = testing::all_report_types::kModuleInstallsDetailedDataReportId;
+  uint32_t expected_report_id =
+      testing::all_report_types::kModuleInstallsModuleInstallsDetailedDataReportId;
   ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
                                      update_recipient_.get()));
   ASSERT_TRUE(observation.has_custom());

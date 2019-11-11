@@ -39,12 +39,27 @@ const int linearBucketsMetricId = 400;
 const int exponentialBucketsMetricId = 500;
 
 // Report ID Constants
+// the_metric_name the_other_report
+// ignore: constant_identifier_names
+const int theMetricNameTheOtherReportReportId = 492006986;
 // the_other_report
 // ignore: constant_identifier_names
 const int theOtherReportReportId = 492006986;
+// event groups the_report
+// ignore: constant_identifier_names
+const int eventGroupsTheReportReportId = 2384646843;
+// the_metric_name the_report
+// ignore: constant_identifier_names
+const int theMetricNameTheReportReportId = 2384646843;
+// the_other_metric_name the_report
+// ignore: constant_identifier_names
+const int theOtherMetricNameTheReportReportId = 2384646843;
 // the_report
 // ignore: constant_identifier_names
 const int theReportReportId = 2384646843;
+// exponential buckets report
+// ignore: constant_identifier_names
+const int exponentialBucketsReportReportId = 2422801083;
 // report
 // ignore: constant_identifier_names
 const int reportReportId = 2422801083;

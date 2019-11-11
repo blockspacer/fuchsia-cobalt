@@ -1073,10 +1073,10 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
                                logger::testing::unique_actives_noise_free::kEventsOccurredMetricId);
   bad_event_record.event()->set_day_index(CurrentDayIndex());
   bad_event_record.event()->mutable_occurrence_event()->set_event_code(0u);
-  EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->LogUniqueActivesEvent(
-                logger::testing::unique_actives_noise_free::kEventsOccurredUniqueDevicesReportId,
-                bad_event_record));
+  EXPECT_EQ(kInvalidArguments, event_aggregator_->LogUniqueActivesEvent(
+                                   logger::testing::unique_actives_noise_free::
+                                       kEventsOccurredEventsOccurredUniqueDevicesReportId,
+                                   bad_event_record));
   // Attempt to call LogUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
   // OccurrenceEvent. Check that the result is |kInvalidArguments|.
@@ -1085,7 +1085,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   bad_event_record2.event()->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_->LogUniqueActivesEvent(
-                logger::testing::unique_actives::kFeaturesActiveUniqueDevicesReportId,
+                logger::testing::unique_actives::kFeaturesActiveFeaturesActiveUniqueDevicesReportId,
                 bad_event_record2));
   // Attempt to call LogPerDeviceCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
@@ -1094,11 +1094,10 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
       noise_free_project_context,
       logger::testing::per_device_numeric_stats::kConnectionFailuresMetricReportId.first);
   bad_event_record3.event()->mutable_occurrence_event();
-  EXPECT_EQ(
-      kInvalidArguments,
-      event_aggregator_->LogCountEvent(
-          logger::testing::per_device_numeric_stats::kConnectionFailuresPerDeviceCountReportId,
-          bad_event_record3));
+  EXPECT_EQ(kInvalidArguments, event_aggregator_->LogCountEvent(
+                                   logger::testing::per_device_numeric_stats::
+                                       kConnectionFailuresConnectionFailuresPerDeviceCountReportId,
+                                   bad_event_record3));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive

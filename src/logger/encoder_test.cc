@@ -176,7 +176,7 @@ TEST_F(EncoderTest, EncodeBasicRapporObservation) {
     result =
         encoder_->EncodeBasicRapporObservation(project_context_->RefMetric(pair.first), pair.second,
                                                day_index, value_index, num_categories);
-    CheckResult(result, kExpectedMetricId, kErrorCountsByTypeReportId, day_index);
+    CheckResult(result, kExpectedMetricId, kErrorOccurredErrorCountsByTypeReportId, day_index);
     CheckDefaultSystemProfile(result);
     ASSERT_TRUE(result.observation->has_basic_rappor());
     EXPECT_FALSE(result.observation->basic_rappor().data().empty());
@@ -196,7 +196,7 @@ TEST_F(EncoderTest, EncodeIntegerEventObservation) {
   auto result =
       encoder_->EncodeIntegerEventObservation(project_context_->RefMetric(pair.first), pair.second,
                                               kDayIndex, event_codes, kComponent, kValue);
-  CheckResult(result, kExpectedMetricId, kReadCacheHitCountsReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kReadCacheHitsReadCacheHitCountsReportId, kDayIndex);
   // In the SystemProfile only the OS should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::UNKNOWN_ARCH, "", "");
   ASSERT_TRUE(result.observation->has_numeric_event());
@@ -221,7 +221,8 @@ TEST_F(EncoderTest, MultipleEventCodes) {
   auto result =
       encoder_->EncodeIntegerEventObservation(project_context_->RefMetric(pair.first), pair.second,
                                               kDayIndex, event_codes, kComponent, kValue);
-  CheckResult(result, kExpectedMetricId, kMultiEventCodeCountsReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kMultiEventCodeTestMultiEventCodeCountsReportId,
+              kDayIndex);
   // In the SystemProfile only the OS should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::UNKNOWN_ARCH, "", "");
   ASSERT_TRUE(result.observation->has_numeric_event());
@@ -249,7 +250,8 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   auto result = encoder_->EncodeHistogramObservation(project_context_->RefMetric(pair.first),
                                                      pair.second, kDayIndex, event_codes,
                                                      kComponent, std::move(histogram));
-  CheckResult(result, kExpectedMetricId, kFileSystemWriteTimesHistogramReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kFileSystemWriteTimesFileSystemWriteTimesHistogramReportId,
+              kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_histogram());
@@ -271,7 +273,8 @@ TEST_F(EncoderTest, EncodeRapporObservation) {
   auto pair = GetMetricAndReport(kMetricName, kReportName);
   auto result = encoder_->EncodeRapporObservation(project_context_->RefMetric(pair.first),
                                                   pair.second, kDayIndex, "Supercalifragilistic");
-  CheckResult(result, kExpectedMetricId, kModuleDownloadsHeavyHittersReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kModuleDownloadsModuleDownloadsHeavyHittersReportId,
+              kDayIndex);
   CheckDefaultSystemProfile(result);
   ASSERT_TRUE(result.observation->has_string_rappor());
   const RapporObservation& obs = result.observation->string_rappor();
@@ -302,7 +305,8 @@ TEST_F(EncoderTest, EncodeCustomObservation) {
 
   auto result = encoder_->EncodeCustomObservation(project_context_->RefMetric(pair.first),
                                                   pair.second, kDayIndex, std::move(custom_event));
-  CheckResult(result, kExpectedMetricId, kModuleInstallsDetailedDataReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId, kModuleInstallsModuleInstallsDetailedDataReportId,
+              kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_custom());
@@ -325,7 +329,8 @@ TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
   auto result_active = encoder_->EncodeUniqueActivesObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex, kEventCode, true,
       MakeDayWindow(kAggregationDays));
-  CheckResult(result_active, kExpectedMetricId, kDeviceBootsUniqueDevicesReportId, kDayIndex);
+  CheckResult(result_active, kExpectedMetricId, kDeviceBootsDeviceBootsUniqueDevicesReportId,
+              kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result_active, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result_active.observation->has_unique_actives());
@@ -340,7 +345,8 @@ TEST_F(EncoderTest, EncodeUniqueActivesObservation) {
   auto result_inactive = encoder_->EncodeUniqueActivesObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex, kEventCode, false,
       MakeHourWindow(kAggregationHours));
-  CheckResult(result_inactive, kExpectedMetricId, kDeviceBootsUniqueDevicesReportId, kDayIndex);
+  CheckResult(result_inactive, kExpectedMetricId, kDeviceBootsDeviceBootsUniqueDevicesReportId,
+              kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result_inactive, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result_inactive.observation->has_unique_actives());
@@ -367,7 +373,8 @@ TEST_F(EncoderTest, EncodePerDeviceNumericObservation) {
   auto result = encoder_->EncodePerDeviceNumericObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex, kComponent, event_codes,
       kCount, MakeDayWindow(kAggregationDays));
-  CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceCountReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId,
+              kConnectionFailuresConnectionFailuresPerDeviceCountReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_per_device_numeric());
@@ -398,7 +405,8 @@ TEST_F(EncoderTest, EncodePerDeviceNumericHistogramObservation) {
   auto result = encoder_->EncodePerDeviceHistogramObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex, kComponent, event_codes,
       kCount, MakeDayWindow(kAggregationDays));
-  CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceHistogramReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId,
+              kConnectionFailuresConnectionFailuresPerDeviceHistogramReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_per_device_histogram());
@@ -423,7 +431,8 @@ TEST_F(EncoderTest, EncodeReportParticipationObservation) {
 
   auto result = encoder_->EncodeReportParticipationObservation(
       project_context_->RefMetric(pair.first), pair.second, kDayIndex);
-  CheckResult(result, kExpectedMetricId, kConnectionFailuresPerDeviceCountReportId, kDayIndex);
+  CheckResult(result, kExpectedMetricId,
+              kConnectionFailuresConnectionFailuresPerDeviceCountReportId, kDayIndex);
   // In the SystemProfile only the OS and ARCH should be set.
   CheckSystemProfile(result, SystemProfile::FUCHSIA, SystemProfile::ARM_64, "", "");
   ASSERT_TRUE(result.observation->has_report_participation());

@@ -19,7 +19,7 @@ var (
 	outFilename   = flag.String("out_filename", "", "The base name to use for writing files. Should not be used with output_file.")
 	outDir        = flag.String("out_dir", "", "The directory into which files should be written.")
 	outFormat     = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) 'dart' (a Dart library), and 'rust' (a rust crate)")
-	forTesting    = flag.Bool("for_testing", false, "Generates a constant for each report ID. Report names should be unique in the registry.")
+	forTesting    = flag.Bool("for_testing", false, "Generates a constant for each report ID.")
 	namespace     = flag.String("namespace", "", "When using the 'cpp', 'rust', or 'go' output format, this will specify the period-separated namespace within which the config variable must be placed (this will be transformed into an underscore-separated package name for go).")
 	goPackageName = flag.String("go_package", "", "When using the 'go' output format, this will specify the package for generated code.")
 	dartOutDir    = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
