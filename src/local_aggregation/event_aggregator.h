@@ -140,9 +140,9 @@ class EventAggregator {
   // aggregates associated with invalid event codes will be garbage-collected
   // together with valid aggregates when EventAggregator::GarbageCollect() is
   // called.
-  logger::Status LogUniqueActivesEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  logger::Status AddUniqueActivesEvent(uint32_t report_id, const logger::EventRecord& event_record);
 
-  // LogCountEvent, LogElapsedTimeEvent:
+  // AddCountEvent,AddElapsedTimeEvent:
   //
   // Adds an Event associated to a report of type PER_DEVICE_NUMERIC_STATS to
   // the AggregateStore.
@@ -157,14 +157,14 @@ class EventAggregator {
   // not found in the LocalAggregateStore, or if the Event wrapped by
   // EventRecord is not of the expected type.
   //
-  // LogCountEvent: |event_record| should wrap a CountEvent.
-  logger::Status LogCountEvent(uint32_t report_id, const logger::EventRecord& event_record);
-  // LogElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
-  logger::Status LogElapsedTimeEvent(uint32_t report_id, const logger::EventRecord& event_record);
-  // LogFrameRateEvent: |event_record| should wrap a FrameRateEvent.
-  logger::Status LogFrameRateEvent(uint32_t report_id, const logger::EventRecord& event_record);
-  // LogMemoryUsageEvent: |event_record| should wrap a MemoryUsageEvent.
-  logger::Status LogMemoryUsageEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  // AddCountEvent: |event_record| should wrap a CountEvent.
+  logger::Status AddCountEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  // AddElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
+  logger::Status AddElapsedTimeEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  // AddFrameRateEvent: |event_record| should wrap a FrameRateEvent.
+  logger::Status AddFrameRateEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  // AddMemoryUsageEvent: |event_record| should wrap a MemoryUsageEvent.
+  logger::Status AddMemoryUsageEvent(uint32_t report_id, const logger::EventRecord& event_record);
 
   // Checks that the worker thread is shut down, and if so, calls
   // AggregateStore::GenerateObservations() and returns its result. Returns kOther if the
@@ -207,11 +207,11 @@ class EventAggregator {
   void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
                         std::chrono::steady_clock::time_point steady_time);
 
-  // Logs a numeric value to the LocalAggregateStore by adding |value| to the
+  // Adds a numeric value to the LocalAggregateStore by adding |value| to the
   // current daily aggregate in the bucket indexed by |report_key|, |day_index|,
   // |component|, and |event_code|. This is a helper method called by
-  // LogCountEvent and LogElapsedTimeEvent.
-  logger::Status LogNumericEvent(const std::string& report_key, uint32_t day_index,
+  // AddCountEvent andAddElapsedTimeEvent.
+  logger::Status AddNumericEvent(const std::string& report_key, uint32_t day_index,
                                  const std::string& component, uint64_t event_code, int64_t value);
 
   // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.

@@ -142,7 +142,7 @@ bool ValidateEventType(Event::TypeCase expected_event_type, const Event& event) 
 
 }  // namespace
 
-Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
   if (!ValidateEventType(Event::kOccurrenceEvent, *event)) {
     return kInvalidArguments;
@@ -172,7 +172,7 @@ Status EventAggregator::LogUniqueActivesEvent(uint32_t report_id, const EventRec
   return kOK;
 }
 
-Status EventAggregator::LogCountEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddCountEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
   if (!ValidateEventType(Event::kCountEvent, *event)) {
     return kInvalidArguments;
@@ -184,11 +184,11 @@ Status EventAggregator::LogCountEvent(uint32_t report_id, const EventRecord& eve
     return kInvalidArguments;
   }
   const CountEvent& count_event = event->count_event();
-  return LogNumericEvent(key, event->day_index(), count_event.component(),
+  return AddNumericEvent(key, event->day_index(), count_event.component(),
                          config::PackEventCodes(count_event.event_code()), count_event.count());
 }
 
-Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
   if (!ValidateEventType(Event::kElapsedTimeEvent, *event)) {
     return kInvalidArguments;
@@ -200,12 +200,12 @@ Status EventAggregator::LogElapsedTimeEvent(uint32_t report_id, const EventRecor
     return kInvalidArguments;
   }
   const ElapsedTimeEvent& elapsed_time_event = event->elapsed_time_event();
-  return LogNumericEvent(key, event->day_index(), elapsed_time_event.component(),
+  return AddNumericEvent(key, event->day_index(), elapsed_time_event.component(),
                          config::PackEventCodes(elapsed_time_event.event_code()),
                          elapsed_time_event.elapsed_micros());
 }
 
-Status EventAggregator::LogFrameRateEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddFrameRateEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
   if (!ValidateEventType(Event::kFrameRateEvent, *event)) {
     return kInvalidArguments;
@@ -217,12 +217,12 @@ Status EventAggregator::LogFrameRateEvent(uint32_t report_id, const EventRecord&
     return kInvalidArguments;
   }
   const FrameRateEvent& frame_rate_event = event->frame_rate_event();
-  return LogNumericEvent(key, event->day_index(), frame_rate_event.component(),
+  return AddNumericEvent(key, event->day_index(), frame_rate_event.component(),
                          config::PackEventCodes(frame_rate_event.event_code()),
                          frame_rate_event.frames_per_1000_seconds());
 }
 
-Status EventAggregator::LogMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
   if (!ValidateEventType(Event::kMemoryUsageEvent, *event)) {
     return kInvalidArguments;
@@ -234,12 +234,12 @@ Status EventAggregator::LogMemoryUsageEvent(uint32_t report_id, const EventRecor
     return kInvalidArguments;
   }
   const MemoryUsageEvent& memory_usage_event = event->memory_usage_event();
-  return LogNumericEvent(key, event->day_index(), memory_usage_event.component(),
+  return AddNumericEvent(key, event->day_index(), memory_usage_event.component(),
                          config::PackEventCodes(memory_usage_event.event_code()),
                          memory_usage_event.bytes());
 }
 
-Status EventAggregator::LogNumericEvent(const std::string& report_key, uint32_t day_index,
+Status EventAggregator::AddNumericEvent(const std::string& report_key, uint32_t day_index,
                                         const std::string& component, uint64_t event_code,
                                         int64_t value) {
   auto locked = aggregate_store_->protected_aggregate_store_.lock();

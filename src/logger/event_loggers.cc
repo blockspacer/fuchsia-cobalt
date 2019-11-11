@@ -455,7 +455,7 @@ Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition
                                                           const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-      return event_aggregator()->LogUniqueActivesEvent(report.id(), event_record);
+      return event_aggregator()->AddUniqueActivesEvent(report.id(), event_record);
     }
     default:
       return kOK;
@@ -509,7 +509,7 @@ Status CountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& rep
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
     case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-      return event_aggregator()->LogCountEvent(report.id(), event_record);
+      return event_aggregator()->AddCountEvent(report.id(), event_record);
     }
     default:
       return kOK;
@@ -578,7 +578,7 @@ Status ElapsedTimeEventLogger::MaybeUpdateLocalAggregation(const ReportDefinitio
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
     case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-      return event_aggregator()->LogElapsedTimeEvent(report.id(), event_record);
+      return event_aggregator()->AddElapsedTimeEvent(report.id(), event_record);
     }
     default:
       return kOK;
@@ -614,7 +614,7 @@ Status FrameRateEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition&
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
     case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-      return event_aggregator()->LogFrameRateEvent(report.id(), event_record);
+      return event_aggregator()->AddFrameRateEvent(report.id(), event_record);
     }
     default:
       return kOK;
@@ -649,7 +649,7 @@ Status MemoryUsageEventLogger::MaybeUpdateLocalAggregation(const ReportDefinitio
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
     case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-      return event_aggregator()->LogMemoryUsageEvent(report.id(), event_record);
+      return event_aggregator()->AddMemoryUsageEvent(report.id(), event_record);
     }
     default:
       return kOK;

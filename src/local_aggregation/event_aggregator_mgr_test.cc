@@ -127,19 +127,19 @@ class EventAggregatorManagerTest : public ::testing::Test {
         .size();
   }
 
-  // Given a ProjectContext |project_context| and the MetricReportId of a
-  // UNIQUE_N_DAY_ACTIVES report in |project_context|, as well as a day index
-  // and an event code, logs an OccurrenceEvent to the EventAggregator for
-  // that report, day index, and event code. If a non-null LoggedActivity map is
-  // provided, updates the map with information about the logged Event.
-  Status LogUniqueActivesEvent(EventAggregatorManager* event_aggregator_mgr,
+  // Given a ProjectContext |project_context| and the MetricReportId of a UNIQUE_N_DAY_ACTIVES
+  // report in |project_context|, as well as a day index and an event code, adds an OccurrenceEvent
+  // to the EventAggregator's AggregateStore for that report, day index, and event code. If a
+  // non-null LoggedActivity map is provided, updates the map with information about the logged
+  // Event.
+  Status AddUniqueActivesEvent(EventAggregatorManager* event_aggregator_mgr,
                                std::shared_ptr<const ProjectContext> project_context,
                                const MetricReportId& metric_report_id, uint32_t day_index,
                                uint32_t event_code) {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
     event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
-    return event_aggregator_mgr->GetEventAggregator()->LogUniqueActivesEvent(
+    return event_aggregator_mgr->GetEventAggregator()->AddUniqueActivesEvent(
         metric_report_id.second, event_record);
   }
 
@@ -306,13 +306,13 @@ TEST_F(EventAggregatorManagerTest, LogEvents) {
   EXPECT_EQ(kOK,
             event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
 
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
                                        kDeviceBootsMetricReportId, day_index, /*event_code*/ 0u));
   EXPECT_EQ(kOK,
-            LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
                                   kFeaturesActiveMetricReportId, day_index, /*event_code*/ 4u));
   EXPECT_EQ(kOK,
-            LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
                                   kEventsOccurredMetricReportId, day_index, /*event_code*/ 1u));
 
   EXPECT_EQ(3, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
@@ -372,13 +372,13 @@ TEST_F(EventAggregatorManagerTest, Run) {
 
   EXPECT_EQ(kOK,
             event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
                                        day_index, /*event_code*/ 1));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
                                        day_index, /*event_code*/ 2));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
                                        day_index, /*event_code*/ 3));
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context, expected_id,
                                        day_index, /*event_code*/ 4));
 
   AdvanceClock(kSecondsInOneDay);

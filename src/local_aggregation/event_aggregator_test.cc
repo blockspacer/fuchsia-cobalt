@@ -181,13 +181,13 @@ class EventAggregatorTest : public ::testing::Test {
   // and an event code, logs an OccurrenceEvent to the EventAggregator for
   // that report, day index, and event code. If a non-null LoggedActivity map is
   // provided, updates the map with information about the logged Event.
-  Status LogUniqueActivesEvent(std::shared_ptr<const ProjectContext> project_context,
+  Status AddUniqueActivesEvent(std::shared_ptr<const ProjectContext> project_context,
                                const MetricReportId& metric_report_id, uint32_t day_index,
                                uint32_t event_code, LoggedActivity* logged_activity = nullptr) {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
     event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
-    auto status = event_aggregator_->LogUniqueActivesEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddUniqueActivesEvent(metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
       return status;
     }
@@ -206,7 +206,7 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a CountEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceCountEvent(std::shared_ptr<const ProjectContext> project_context,
+  Status AddPerDeviceCountEvent(std::shared_ptr<const ProjectContext> project_context,
                                 const MetricReportId& metric_report_id, uint32_t day_index,
                                 const std::string& component, uint32_t event_code, int64_t count,
                                 LoggedValues* logged_values = nullptr) {
@@ -216,7 +216,7 @@ class EventAggregatorTest : public ::testing::Test {
     count_event->set_component(component);
     count_event->add_event_code(event_code);
     count_event->set_count(count);
-    auto status = event_aggregator_->LogCountEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddCountEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -235,7 +235,7 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs an ElapsedTimeEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceElapsedTimeEvent(std::shared_ptr<const ProjectContext> project_context,
+  Status AddPerDeviceElapsedTimeEvent(std::shared_ptr<const ProjectContext> project_context,
                                       const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component, uint32_t event_code,
                                       int64_t micros, LoggedValues* logged_values = nullptr) {
@@ -245,7 +245,7 @@ class EventAggregatorTest : public ::testing::Test {
     elapsed_time_event->set_component(component);
     elapsed_time_event->add_event_code(event_code);
     elapsed_time_event->set_elapsed_micros(micros);
-    auto status = event_aggregator_->LogElapsedTimeEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddElapsedTimeEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -264,7 +264,7 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a FrameRateEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceFrameRateEvent(std::shared_ptr<const ProjectContext> project_context,
+  Status AddPerDeviceFrameRateEvent(std::shared_ptr<const ProjectContext> project_context,
                                     const MetricReportId& metric_report_id, uint32_t day_index,
                                     const std::string& component, uint32_t event_code, float fps,
                                     LoggedValues* logged_values = nullptr) {
@@ -275,7 +275,7 @@ class EventAggregatorTest : public ::testing::Test {
     frame_rate_event->add_event_code(event_code);
     int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
-    auto status = event_aggregator_->LogFrameRateEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddFrameRateEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -294,7 +294,7 @@ class EventAggregatorTest : public ::testing::Test {
   // code, logs a MemoryUsageEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status LogPerDeviceMemoryUsageEvent(std::shared_ptr<const ProjectContext> project_context,
+  Status AddPerDeviceMemoryUsageEvent(std::shared_ptr<const ProjectContext> project_context,
                                       const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component,
                                       const std::vector<uint32_t>& event_codes, int64_t bytes,
@@ -307,7 +307,7 @@ class EventAggregatorTest : public ::testing::Test {
       memory_usage_event->add_event_code(event_code);
     }
     memory_usage_event->set_bytes(bytes);
-    auto status = event_aggregator_->LogMemoryUsageEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddMemoryUsageEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -699,54 +699,53 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
     event_aggregator_->UpdateAggregationConfigs(*project_context_);
   }
 
-  // Logs an OccurrenceEvent for the MetricReportId of a locally
+  // Adds an OccurrenceEvent to the local aggregations for the MetricReportId of a locally
   // aggregated report of the ProjectContext. Overrides the method
-  // EventAggregatorTest::LogUniqueActivesEvent.
-  Status LogUniqueActivesEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+  // EventAggregatorTest::AddUniqueActivesEvent.
+  Status AddUniqueActivesEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                uint32_t event_code, LoggedActivity* logged_activity = nullptr) {
-    return EventAggregatorTest::LogUniqueActivesEvent(project_context_, metric_report_id, day_index,
+    return EventAggregatorTest::AddUniqueActivesEvent(project_context_, metric_report_id, day_index,
                                                       event_code, logged_activity);
   }
 
-  // Logs a CountEvent for the MetricReportId of a locally
-  // aggregated report of the ProjectContext. Overrides the method
-  // EventAggregatorTest::LogPerDeviceCountEvent.
-  Status LogPerDeviceCountEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+  // Adds a CountEvent to the local aggregations for the MetricReportId of a locally aggregated
+  // report of the ProjectContext. Overrides the method EventAggregatorTest::AddPerDeviceCountEvent.
+  Status AddPerDeviceCountEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                 const std::string& component, uint32_t event_code, int64_t count,
                                 LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceCountEvent(
+    return EventAggregatorTest::AddPerDeviceCountEvent(
         project_context_, metric_report_id, day_index, component, event_code, count, logged_values);
   }
 
-  // Logs an ElapsedTimeEvent for the MetricReportId of a locally
+  // Adds an ElapsedTimeEvent to the local aggregations for the MetricReportId of a locally
   // aggregated report of the ProjectContext. Overrides the method
-  // EventAggregatorTest::LogPerDeviceElapsedTimeEvent.
-  Status LogPerDeviceElapsedTimeEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+  // EventAggregatorTest::AddPerDeviceElapsedTimeEvent.
+  Status AddPerDeviceElapsedTimeEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component, uint32_t event_code,
                                       int64_t micros, LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceElapsedTimeEvent(project_context_, metric_report_id,
+    return EventAggregatorTest::AddPerDeviceElapsedTimeEvent(project_context_, metric_report_id,
                                                              day_index, component, event_code,
                                                              micros, logged_values);
   }
 
-  // Logs a FrameRateEvent for the MetricReportId of a locally
-  // aggregated report of the ProjectContext. Overrides the method
-  // EventAggregatorTest::LogPerDeviceFrameRateEvent.
-  Status LogPerDeviceFrameRateEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+  // Adds a FrameRateEvent to the local aggregations for the MetricReportId of a locally aggregated
+  // report of the ProjectContext. Overrides the method
+  // EventAggregatorTest::AddPerDeviceFrameRateEvent.
+  Status AddPerDeviceFrameRateEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                     const std::string& component, uint32_t event_code, float fps,
                                     LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceFrameRateEvent(
+    return EventAggregatorTest::AddPerDeviceFrameRateEvent(
         project_context_, metric_report_id, day_index, component, event_code, fps, logged_values);
   }
 
-  // Logs a MemoryUsageEvent for the MetricReportId of a locally
+  // Adds a MemoryUsageEvent to the local aggregations for the MetricReportId of a locally
   // aggregated report of the ProjectContext. Overrides the method
-  // EventAggregatorTest::LogPerDeviceMemoryUsageEvent.
-  Status LogPerDeviceMemoryUsageEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+  // EventAggregatorTest::AddPerDeviceMemoryUsageEvent.
+  Status AddPerDeviceMemoryUsageEvent(const MetricReportId& metric_report_id, uint32_t day_index,
                                       const std::string& component,
                                       const std::vector<uint32_t>& event_codes, int64_t bytes,
                                       LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::LogPerDeviceMemoryUsageEvent(project_context_, metric_report_id,
+    return EventAggregatorTest::AddPerDeviceMemoryUsageEvent(project_context_, metric_report_id,
                                                              day_index, component, event_codes,
                                                              bytes, logged_values);
   }
@@ -923,35 +922,35 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
                                logger::testing::unique_actives_noise_free::kEventsOccurredMetricId);
   bad_event_record.event()->set_day_index(CurrentDayIndex());
   bad_event_record.event()->mutable_occurrence_event()->set_event_code(0u);
-  EXPECT_EQ(kInvalidArguments, event_aggregator_->LogUniqueActivesEvent(
+  EXPECT_EQ(kInvalidArguments, event_aggregator_->AddUniqueActivesEvent(
                                    logger::testing::unique_actives_noise_free::
                                        kEventsOccurredEventsOccurredUniqueDevicesReportId,
                                    bad_event_record));
-  // Attempt to call LogUniqueActivesEvent() with a valid metric and report
+  // Attempt to call AddUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
   // OccurrenceEvent. Check that the result is |kInvalidArguments|.
   EventRecord bad_event_record2(unique_actives_project_context,
                                 logger::testing::unique_actives::kFeaturesActiveMetricId);
   bad_event_record2.event()->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->LogUniqueActivesEvent(
+            event_aggregator_->AddUniqueActivesEvent(
                 logger::testing::unique_actives::kFeaturesActiveFeaturesActiveUniqueDevicesReportId,
                 bad_event_record2));
-  // Attempt to call LogPerDeviceCountEvent() with a valid metric and report
+  // Attempt to call AddPerDeviceCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
   // CountEvent. Check that the result is |kInvalidArguments|.
   EventRecord bad_event_record3(
       noise_free_project_context,
       logger::testing::per_device_numeric_stats::kConnectionFailuresMetricReportId.first);
   bad_event_record3.event()->mutable_occurrence_event();
-  EXPECT_EQ(kInvalidArguments, event_aggregator_->LogCountEvent(
+  EXPECT_EQ(kInvalidArguments, event_aggregator_->AddCountEvent(
                                    logger::testing::per_device_numeric_stats::
                                        kConnectionFailuresConnectionFailuresPerDeviceCountReportId,
                                    bad_event_record3));
 }
 
 // Tests that the LocalAggregateStore is updated as expected when
-// EventAggregator::LogUniqueActivesEvent() is called with valid arguments;
+// EventAggregator::AddUniqueActivesEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
 // LocalAggregateStore, and with an EventRecord which wraps an
 // OccurrenceEvent.
@@ -962,32 +961,32 @@ TEST_F(UniqueActivesEventAggregatorTest, LogEvents) {
   LoggedActivity logged_activity;
   uint32_t num_days = 35;
   for (uint32_t offset = 0; offset < num_days; offset++) {
-    // Log an event for the FeaturesActive_UniqueDevices report with event code
-    // 0. Check the contents of the LocalAggregateStore.
+    // Add an event to the local aggregations for the FeaturesActive_UniqueDevices report with event
+    // code 0. Check the contents of the LocalAggregateStore.
     auto day_index = CurrentDayIndex();
     EXPECT_EQ(kOK,
-              LogUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
+              AddUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
                                     day_index, 0u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
-    // Log another event for the same report, event code, and day index.
+    // Add another event to the local aggregations for the same report, event code, and day index.
     // Check the contents of the LocalAggregateStore.
     EXPECT_EQ(kOK,
-              LogUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
+              AddUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
                                     day_index, 0u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
-    // Log several more events for various valid reports and event codes.
+    // Add several more events to the local aggregations for various valid reports and event codes.
     // Check the contents of the LocalAggregateStore.
     EXPECT_EQ(kOK,
-              LogUniqueActivesEvent(logger::testing::unique_actives::kDeviceBootsMetricReportId,
+              AddUniqueActivesEvent(logger::testing::unique_actives::kDeviceBootsMetricReportId,
                                     day_index, 0u, &logged_activity));
     EXPECT_EQ(kOK,
-              LogUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
+              AddUniqueActivesEvent(logger::testing::unique_actives::kFeaturesActiveMetricReportId,
                                     day_index, 4u, &logged_activity));
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(
+    EXPECT_EQ(kOK, AddUniqueActivesEvent(
                        logger::testing::unique_actives::kNetworkActivityWindowSizeMetricReportId,
                        day_index, 1u, &logged_activity));
     EXPECT_EQ(kOK,
-              LogUniqueActivesEvent(
+              AddUniqueActivesEvent(
                   logger::testing::unique_actives::kNetworkActivityAggregationWindowMetricReportId,
                   day_index, 1u, &logged_activity));
     EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
@@ -1040,7 +1039,7 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
        logger::testing::unique_actives_noise_free::kExpectedAggregationParams.num_event_codes.at(
            expected_id);
        event_code++) {
-    EXPECT_EQ(kOK, LogUniqueActivesEvent(expected_id, day_index, event_code));
+    EXPECT_EQ(kOK, AddUniqueActivesEvent(expected_id, day_index, event_code));
   }
   // Advance |test_clock_| by 1 day.
   AdvanceClock(kDay);
@@ -1056,7 +1055,7 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
 }
 
 // Tests that the LocalAggregateStore is updated as expected when
-// EventAggregator::LogPerDeviceCountEvent() is called with valid arguments;
+// EventAggregator::AddPerDeviceCountEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
 // LocalAggregateStore, and with an EventRecord which wraps a CountEvent.
 //
@@ -1083,43 +1082,43 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
     auto day_index = CurrentDayIndex();
     for (const auto& id : count_metric_report_ids) {
       for (const auto& component : {"component_A", "component_B", "component_C"}) {
-        // Log 2 events with event code 0, for each component A, B, C.
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 2, &logged_values));
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, component, 0u, 3, &logged_values));
+        // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
+        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 2, &logged_values));
+        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 3, &logged_values));
       }
       if (offset < 3) {
-        // Log 1 event for component D and event code 1.
-        EXPECT_EQ(kOK, LogPerDeviceCountEvent(id, day_index, "component_D", 1u, 4, &logged_values));
+        // Adds 1 event to the local aggregations for component D and event code 1.
+        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, "component_D", 1u, 4, &logged_values));
       }
     }
     for (const auto& id : elapsed_time_metric_report_ids) {
       for (const auto& component : {"component_A", "component_B", "component_C"}) {
-        // Log 2 events with event code 0, for each component A, B, C.
+        // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
         EXPECT_EQ(kOK,
-                  LogPerDeviceElapsedTimeEvent(id, day_index, component, 0u, 2, &logged_values));
+                  AddPerDeviceElapsedTimeEvent(id, day_index, component, 0u, 2, &logged_values));
         EXPECT_EQ(kOK,
-                  LogPerDeviceElapsedTimeEvent(id, day_index, component, 0u, 3, &logged_values));
+                  AddPerDeviceElapsedTimeEvent(id, day_index, component, 0u, 3, &logged_values));
       }
       if (offset < 3) {
-        // Log 1 event for component D and event code 1.
+        // Adds 1 event to the local aggregations for component D and event code 1.
         EXPECT_EQ(
-            kOK, LogPerDeviceElapsedTimeEvent(id, day_index, "component_D", 1u, 4, &logged_values));
+            kOK, AddPerDeviceElapsedTimeEvent(id, day_index, "component_D", 1u, 4, &logged_values));
       }
     }
     for (const auto& component : {"component_A", "component_B"}) {
-      // Log some events for a FRAME_RATE metric with a PerDeviceNumericStats
-      // report.
-      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id, day_index, component,
+      // Adds some events to the local aggregations for a FRAME_RATE metric with a
+      // PerDeviceNumericStats report.
+      EXPECT_EQ(kOK, AddPerDeviceFrameRateEvent(frame_rate_metric_report_id, day_index, component,
                                                 0u, 2.25, &logged_values));
-      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_metric_report_id, day_index, component,
+      EXPECT_EQ(kOK, AddPerDeviceFrameRateEvent(frame_rate_metric_report_id, day_index, component,
                                                 0u, 1.75, &logged_values));
-      // Log some events for a MEMORY_USAGE metric with a
+      // Adds some events to the local aggregations for a MEMORY_USAGE metric with a
       // PerDeviceNumericStats report.
       EXPECT_EQ(kOK,
-                LogPerDeviceMemoryUsageEvent(memory_usage_metric_report_id, day_index, component,
+                AddPerDeviceMemoryUsageEvent(memory_usage_metric_report_id, day_index, component,
                                              std::vector<uint32_t>{0u, 0u}, 300, &logged_values));
       EXPECT_EQ(kOK,
-                LogPerDeviceMemoryUsageEvent(memory_usage_metric_report_id, day_index, component,
+                AddPerDeviceMemoryUsageEvent(memory_usage_metric_report_id, day_index, component,
                                              std::vector<uint32_t>{1u, 0u}, 300, &logged_values));
     }
     EXPECT_TRUE(CheckPerDeviceNumericAggregates(logged_values, day_index));
@@ -1128,7 +1127,7 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
 }
 
 // Tests that the LocalAggregateStore is updated as expected when
-// EventAggregator::LogPerDeviceCountEvent() is called with valid arguments;
+// EventAggregator::AddPerDeviceCountEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
 // LocalAggregateStore, and with an EventRecord which wraps a CountEvent.
 //
@@ -1147,43 +1146,45 @@ TEST_F(PerDeviceHistogramEventAggregatorTest, LogEvents) {
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (const auto& component : {"component_A", "component_B", "component_C"}) {
-      // Log 2 events with event code 0, for each component A, B, C.
+      // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
       EXPECT_EQ(
-          kOK, LogPerDeviceCountEvent(event_count_id, day_index, component, 0u, 2, &logged_values));
+          kOK, AddPerDeviceCountEvent(event_count_id, day_index, component, 0u, 2, &logged_values));
       EXPECT_EQ(
-          kOK, LogPerDeviceCountEvent(event_count_id, day_index, component, 0u, 3, &logged_values));
+          kOK, AddPerDeviceCountEvent(event_count_id, day_index, component, 0u, 3, &logged_values));
     }
     if (offset < 3) {
-      // Log 1 event for component D and event code 1.
-      EXPECT_EQ(kOK, LogPerDeviceCountEvent(event_count_id, day_index, "component_D", 1u, 4,
+      // Adds 1 event to the local aggregations for component D and event code 1.
+      EXPECT_EQ(kOK, AddPerDeviceCountEvent(event_count_id, day_index, "component_D", 1u, 4,
                                             &logged_values));
     }
 
     for (const auto& component : {"component_A", "component_B", "component_C"}) {
-      // Log 2 events with event code 0, for each component A, B, C.
-      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 2,
+      // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
+      EXPECT_EQ(kOK, AddPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 2,
                                                   &logged_values));
-      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 3,
+      EXPECT_EQ(kOK, AddPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, component, 0u, 3,
                                                   &logged_values));
     }
     if (offset < 3) {
-      // Log 1 event for component D and event code 1.
-      EXPECT_EQ(kOK, LogPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, "component_D", 1u, 4,
+      // Adds 1 event to the local aggregations for component D and event code 1.
+      EXPECT_EQ(kOK, AddPerDeviceElapsedTimeEvent(elapsed_time_id, day_index, "component_D", 1u, 4,
                                                   &logged_values));
     }
 
     for (const auto& component : {"component_A", "component_B"}) {
-      // Log some events for a FRAME_RATE metric with a PerDeviceHistogram report.
-      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 2.25,
+      // Adds some events to the local aggregations for a FRAME_RATE metric with a
+      // PerDeviceHistogram report.
+      EXPECT_EQ(kOK, AddPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 2.25,
                                                 &logged_values));
-      EXPECT_EQ(kOK, LogPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 1.75,
+      EXPECT_EQ(kOK, AddPerDeviceFrameRateEvent(frame_rate_id, day_index, component, 0u, 1.75,
                                                 &logged_values));
-      // Log some events for a MEMORY_USAGE metric with a PerDeviceHistogram report.
+      // Adds some events to the local aggregations for a MEMORY_USAGE metric with a
+      // PerDeviceHistogram report.
       EXPECT_EQ(kOK,
-                LogPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
+                AddPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
                                              std::vector<uint32_t>{0u, 0u}, 300, &logged_values));
       EXPECT_EQ(kOK,
-                LogPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
+                AddPerDeviceMemoryUsageEvent(memory_usage_id, day_index, component,
                                              std::vector<uint32_t>{1u, 0u}, 300, &logged_values));
     }
     EXPECT_TRUE(CheckPerDeviceNumericAggregates(logged_values, day_index));
@@ -1254,17 +1255,17 @@ TEST_F(EventAggregatorWorkerTest, LogEvents) {
   std::shared_ptr<ProjectContext> project_context =
       GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
-  // Log some events.
+  // // Adds some events to the local aggregations.
   LoggedActivity logged_activity;
-  EXPECT_EQ(kOK, LogUniqueActivesEvent(
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(
                      project_context, logger::testing::all_report_types::kDeviceBootsMetricReportId,
                      day_index, 0u, &logged_activity));
   EXPECT_EQ(kOK,
-            LogUniqueActivesEvent(project_context,
+            AddUniqueActivesEvent(project_context,
                                   logger::testing::all_report_types::kFeaturesActiveMetricReportId,
                                   day_index, 4u, &logged_activity));
   EXPECT_EQ(kOK,
-            LogUniqueActivesEvent(project_context,
+            AddUniqueActivesEvent(project_context,
                                   logger::testing::all_report_types::kEventsOccurredMetricReportId,
                                   day_index, 1u, &logged_activity));
   EXPECT_TRUE(CheckUniqueActivesAggregates(logged_activity, day_index));
