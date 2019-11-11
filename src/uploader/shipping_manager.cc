@@ -357,7 +357,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
   for (const auto& observation_batch : envelope.batch()) {
     const auto& metadata = observation_batch.meta_data();
     internal_metrics_->BytesUploaded(
-        logger::per_project_bytes_uploaded_metric_dimension_status_scope::Attempted,
+        logger::PerProjectBytesUploadedMetricDimensionStatus::Attempted,
         observation_batch.ByteSizeLong(), metadata.customer_id(), metadata.project_id());
   }
 
@@ -387,7 +387,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
     for (const auto& observation_batch : envelope.batch()) {
       const auto& metadata = observation_batch.meta_data();
       internal_metrics_->BytesUploaded(
-          logger::per_project_bytes_uploaded_metric_dimension_status_scope::Succeeded,
+          logger::PerProjectBytesUploadedMetricDimensionStatus::Succeeded,
           observation_batch.GetCachedSize(), metadata.customer_id(), metadata.project_id());
     }
   }

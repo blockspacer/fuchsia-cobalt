@@ -32,56 +32,56 @@ const uint32_t kLinearBucketsMetricId = 400;
 const uint32_t kExponentialBucketsMetricId = 500;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
-namespace the_other_metric_name_metric_dimension_0_scope {
+namespace __the_other_metric_name_metric_dimension_0_internal_scope_do_not_use__ {
 enum Enum {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 };
-}  // the_other_metric_name_metric_dimension_0_scope
-using TheOtherMetricNameMetricDimension0 = the_other_metric_name_metric_dimension_0_scope::Enum;
+}  // __the_other_metric_name_metric_dimension_0_internal_scope_do_not_use__
+using TheOtherMetricNameMetricDimension0 = __the_other_metric_name_metric_dimension_0_internal_scope_do_not_use__::Enum;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnEvent = TheOtherMetricNameMetricDimension0::AnEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnotherEvent = TheOtherMetricNameMetricDimension0::AnotherEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AThirdEvent = TheOtherMetricNameMetricDimension0::AThirdEvent;
 
 // Enum for event groups (Metric Dimension The First Group)
-namespace event_groups_metric_dimension_the_first_group_scope {
+namespace __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__ {
 enum Enum {
   AnEvent = 0,
   AnotherEvent = 1,
   AThirdEvent = 2,
 };
-}  // event_groups_metric_dimension_the_first_group_scope
-using EventGroupsMetricDimensionTheFirstGroup = event_groups_metric_dimension_the_first_group_scope::Enum;
+}  // __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__
+using EventGroupsMetricDimensionTheFirstGroup = __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__::Enum;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
 
 // Enum for event groups (Metric Dimension A second group)
-namespace event_groups_metric_dimension_a_second_group_scope {
+namespace __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__ {
 enum Enum {
   This = 1,
   Is = 2,
   Another = 3,
   Test = 4,
 };
-}  // event_groups_metric_dimension_a_second_group_scope
-using EventGroupsMetricDimensionASecondGroup = event_groups_metric_dimension_a_second_group_scope::Enum;
+}  // __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__
+using EventGroupsMetricDimensionASecondGroup = __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__::Enum;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Test = EventGroupsMetricDimensionASecondGroup::Test;
 
 // Enum for event groups (Metric Dimension 2)
-namespace event_groups_metric_dimension_2_scope {
+namespace __event_groups_metric_dimension_2_internal_scope_do_not_use__ {
 enum Enum {
   ThisMetric = 0,
   HasNo = 2,
   Name = 4,
   Alias = HasNo,
 };
-}  // event_groups_metric_dimension_2_scope
-using EventGroupsMetricDimension2 = event_groups_metric_dimension_2_scope::Enum;
+}  // __event_groups_metric_dimension_2_internal_scope_do_not_use__
+using EventGroupsMetricDimension2 = __event_groups_metric_dimension_2_internal_scope_do_not_use__::Enum;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;

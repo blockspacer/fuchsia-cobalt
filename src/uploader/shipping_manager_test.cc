@@ -27,7 +27,7 @@ namespace cobalt::encoder {
 
 using cobalt::clearcut_extensions::LogEventExtension;
 using lib::statusor::StatusOr;
-using logger::per_project_bytes_uploaded_metric_dimension_status_scope::Succeeded;
+using logger::PerProjectBytesUploadedMetricDimensionStatus::Succeeded;
 using logger::testing::FakeLogger;
 using observation_store::MemoryObservationStore;
 using observation_store::ObservationStore;

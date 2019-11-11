@@ -45,8 +45,8 @@ func (_ CPP) writeExtraFooter(so *sourceOutputter, projectName, customerName str
 }
 
 func enumNamespace(name ...string) string {
-	name = append(name, "scope")
-	return toSnakeCase(name...)
+	name = append(name, "internal scope do not use")
+	return "__" + toSnakeCase(name...) + "__"
 }
 
 func (_ CPP) writeEnumBegin(so *sourceOutputter, name ...string) {
