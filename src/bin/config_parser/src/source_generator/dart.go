@@ -8,6 +8,7 @@ package source_generator
 type Dart struct{}
 
 func (_ Dart) getCommentPrefix() string { return "//" }
+func (_ Dart) supportsTypeAlias() bool  { return false }
 
 func (_ Dart) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 }
@@ -39,6 +40,7 @@ func (_ Dart) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	so.writeLineFmt("const int %s_%s = %s::%s;", enum, variant, enum, variant)
 }
 
+func (_ Dart) writeTypeAlias(so *sourceOutputter, from, to []string)         {}
 func (_ Dart) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {}
 func (_ Dart) writeNamespacesEnd(so *sourceOutputter, namespaces []string)   {}
 

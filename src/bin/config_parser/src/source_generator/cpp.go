@@ -23,6 +23,7 @@ func getHeaderGuard(projectName, customerName string, namespaces []string) strin
 }
 
 func (_ CPP) getCommentPrefix() string { return "//" }
+func (_ CPP) supportsTypeAlias() bool  { return true }
 
 func (_ CPP) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 	if projectName == "" || customerName == "" {
@@ -77,6 +78,10 @@ func (_ CPP) writeEnumExport(so *sourceOutputter, enumName, name []string) {
 	enum := toPascalCase(enumName...)
 	variant := toPascalCase(name...)
 	so.writeLineFmt("const %s %s_%s = %s::%s;", enum, enum, variant, enum, variant)
+}
+
+func (_ CPP) writeTypeAlias(so *sourceOutputter, from, to []string) {
+	so.writeLineFmt("using %s = %s;", toPascalCase(to...), toPascalCase(from...))
 }
 
 func getNamespaces(namespaces []string) string {

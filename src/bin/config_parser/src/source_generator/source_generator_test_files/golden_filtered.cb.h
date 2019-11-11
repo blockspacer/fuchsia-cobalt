@@ -30,6 +30,10 @@ const uint32_t kEventGroupsMetricId = 300;
 const uint32_t kLinearBucketsMetricId = 400;
 // exponential buckets
 const uint32_t kExponentialBucketsMetricId = 500;
+// metric
+const uint32_t kMetricMetricId = 600;
+// second metric
+const uint32_t kSecondMetricMetricId = 601;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 namespace __the_other_metric_name_metric_dimension_0_internal_scope_do_not_use__ {
@@ -44,15 +48,8 @@ const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnEv
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AnotherEvent = TheOtherMetricNameMetricDimension0::AnotherEvent;
 const TheOtherMetricNameMetricDimension0 TheOtherMetricNameMetricDimension0_AThirdEvent = TheOtherMetricNameMetricDimension0::AThirdEvent;
 
-// Enum for event groups (Metric Dimension The First Group)
-namespace __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__ {
-enum Enum {
-  AnEvent = 0,
-  AnotherEvent = 1,
-  AThirdEvent = 2,
-};
-}  // __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__
-using EventGroupsMetricDimensionTheFirstGroup = __event_groups_metric_dimension_the_first_group_internal_scope_do_not_use__::Enum;
+// Alias for event groups (Metric Dimension The First Group) which has the same event codes
+using EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnEvent = EventGroupsMetricDimensionTheFirstGroup::AnEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
@@ -87,7 +84,51 @@ const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroup
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Alias = EventGroupsMetricDimension2::Alias;
 
+// Enum for metric (Metric Dimension First)
+namespace __metric_metric_dimension_first_internal_scope_do_not_use__ {
+enum Enum {
+  A = 1,
+  Set = 2,
+  OfEvent = 3,
+  Codes = 4,
+};
+}  // __metric_metric_dimension_first_internal_scope_do_not_use__
+using MetricMetricDimensionFirst = __metric_metric_dimension_first_internal_scope_do_not_use__::Enum;
+const MetricMetricDimensionFirst MetricMetricDimensionFirst_A = MetricMetricDimensionFirst::A;
+const MetricMetricDimensionFirst MetricMetricDimensionFirst_Set = MetricMetricDimensionFirst::Set;
+const MetricMetricDimensionFirst MetricMetricDimensionFirst_OfEvent = MetricMetricDimensionFirst::OfEvent;
+const MetricMetricDimensionFirst MetricMetricDimensionFirst_Codes = MetricMetricDimensionFirst::Codes;
+
+// Alias for second metric (Metric Dimension First) which has the same event codes
+using SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_A = SecondMetricMetricDimensionFirst::A;
+const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_Set = SecondMetricMetricDimensionFirst::Set;
+const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_OfEvent = SecondMetricMetricDimensionFirst::OfEvent;
+const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_Codes = SecondMetricMetricDimensionFirst::Codes;
+
+// Enum for metric (Metric Dimension Second)
+namespace __metric_metric_dimension_second_internal_scope_do_not_use__ {
+enum Enum {
+  Some = 0,
+  More = 4,
+  Event = 8,
+  Codes = 16,
+};
+}  // __metric_metric_dimension_second_internal_scope_do_not_use__
+using MetricMetricDimensionSecond = __metric_metric_dimension_second_internal_scope_do_not_use__::Enum;
+const MetricMetricDimensionSecond MetricMetricDimensionSecond_Some = MetricMetricDimensionSecond::Some;
+const MetricMetricDimensionSecond MetricMetricDimensionSecond_More = MetricMetricDimensionSecond::More;
+const MetricMetricDimensionSecond MetricMetricDimensionSecond_Event = MetricMetricDimensionSecond::Event;
+const MetricMetricDimensionSecond MetricMetricDimensionSecond_Codes = MetricMetricDimensionSecond::Codes;
+
+// Alias for second metric (Metric Dimension Second) which has the same event codes
+using SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_Some = SecondMetricMetricDimensionSecond::Some;
+const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_More = SecondMetricMetricDimensionSecond::More;
+const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_Event = SecondMetricMetricDimensionSecond::Event;
+const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_Codes = SecondMetricMetricDimensionSecond::Codes;
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const char kConfig[] = "KqAECghjdXN0b21lchAKGpEECgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAg==";
+const char kConfig[] = "KpcGCghjdXN0b21lchAKGogGCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAhp2CgZtZXRyaWMQChgFINgEggEvCgVGaXJzdBIFCAESAUESBwgCEgNTZXQSCwgDEgdPZkV2ZW50EgkIBBIFQ29kZXOCATIKBlNlY29uZBIICAASBFNvbWUSCAgEEgRNb3JlEgkICBIFRXZlbnQSCQgQEgVDb2Rlcxp9Cg1zZWNvbmQgbWV0cmljEAoYBSDZBIIBLwoFRmlyc3QSBQgBEgFBEgcIAhIDU2V0EgsIAxIHT2ZFdmVudBIJCAQSBUNvZGVzggEyCgZTZWNvbmQSCAgAEgRTb21lEggIBBIETW9yZRIJCAgSBUV2ZW50EgkIEBIFQ29kZXM=";
 
 #endif  // COBALT_REGISTRY_CUSTOMER_PROJECT_GEN_

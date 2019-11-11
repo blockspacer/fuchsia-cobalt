@@ -26,6 +26,10 @@ const EventGroupsMetricId uint32 = 300;
 const LinearBucketsMetricId uint32 = 400;
 // exponential buckets
 const ExponentialBucketsMetricId uint32 = 500;
+// metric
+const MetricMetricId uint32 = 600;
+// second metric
+const SecondMetricMetricId uint32 = 601;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 type TheOtherMetricNameMetricDimension0 uint32
@@ -36,14 +40,8 @@ _ TheOtherMetricNameMetricDimension0 = iota
   AThirdEvent = 2
 )
 
-// Enum for event groups (Metric Dimension The First Group)
-type EventGroupsMetricDimensionTheFirstGroup uint32
-const (
-_ EventGroupsMetricDimensionTheFirstGroup = iota
-  AnEvent = 0
-  AnotherEvent = 1
-  AThirdEvent = 2
-)
+// Alias for event groups (Metric Dimension The First Group) which has the same event codes
+type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0
 
 // Enum for event groups (Metric Dimension A second group)
 type EventGroupsMetricDimensionASecondGroup uint32
@@ -64,5 +62,31 @@ _ EventGroupsMetricDimension2 = iota
   Name = 4
 )
 
+// Enum for metric (Metric Dimension First)
+type MetricMetricDimensionFirst uint32
+const (
+_ MetricMetricDimensionFirst = iota
+  A = 1
+  Set = 2
+  OfEvent = 3
+  Codes = 4
+)
+
+// Alias for second metric (Metric Dimension First) which has the same event codes
+type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst
+
+// Enum for metric (Metric Dimension Second)
+type MetricMetricDimensionSecond uint32
+const (
+_ MetricMetricDimensionSecond = iota
+  Some = 0
+  More = 4
+  Event = 8
+  Codes = 16
+)
+
+// Alias for second metric (Metric Dimension Second) which has the same event codes
+type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-const Config string = "KqAECghjdXN0b21lchAKGpEECgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAg==";
+const Config string = "KpcGCghjdXN0b21lchAKGogGCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAhp2CgZtZXRyaWMQChgFINgEggEvCgVGaXJzdBIFCAESAUESBwgCEgNTZXQSCwgDEgdPZkV2ZW50EgkIBBIFQ29kZXOCATIKBlNlY29uZBIICAASBFNvbWUSCAgEEgRNb3JlEgkICBIFRXZlbnQSCQgQEgVDb2Rlcxp9Cg1zZWNvbmQgbWV0cmljEAoYBSDZBIIBLwoFRmlyc3QSBQgBEgFBEgcIAhIDU2V0EgsIAxIHT2ZFdmVudBIJCAQSBUNvZGVzggEyCgZTZWNvbmQSCAgAEgRTb21lEggIBBIETW9yZRIJCAgSBUV2ZW50EgkIEBIFQ29kZXM=";

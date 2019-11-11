@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"config"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 
 type outputLanguage interface {
 	getCommentPrefix() string
+	supportsTypeAlias() bool
 
 	writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string)
 	writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string)
@@ -26,6 +28,7 @@ type outputLanguage interface {
 	writeEnumAlias(so *sourceOutputter, name, from, to []string)
 	writeEnumEnd(so *sourceOutputter, name ...string)
 	writeEnumExport(so *sourceOutputter, enumName, name []string)
+	writeTypeAlias(so *sourceOutputter, from, to []string)
 	writeNamespacesBegin(so *sourceOutputter, namespaces []string)
 	writeNamespacesEnd(so *sourceOutputter, namespaces []string)
 	writeConstUint32(so *sourceOutputter, value uint32, name ...string)
@@ -109,6 +112,16 @@ func (so *sourceOutputter) writeIdConstants(constType string, entries map[string
 	so.writeLine("")
 }
 
+type EnumName struct {
+	prefix, suffix string
+}
+
+type EnumEntry struct {
+	events  map[uint32]string
+	aliases map[string]string
+	names   []EnumName
+}
+
 // writeEnum prints out an enum with a for list of EventCodes (cobalt v1.0 only)
 //
 // It prints out the event_code string using toIdent, (event_code => EventCode).
@@ -116,40 +129,52 @@ func (so *sourceOutputter) writeIdConstants(constType string, entries map[string
 // export the enum values. For a metric called "foo_bar" with a event named
 // "baz", it would generate the constant:
 // "FooBarEventCode_Baz = FooBarEventCode::Baz"
-func (so *sourceOutputter) writeEnum(prefix string, suffix string, entries map[uint32]string, aliases map[string]string) {
-	if len(entries) == 0 {
+func (so *sourceOutputter) writeEnum(entry EnumEntry) {
+	if len(entry.events) == 0 {
+		return
+	}
+
+	if len(entry.names) == 0 {
 		return
 	}
 
 	var keys []uint32
-	for k := range entries {
+	for k := range entry.events {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
-	so.writeCommentFmt("Enum for %s (%s)", prefix, suffix)
-	so.language.writeEnumBegin(so, prefix, suffix)
-	for _, id := range keys {
-		name := entries[id]
-		so.language.writeEnumEntry(so, id, name)
-	}
-	if len(aliases) > 0 {
-		so.language.writeEnumAliasesBegin(so, prefix, suffix)
-		for from, to := range aliases {
-			so.language.writeEnumAlias(so, []string{prefix, suffix}, []string{from}, []string{to})
+	for i, name := range entry.names {
+		if i == 0 || !so.language.supportsTypeAlias() {
+			so.writeCommentFmt("Enum for %s (%s)", name.prefix, name.suffix)
+			so.language.writeEnumBegin(so, name.prefix, name.suffix)
+			for _, id := range keys {
+				name := entry.events[id]
+				so.language.writeEnumEntry(so, id, name)
+			}
+			if len(entry.aliases) > 0 {
+				so.language.writeEnumAliasesBegin(so, name.prefix, name.suffix)
+				for from, to := range entry.aliases {
+					so.language.writeEnumAlias(so, []string{name.prefix, name.suffix}, []string{from}, []string{to})
+				}
+			}
+			so.language.writeEnumEnd(so, name.prefix, name.suffix)
+		} else {
+			first := entry.names[0]
+			so.writeCommentFmt("Alias for %s (%s) which has the same event codes", name.prefix, name.suffix)
+			so.language.writeTypeAlias(so, []string{first.prefix, first.suffix}, []string{name.prefix, name.suffix})
 		}
-	}
-	so.language.writeEnumEnd(so, prefix, suffix)
-	for _, id := range keys {
-		so.language.writeEnumExport(so, []string{prefix, suffix}, []string{entries[id]})
-	}
-	if len(aliases) > 0 {
-		for _, to := range aliases {
-			so.language.writeEnumExport(so, []string{prefix, suffix}, []string{to})
-		}
-	}
 
-	so.writeLine("")
+		for _, id := range keys {
+			so.language.writeEnumExport(so, []string{name.prefix, name.suffix}, []string{entry.events[id]})
+		}
+		if len(entry.aliases) > 0 {
+			for _, to := range entry.aliases {
+				so.language.writeEnumExport(so, []string{name.prefix, name.suffix}, []string{to})
+			}
+		}
+		so.writeLine("")
+	}
 }
 
 func (so *sourceOutputter) Bytes() []byte {
@@ -209,22 +234,44 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 		so.writeIdConstants("Report", reports)
 	}
 
+	var enums []EnumEntry
 	for _, metric := range c.Customers[0].Projects[0].Metrics {
 		if len(metric.MetricDimensions) > 0 {
 			for i, md := range metric.MetricDimensions {
 				events := make(map[uint32]string)
-				eventNames := make(map[string]uint32)
 				for value, name := range md.EventCodes {
 					events[value] = name
-					eventNames[name] = value
 				}
 				varname := "Metric Dimension " + strconv.Itoa(i)
 				if md.Dimension != "" {
 					varname = "Metric Dimension " + md.Dimension
 				}
-				so.writeEnum(metric.MetricName, varname, events, md.EventCodeAliases)
+				found := false
+				for i, e := range enums {
+					if reflect.DeepEqual(e.events, events) && reflect.DeepEqual(e.aliases, md.EventCodeAliases) {
+						enums[i].names = append(enums[i].names, EnumName{prefix: metric.MetricName, suffix: varname})
+						found = true
+						break
+					}
+				}
+				if !found {
+					enums = append(enums, EnumEntry{
+						events:  events,
+						aliases: md.EventCodeAliases,
+						names: []EnumName{
+							{
+								prefix: metric.MetricName,
+								suffix: varname,
+							},
+						},
+					})
+				}
 			}
 		}
+	}
+
+	for _, e := range enums {
+		so.writeEnum(e)
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import "strings"
 type Rust struct{}
 
 func (_ Rust) getCommentPrefix() string { return "//" }
+func (_ Rust) supportsTypeAlias() bool  { return true }
 
 func (_ Rust) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 }
@@ -42,6 +43,10 @@ func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
 // We don't alias Enums in rust, since this can easily be accomplished with a
 // use EnumName::*;
 func (_ Rust) writeEnumExport(so *sourceOutputter, enumName, name []string) {}
+
+func (_ Rust) writeTypeAlias(so *sourceOutputter, from, to []string) {
+	so.writeLineFmt("type %s = %s;", toPascalCase(to...), toPascalCase(from...))
+}
 
 func (_ Rust) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {
 	if len(namespaces) > 0 {

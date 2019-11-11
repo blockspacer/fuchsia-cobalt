@@ -25,6 +25,10 @@ pub const EVENT_GROUPS_METRIC_ID: u32 = 300;
 pub const LINEAR_BUCKETS_METRIC_ID: u32 = 400;
 // exponential buckets
 pub const EXPONENTIAL_BUCKETS_METRIC_ID: u32 = 500;
+// metric
+pub const METRIC_METRIC_ID: u32 = 600;
+// second metric
+pub const SECOND_METRIC_METRIC_ID: u32 = 601;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -34,13 +38,8 @@ pub enum TheOtherMetricNameMetricDimension0 {
   AThirdEvent = 2,
 }
 
-// Enum for event groups (Metric Dimension The First Group)
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum EventGroupsMetricDimensionTheFirstGroup {
-  AnEvent = 0,
-  AnotherEvent = 1,
-  AThirdEvent = 2,
-}
+// Alias for event groups (Metric Dimension The First Group) which has the same event codes
+type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
 
 // Enum for event groups (Metric Dimension A second group)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -63,5 +62,29 @@ impl EventGroupsMetricDimension2 {
   pub const Alias: EventGroupsMetricDimension2 = EventGroupsMetricDimension2::HasNo;
 }
 
+// Enum for metric (Metric Dimension First)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+pub enum MetricMetricDimensionFirst {
+  A = 1,
+  Set = 2,
+  OfEvent = 3,
+  Codes = 4,
+}
+
+// Alias for second metric (Metric Dimension First) which has the same event codes
+type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+
+// Enum for metric (Metric Dimension Second)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+pub enum MetricMetricDimensionSecond {
+  Some = 0,
+  More = 4,
+  Event = 8,
+  Codes = 16,
+}
+
+// Alias for second metric (Metric Dimension Second) which has the same event codes
+type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-pub const CONFIG: &str = "KoAFCghjdXN0b21lchAKGvEECgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXMaMwoObGluZWFyIGJ1Y2tldHMQChgFIJADQgcSBRCMARgFcghjdXN0b21lcnoHcHJvamVjdBpJChNleHBvbmVudGlhbCBidWNrZXRzEAoYBSD0A2IYCgZyZXBvcnQQu4WkgwlSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdA==";
+pub const CONFIG: &str = "Kp8HCghjdXN0b21lchAKGpAHCgdwcm9qZWN0EAUaXQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGcghjdXN0b21lcnoHcHJvamVjdBqDAQoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiFAoKdGhlX3JlcG9ydBC7pYvxCBgHcghjdXN0b21lcnoHcHJvamVjdIIBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGv4BCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAdyCGN1c3RvbWVyegdwcm9qZWN0ggFFCg9UaGUgRmlyc3QgR3JvdXASCwgAEgdBbkV2ZW50EhAIARIMQW5vdGhlckV2ZW50EhEIAhINQSB0aGlyZCBldmVudBgCggE5Cg5BIHNlY29uZCBncm91cBIICAESBFRoaXMSBggCEgJJcxILCAMSB2Fub3RoZXISCAgEEgRUZXN0ggE1Eg4IABIKVGhpc01ldHJpYxIJCAISBUhhc05vEggIBBIETmFtZSoOCgVIYXNObxIFQWxpYXMaMwoObGluZWFyIGJ1Y2tldHMQChgFIJADQgcSBRCMARgFcghjdXN0b21lcnoHcHJvamVjdBpJChNleHBvbmVudGlhbCBidWNrZXRzEAoYBSD0A2IYCgZyZXBvcnQQu4WkgwlSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdBqJAQoGbWV0cmljEAoYBSDYBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVzGpABCg1zZWNvbmQgbWV0cmljEAoYBSDZBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVz";

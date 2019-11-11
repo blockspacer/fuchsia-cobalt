@@ -10,6 +10,7 @@ type Go struct {
 }
 
 func (_ Go) getCommentPrefix() string { return "//" }
+func (_ Go) supportsTypeAlias() bool  { return true }
 
 func (g Go) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 	so.writeLineFmt("package %s", g.packageName)
@@ -37,6 +38,10 @@ func (_ Go) writeEnumEnd(so *sourceOutputter, name ...string) {
 }
 
 func (_ Go) writeEnumExport(so *sourceOutputter, enumName, name []string) {}
+
+func (_ Go) writeTypeAlias(so *sourceOutputter, from, to []string) {
+	so.writeLineFmt("type %s = %s", toPascalCase(to...), toPascalCase(from...))
+}
 
 func (_ Go) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {}
 

@@ -118,6 +118,24 @@ metric_definitions:
         num_buckets: 3
         initial_step: 2
         step_multiplier: 2
+- id: 600
+  metric_name: "metric"
+  metric_dimensions: &dimensions
+    - dimension: "First"
+      event_codes:
+        1: A
+        2: Set
+        3: OfEvent
+        4: Codes
+    - dimension: "Second"
+      event_codes:
+        0: Some
+        4: More
+        8: Event
+        16: Codes
+- id: 601
+  metric_name: "second metric"
+  metric_dimensions: *dimensions
 `
 
 func readGoldenFile(filename string) (string, error) {

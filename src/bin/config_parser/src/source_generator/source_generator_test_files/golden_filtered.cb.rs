@@ -25,6 +25,10 @@ pub const EVENT_GROUPS_METRIC_ID: u32 = 300;
 pub const LINEAR_BUCKETS_METRIC_ID: u32 = 400;
 // exponential buckets
 pub const EXPONENTIAL_BUCKETS_METRIC_ID: u32 = 500;
+// metric
+pub const METRIC_METRIC_ID: u32 = 600;
+// second metric
+pub const SECOND_METRIC_METRIC_ID: u32 = 601;
 
 // Enum for the_other_metric_name (Metric Dimension 0)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -34,13 +38,8 @@ pub enum TheOtherMetricNameMetricDimension0 {
   AThirdEvent = 2,
 }
 
-// Enum for event groups (Metric Dimension The First Group)
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum EventGroupsMetricDimensionTheFirstGroup {
-  AnEvent = 0,
-  AnotherEvent = 1,
-  AThirdEvent = 2,
-}
+// Alias for event groups (Metric Dimension The First Group) which has the same event codes
+type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
 
 // Enum for event groups (Metric Dimension A second group)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -63,5 +62,29 @@ impl EventGroupsMetricDimension2 {
   pub const Alias: EventGroupsMetricDimension2 = EventGroupsMetricDimension2::HasNo;
 }
 
+// Enum for metric (Metric Dimension First)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+pub enum MetricMetricDimensionFirst {
+  A = 1,
+  Set = 2,
+  OfEvent = 3,
+  Codes = 4,
+}
+
+// Alias for second metric (Metric Dimension First) which has the same event codes
+type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+
+// Enum for metric (Metric Dimension Second)
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+pub enum MetricMetricDimensionSecond {
+  Some = 0,
+  More = 4,
+  Event = 8,
+  Codes = 16,
+}
+
+// Alias for second metric (Metric Dimension Second) which has the same event codes
+type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
-pub const CONFIG: &str = "KqAECghjdXN0b21lchAKGpEECgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAg==";
+pub const CONFIG: &str = "KpcGCghjdXN0b21lchAKGogGCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAhp2CgZtZXRyaWMQChgFINgEggEvCgVGaXJzdBIFCAESAUESBwgCEgNTZXQSCwgDEgdPZkV2ZW50EgkIBBIFQ29kZXOCATIKBlNlY29uZBIICAASBFNvbWUSCAgEEgRNb3JlEgkICBIFRXZlbnQSCQgQEgVDb2Rlcxp9Cg1zZWNvbmQgbWV0cmljEAoYBSDZBIIBLwoFRmlyc3QSBQgBEgFBEgcIAhIDU2V0EgsIAxIHT2ZFdmVudBIJCAQSBUNvZGVzggEyCgZTZWNvbmQSCAgAEgRTb21lEggIBBIETW9yZRIJCAgSBUV2ZW50EgkIEBIFQ29kZXM=";
