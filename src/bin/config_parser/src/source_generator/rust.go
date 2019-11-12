@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file implement outputLanguage for Rust
+// This file implements outputLanguage for Rust
 package source_generator
 
 import "strings"

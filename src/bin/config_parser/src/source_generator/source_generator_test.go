@@ -185,6 +185,9 @@ var cfgTests = []struct {
 	{"golden_for_testing.cb.h", CppOutputFactory("config", []string{}, true), false},
 	{"golden_for_testing.cb.rs", RustOutputFactory("config", []string{}, true), false},
 	{"golden_for_testing.cb.go", GoOutputFactory("config", "package", true), false},
+
+	// JSONOutput() ignores hideOnClients so we only test once
+	{"golden.cb.json", JSONOutput, true},
 }
 
 func TestPrintConfig(t *testing.T) {

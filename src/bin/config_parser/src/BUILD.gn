@@ -102,6 +102,7 @@ go_library("source_generator") {
     "dep.go",
     "go.go",
     "ident.go",
+    "json.go",
     "rust.go",
     "simple.go",
     "source_outputter.go",
@@ -113,6 +114,7 @@ go_library("source_generator") {
   sources += [
     "dep_test.go",
     "ident_test.go",
+    "json_test.go",
     "source_generator_test.go",
     "source_generator_test_files",
     "source_outputter_test.go",

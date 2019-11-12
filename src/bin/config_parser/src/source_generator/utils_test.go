@@ -65,6 +65,11 @@ func TestGenerateFilename(t *testing.T) {
 		},
 		{
 			outFilename: "base",
+			format:      "json",
+			expected:    "base.json",
+		},
+		{
+			outFilename: "base",
 			format:      "dart",
 			expected:    "base.dart",
 		},

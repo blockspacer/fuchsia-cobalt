@@ -344,9 +344,11 @@ func getOutputFormatter(format, namespace, goPackageName, varName string, forTes
 			return nil, fmt.Errorf("no package name specified for go output formatter")
 		}
 		return GoOutputFactory(varName, goPackageName, forTesting), nil
+	case "json":
+		return JSONOutput, nil
 	case "rust":
 		return RustOutputFactory(varName, namespaceList, forTesting), nil
 	default:
-		return nil, fmt.Errorf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', 'go', and 'rust' are the only valid values for out_format.", format)
+		return nil, fmt.Errorf("'%v' is an invalid out_format parameter. 'bin', 'b64', 'cpp', 'dart', 'go', 'rust', and 'json' are the only valid values for out_format.", format)
 	}
 }

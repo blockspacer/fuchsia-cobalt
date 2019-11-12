@@ -30,6 +30,8 @@ func getFilenameGenerator(outFile, outFilename, outDir, dartOutDir string) func(
 			return fmt.Sprintf("%s.cb.h", fnameBase)
 		case "rust":
 			return fmt.Sprintf("%s.rs", fnameBase)
+		case "json":
+			return fmt.Sprintf("%s.json", fnameBase)
 		default:
 			return fmt.Sprintf("%s.%s", fnameBase, format)
 		}

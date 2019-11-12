@@ -1,0 +1,107 @@
+{
+  "customers": [
+    {
+      "name": "customer",
+      "id": 10,
+      "projects": [
+        {
+          "name": "project",
+          "id": 5,
+          "project_contact": "",
+          "metrics": [
+            {
+              "name": "the_metric_name",
+              "id": 100,
+              "metric_type": "UNSET",
+              "owners": null,
+              "expiration_date": "",
+              "reports": [
+                {
+                  "name": "the_report",
+                  "id": 2384646843,
+                  "report_type": "CUSTOM_RAW_DUMP",
+                  "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
+                },
+                {
+                  "name": "the_other_report",
+                  "id": 492006986,
+                  "report_type": "STRING_COUNTS_WITH_THRESHOLD",
+                  "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
+                }
+              ]
+            },
+            {
+              "name": "the_other_metric_name",
+              "id": 200,
+              "metric_type": "EVENT_OCCURRED",
+              "owners": null,
+              "expiration_date": "",
+              "reports": [
+                {
+                  "name": "the_report",
+                  "id": 2384646843,
+                  "report_type": "NUMERIC_PERF_RAW_DUMP",
+                  "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
+                }
+              ]
+            },
+            {
+              "name": "event groups",
+              "id": 300,
+              "metric_type": "EVENT_OCCURRED",
+              "owners": null,
+              "expiration_date": "",
+              "reports": [
+                {
+                  "name": "the_report",
+                  "id": 2384646843,
+                  "report_type": "NUMERIC_PERF_RAW_DUMP",
+                  "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
+                }
+              ]
+            },
+            {
+              "name": "linear buckets",
+              "id": 400,
+              "metric_type": "UNSET",
+              "owners": null,
+              "expiration_date": "",
+              "reports": null
+            },
+            {
+              "name": "exponential buckets",
+              "id": 500,
+              "metric_type": "UNSET",
+              "owners": null,
+              "expiration_date": "",
+              "reports": [
+                {
+                  "name": "report",
+                  "id": 2422801083,
+                  "report_type": "REPORT_TYPE_UNSET",
+                  "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
+                }
+              ]
+            },
+            {
+              "name": "metric",
+              "id": 600,
+              "metric_type": "UNSET",
+              "owners": null,
+              "expiration_date": "",
+              "reports": null
+            },
+            {
+              "name": "second metric",
+              "id": 601,
+              "metric_type": "UNSET",
+              "owners": null,
+              "expiration_date": "",
+              "reports": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

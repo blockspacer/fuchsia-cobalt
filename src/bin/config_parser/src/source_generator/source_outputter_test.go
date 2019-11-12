@@ -7,7 +7,7 @@ package source_generator
 import "testing"
 
 func TestGetOutputFormatter(t *testing.T) {
-	formats := []string{"bin", "b64", "cpp", "dart", "rust", "go"}
+	formats := []string{"bin", "b64", "cpp", "dart", "rust", "go", "json"}
 
 	for _, format := range formats {
 		outputFormatter, err := getOutputFormatter(format, "ns", "package", "varName", false)
