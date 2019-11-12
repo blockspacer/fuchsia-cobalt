@@ -3,9 +3,11 @@
 
   projects:
     - project_name: ProjectA1
+      project_id: 1
       cobalt_version: 1
       project_contact: nobody@example.com
     - project_name: ProjectA2
+      project_id: 2
       cobalt_version: 1
       project_contact: nobody@example.com
 
@@ -14,5 +16,6 @@
 
   projects:
     - project_name: ProjectB1
+      project_id: 1
       cobalt_version: 1
       project_contact: nobody@example.com

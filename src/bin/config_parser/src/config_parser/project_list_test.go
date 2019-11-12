@@ -29,11 +29,13 @@ func TestParseCustomerList(t *testing.T) {
   projects:
   - project_name: ledger
     project_contact: ben
+    project_id: 10
     cobalt_version: 1
 - customer_name: test_project
   customer_id: 25
   projects:
   - project_name: ledger
+    project_id: 10
     project_contact: ben
     cobalt_version: 1
 `
@@ -43,7 +45,7 @@ func TestParseCustomerList(t *testing.T) {
 			CustomerName:  "fuchsia",
 			CustomerId:    20,
 			ProjectName:   "ledger",
-			ProjectId:     IdFromName("ledger"),
+			ProjectId:     10,
 			Contact:       "ben",
 			CobaltVersion: CobaltVersion1,
 		},
@@ -51,7 +53,7 @@ func TestParseCustomerList(t *testing.T) {
 			CustomerName:  "test_project",
 			CustomerId:    25,
 			ProjectName:   "ledger",
-			ProjectId:     IdFromName("ledger"),
+			ProjectId:     10,
 			Contact:       "ben",
 			CobaltVersion: CobaltVersion1,
 		},
@@ -222,6 +224,7 @@ func TestPopulateProjectList(t *testing.T) {
 	y := `
 - project_name: ledger
   project_contact: ben,etienne
+  project_id: 10
   cobalt_version: 1
 - project_name: zircon
   project_contact: yvonne
@@ -236,7 +239,7 @@ func TestPopulateProjectList(t *testing.T) {
 	e := []ProjectConfig{
 		ProjectConfig{
 			ProjectName:   "ledger",
-			ProjectId:     IdFromName("ledger"),
+			ProjectId:     10,
 			Contact:       "ben,etienne",
 			CobaltVersion: CobaltVersion1,
 		},
@@ -378,18 +381,6 @@ cobalt_version: 1
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err != nil {
 		t.Errorf("Rejected a Cobalt version 1 project without id.: %v", err)
-	}
-
-	// Checks that Cobalt version 1 projects with an id are rejected.
-	y = `
-project_name: ledger
-project_contact: ben
-project_id: 10
-cobalt_version: 1
-`
-	c = ProjectConfig{}
-	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted a Cobalt version 1 project with an id.")
 	}
 
 	// Checks that an error is returned if the id is an invalid type.

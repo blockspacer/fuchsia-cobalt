@@ -2,6 +2,7 @@
   customer_id: 11
   projects:
     - project_name: Project11
+      project_id: 1
       cobalt_version: 1
       project_contact: nobody@example.com
 
@@ -9,5 +10,6 @@
   customer_id: 22
   projects:
     - project_name: Project22
+      project_id: 1
       cobalt_version: 1
       project_contact: nobody@example.com
