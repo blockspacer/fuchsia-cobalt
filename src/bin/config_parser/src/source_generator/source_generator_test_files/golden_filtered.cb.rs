@@ -39,7 +39,7 @@ pub enum TheOtherMetricNameMetricDimension0 {
 }
 
 // Alias for event groups (Metric Dimension The First Group) which has the same event codes
-type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
+pub type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
 
 // Enum for event groups (Metric Dimension A second group)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -72,7 +72,7 @@ pub enum MetricMetricDimensionFirst {
 }
 
 // Alias for second metric (Metric Dimension First) which has the same event codes
-type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+pub type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
 
 // Enum for metric (Metric Dimension Second)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -84,7 +84,7 @@ pub enum MetricMetricDimensionSecond {
 }
 
 // Alias for second metric (Metric Dimension Second) which has the same event codes
-type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+pub type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 pub const CONFIG: &str = "KpcGCghjdXN0b21lchAKGogGCgdwcm9qZWN0EAUaSgoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhUKCnRoZV9yZXBvcnQQu6WL8QgYj05iGgoQdGhlX290aGVyX3JlcG9ydBDK3M3qARgGGnAKFXRoZV9vdGhlcl9tZXRyaWNfbmFtZRAKGAUgyAEoAVABYhQKCnRoZV9yZXBvcnQQu6WL8QgYB4IBNRILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GMgBGusBCgxldmVudCBncm91cHMQChgFIKwCKAFQAWIUCgp0aGVfcmVwb3J0ELuli/EIGAeCAUUKD1RoZSBGaXJzdCBHcm91cBILCAASB0FuRXZlbnQSEAgBEgxBbm90aGVyRXZlbnQSEQgCEg1BIHRoaXJkIGV2ZW50GAKCATkKDkEgc2Vjb25kIGdyb3VwEggIARIEVGhpcxIGCAISAklzEgsIAxIHYW5vdGhlchIICAQSBFRlc3SCATUSDggAEgpUaGlzTWV0cmljEgkIAhIFSGFzTm8SCAgEEgROYW1lKg4KBUhhc05vEgVBbGlhcxogCg5saW5lYXIgYnVja2V0cxAKGAUgkANCBxIFEIwBGAUaNgoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiGAoGcmVwb3J0ELuFpIMJUggKBhADGAIgAhp2CgZtZXRyaWMQChgFINgEggEvCgVGaXJzdBIFCAESAUESBwgCEgNTZXQSCwgDEgdPZkV2ZW50EgkIBBIFQ29kZXOCATIKBlNlY29uZBIICAASBFNvbWUSCAgEEgRNb3JlEgkICBIFRXZlbnQSCQgQEgVDb2Rlcxp9Cg1zZWNvbmQgbWV0cmljEAoYBSDZBIIBLwoFRmlyc3QSBQgBEgFBEgcIAhIDU2V0EgsIAxIHT2ZFdmVudBIJCAQSBUNvZGVzggEyCgZTZWNvbmQSCAgAEgRTb21lEggIBBIETW9yZRIJCAgSBUV2ZW50EgkIEBIFQ29kZXM=";
