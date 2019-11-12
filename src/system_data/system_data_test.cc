@@ -13,7 +13,7 @@
 #include "src/logging.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::encoder {
+namespace cobalt::system_data {
 
 TEST(SystemDataTest, BasicTest) {
   SystemData system_data("test_product", "", GA, "test_version");
@@ -76,4 +76,4 @@ TEST(SystemDataTest, SetChannelTest) {
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::system_data

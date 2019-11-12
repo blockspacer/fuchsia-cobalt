@@ -22,12 +22,12 @@ namespace cobalt::logger {
 using ::cobalt::config::IntegerBucketConfig;
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
-using ::cobalt::encoder::ClientSecret;
-using ::cobalt::encoder::SystemDataInterface;
 using ::cobalt::forculus::ForculusEncrypter;
 using ::cobalt::rappor::BasicRapporEncoder;
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::rappor::RapporEncoder;
+using ::cobalt::system_data::ClientSecret;
+using ::cobalt::system_data::SystemDataInterface;
 using ::google::protobuf::RepeatedField;
 
 namespace {
@@ -70,7 +70,7 @@ Status TranslateBasicRapporEncoderStatus(MetricRef metric, const ReportDefinitio
 
 }  // namespace
 
-Encoder::Encoder(ClientSecret client_secret, const encoder::SystemDataInterface* system_data)
+Encoder::Encoder(ClientSecret client_secret, const system_data::SystemDataInterface* system_data)
     : client_secret_(std::move(client_secret)), system_data_(system_data) {}
 
 Encoder::Result Encoder::EncodeBasicRapporObservation(MetricRef metric,

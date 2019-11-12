@@ -11,7 +11,7 @@
 
 #include "src/logging.h"
 
-namespace cobalt::encoder {
+namespace cobalt::system_data {
 
 namespace {
 
@@ -136,4 +136,4 @@ void SystemData::PopulateSystemProfile() {
   PopulateBoardName(&system_profile_);
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::system_data

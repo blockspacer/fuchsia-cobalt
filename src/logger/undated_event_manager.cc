@@ -20,7 +20,7 @@ using local_aggregation::EventAggregator;
 
 UndatedEventManager::UndatedEventManager(const Encoder* encoder, EventAggregator* event_aggregator,
                                          ObservationWriter* observation_writer,
-                                         encoder::SystemDataInterface* system_data,
+                                         system_data::SystemDataInterface* system_data,
                                          int32_t max_saved_events)
     : encoder_(encoder),
       event_aggregator_(event_aggregator),

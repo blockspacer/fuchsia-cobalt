@@ -33,9 +33,9 @@ using ::google::protobuf::util::MessageDifferencer;
 
 namespace cobalt {
 
-using encoder::ClientSecret;
-using encoder::SystemDataInterface;
 using local_aggregation::EventAggregator;
+using system_data::ClientSecret;
+using system_data::SystemDataInterface;
 using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;
 using util::IncrementingSystemClock;

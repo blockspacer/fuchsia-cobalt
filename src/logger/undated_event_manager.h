@@ -56,7 +56,7 @@ class UndatedEventManager {
   // Primarily for testing.
   UndatedEventManager(const Encoder* encoder, local_aggregation::EventAggregator* event_aggregator,
                       ObservationWriter* observation_writer,
-                      encoder::SystemDataInterface* system_data,
+                      system_data::SystemDataInterface* system_data,
                       int32_t max_saved_events = kDefaultMaxSavedEvents);
 
   // Saves the fact that an event has occurred.
@@ -88,7 +88,7 @@ class UndatedEventManager {
   const Encoder* encoder_;
   local_aggregation::EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
-  const encoder::SystemDataInterface* system_data_;
+  const system_data::SystemDataInterface* system_data_;
 
   size_t max_saved_events_;
 

@@ -145,7 +145,7 @@ class ShippingManagerTest : public ::testing::Test {
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_shuffler_;
   std::unique_ptr<EncryptedMessageMaker> encrypt_to_analyzer_;
   MemoryObservationStore observation_store_;
-  FakeSystemData system_data_;
+  system_data::FakeSystemData system_data_;
 
  protected:
   std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;

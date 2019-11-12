@@ -34,7 +34,7 @@ class EventLogger {
  public:
   EventLogger(const Encoder* encoder, local_aggregation::EventAggregator* event_aggregator,
               const ObservationWriter* observation_writer,
-              const encoder::SystemDataInterface* system_data)
+              const system_data::SystemDataInterface* system_data)
       : encoder_(encoder),
         event_aggregator_(event_aggregator),
         observation_writer_(observation_writer),
@@ -51,7 +51,7 @@ class EventLogger {
                                              const Encoder* encoder,
                                              local_aggregation::EventAggregator* event_aggregator,
                                              const ObservationWriter* observation_writer,
-                                             const encoder::SystemDataInterface* system_data);
+                                             const system_data::SystemDataInterface* system_data);
 
   // Finds the Metric with the given ID. Expects that this has type
   // |expected_metric_type|. If not logs an error and returns.
@@ -143,7 +143,7 @@ class EventLogger {
   const Encoder* encoder_;
   local_aggregation::EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
-  const encoder::SystemDataInterface* system_data_;
+  const system_data::SystemDataInterface* system_data_;
 };
 
 // Implementation of EventLogger for metrics of type EVENT_OCCURRED.
