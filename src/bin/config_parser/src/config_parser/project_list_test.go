@@ -27,31 +27,33 @@ func TestParseCustomerList(t *testing.T) {
 - customer_name: fuchsia
   customer_id: 20
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 - customer_name: test_project
   customer_id: 25
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 `
 
 	e := []ProjectConfig{
 		ProjectConfig{
-			CustomerName: "fuchsia",
-			CustomerId:   20,
-			ProjectName:  "ledger",
-			ProjectId:    1,
-			Contact:      "ben",
+			CustomerName:  "fuchsia",
+			CustomerId:    20,
+			ProjectName:   "ledger",
+			ProjectId:     IdFromName("ledger"),
+			Contact:       "ben",
+			CobaltVersion: CobaltVersion1,
 		},
 		ProjectConfig{
-			CustomerName: "test_project",
-			CustomerId:   25,
-			ProjectName:  "ledger",
-			ProjectId:    1,
-			Contact:      "ben",
+			CustomerName:  "test_project",
+			CustomerId:    25,
+			ProjectName:   "ledger",
+			ProjectId:     IdFromName("ledger"),
+			Contact:       "ben",
+			CobaltVersion: CobaltVersion1,
 		},
 	}
 
@@ -65,29 +67,29 @@ func TestParseCustomerList(t *testing.T) {
 	}
 }
 
-// Tests that duplicated customer names and ids result in errors.
+// Tests that duplicated customer project_names and ids result in errors.
 func TestParseCustomerListDuplicateValues(t *testing.T) {
 	var y string
 	l := []ProjectConfig{}
 
-	// Checks that an error is returned if a duplicate customer name is used.
+	// Checks that an error is returned if a duplicate customer project_name is used.
 	y = `
 - customer_name: fuchsia
   customer_id: 10
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 - customer_name: fuchsia
   customer_id: 11
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
-		t.Error("Accepted customer list with duplicate customer names.")
+		t.Error("Accepted customer list with duplicate customer project_names.")
 	}
 
 	// Checks that an error is returned if a duplicate customer id is used.
@@ -95,15 +97,15 @@ func TestParseCustomerListDuplicateValues(t *testing.T) {
 - customer_name: fuchsia
   customer_id: 10
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 - customer_name: test_project
   customer_id: 10
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    project_contact: ben
+    cobalt_version: 1
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -111,50 +113,50 @@ func TestParseCustomerListDuplicateValues(t *testing.T) {
 	}
 }
 
-// Tests the customer name validation logic.
+// Tests the customer project_name validation logic.
 func TestParseCustomerListNameValidation(t *testing.T) {
 	var y string
 	l := []ProjectConfig{}
 
-	// Checks that an error is returned if no customer name is specified.
+	// Checks that an error is returned if no customer project_name is specified.
 	y = `
 - customer_id: 20
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
-		t.Error("Accepted customer without a name.")
+		t.Error("Accepted customer without a project_name.")
 	}
 
-	// Checks that an error is returned if the customer name has an invalid type.
+	// Checks that an error is returned if the customer project_name has an invalid type.
 	y = `
 - customer_name: 20
   customer_id: 10
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
-		t.Error("Accepted customer with invalid name type.")
+		t.Error("Accepted customer with invalid project_name type.")
 	}
 
-	// Checks that an error is returned if a name is invalid.
+	// Checks that an error is returned if a project_name is invalid.
 	y = `
 - customer_name: hello world
   customer_id: 10
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
-		t.Error("Accepted customer with invalid name.")
+		t.Error("Accepted customer with invalid project_name.")
 	}
 }
 
@@ -167,9 +169,9 @@ func TestParseCustomerListIdValidation(t *testing.T) {
 	y = `
 - customer_name: fuchsia
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -181,9 +183,9 @@ func TestParseCustomerListIdValidation(t *testing.T) {
 - customer_id: fuchsia
   customer_name: fuchsia
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -195,9 +197,9 @@ func TestParseCustomerListIdValidation(t *testing.T) {
 - customer_id: -10
   customer_name: fuchsia
   projects:
-  - name: ledger
-    id: 1
-    contact: ben
+  - project_name: ledger
+    cobalt_version: 1
+    project_contact: ben
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -218,12 +220,12 @@ func parseProjectListForTest(content string, l *[]ProjectConfig) (err error) {
 // Basic test case for populateProjectList.
 func TestPopulateProjectList(t *testing.T) {
 	y := `
-- name: ledger
-  id: 1
-  contact: ben,etienne
-- name: zircon
-  id: 2
-  contact: yvonne
+- project_name: ledger
+  project_contact: ben,etienne
+  cobalt_version: 1
+- project_name: zircon
+  project_contact: yvonne
+  cobalt_version: 1
 `
 
 	l := []ProjectConfig{}
@@ -233,14 +235,16 @@ func TestPopulateProjectList(t *testing.T) {
 
 	e := []ProjectConfig{
 		ProjectConfig{
-			ProjectName: "ledger",
-			ProjectId:   1,
-			Contact:     "ben,etienne",
+			ProjectName:   "ledger",
+			ProjectId:     IdFromName("ledger"),
+			Contact:       "ben,etienne",
+			CobaltVersion: CobaltVersion1,
 		},
 		ProjectConfig{
-			ProjectName: "zircon",
-			ProjectId:   2,
-			Contact:     "yvonne",
+			ProjectName:   "zircon",
+			ProjectId:     IdFromName("zircon"),
+			Contact:       "yvonne",
+			CobaltVersion: CobaltVersion1,
 		},
 	}
 	if !reflect.DeepEqual(e, l) {
@@ -248,38 +252,23 @@ func TestPopulateProjectList(t *testing.T) {
 	}
 }
 
-// Test duplicate project name or id validation logic.
+// Test duplicate project project_name or id validation logic.
 func TestDuplicateProjectValuesValidation(t *testing.T) {
 	var y string
 	var l []ProjectConfig
-	// Checks that an error is returned if a name is duplicated.
+	// Checks that an error is returned if a project_name is duplicated.
 	y = `
-- name: ledger
-  id: 1
-  contact: ben
-- name: ledger
-  id: 2
-  contact: yvonne
+- project_name: ledger
+  cobalt_version: 1
+  project_contact: ben
+- project_name: ledger
+  cobalt_version: 1
+  project_contact: yvonne
 `
 
 	l = []ProjectConfig{}
 	if err := parseProjectListForTest(y, &l); err == nil {
-		t.Errorf("Accepted list with duplicate project name.")
-	}
-
-	// Checks that an error is returned if the id duplicated.
-	y = `
-- name: ledger
-  id: 1
-  contact: ben
-- name: zircon
-  id: 1
-  contact: yvonne
-`
-
-	l = []ProjectConfig{}
-	if err := parseProjectListForTest(y, &l); err == nil {
-		t.Errorf("Accepted list with duplicate project id.")
+		t.Errorf("Accepted list with duplicate project project_name.")
 	}
 }
 
@@ -293,40 +282,37 @@ func parseProjectConfigForTest(content string, c *ProjectConfig) (err error) {
 	return populateProjectConfig(y, c)
 }
 
-// Checks validation for the name field.
+// Checks validation for the project_name field.
 func TestPopulateProjectListNameValidation(t *testing.T) {
 	var y string
 	var c ProjectConfig
-	// Checks that an error is returned if a name is the wrong type.
+	// Checks that an error is returned if a project_name is the wrong type.
 	y = `
-name: 10
-id: 1
-contact: ben
+project_name: 10
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted project with numeric name.")
+		t.Errorf("Accepted project with numeric project_name.")
 	}
 
-	// Checks that an error is returned if a name is invalid.
+	// Checks that an error is returned if a project_name is invalid.
 	y = `
-name: hello world
-id: 1
-contact: ben
+project_name: hello world
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted project with invalid name.")
+		t.Errorf("Accepted project with invalid project_name.")
 	}
 
-	// Checks that an error is returned if no name is provided for a project.
+	// Checks that an error is returned if no project_name is provided for a project.
 	y = `
-id: 1
-contact: ben
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted project without name.")
+		t.Errorf("Accepted project without project_name.")
 	}
 }
 
@@ -336,19 +322,19 @@ func TestPopulateProjectListVersionValidation(t *testing.T) {
 	var c ProjectConfig
 
 	y = `
-name: ledger
-id: 1
-contact: ben
+project_name: ledger
+project_id: 1
+project_contact: ben
 cobalt_version: 0
 `
 	c = ProjectConfig{}
-	if err := parseProjectConfigForTest(y, &c); err != nil {
-		t.Errorf("Rejected a project with Cobalt version 0: %v", err)
+	if err := parseProjectConfigForTest(y, &c); err == nil {
+		t.Errorf("Accepted a project with Cobalt version 0: %v", err)
 	}
 
 	y = `
-name: ledger
-contact: ben
+project_name: ledger
+project_contact: ben
 cobalt_version: 1
 `
 	c = ProjectConfig{}
@@ -358,9 +344,8 @@ cobalt_version: 1
 
 	// Checks that an error is returned if the Cobalt version is an unexpected value.
 	y = `
-name: ledger
-id: 1
-contact: ben
+project_name: ledger
+project_contact: ben
 cobalt_version: 10
 `
 	c = ProjectConfig{}
@@ -376,8 +361,8 @@ func TestPopulateProjectListIdValidation(t *testing.T) {
 
 	// Checks that an error is returned if the id missing.
 	y = `
-name: ledger
-contact: ben
+project_name: ledger
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -386,8 +371,8 @@ contact: ben
 
 	// Checks that Cobalt version 1 projects without an id are accepted.
 	y = `
-name: ledger
-contact: ben
+project_name: ledger
+project_contact: ben
 cobalt_version: 1
 `
 	c = ProjectConfig{}
@@ -397,9 +382,9 @@ cobalt_version: 1
 
 	// Checks that Cobalt version 1 projects with an id are rejected.
 	y = `
-name: ledger
-contact: ben
-id: 10
+project_name: ledger
+project_contact: ben
+project_id: 10
 cobalt_version: 1
 `
 	c = ProjectConfig{}
@@ -409,9 +394,9 @@ cobalt_version: 1
 
 	// Checks that an error is returned if the id is an invalid type.
 	y = `
-name: ledger
-id: ledger
-contact: ben
+project_name: ledger
+project_id: ledger
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -420,9 +405,9 @@ contact: ben
 
 	// Checks that an error is returned if the id is negative.
 	y = `
-name: ledger
-id: -10
-contact: ben
+project_name: ledger
+project_id: -10
+project_contact: ben
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -430,29 +415,29 @@ contact: ben
 	}
 }
 
-// Checks validation for the contact field.
+// Checks validation for the project_contact field.
 func TestPopulateProjectListContactValidation(t *testing.T) {
 	var y string
 	var c ProjectConfig
 
-	// Checks that an error is returned if a contact is the wrong type.
+	// Checks that an error is returned if a project_contact is the wrong type.
 	y = `
-name: ledger
-id: 1
-contact: 10
+project_name: ledger
+project_id: 1
+project_contact: 10
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted project with numeric contact.")
+		t.Errorf("Accepted project with numeric project_contact.")
 	}
 
-	// Checks that an error is returned if a contact is missing.
+	// Checks that an error is returned if a project_contact is missing.
 	y = `
-name: ledger
-id: 10
+project_name: ledger
+project_id: 10
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
-		t.Errorf("Accepted project without contact.")
+		t.Errorf("Accepted project without project_contact.")
 	}
 }

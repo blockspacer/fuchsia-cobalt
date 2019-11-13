@@ -144,9 +144,13 @@ func populateProjectList(y []interface{}, l *[]ProjectConfig) (err error) {
 // values. The project id must be a positive integer. The project must have
 // name, id and contact fields.
 func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err error) {
-	v, ok := p["name"]
+	v, ok := p["project_name"]
 	if !ok {
-		return fmt.Errorf("Missing name in project list.")
+		// TODO(zmbush): Remove once config is updated to use project_name
+		v, ok = p["name"]
+		if !ok {
+			return fmt.Errorf("Missing name in project list.")
+		}
 	}
 	c.ProjectName, ok = v.(string)
 	if !ok {
@@ -172,30 +176,30 @@ func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err erro
 		}
 	}
 
+	if c.CobaltVersion == CobaltVersion0 {
+		return fmt.Errorf("Project %v is declared to use config version 0.1, which is no longer supported.", c.ProjectName)
+	}
+
 	if c.CobaltVersion == CobaltVersion1 {
+		// TODO(zmbush): Remove once config is updated to use project_id
 		_, ok = p["id"]
 		if ok {
 			return fmt.Errorf("Project %v is using version 1.0. Version 1.0 projects may not specify an id.", c.ProjectName)
 		}
+		_, ok = p["project_id"]
+		if ok {
+			return fmt.Errorf("Project %v is using version 1.0. Version 1.0 projects may not specify an id.", c.ProjectName)
+		}
 		c.ProjectId = IdFromName(c.ProjectName)
-	} else {
-		v, ok = p["id"]
-		if !ok {
-			return fmt.Errorf("Missing id for project %v.", c.ProjectName)
-		}
-		projectId, ok := v.(int)
-		if !ok {
-			return fmt.Errorf("Id '%v' for project %v is not an integer.", v, c.ProjectName)
-		}
-		if projectId <= 0 {
-			return fmt.Errorf("Id for project %v is not a positive integer.", c.ProjectName)
-		}
-		c.ProjectId = uint32(projectId)
 	}
 
-	v, ok = p["contact"]
+	v, ok = p["project_contact"]
 	if !ok {
-		return fmt.Errorf("Missing contact for project %v.", c.ProjectName)
+		// TODO(zmbush): Remove once config is updated to use project_contact
+		v, ok = p["contact"]
+		if !ok {
+			return fmt.Errorf("Missing contact for project %v.", c.ProjectName)
+		}
 	}
 	c.Contact, ok = v.(string)
 	if !ok {

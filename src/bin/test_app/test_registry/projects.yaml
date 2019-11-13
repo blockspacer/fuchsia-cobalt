@@ -2,7 +2,6 @@
   customer_id: 1
 
   projects:
-    - name: Cobalt
-      project_id: 1
+    - project_name: Cobalt
       cobalt_version: 1
-      contact: nobody@example.com
+      project_contact: nobody@example.com

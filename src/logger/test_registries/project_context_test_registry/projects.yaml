@@ -2,17 +2,17 @@
   customer_id: 123
 
   projects:
-    - name: ProjectA1
+    - project_name: ProjectA1
       cobalt_version: 1
-      contact: nobody@example.com
-    - name: ProjectA2
+      project_contact: nobody@example.com
+    - project_name: ProjectA2
       cobalt_version: 1
-      contact: nobody@example.com
+      project_contact: nobody@example.com
 
 - customer_name: CustomerB
   customer_id: 234
 
   projects:
-    - name: ProjectB1
+    - project_name: ProjectB1
       cobalt_version: 1
-      contact: nobody@example.com
+      project_contact: nobody@example.com

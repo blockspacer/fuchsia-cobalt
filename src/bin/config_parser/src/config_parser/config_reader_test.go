@@ -47,18 +47,18 @@ const customersYaml = `
 - customer_name: fuchsia
   customer_id: 1
   projects:
-    - name: ledger
-      id: 100
-      contact: bob
-    - name: module_usage_tracking
-      id: 101
-      contact: bob
+    - project_name: ledger
+      project_contact: bob
+      cobalt_version: 1
+    - project_name: module_usage_tracking
+      project_contact: bob
+      cobalt_version: 1
 - customer_name: test_customer
   customer_id: 100
   projects:
-    - name: test_project
-      id: 50
-      contact: bob
+    - project_name: test_project
+      project_contact: bob
+      cobalt_version: 1
 `
 
 const invalidCustomersYaml = `
@@ -66,17 +66,17 @@ const invalidCustomersYaml = `
   customer_id: 1
   projects:
     - naINVALIDme: ledger
-      id: 100
-      contact: bob
-    - name: module_usage_tracking
-      id: 101
-      contact: bob
+      project_contact: bob
+      cobalt_version: 1
+    - project_name: module_usage_tracking
+      project_contact: bob
+      cobalt_version: 1
 - customer_name: test_customer
   customer_id: 100
   projects:
-    - name: test_project
-      id: 50
-      contact: bob
+    - project_name: test_project
+      project_contact: bob
+      cobalt_version: 1
 `
 
 const projectConfigYaml = `
@@ -117,7 +117,7 @@ func TestReadConfig(t *testing.T) {
 	}
 }
 
-// Tests that ReadConfig customer parsing failures include the YAML file name.
+// Tests that ReadConfig customer parsing failures include the YAML file project_name.
 func TestReadInvalidConfig(t *testing.T) {
 	r := memConfigReader{
 		customers: invalidCustomersYaml}
