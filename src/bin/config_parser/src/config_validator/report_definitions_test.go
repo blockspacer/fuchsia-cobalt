@@ -6,7 +6,6 @@ package config_validator
 
 import (
 	"config"
-	"config_parser"
 	"testing"
 )
 
@@ -18,7 +17,7 @@ func makeValidReport() config.ReportDefinition {
 
 func makeValidReportWithName(name string) config.ReportDefinition {
 	return config.ReportDefinition{
-		Id:         config_parser.IdFromName(name),
+		Id:         10,
 		ReportName: name,
 		ReportType: config.ReportDefinition_EVENT_COMPONENT_OCCURRENCE_COUNT,
 	}
@@ -32,12 +31,12 @@ func TestValidateMakeValidReport(t *testing.T) {
 	}
 }
 
-func TestValidateCorrectReportId(t *testing.T) {
+func TestDifferentReportId(t *testing.T) {
 	r := makeValidReport()
 	r.Id += 1
 
-	if err := validateReportDefinition(r); err == nil {
-		t.Error("Accepted report with wrong report id.")
+	if err := validateReportDefinition(r); err != nil {
+		t.Error("Reject report with different report id.")
 	}
 }
 
@@ -51,6 +50,7 @@ func TestValidateInvalidName(t *testing.T) {
 
 func TestValidateZeroReportId(t *testing.T) {
 	r := makeValidReportWithName("NRaMinLNcqiYmgEypLLVGnXymNpxJzqabtbbjLycCMEohvVzZtAYpah")
+	r.Id = 0
 
 	if err := validateReportDefinition(r); err == nil {
 		t.Error("Accepted report with 0 id.")

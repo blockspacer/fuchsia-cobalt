@@ -24,12 +24,14 @@ metric_definitions:
   reports:
     # Report ID: 2830512035
     - report_name: "SettingsChanged_PerDeviceCount_WindowSize"
+      id: 1
       report_type: PER_DEVICE_NUMERIC_STATS
       window_size:
         - 7
         - 30
     # Report ID: 4037871566
     - report_name: "SettingsChanged_PerDeviceCount_AggregationWindow"
+      id: 2
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_window:
         - days: 7
@@ -46,9 +48,11 @@ metric_definitions:
   reports:
     # Report ID: 2973951499
     - report_name: "ConnectionFailures_GlobalCount"
+      id: 3
       report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
     # Report ID: 1059892875
     - report_name: "ConnectionFailures_PerDeviceCount"
+      id: 4
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: SUM
       window_size:
@@ -65,6 +69,7 @@ metric_definitions:
   reports:
     # Report ID: 2917574296
     - report_name: "StreamingTime_PerDeviceTotal"
+      id: 5
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: SUM
       window_size:
@@ -72,6 +77,7 @@ metric_definitions:
         - 7
     # Report ID: 1177128518
     - report_name: "StreamingTime_PerDeviceMin"
+      id: 6
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MIN
       window_size:
@@ -79,6 +85,7 @@ metric_definitions:
         - 7
     # Report ID: 1042907624
     - report_name: "StreamingTime_PerDeviceMax"
+      id: 7
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MAX
       window_size:
@@ -97,9 +104,11 @@ metric_definitions:
   reports:
     # Report ID: 1444372300
     - report_name: "LoginModuleFrameRate_Aggregated"
+      id: 8
       report_type: NUMERIC_AGGREGATION
     # Report ID: 63534081
     - report_name: "LoginModuleFrameRate_PerDeviceMin"
+      id: 9
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MIN
       window_size:
@@ -122,9 +131,11 @@ metric_definitions:
   reports:
     # Report ID: 4291656504
     - report_name: "LedgerMemoryUsage_Aggregated"
+      id: 10
       report_type: NUMERIC_AGGREGATION
     # Report ID: 3379988036
     - report_name: "LedgerMemoryUsage_PerDeviceMax"
+      id: 11
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MAX
       window_size:

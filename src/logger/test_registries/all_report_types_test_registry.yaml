@@ -22,6 +22,7 @@ metric_definitions:
   reports:
     # Report ID: 3131160301
     - report_name: "ErrorCountsByCode"
+      id: 1
       report_type: SIMPLE_OCCURRENCE_COUNT
       local_privacy_noise_level: SMALL
 
@@ -35,10 +36,13 @@ metric_definitions:
   reports:
     # Report ID: 2845948340
     - report_name: "ReadCacheHitCounts"
+      id: 2
       report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
     - report_name: "ReadCacheHitHistograms"
+      id: 3
       report_type: INT_RANGE_HISTOGRAM
     - report_name: "ReadCacheHitStats"
+      id: 4
       report_type: NUMERIC_AGGREGATION
 
 - id: 3
@@ -48,12 +52,15 @@ metric_definitions:
   reports:
     # Report ID: 643534882
     - report_name: "ModuleLoadTime_Aggregated"
+      id: 5
       report_type: NUMERIC_AGGREGATION
     # Report ID: 1259152485
     - report_name: "ModuleLoadTime_Histogram"
+      id: 6
       report_type: INT_RANGE_HISTOGRAM
     # Report ID: 916724603
     - report_name: "ModuleLoadTime_RawDump"
+      id: 7
       report_type: NUMERIC_PERF_RAW_DUMP
 
 - id: 4
@@ -68,15 +75,19 @@ metric_definitions:
   reports:
     # Report ID: 1444372300
     - report_name: "LoginModuleFrameRate_Aggregated"
+      id: 8
       report_type: NUMERIC_AGGREGATION
     # Report ID: 81821186
     - report_name: "LoginModuleFrameRate_Histogram"
+      id: 9
       report_type: INT_RANGE_HISTOGRAM
     # Report ID: 1067664280
     - report_name: "LoginModuleFrameRate_RawDump"
+      id: 10
       report_type: NUMERIC_PERF_RAW_DUMP
     # Report ID: 63534081
     - report_name: "LoginModuleFrameRate_PerDeviceMin"
+      id: 11
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MIN
       window_size:
@@ -101,11 +112,14 @@ metric_definitions:
   reports:
     # Report ID: 4291656504
     - report_name: "LedgerMemoryUsage_Aggregated"
+      id: 12
       report_type: NUMERIC_AGGREGATION
     # Report ID: 253462951
     - report_name: "LedgerMemoryUsage_Histogram"
+      id: 13
       report_type: INT_RANGE_HISTOGRAM
     - report_name: "LedgerMemoryUsage_PerDeviceMax"
+      id: 14
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MAX
       window_size:
@@ -126,6 +140,7 @@ metric_definitions:
   reports:
     # Report ID: 1534862846
     - report_name: "FileSystemWriteTimes_Histogram"
+      id: 15
       report_type: INT_RANGE_HISTOGRAM
 
 - id: 7
@@ -134,12 +149,14 @@ metric_definitions:
   reports:
     # Report ID: 1447128111
     - report_name: "ModuleDownloads_HeavyHitters"
+      id: 16
       report_type: HIGH_FREQUENCY_STRING_COUNTS
       local_privacy_noise_level: SMALL
       expected_population_size: 20000
       expected_string_set_size: 10000
     # Report ID: 823581688
     - report_name: "ModuleDownloads_WithThreshold"
+      id: 17
       report_type: STRING_COUNTS_WITH_THRESHOLD
       threshold: 200
 
@@ -149,6 +166,7 @@ metric_definitions:
   reports:
     # Report ID: 1219786724
     - report_name: "ModuleInstalls_DetailedData"
+      id: 18
       report_type: CUSTOM_RAW_DUMP
 
 - id: 9
@@ -159,6 +177,7 @@ metric_definitions:
   reports:
     # Report ID: 131134909
     - report_name: "DeviceBoots_UniqueDevices"
+      id: 19
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: SMALL
       window_size:
@@ -172,6 +191,7 @@ metric_definitions:
   reports:
     # Report ID: 635837989
     - report_name: "FeaturesActive_UniqueDevices"
+      id: 20
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: LARGE
       window_size:
@@ -187,10 +207,12 @@ metric_definitions:
   reports:
     # Report ID: 1203991176
     - report_name: "EventsOccurred_GlobalCount"
+      id: 21
       report_type: SIMPLE_OCCURRENCE_COUNT
       local_privacy_noise_level: SMALL
     # Report ID: 1444372300
     - report_name: "EventsOccurred_UniqueDevices"
+      id: 22
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: MEDIUM
       window_size:
@@ -208,6 +230,7 @@ metric_definitions:
   reports:
     # Report ID: 2024497361
     - report_name: "SettingsChanged_PerDeviceCount"
+      id: 23
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: SUM
       window_size:
@@ -225,9 +248,11 @@ metric_definitions:
   reports:
     # Report ID: 2973951499
     - report_name: "ConnectionFailures_GlobalCount"
+      id: 24
       report_type: EVENT_COMPONENT_OCCURRENCE_COUNT
     # Report ID: 1059892875
     - report_name: "ConnectionFailures_PerDeviceCount"
+      id: 25
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: SUM
       window_size:
@@ -244,6 +269,7 @@ metric_definitions:
   reports:
     # Report ID: 2917574296
     - report_name: "StreamingTime_PerDeviceTotal"
+      id: 26
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: SUM
       window_size:
@@ -251,6 +277,7 @@ metric_definitions:
         - 7
     # Report ID: 1177128518
     - report_name: "StreamingTime_PerDeviceMin"
+      id: 27
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MIN
       window_size:
@@ -258,6 +285,7 @@ metric_definitions:
         - 7
     # Report ID: 1042907624
     - report_name: "StreamingTime_PerDeviceMax"
+      id: 28
       report_type: PER_DEVICE_NUMERIC_STATS
       aggregation_type: MAX
       window_size:

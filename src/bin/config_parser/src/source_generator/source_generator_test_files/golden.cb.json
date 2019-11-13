@@ -18,13 +18,13 @@
               "reports": [
                 {
                   "name": "the_report",
-                  "id": 2384646843,
+                  "id": 10,
                   "report_type": "CUSTOM_RAW_DUMP",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 },
                 {
                   "name": "the_other_report",
-                  "id": 492006986,
+                  "id": 20,
                   "report_type": "STRING_COUNTS_WITH_THRESHOLD",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 }
@@ -39,7 +39,7 @@
               "reports": [
                 {
                   "name": "the_report",
-                  "id": 2384646843,
+                  "id": 10,
                   "report_type": "NUMERIC_PERF_RAW_DUMP",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 }
@@ -54,7 +54,7 @@
               "reports": [
                 {
                   "name": "the_report",
-                  "id": 2384646843,
+                  "id": 30,
                   "report_type": "NUMERIC_PERF_RAW_DUMP",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 }
@@ -77,7 +77,7 @@
               "reports": [
                 {
                   "name": "report",
-                  "id": 2422801083,
+                  "id": 40,
                   "report_type": "REPORT_TYPE_UNSET",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 }

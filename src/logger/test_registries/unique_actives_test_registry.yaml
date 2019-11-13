@@ -21,6 +21,7 @@ metric_definitions:
   reports:
     # Report ID: 131134909
     - report_name: "DeviceBoots_UniqueDevices"
+      id: 1
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: SMALL
       window_size:
@@ -34,6 +35,7 @@ metric_definitions:
   reports:
     # Report ID: 635837989
     - report_name: "FeaturesActive_UniqueDevices"
+      id: 2
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: LARGE
       window_size:
@@ -48,10 +50,12 @@ metric_definitions:
   reports:
     # Report ID: 1956746741
     - report_name: "NetworkActivity_GlobalCount"
+      id: 5
       report_type: SIMPLE_OCCURRENCE_COUNT
       local_privacy_noise_level: MEDIUM
     # Report ID: 3430665491
     - report_name: "NetworkActivity_UniqueDevices_WindowSize"
+      id: 6
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: LARGE
       window_size:
@@ -60,6 +64,7 @@ metric_definitions:
         - 30
     # Report ID: 763431326
     - report_name: "NetworkActivity_UniqueDevices_AggregationWindow"
+      id: 7
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: LARGE
       aggregation_window:

@@ -59,8 +59,10 @@ metric_definitions:
   time_zone_policy: UTC
   reports:
   - report_name: the_report
+    id: 10
     report_type: CUSTOM_RAW_DUMP
   - report_name: the_other_report
+    id: 20
     report_type: STRING_COUNTS_WITH_THRESHOLD
 - metric_name: the_other_metric_name
   id: 200
@@ -74,6 +76,7 @@ metric_definitions:
       max_event_code: 200
   reports:
   - report_name: the_report
+    id: 10
     report_type: NUMERIC_PERF_RAW_DUMP
 - id: 300
   metric_name: "event groups"
@@ -100,6 +103,7 @@ metric_definitions:
         HasNo: Alias
   reports:
   - report_name: the_report
+    id: 30
     report_type: NUMERIC_PERF_RAW_DUMP
 - id: 400
   metric_name: "linear buckets"
@@ -112,6 +116,7 @@ metric_definitions:
   metric_name: "exponential buckets"
   reports:
   - report_name: report
+    id: 40
     int_buckets:
       exponential:
         floor: 0

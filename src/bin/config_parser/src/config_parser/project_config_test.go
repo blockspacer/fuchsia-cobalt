@@ -30,14 +30,17 @@ metric_definitions:
   time_zone_policy: UTC
   reports:
   - report_name: the_report
+    id: 10
     report_type: CUSTOM_RAW_DUMP
   - report_name: the_other_report
+    id: 20
     report_type: STRING_COUNTS_WITH_THRESHOLD
 - metric_name: the_other_metric_name
   id: 2
   time_zone_policy: LOCAL
   reports:
   - report_name: the_report
+    id: 10
     report_type: NUMERIC_PERF_RAW_DUMP
 `
 	c := ProjectConfig{
@@ -65,12 +68,12 @@ metric_definitions:
 				Reports: []*config.ReportDefinition{
 					&config.ReportDefinition{
 						ReportName: "the_report",
-						Id:         IdFromName("the_report"),
+						Id:         10,
 						ReportType: config.ReportDefinition_CUSTOM_RAW_DUMP,
 					},
 					&config.ReportDefinition{
 						ReportName: "the_other_report",
-						Id:         IdFromName("the_other_report"),
+						Id:         20,
 						ReportType: config.ReportDefinition_STRING_COUNTS_WITH_THRESHOLD,
 					},
 				},
@@ -86,7 +89,7 @@ metric_definitions:
 				Reports: []*config.ReportDefinition{
 					&config.ReportDefinition{
 						ReportName: "the_report",
-						Id:         IdFromName("the_report"),
+						Id:         10,
 						ReportType: config.ReportDefinition_NUMERIC_PERF_RAW_DUMP,
 					},
 				},

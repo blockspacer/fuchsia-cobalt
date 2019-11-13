@@ -22,6 +22,7 @@ metric_definitions:
   reports:
     # Report ID: 131134909
     - report_name: "DeviceBoots_UniqueDevices"
+      id: 1
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: NONE
       window_size:
@@ -36,6 +37,7 @@ metric_definitions:
   reports:
     # Report ID: 635837989
     - report_name: "FeaturesActive_UniqueDevices"
+      id: 2
       report_type: UNIQUE_N_DAY_ACTIVES
       local_privacy_noise_level: NONE
       window_size:

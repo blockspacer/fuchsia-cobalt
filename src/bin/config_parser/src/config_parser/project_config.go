@@ -62,7 +62,9 @@ func parseProjectConfig(y string, c *ProjectConfig) (err error) {
 		}
 
 		for _, r := range e.Reports {
-			r.Id = IdFromName(r.ReportName)
+			if r.Id == 0 {
+				r.Id = IdFromName(r.ReportName)
+			}
 		}
 	}
 

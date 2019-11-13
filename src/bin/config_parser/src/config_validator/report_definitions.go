@@ -6,7 +6,6 @@ package config_validator
 
 import (
 	"config"
-	"config_parser"
 	"fmt"
 )
 
@@ -59,7 +58,19 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 }
 
 func validateReportDefinitions(m config.MetricDefinition) error {
-	for _, r := range m.Reports {
+	reportIds := map[uint32]int{}
+	reportNames := map[string]bool{}
+	for i, r := range m.Reports {
+		if _, ok := reportIds[r.Id]; ok {
+			return fmt.Errorf("There are two reports with id=%v.", r.Id)
+		}
+		reportIds[r.Id] = i
+
+		if _, ok := reportNames[r.ReportName]; ok {
+			return fmt.Errorf("There are two reports with name=%v.", r.ReportName)
+		}
+		reportNames[r.ReportName] = true
+
 		if err := validateReportDefinitionForMetric(m, *r); err != nil {
 			return fmt.Errorf("Error validating report '%s': %v", r.ReportName, err)
 		}
@@ -87,12 +98,8 @@ func validateReportDefinition(r config.ReportDefinition) error {
 		return fmt.Errorf("Invalid report name. Report names must match the regular expression '%v'.", validNameRegexp)
 	}
 
-	if r.Id != config_parser.IdFromName(r.ReportName) {
-		return fmt.Errorf("Report id specified in the config file. Report ids may not be set by users.")
-	}
-
 	if r.Id == 0 {
-		return fmt.Errorf("Report hashes to a zero report id. This is invalid. Please change the report name.")
+		return fmt.Errorf("Report ID of zero is not allowed. Please specify a positive report ID.")
 	}
 
 	if err := validateReportDefinitionForType(r); err != nil {

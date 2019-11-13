@@ -31,6 +31,7 @@ metric_definitions:
   id: 3
   reports:
     - report_name: "update_duration_report"
+      id: 3
       report_type: INT_RANGE_HISTOGRAM
       int_buckets:
         exponential:
@@ -46,6 +47,7 @@ metric_definitions:
   id: 4
   reports:
     - report_name: "game_frame_rate_histograms"
+      id: 4
       report_type: INT_RANGE_HISTOGRAM
       int_buckets:
         exponential:
@@ -61,6 +63,7 @@ metric_definitions:
   id: 5
   reports:
     - report_name: "application_memory_histograms"
+      id: 5
       report_type: INT_RANGE_HISTOGRAM
       int_buckets:
         exponential:
@@ -81,6 +84,7 @@ metric_definitions:
       step_size: 2
   reports:
     - report_name: "power_usage_histograms"
+      id: 6
       report_type: INT_RANGE_HISTOGRAM
 
 - metric_name: "FeaturesActive"
