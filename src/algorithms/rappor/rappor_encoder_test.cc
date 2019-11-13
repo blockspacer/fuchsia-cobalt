@@ -23,7 +23,7 @@
 
 namespace cobalt::rappor {
 
-using encoder::ClientSecret;
+using system_data::ClientSecret;
 
 TEST(RapporConfigValidatorTest, TestMinPower2Above) {
   EXPECT_EQ(1u, RapporConfigValidator::MinPower2Above(0));
@@ -698,7 +698,7 @@ class StringRapporEncoderTest : public ::testing::Test {
 
   uint32_t DeriveCohortFromSecret() { return encoder_->DeriveCohortFromSecret(); }
 
-  void SetNewEncoder(const RapporConfig& config, const encoder::ClientSecret& secret) {
+  void SetNewEncoder(const RapporConfig& config, const system_data::ClientSecret& secret) {
     encoder_ = std::make_unique<RapporEncoder>(config, secret);
   }
 

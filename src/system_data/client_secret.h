@@ -22,8 +22,7 @@
 #include "src/lib/crypto_util/random.h"
 #include "src/lib/crypto_util/types.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::system_data {
 
 using crypto::byte;
 
@@ -83,7 +82,12 @@ class ClientSecret {
   std::vector<byte> bytes_;
 };
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::system_data
+
+namespace cobalt::encoder {
+
+using system_data::ClientSecret;
+
+}  // namespace cobalt::encoder
 
 #endif  // COBALT_SRC_SYSTEM_DATA_CLIENT_SECRET_H_

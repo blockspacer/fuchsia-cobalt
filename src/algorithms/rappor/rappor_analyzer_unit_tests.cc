@@ -6,7 +6,7 @@
 
 namespace cobalt::rappor {
 
-using encoder::ClientSecret;
+using system_data::ClientSecret;
 
 // Tests the function BuildCandidateMap. We build one small CandidateMap and
 // then we explicitly check every value against a known value. We have not

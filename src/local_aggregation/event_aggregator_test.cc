@@ -28,8 +28,6 @@
 namespace cobalt {
 
 using config::PackEventCodes;
-using encoder::ClientSecret;
-using encoder::SystemDataInterface;
 using logger::Encoder;
 using logger::EventRecord;
 using logger::kInvalidArguments;
@@ -53,6 +51,8 @@ using logger::testing::MakeExpectedReportParticipationObservations;
 using logger::testing::MakeNullExpectedUniqueActivesObservations;
 using logger::testing::MockConsistentProtoStore;
 using logger::testing::TestUpdateRecipient;
+using system_data::ClientSecret;
+using system_data::SystemDataInterface;
 using util::EncryptedMessageMaker;
 using util::IncrementingSteadyClock;
 using util::IncrementingSystemClock;
@@ -117,7 +117,8 @@ class EventAggregatorTest : public ::testing::Test {
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
     observation_writer_ = std::make_unique<ObservationWriter>(
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
-    encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
+    encoder_ = std::make_unique<Encoder>(system_data::ClientSecret::GenerateNewSecret(),
+                                         system_data_.get());
     local_aggregate_proto_store_ =
         std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
     obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
@@ -737,7 +738,7 @@ class EventAggregatorTest : public ::testing::Test {
   uint32_t day_store_created_ = 0u;
 
  private:
-  std::unique_ptr<SystemDataInterface> system_data_;
+  std::unique_ptr<system_data::SystemDataInterface> system_data_;
 };  // namespace logger
 
 // Creates an EventAggregator and provides it with a ProjectContext generated

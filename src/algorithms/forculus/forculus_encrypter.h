@@ -40,7 +40,7 @@ class ForculusEncrypter {
   // the Forculus polynomial.
   ForculusEncrypter(const ForculusConfig& config, uint32_t customer_id, uint32_t project_id,
                     uint32_t metric_id, std::string metric_part_name,
-                    encoder::ClientSecret client_secret);
+                    system_data::ClientSecret client_secret);
 
   ~ForculusEncrypter();
 
@@ -88,7 +88,7 @@ class ForculusEncrypter {
   std::unique_ptr<ForculusConfigValidator> config_;
   uint32_t customer_id_, project_id_, metric_id_;
   std::string metric_part_name_;
-  encoder::ClientSecret client_secret_;
+  system_data::ClientSecret client_secret_;
 };
 
 }  // namespace cobalt::forculus

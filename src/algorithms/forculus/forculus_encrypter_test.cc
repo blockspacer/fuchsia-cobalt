@@ -18,7 +18,7 @@
 
 namespace cobalt::forculus {
 
-using encoder::ClientSecret;
+using system_data::ClientSecret;
 
 static const uint32_t kDayIndex = 12345;
 

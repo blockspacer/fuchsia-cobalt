@@ -27,7 +27,7 @@ namespace cobalt::forculus {
 
 using crypto::SymmetricCipher;
 using crypto::hmac::HMAC;
-using encoder::ClientSecret;
+using system_data::ClientSecret;
 
 namespace {
 // Derives a master key for use in Forculus encryption by applying a slow

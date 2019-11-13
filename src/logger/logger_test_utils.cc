@@ -26,9 +26,9 @@ namespace cobalt {
 
 using crypto::byte;
 using crypto::hash::DIGEST_SIZE;
-using encoder::ClientSecret;
 using local_aggregation::MakeDayWindow;
 using rappor::BasicRapporEncoder;
+using system_data::ClientSecret;
 using util::MessageDecrypter;
 
 namespace logger::testing {

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-namespace cobalt::config {
+namespace cobalt::system_data {
 
 // The environment that the Cobalt system should talk to.
 enum Environment {
@@ -49,6 +49,15 @@ class ConfigurationData {
 
 // The current default configuration if no environment/config is specified.
 static const ConfigurationData defaultConfigurationData(Environment::DEVEL);
+
+}  // namespace cobalt::system_data
+
+namespace cobalt::config {
+
+using system_data::ConfigurationData;
+using system_data::DEVEL;
+using system_data::Environment;
+using system_data::PROD;
 
 }  // namespace cobalt::config
 
