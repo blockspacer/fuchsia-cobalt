@@ -105,8 +105,7 @@ class Encoder {
   //     not take ownership of system_data and system_data is allowed to be
   //     NULL, in which case no SystemProfile will be added to the
   //     ObservationMetadata.
-  Encoder(system_data::ClientSecret client_secret,
-          const system_data::SystemDataInterface* system_data);
+  Encoder(encoder::ClientSecret client_secret, const encoder::SystemDataInterface* system_data);
 
   // The output of the Encode*() methods is a triple consisting of a status
   // and, if the status is kOK, a new observation and its metadata. The
@@ -353,8 +352,8 @@ class Encoder {
   Result MakeObservation(MetricRef metric, const ReportDefinition* report,
                          uint32_t day_index) const;
 
-  const system_data::ClientSecret client_secret_;
-  const system_data::SystemDataInterface* system_data_;
+  const encoder::ClientSecret client_secret_;
+  const encoder::SystemDataInterface* system_data_;
   mutable crypto::Random random_;
 };
 

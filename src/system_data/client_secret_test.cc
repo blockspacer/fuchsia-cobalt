@@ -19,7 +19,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::system_data {
+namespace cobalt::encoder {
 
 // Tests the basic functionality of ClientSecret.
 TEST(ClientSecretTest, BasicTest) {
@@ -58,4 +58,4 @@ TEST(ClientSecretTest, BasicTest) {
   EXPECT_EQ(std::string(), invalid_secret.GetToken());
 }
 
-}  // namespace cobalt::system_data
+}  // namespace cobalt::encoder

@@ -227,7 +227,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
       observation_store::ObservationStore* observation_store,
       util::EncryptedMessageMaker* encrypt_to_shuffler,
       std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
-      int32_t log_source_id = system_data::defaultConfigurationData.GetLogSourceId(),
+      int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
       logger::LoggerInterface* internal_logger = nullptr,
       size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
       std::string api_key = "cobalt-default-api-key");
@@ -238,7 +238,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
       util::EncryptedMessageMaker* encrypt_to_shuffler,
       util::EncryptedMessageMaker* encrypt_to_analyzer,
       std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
-      int32_t log_source_id = system_data::defaultConfigurationData.GetLogSourceId(),
+      int32_t log_source_id = config::defaultConfigurationData.GetLogSourceId(),
       logger::LoggerInterface* internal_logger = nullptr,
       size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
       std::string api_key = "cobalt-default-api-key");

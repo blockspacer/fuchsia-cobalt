@@ -22,7 +22,7 @@
 
 namespace cobalt::forculus {
 
-using system_data::ClientSecret;
+using encoder::ClientSecret;
 
 static const uint32_t kThreshold = 20;
 static const uint32_t kDayIndex = 12345;

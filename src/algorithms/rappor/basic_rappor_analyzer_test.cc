@@ -29,7 +29,7 @@
 
 namespace cobalt::rappor {
 
-using system_data::ClientSecret;
+using encoder::ClientSecret;
 
 namespace {
 

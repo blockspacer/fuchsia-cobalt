@@ -19,7 +19,7 @@
 #include "src/lib/crypto_util/base64.h"
 #include "src/lib/crypto_util/random.h"
 
-namespace cobalt::system_data {
+namespace cobalt::encoder {
 
 // static
 ClientSecret ClientSecret::GenerateNewSecret() {
@@ -48,4 +48,4 @@ std::string ClientSecret::GetToken() {
   return token;
 }
 
-}  // namespace cobalt::system_data
+}  // namespace cobalt::encoder

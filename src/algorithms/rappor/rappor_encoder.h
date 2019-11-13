@@ -38,7 +38,7 @@ class RapporEncoder {
  public:
   // Constructor.
   // The |client_secret| is used to determine the cohort and the PRR.
-  RapporEncoder(const RapporConfig& config, system_data::ClientSecret client_secret);
+  RapporEncoder(const RapporConfig& config, encoder::ClientSecret client_secret);
   virtual ~RapporEncoder() = default;
 
   // Encodes |value| using RAPPOR encoding. Returns kOK on success, or
@@ -103,7 +103,7 @@ class RapporEncoder {
 
   std::unique_ptr<RapporConfigValidator> config_;
   std::unique_ptr<crypto::Random> random_;
-  system_data::ClientSecret client_secret_;
+  encoder::ClientSecret client_secret_;
   uint32_t cohort_num_;
 };
 
@@ -113,7 +113,7 @@ class RapporEncoder {
 // The |client_secret| is used to determine the PRR.
 class BasicRapporEncoder {
  public:
-  BasicRapporEncoder(const BasicRapporConfig& config, system_data::ClientSecret client_secret);
+  BasicRapporEncoder(const BasicRapporConfig& config, encoder::ClientSecret client_secret);
   ~BasicRapporEncoder() = default;
 
   // Encodes |value| using Basic RAPPOR encoding. |value| must be one
@@ -143,7 +143,7 @@ class BasicRapporEncoder {
 
   std::unique_ptr<RapporConfigValidator> config_;
   std::unique_ptr<crypto::Random> random_;
-  system_data::ClientSecret client_secret_;
+  encoder::ClientSecret client_secret_;
 };
 
 }  // namespace cobalt::rappor

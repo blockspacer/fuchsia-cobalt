@@ -4,7 +4,7 @@
 
 #include "src/system_data/configuration_data.h"
 
-namespace cobalt::system_data {
+namespace cobalt::config {
 
 // IDs of the Clearcut log sources (Cobalt Shuffler Input) that Cobalt can write to.
 //
@@ -39,4 +39,4 @@ int32_t ConfigurationData::GetLogSourceId() const {
   }
 }
 
-}  // namespace cobalt::system_data
+}  // namespace cobalt::config

@@ -44,6 +44,9 @@
 namespace cobalt {
 
 using encoder::ClearcutV1ShippingManager;
+using encoder::ClientSecret;
+using encoder::SystemData;
+using encoder::SystemDataInterface;
 using google::protobuf::RepeatedPtrField;
 using local_aggregation::EventAggregator;
 using logger::Encoder;
@@ -58,9 +61,6 @@ using logger::ProjectContextFactory;
 using logger::Status;
 using logger::UndatedEventManager;
 using observation_store::MemoryObservationStore;
-using system_data::ClientSecret;
-using system_data::SystemData;
-using system_data::SystemDataInterface;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;

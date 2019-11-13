@@ -24,12 +24,12 @@
 
 namespace cobalt {
 
+using encoder::ClientSecret;
+using encoder::FakeSystemData;
+using encoder::SystemDataInterface;
 using google::protobuf::RepeatedPtrField;
 using local_aggregation::MakeDayWindow;
 using local_aggregation::MakeHourWindow;
-using system_data::ClientSecret;
-using system_data::FakeSystemData;
-using system_data::SystemDataInterface;
 
 namespace logger {
 

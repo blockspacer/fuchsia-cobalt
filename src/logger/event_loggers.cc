@@ -28,10 +28,11 @@ using ::google::protobuf::RepeatedPtrField;
 
 constexpr char TRACE_PREFIX[] = "[COBALT_EVENT_TRACE] ";
 
-std::unique_ptr<EventLogger> EventLogger::Create(
-    MetricDefinition::MetricType metric_type, const Encoder* encoder,
-    EventAggregator* event_aggregator, const ObservationWriter* observation_writer,
-    const system_data::SystemDataInterface* system_data) {
+std::unique_ptr<EventLogger> EventLogger::Create(MetricDefinition::MetricType metric_type,
+                                                 const Encoder* encoder,
+                                                 EventAggregator* event_aggregator,
+                                                 const ObservationWriter* observation_writer,
+                                                 const encoder::SystemDataInterface* system_data) {
   switch (metric_type) {
     case MetricDefinition::EVENT_OCCURRED: {
       return std::make_unique<internal::OccurrenceEventLogger>(encoder, event_aggregator,

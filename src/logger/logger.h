@@ -65,7 +65,7 @@ class Logger : public LoggerInterface {
   // internal logging will be performed by this Logger.
   Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
          local_aggregation::EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer, system_data::SystemDataInterface* system_data,
+         ObservationWriter* observation_writer, encoder::SystemDataInterface* system_data,
          LoggerInterface* internal_logger = nullptr);
 
   // Constructor for a Logger when the clock is not yet accurate.
@@ -99,7 +99,7 @@ class Logger : public LoggerInterface {
   // internal logging will be performed by this Logger.
   Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* encoder,
          local_aggregation::EventAggregator* event_aggregator,
-         ObservationWriter* observation_writer, system_data::SystemDataInterface* system_data,
+         ObservationWriter* observation_writer, encoder::SystemDataInterface* system_data,
          util::ValidatedClockInterface* validated_clock,
          std::weak_ptr<UndatedEventManager> undated_event_manager,
          LoggerInterface* internal_logger = nullptr);
@@ -177,7 +177,7 @@ class Logger : public LoggerInterface {
   const Encoder* encoder_;
   local_aggregation::EventAggregator* event_aggregator_;
   const ObservationWriter* observation_writer_;
-  const system_data::SystemDataInterface* system_data_;
+  const encoder::SystemDataInterface* system_data_;
   util::ValidatedClockInterface* validated_clock_;
   std::unique_ptr<util::ValidatedClockInterface> local_validated_clock_;
   std::weak_ptr<UndatedEventManager> undated_event_manager_;

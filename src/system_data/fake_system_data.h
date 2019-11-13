@@ -10,7 +10,8 @@
 
 #include "src/system_data/system_data.h"
 
-namespace cobalt::system_data {
+namespace cobalt {
+namespace encoder {
 
 // Mock of the SystemDataInterface. Used for testing.
 class FakeSystemData : public SystemDataInterface {
@@ -37,6 +38,7 @@ class FakeSystemData : public SystemDataInterface {
   ReleaseStage release_stage_ = ReleaseStage::GA;
 };
 
-}  // namespace cobalt::system_data
+}  // namespace encoder
+}  // namespace cobalt
 
 #endif  // COBALT_SRC_SYSTEM_DATA_FAKE_SYSTEM_DATA_H_

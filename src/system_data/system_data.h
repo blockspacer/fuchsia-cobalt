@@ -15,7 +15,8 @@
 #include "src/registry/metric_definition.pb.h"
 #include "third_party/abseil-cpp/absl/synchronization/mutex.h"
 
-namespace cobalt::system_data {
+namespace cobalt {
+namespace encoder {
 
 // An abstraction of the interface to SystemData that allows mocking in
 // tests.
@@ -97,6 +98,7 @@ class SystemData : public SystemDataInterface {
   ReleaseStage release_stage_;
 };
 
-}  // namespace cobalt::system_data
+}  // namespace encoder
+}  // namespace cobalt
 
 #endif  // COBALT_SRC_SYSTEM_DATA_SYSTEM_DATA_H_

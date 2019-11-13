@@ -29,7 +29,7 @@ namespace cobalt::rappor {
 
 using crypto::byte;
 using crypto::hmac::HMAC;
-using system_data::ClientSecret;
+using encoder::ClientSecret;
 
 namespace {
 

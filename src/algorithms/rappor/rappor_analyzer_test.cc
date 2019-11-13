@@ -15,7 +15,7 @@
 
 namespace cobalt::rappor {
 
-using system_data::ClientSecret;
+using encoder::ClientSecret;
 
 void RapporAnalyzerTest::SetAnalyzer(uint32_t num_candidates, uint32_t num_bloom_bits,
                                      uint32_t num_cohorts, uint32_t num_hashes) {

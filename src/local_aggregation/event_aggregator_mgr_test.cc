@@ -15,6 +15,8 @@
 
 namespace cobalt::local_aggregation {
 
+using encoder::ClientSecret;
+using encoder::SystemDataInterface;
 using logger::Encoder;
 using logger::EventRecord;
 using logger::kOK;
@@ -33,8 +35,6 @@ using logger::testing::all_report_types::kCobaltRegistryBase64;
 using logger::testing::all_report_types::kDeviceBootsMetricReportId;
 using logger::testing::all_report_types::kEventsOccurredMetricReportId;
 using logger::testing::all_report_types::kFeaturesActiveMetricReportId;
-using system_data::ClientSecret;
-using system_data::SystemDataInterface;
 using testing::AssertionFailure;
 using testing::AssertionResult;
 using testing::AssertionSuccess;
