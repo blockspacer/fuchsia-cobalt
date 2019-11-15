@@ -58,11 +58,15 @@ def main():
       dirs.remove(d)
 
   print('Linting %d go files' % len(files_to_lint))
-  p = subprocess.Popen(['gofmt', '-l'] + files_to_lint)
-  p.wait()
+  p = subprocess.Popen(['gofmt', '-l'] + files_to_lint, stdout=subprocess.PIPE)
+  out, err = p.communicate()
 
   if p.returncode != 0:
     print('Received non-zero return code (%s)' % p.returncode)
+    status += 1
+
+  if len(out) > 0:
+    print('The following files do not match gofmt:\n%s' % out)
     status += 1
 
   return status
