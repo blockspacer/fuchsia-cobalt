@@ -6,7 +6,9 @@
 #include <cstdint>
 
 const char kCustomerName[] = "customer";
+const uint32_t kCustomerId = 10;
 const char kProjectName[] = "project";
+const uint32_t kProjectId = 5;
 
 // Linear bucket constants for linear buckets
 const int64_t kLinearBucketsIntBucketsFloor = 0;

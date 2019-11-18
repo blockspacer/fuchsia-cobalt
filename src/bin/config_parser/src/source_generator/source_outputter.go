@@ -277,7 +277,9 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 
 func (so *sourceOutputter) writeNames(c *config.CobaltRegistry) {
 	so.language.writeStringConstant(so, c.Customers[0].CustomerName, "Customer Name")
+	so.language.writeConstUint32(so, c.Customers[0].CustomerId, "Customer Id")
 	so.language.writeStringConstant(so, c.Customers[0].Projects[0].ProjectName, "Project Name")
+	so.language.writeConstUint32(so, c.Customers[0].Projects[0].ProjectId, "Project Id")
 }
 
 func (so *sourceOutputter) writeFile(c, filtered *config.CobaltRegistry) error {

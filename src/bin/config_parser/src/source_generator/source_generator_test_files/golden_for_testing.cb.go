@@ -2,7 +2,9 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 package package
 const CustomerName string = "customer";
+const CustomerId uint32 = 10;
 const ProjectName string = "project";
+const ProjectId uint32 = 5;
 
 // Linear bucket constants for linear buckets
 const LinearBucketsIntBucketsFloor int64 = 0;

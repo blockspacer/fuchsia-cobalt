@@ -2,7 +2,9 @@
 // YAML in the cobalt_config repository. Edit the YAML there to make changes.
 pub mod ns1::ns2 {
 pub const CUSTOMER_NAME: &str = "customer";
+pub const CUSTOMER_ID: u32 = 10;
 pub const PROJECT_NAME: &str = "project";
+pub const PROJECT_ID: u32 = 5;
 
 // Linear bucket constants for linear buckets
 pub const LINEAR_BUCKETS_INT_BUCKETS_FLOOR: i64 = 0;

@@ -12,17 +12,17 @@
 namespace cobalt::logger {
 
 constexpr int64_t kNumBytes = 123;
-constexpr uint32_t kCustomerId = 1;
-constexpr uint32_t kProjectId = 2;
+constexpr uint32_t kTestCustomerId = 1;
+constexpr uint32_t kTestProjectId = 2;
 constexpr uint32_t kMany = 100;
 
 class InternalMetricsImplTest : public ::testing::Test {
  public:
   Project GetTestProject() {
     Project project;
-    project.set_customer_id(kCustomerId);
+    project.set_customer_id(kTestCustomerId);
     project.set_customer_name("test");
-    project.set_project_id(kProjectId);
+    project.set_project_id(kTestProjectId);
     project.set_project_name("project");
     return project;
   }
@@ -84,7 +84,7 @@ TEST_F(InternalMetricsImplTest, MegaBytesUploaded) {
 
   ASSERT_EQ(logger.call_count(), 0);
   metrics.BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus::Attempted, kNumBytes,
-                        kCustomerId, kProjectId);
+                        kTestCustomerId, kTestProjectId);
 
   ASSERT_EQ(logger.call_count(), 1);
   ASSERT_TRUE(logger.last_event_logged().has_count_event());
@@ -98,7 +98,7 @@ TEST_F(InternalMetricsImplTest, MegaBytesUploadedPauseWorks) {
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
     metrics.BytesUploaded(PerProjectBytesUploadedMetricDimensionStatus::Attempted, kNumBytes,
-                          kCustomerId, kProjectId);
+                          kTestCustomerId, kTestProjectId);
   }
   metrics.ResumeLogging();
   ASSERT_EQ(logger.call_count(), 0);
@@ -109,8 +109,8 @@ TEST_F(InternalMetricsImplTest, BytesStored) {
   InternalMetricsImpl metrics(&logger);
 
   ASSERT_EQ(logger.call_count(), 0);
-  metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted, kNumBytes, kCustomerId,
-                      kProjectId);
+  metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted, kNumBytes,
+                      kTestCustomerId, kTestProjectId);
 
   ASSERT_EQ(logger.call_count(), 1);
   ASSERT_TRUE(logger.last_event_logged().has_memory_usage_event());
@@ -124,7 +124,7 @@ TEST_F(InternalMetricsImplTest, BytesStoredPauseWorks) {
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
     metrics.BytesStored(PerProjectBytesStoredMetricDimensionStatus::Attempted, kNumBytes,
-                        kCustomerId, kProjectId);
+                        kTestCustomerId, kTestProjectId);
   }
   metrics.ResumeLogging();
   ASSERT_EQ(logger.call_count(), 0);
