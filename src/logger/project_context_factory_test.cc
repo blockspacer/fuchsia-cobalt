@@ -54,7 +54,9 @@ TEST(ProjectContextFactoryTest, InvalidBytes) {
   EXPECT_FALSE(factory.is_valid());
   EXPECT_FALSE(factory.is_single_project());
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
+  EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1));
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22"));
+  EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1));
   EXPECT_EQ(nullptr, factory.TakeSingleProjectContext());
 }
 
@@ -71,7 +73,9 @@ TEST(ProjectContextFactoryTest, RegistryA) {
 
   // Registry A contains Cobalt 1.0 project 11, but no project 22
   EXPECT_NE(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
+  EXPECT_NE(nullptr, factory.NewProjectContext(11, 1).get());
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
+  EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1).get());
 
   // Registry A does contain a single Cobalt 1.0 project.
   auto context = factory.TakeSingleProjectContext();
@@ -83,6 +87,7 @@ TEST(ProjectContextFactoryTest, RegistryA) {
 
   // The data has been removed from the factory.
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
+  EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1));
   EXPECT_FALSE(factory.is_valid());
 }
 
@@ -97,7 +102,9 @@ TEST(ProjectContextFactoryTest, RegistryB) {
 
   // Registry B contains Cobalt 1.0 project 22, but no project 11
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
+  EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1).get());
   EXPECT_NE(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
+  EXPECT_NE(nullptr, factory.NewProjectContext(22, 1).get());
 
   // Registry B does contain a single Cobalt 1.0 project.
   auto context = factory.TakeSingleProjectContext();
@@ -109,6 +116,7 @@ TEST(ProjectContextFactoryTest, RegistryB) {
 
   // The data has been removed from the factory.
   EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22"));
+  EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1));
   EXPECT_FALSE(factory.is_valid());
 }
 
@@ -131,6 +139,16 @@ TEST(ProjectContextFactoryTest, RegistryC) {
   EXPECT_EQ(nullptr, context1->GetMetric("Metric22"));
   EXPECT_NE(nullptr, context2->GetMetric("Metric22"));
   EXPECT_EQ(nullptr, context2->GetMetric("Metric11"));
+
+  context1 = factory.NewProjectContext(11, 1);
+  context2 = factory.NewProjectContext(22, 1);
+  EXPECT_NE(nullptr, context1.get());
+  EXPECT_NE(nullptr, context2.get());
+
+  EXPECT_NE(nullptr, context1->GetMetric("Metric11"));
+  EXPECT_EQ(nullptr, context1->GetMetric("Metric22"));
+  EXPECT_NE(nullptr, context2->GetMetric("Metric22"));
+  EXPECT_EQ(nullptr, context2->GetMetric("Metric11"));
 }
 
 TEST(ProjectContextFactoryTest, ReleaseStage) {
@@ -139,7 +157,13 @@ TEST(ProjectContextFactoryTest, ReleaseStage) {
   auto context = factory.NewProjectContext("Customer22", "Project22");
   EXPECT_EQ(GA, context->project().release_stage());
 
+  context = factory.NewProjectContext(22, 1);
+  EXPECT_EQ(GA, context->project().release_stage());
+
   context = factory.NewProjectContext("Customer22", "Project22", FISHFOOD);
+  EXPECT_EQ(FISHFOOD, context->project().release_stage());
+
+  context = factory.NewProjectContext(22, 1, FISHFOOD);
   EXPECT_EQ(FISHFOOD, context->project().release_stage());
 }
 

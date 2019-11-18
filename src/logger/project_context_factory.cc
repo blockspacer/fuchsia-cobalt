@@ -64,6 +64,23 @@ std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
                                           project_config, release_stage);
 }
 
+std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
+    uint32_t customer_id, uint32_t project_id, ReleaseStage release_stage) {
+  if (project_configs_ == nullptr) {
+    return nullptr;
+  }
+  const auto* customer_config = project_configs_->GetCustomerConfig(customer_id);
+  if (!customer_config) {
+    return nullptr;
+  }
+  const auto* project_config = project_configs_->GetProjectConfig(customer_id, project_id);
+  if (!project_config) {
+    return nullptr;
+  }
+  return std::make_unique<ProjectContext>(customer_id, customer_config->customer_name(),
+                                          project_config, release_stage);
+}
+
 std::unique_ptr<ProjectContext> ProjectContextFactory::TakeSingleProjectContext(
     ReleaseStage release_stage) {
   if (!is_single_project()) {
