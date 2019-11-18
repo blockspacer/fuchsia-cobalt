@@ -13,13 +13,11 @@ namespace cobalt::logger {
 namespace {
 
 void PopulateProject(uint32_t customer_id, uint32_t project_id, const std::string& customer_name,
-                     const std::string& project_name, ReleaseStage release_stage,
-                     Project* project) {
+                     const std::string& project_name, Project* project) {
   project->set_customer_id(customer_id);
   project->set_project_id(project_id);
   project->set_customer_name(customer_name);
   project->set_project_name(project_name);
-  project->set_release_stage(release_stage);
 }
 
 }  // namespace
@@ -46,19 +44,16 @@ std::string MetricRef::FullyQualifiedName() const {
 }
 
 ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                               std::unique_ptr<ProjectConfig> project_config,
-                               ReleaseStage release_stage)
-    : ProjectContext(customer_id, customer_name, nullptr, std::move(project_config),
-                     release_stage) {}
+                               std::unique_ptr<ProjectConfig> project_config)
+    : ProjectContext(customer_id, customer_name, nullptr, std::move(project_config)) {}
 
 ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                               const ProjectConfig* project_config, ReleaseStage release_stage)
-    : ProjectContext(customer_id, customer_name, project_config, nullptr, release_stage) {}
+                               const ProjectConfig* project_config)
+    : ProjectContext(customer_id, customer_name, project_config, nullptr) {}
 
 ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer_name,
                                const ProjectConfig* project_config,
-                               std::unique_ptr<ProjectConfig> owned_project_config,
-                               ReleaseStage release_stage)
+                               std::unique_ptr<ProjectConfig> owned_project_config)
     : project_config_(project_config), maybe_null_project_config_(std::move(owned_project_config)) {
   CHECK(project_config_ || maybe_null_project_config_);
   CHECK(!(project_config_ && maybe_null_project_config_));
@@ -66,7 +61,7 @@ ProjectContext::ProjectContext(uint32_t customer_id, const std::string& customer
     project_config_ = maybe_null_project_config_.get();
   }
   PopulateProject(customer_id, project_config_->project_id(), customer_name,
-                  project_config_->project_name(), release_stage, &project_);
+                  project_config_->project_name(), &project_);
   for (const auto& metric : project_config_->metrics()) {
     if (metric.customer_id() == project_.customer_id() &&
         metric.project_id() == project_.project_id()) {

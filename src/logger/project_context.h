@@ -69,12 +69,8 @@ class ProjectContext {
   // |customer_name| The name of the customer this project is for.
   //
   // |project_config| The |ProjectConfig| containing the project data.
-  //
-  // |release_stage| The declared release stage of the unit of code that will
-  // use this ProjectContext. Used to determine which metrics from the
-  // given |ProjectConfig| are allowed to be used. Optional.
   ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                 std::unique_ptr<ProjectConfig> project_config, ReleaseStage release_stage = GA);
+                 std::unique_ptr<ProjectConfig> project_config);
 
   // Constructs an instance of ProjectContext that does not own the
   // underlying |ProjectConfig|.
@@ -84,12 +80,8 @@ class ProjectContext {
   // |customer_name| The name of the customer this project is for.
   //
   // |project_config| The |ProjectConfig| containing the project data.
-  //
-  // |release_stage| The declared release stage of the unit of code that will
-  // use this ProjectContext. Used to determine which metrics from the
-  // given |ProjectConfig| are allowed to be used. Optional.
   ProjectContext(uint32_t customer_id, const std::string& customer_name,
-                 const ProjectConfig* project_config, ReleaseStage release_stage = GA);
+                 const ProjectConfig* project_config);
 
   // Returns the MetricDefinition for the metric with the given name, or
   // nullptr if there is no such metric.
@@ -142,14 +134,9 @@ class ProjectContext {
   //
   // |project_config| Exactly one of |owned_project_config| or
   // |project_config| must be not null or we will CHECK fail.
-  //
-  // |release_stage| The declared release stage of the unit of code that will
-  // use this ProjectContext. Used to determine which metrics from the
-  // given |ProjectConfig| are allowed to be used. Optional.
   ProjectContext(uint32_t customer_id, const std::string& customer_name,
                  const ProjectConfig* project_config,
-                 std::unique_ptr<ProjectConfig> owned_project_config,
-                 ReleaseStage release_stage = GA);
+                 std::unique_ptr<ProjectConfig> owned_project_config);
 
   Project project_;
 

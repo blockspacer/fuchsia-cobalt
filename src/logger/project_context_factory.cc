@@ -48,7 +48,7 @@ ProjectContextFactory::ProjectContextFactory(std::unique_ptr<CobaltRegistry> cob
 }
 
 std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
-    const std::string& customer_name, const std::string& project_name, ReleaseStage release_stage) {
+    const std::string& customer_name, const std::string& project_name) {
   if (project_configs_ == nullptr) {
     return nullptr;
   }
@@ -61,11 +61,11 @@ std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
     return nullptr;
   }
   return std::make_unique<ProjectContext>(customer_config->customer_id(), customer_name,
-                                          project_config, release_stage);
+                                          project_config);
 }
 
-std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
-    uint32_t customer_id, uint32_t project_id, ReleaseStage release_stage) {
+std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(uint32_t customer_id,
+                                                                         uint32_t project_id) {
   if (project_configs_ == nullptr) {
     return nullptr;
   }
@@ -78,17 +78,16 @@ std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
     return nullptr;
   }
   return std::make_unique<ProjectContext>(customer_id, customer_config->customer_name(),
-                                          project_config, release_stage);
+                                          project_config);
 }
 
-std::unique_ptr<ProjectContext> ProjectContextFactory::TakeSingleProjectContext(
-    ReleaseStage release_stage) {
+std::unique_ptr<ProjectContext> ProjectContextFactory::TakeSingleProjectContext() {
   if (!is_single_project()) {
     return nullptr;
   }
   auto project_context = std::make_unique<ProjectContext>(
       project_configs_->single_customer_id(), project_configs_->single_customer_name(),
-      project_configs_->TakeSingleProjectConfig(), release_stage);
+      project_configs_->TakeSingleProjectConfig());
   project_configs_.reset();
   return project_context;
 }

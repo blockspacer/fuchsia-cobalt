@@ -151,20 +151,4 @@ TEST(ProjectContextFactoryTest, RegistryC) {
   EXPECT_EQ(nullptr, context2->GetMetric("Metric11"));
 }
 
-TEST(ProjectContextFactoryTest, ReleaseStage) {
-  ProjectContextFactory factory(GetCobaltRegistryBytes(3));
-
-  auto context = factory.NewProjectContext("Customer22", "Project22");
-  EXPECT_EQ(GA, context->project().release_stage());
-
-  context = factory.NewProjectContext(22, 1);
-  EXPECT_EQ(GA, context->project().release_stage());
-
-  context = factory.NewProjectContext("Customer22", "Project22", FISHFOOD);
-  EXPECT_EQ(FISHFOOD, context->project().release_stage());
-
-  context = factory.NewProjectContext(22, 1, FISHFOOD);
-  EXPECT_EQ(FISHFOOD, context->project().release_stage());
-}
-
 }  // namespace cobalt::logger

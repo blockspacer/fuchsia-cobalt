@@ -14,5 +14,4 @@ message Project {
   uint32 project_id = 2;
   string customer_name = 3;
   string project_name = 4;
-  ReleaseStage release_stage = 5;
 }
