@@ -14,9 +14,9 @@
 #include "src/observation_store/observation_store.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "src/pb/observation.pb.h"
+#include "third_party/googletest/googletest/include/gtest/gtest_prod.h"
 
-namespace cobalt {
-namespace observation_store {
+namespace cobalt::observation_store {
 
 // EnvelopeMaker is an implementation of ObservationStore::EnvelopeHolder that
 // holds its Envelope in memory. This implementation is used by
@@ -51,11 +51,9 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   ObservationStore::StoreStatus AddEncryptedObservation(
       std::unique_ptr<EncryptedMessage> message, std::unique_ptr<ObservationMetadata> metadata);
 
-  const Envelope& GetEnvelope(util::EncryptedMessageMaker* /*encrypter*/) override {
-    return envelope_;
-  }
+  const Envelope& GetEnvelope(util::EncryptedMessageMaker* encrypter) override;
 
-  bool Empty() const { return envelope_.batch_size() == 0; }
+  bool Empty() const { return batch_map_.empty(); }
 
   void Clear() {
     envelope_.Clear();
@@ -74,17 +72,18 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
 
  private:
   friend class EnvelopeMakerTest;
+  FRIEND_TEST(EnvelopeMakerTest, CanReadUnencrypted);
 
   // Returns the ObservationBatch containing the given |metadata|. If
   // this is the first time we have seen the given |metadata| then a
   // new ObservationBatch is created.
-  ObservationBatch* GetBatch(std::unique_ptr<ObservationMetadata> metadata);
+  StoredObservationBatch* GetBatch(std::unique_ptr<ObservationMetadata> metadata);
 
   Envelope envelope_;
 
   // The keys of the map are serialized ObservationMetadata. The values
   // are the ObservationBatch containing that Metadata
-  std::unordered_map<std::string, ObservationBatch*> batch_map_;
+  std::unordered_map<std::string, std::unique_ptr<StoredObservationBatch>> batch_map_;
 
   // Keeps a running total of the sum of the sizes of the encrypted Observations
   // contained in |envelope_|;
@@ -94,7 +93,6 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
   const size_t max_num_bytes_;
 };
 
-}  // namespace observation_store
-}  // namespace cobalt
+}  // namespace cobalt::observation_store
 
 #endif  // COBALT_SRC_OBSERVATION_STORE_ENVELOPE_MAKER_H_

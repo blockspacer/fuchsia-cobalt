@@ -8,9 +8,11 @@
 #include <random>
 #include <utility>
 
+#include "google/protobuf/util/delimited_message_util.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/logging.h"
 #include "src/observation_store/observation_store.h"
+#include "src/observation_store/observation_store_internal.pb.h"
 #include "src/system_data/client_secret.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
@@ -348,6 +350,45 @@ TEST_F(FileObservationStoreTest, StressTest) {
 
     ASSERT_EQ(store_->Size(), 0u);
   }
+}
+
+TEST_F(FileObservationStoreTest, CanReadUnencrypted) {
+  auto observation = std::make_unique<Observation2>();
+  observation->set_random_id("test123");
+  observation->mutable_basic_rappor()->set_data("test");
+
+  auto encrypted_obs = std::make_unique<EncryptedMessage>();
+  encrypt_->Encrypt(*observation, encrypted_obs.get());
+
+  // Verify that our encrypted observation is non-trivial.
+  ASSERT_GT(encrypted_obs->ciphertext().size(), 0);
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  {
+    std::ofstream manual_data(test_dir_name_ + "/1234567890123-1234567890.data");
+    google::protobuf::io::OstreamOutputStream outstream(&manual_data);
+    FileObservationStoreRecord stored_metadata;
+    stored_metadata.mutable_meta_data()->Swap(metadata.get());
+    google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_metadata, &outstream);
+
+    FileObservationStoreRecord stored_observation;
+    stored_observation.mutable_unencrypted_observation()->Swap(observation.get());
+    google::protobuf::util::SerializeDelimitedToZeroCopyStream(stored_observation, &outstream);
+  }
+
+  ASSERT_EQ(store_->ListFinalizedFiles().size(), 1u);
+  auto envelope = store_->TakeNextEnvelopeHolder();
+  ASSERT_NE(envelope, nullptr);
+  auto read_env = envelope->GetEnvelope(encrypt_.get());
+  ASSERT_EQ(read_env.batch_size(), 1);
+  ASSERT_EQ(read_env.batch(0).encrypted_observation_size(), 1);
+
+  // Verify that we got the observation we expected.
+  ASSERT_EQ(read_env.batch(0).encrypted_observation(0).ciphertext(), encrypted_obs->ciphertext());
 }
 
 TEST(FilenameGenerator, PadsTimestamp) {

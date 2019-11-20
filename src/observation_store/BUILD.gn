@@ -48,6 +48,7 @@ source_set("observation_store") {
     "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/logger:internal_metrics",
     "$cobalt_root/src/logger:logger_interface",
+    "//third_party/googletest:gtest_prod",
   ]
   public_deps = [
     ":observation_store_internal_proto",
@@ -69,6 +70,7 @@ source_set("tests") {
   deps = [
     ":observation_store",
     "$cobalt_root/src/lib/util:posix_file_system",
+    "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/system_data:client_secret",
     "//third_party/gflags",
     "//third_party/googletest:gmock",

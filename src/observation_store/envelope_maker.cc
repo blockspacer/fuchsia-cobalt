@@ -54,11 +54,39 @@ ObservationStore::StoreStatus EnvelopeMaker::AddEncryptedObservation(
   // "+1" below is for the |scheme| field of EncryptedMessage.
   num_bytes_ += message->ciphertext().size() + message->public_key_fingerprint().size() + 1;
   // Put the encrypted observation into the appropriate ObservationBatch.
-  GetBatch(std::move(metadata))->add_encrypted_observation()->Swap(message.get());
+  GetBatch(std::move(metadata))->add_observation()->mutable_encrypted()->Swap(message.get());
   return ObservationStore::kOk;
 }
 
-ObservationBatch* EnvelopeMaker::GetBatch(std::unique_ptr<ObservationMetadata> metadata) {
+const Envelope& EnvelopeMaker::GetEnvelope(util::EncryptedMessageMaker* encrypter) {
+  envelope_.Clear();
+
+  auto num_batches = batch_map_.size();
+  for (auto i = 0; i < num_batches; i++) {
+    envelope_.add_batch();
+  }
+
+  auto i = num_batches;
+  for (const auto& batch : batch_map_) {
+    i -= 1;
+    ObservationBatch* observation_batch = envelope_.mutable_batch(i);
+    *observation_batch->mutable_meta_data() = batch.second->meta_data();
+    for (const auto& obs : batch.second->observation()) {
+      auto obs_out = observation_batch->add_encrypted_observation();
+      if (obs.has_encrypted()) {
+        *obs_out = obs.encrypted();
+      } else if (obs.has_unencrypted()) {
+        if (!encrypter->Encrypt(obs.unencrypted(), obs_out)) {
+          LOG_FIRST_N(ERROR, 10) << "ERROR: Unable to encrypt observation on read.";
+        }
+      }
+    }
+  }
+
+  return envelope_;
+}
+
+StoredObservationBatch* EnvelopeMaker::GetBatch(std::unique_ptr<ObservationMetadata> metadata) {
   // Serialize metadata.
   std::string serialized_metadata;
   (*metadata).SerializeToString(&serialized_metadata);
@@ -66,14 +94,12 @@ ObservationBatch* EnvelopeMaker::GetBatch(std::unique_ptr<ObservationMetadata> m
   // See if metadata is already in batch_map_. If so return it.
   auto iter = batch_map_.find(serialized_metadata);
   if (iter != batch_map_.end()) {
-    return iter->second;
+    return iter->second.get();
   }
 
-  // Create a new ObservationBatch and add it to both envelope_ and batch_map_.
-  ObservationBatch* observation_batch = envelope_.add_batch();
-  observation_batch->set_allocated_meta_data(metadata.release());
-  batch_map_[serialized_metadata] = observation_batch;
-  return observation_batch;
+  batch_map_[serialized_metadata] = std::make_unique<StoredObservationBatch>();
+  batch_map_[serialized_metadata]->set_allocated_meta_data(metadata.release());
+  return batch_map_[serialized_metadata].get();
 }
 
 void EnvelopeMaker::MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> other_ref) {
@@ -88,17 +114,17 @@ void EnvelopeMaker::MergeWith(std::unique_ptr<ObservationStore::EnvelopeHolder> 
       // from the other's batch into our batch. Note that this process
       // reverses the order of the messages in other but the order of
       // the messages in a batch has no meaning so this doesn't matter.
-      auto* other_messages = other_pair.second->mutable_encrypted_observation();
-      auto* this_messages = iter->second->mutable_encrypted_observation();
+      auto* other_messages = other_pair.second->mutable_observation();
+      auto* this_messages = iter->second->mutable_observation();
       while (!other_messages->empty()) {
         this_messages->AddAllocated(other_messages->ReleaseLast());
       }
     } else {
       // We do not have a pair with the same key. Make one and swap the
       // contents of the others batch into it.
-      ObservationBatch* observation_batch = envelope_.add_batch();
-      observation_batch->Swap(other_pair.second);
-      batch_map_[other_pair.first] = observation_batch;
+      auto observation_batch = std::make_unique<StoredObservationBatch>();
+      observation_batch->Swap(other_pair.second.get());
+      batch_map_[other_pair.first] = std::move(observation_batch);
     }
   }
   num_bytes_ += other->num_bytes_;

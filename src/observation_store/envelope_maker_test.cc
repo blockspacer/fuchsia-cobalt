@@ -331,4 +331,33 @@ TEST_F(EnvelopeMakerTest, EnvelopeFull) {
                  expected_this_batch_size, ObservationStore::kOk);
 }
 
+TEST_F(EnvelopeMakerTest, CanReadUnencrypted) {
+  auto observation = std::make_unique<Observation2>();
+  observation->set_random_id("test123");
+  observation->mutable_basic_rappor()->set_data("test");
+
+  auto encrypted_obs = std::make_unique<EncryptedMessage>();
+  encrypt_->Encrypt(*observation, encrypted_obs.get());
+
+  // Verify that our encrypted observation is non-trivial.
+  ASSERT_GT(encrypted_obs->ciphertext().size(), 0);
+
+  auto metadata = std::make_unique<ObservationMetadata>();
+  metadata->set_customer_id(kCustomerId);
+  metadata->set_project_id(kProjectId);
+  metadata->set_metric_id(10);
+
+  envelope_maker_->GetBatch(std::move(metadata))
+      ->add_observation()
+      ->mutable_unencrypted()
+      ->Swap(observation.get());
+
+  auto read_env = envelope_maker_->GetEnvelope(encrypt_.get());
+  ASSERT_EQ(read_env.batch_size(), 1);
+  ASSERT_EQ(read_env.batch(0).encrypted_observation_size(), 1);
+
+  // Verify that we got the observation we expected.
+  ASSERT_EQ(read_env.batch(0).encrypted_observation(0).ciphertext(), encrypted_obs->ciphertext());
+}
+
 }  // namespace cobalt::observation_store

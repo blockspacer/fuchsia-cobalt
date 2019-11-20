@@ -349,7 +349,7 @@ void FileObservationStore::FileEnvelopeHolder::MergeWith(
 }
 
 const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope(
-    util::EncryptedMessageMaker * /*encrypter*/) {
+    util::EncryptedMessageMaker *encrypter) {
   if (envelope_read_) {
     return envelope_;
   }
@@ -386,6 +386,11 @@ const Envelope &FileObservationStore::FileEnvelopeHolder::GetEnvelope(
         }
       } else if (stored.has_encrypted_observation()) {
         current_batch->add_encrypted_observation()->Swap(stored.mutable_encrypted_observation());
+      } else if (stored.has_unencrypted_observation()) {
+        if (!encrypter->Encrypt(stored.unencrypted_observation(),
+                                current_batch->add_encrypted_observation())) {
+          LOG_FIRST_N(ERROR, 10) << "ERROR: Unable to encrypt observation on read.";
+        }
       } else {
         clean_eof = false;
         break;
