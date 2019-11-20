@@ -25,20 +25,20 @@ class ObservationWriter {
  public:
   // Constructor:
   //
-  // |observation_store| A writer interface to the system's singleton instance
-  // of Observation Store. This must remain valid as long as the
+  // |observation_store| A writer interface to the system's singleton instance of Observation Store.
+  // This must remain valid as long as the ObservationWriter is being used.
+  //
+  // |update_recipient| The ObservationWriter uses this to notify the update recipient when an
+  // Observation has been added to the Observation Store. This must remain valid as long as the
   // ObservationWriter is being used.
   //
-  // |update_recipient| The ObservationWriter uses this to notify the update
-  // recipient when an Observation has been added to the Observation Store. This
-  // must remain valid as long as the ObservationWriter is being used.
-  //
-  // |observation_encrypter| This is used to encrypt Observations to the public
-  // key of Cobalt's Analyzer prior to writing them into the Observation Store.
-  // This must remain valid as long as the ObservationWriter is being used.
+  // |observation_encrypter| This is used to encrypt Observations to the public key of Cobalt's
+  // Analyzer prior to writing them into the Observation Store. If this value is equal to nullptr,
+  // then Observations will not be encrypted before being added to the Observation Store. Otherwise,
+  // this must remain valid as long as the ObservationWriter is being used.
   ObservationWriter(observation_store::ObservationStoreWriterInterface* observation_store,
                     observation_store::ObservationStoreUpdateRecipient* update_recipient,
-                    util::EncryptedMessageMaker* observation_encrypter)
+                    util::EncryptedMessageMaker* observation_encrypter = nullptr)
       : observation_store_(observation_store),
         update_recipient_(update_recipient),
         observation_encrypter_(observation_encrypter) {}
