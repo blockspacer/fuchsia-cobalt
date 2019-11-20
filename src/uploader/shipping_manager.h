@@ -219,18 +219,6 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
 // is the backend used by Cobalt 1.0.
 class ClearcutV1ShippingManager : public ShippingManager {
  public:
-  // DEPRECATED
-  // TODO(crbug.com/fuchsia/3752): Delete this after it is no longer used.
-  ClearcutV1ShippingManager(
-      const UploadScheduler& upload_scheduler,
-      observation_store::ObservationStore* observation_store,
-      util::EncryptedMessageMaker* encrypt_to_shuffler,
-      std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
-      int32_t log_source_id = system_data::defaultConfigurationData.GetLogSourceId(),
-      logger::LoggerInterface* internal_logger = nullptr,
-      size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
-      std::string api_key = "cobalt-default-api-key");
-
   ClearcutV1ShippingManager(
       const UploadScheduler& upload_scheduler,
       observation_store::ObservationStore* observation_store,
@@ -251,19 +239,6 @@ class ClearcutV1ShippingManager : public ShippingManager {
   ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
                             observation_store::ObservationStore* observation_store,
                             util::EncryptedMessageMaker* encrypt_to_analyzer,
-                            std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
-                            logger::LoggerInterface* internal_logger = nullptr,
-                            size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
-                            std::string api_key = "cobalt-default-api-key");
-
-  // Create a shipping manager that can upload data to Clearcut.
-  //
-  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to
-  // use when doing so.
-  //
-  // TODO(camrdale): remove this once the log source transition is complete.
-  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
-                            observation_store::ObservationStore* observation_store,
                             std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
                             logger::LoggerInterface* internal_logger = nullptr,
                             size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,

@@ -272,15 +272,6 @@ void ShippingManager::InvokeSendCallbacksLockHeld(ShippingManager::Fields::Locke
 ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
     util::EncryptedMessageMaker* encrypt_to_shuffler,
-    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
-    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
-    : ClearcutV1ShippingManager(upload_scheduler, observation_store, encrypt_to_shuffler, nullptr,
-                                std::move(clearcut), log_source_id, internal_logger,
-                                max_attempts_per_upload, std::move(api_key)) {}
-
-ClearcutV1ShippingManager::ClearcutV1ShippingManager(
-    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
-    util::EncryptedMessageMaker* encrypt_to_shuffler,
     util::EncryptedMessageMaker* encrypt_to_analyzer,
     std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
@@ -296,16 +287,6 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_analyzer),
-      max_attempts_per_upload_(max_attempts_per_upload),
-      clearcut_(std::move(clearcut)),
-      internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
-      api_key_(std::move(api_key)) {}
-
-ClearcutV1ShippingManager::ClearcutV1ShippingManager(
-    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
-    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
-    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
-    : ShippingManager(upload_scheduler, observation_store, nullptr),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
