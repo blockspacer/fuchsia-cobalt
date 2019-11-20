@@ -43,7 +43,6 @@
 
 namespace cobalt {
 
-using encoder::ClearcutV1ShippingManager;
 using google::protobuf::RepeatedPtrField;
 using local_aggregation::EventAggregator;
 using logger::Encoder;
@@ -61,6 +60,7 @@ using observation_store::MemoryObservationStore;
 using system_data::ClientSecret;
 using system_data::SystemData;
 using system_data::SystemDataInterface;
+using uploader::ClearcutV1ShippingManager;
 using util::ConsistentProtoStore;
 using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;
@@ -485,12 +485,12 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
   // automatically and it will send immediately in response to
   // RequestSendSoon().
   auto upload_scheduler =
-      encoder::UploadScheduler(encoder::UploadScheduler::kMaxSeconds, std::chrono::seconds(0));
+      uploader::UploadScheduler(uploader::UploadScheduler::kMaxSeconds, std::chrono::seconds(0));
   if (mode == TestApp::kAutomatic) {
     // In automatic mode, let the ShippingManager send to the Shuffler
     // every 10 seconds.
     const auto upload_interval = std::chrono::seconds(10);
-    upload_scheduler = encoder::UploadScheduler(upload_interval, std::chrono::seconds(1));
+    upload_scheduler = uploader::UploadScheduler(upload_interval, std::chrono::seconds(1));
   }
   auto shipping_manager = std::make_unique<ClearcutV1ShippingManager>(
       upload_scheduler, observation_store.get(), envelope_encrypter.get(),

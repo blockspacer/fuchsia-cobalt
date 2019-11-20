@@ -13,7 +13,7 @@
 #include "src/pb/clearcut_extensions.pb.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
-namespace cobalt::encoder {
+namespace cobalt::uploader {
 
 using observation_store::ObservationStore;
 using EnvelopeHolder = ObservationStore::EnvelopeHolder;
@@ -465,4 +465,4 @@ std::unique_ptr<EnvelopeHolder> LocalShippingManager::SendEnvelopeToBackend(
   return envelope_to_send;
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::uploader

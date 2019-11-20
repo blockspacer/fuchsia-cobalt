@@ -4,7 +4,7 @@
 
 #include "src/uploader/upload_scheduler.h"
 
-namespace cobalt::encoder {
+namespace cobalt::uploader {
 
 // Definition of the static constant declared in shipping_manager.h.
 // This must be less than 2^31. There appears to be a bug in
@@ -39,4 +39,4 @@ std::chrono::seconds UploadScheduler::Interval() {
   return interval;
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::uploader

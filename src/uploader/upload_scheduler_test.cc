@@ -6,7 +6,7 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt::encoder {
+namespace cobalt::uploader {
 
 TEST(UploadScheduler, NoBackoff) {
   auto scheduler = UploadScheduler(std::chrono::hours(1), std::chrono::seconds(0));
@@ -52,4 +52,4 @@ TEST(UploadScheduler, LongBackoff) {
   EXPECT_EQ(scheduler.Interval(), std::chrono::seconds(3600));
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::uploader

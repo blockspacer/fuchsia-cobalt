@@ -9,8 +9,7 @@
 
 #include "src/logging.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::uploader {
 
 // UploadScheduler enables providing ShippingManager with information about when
 // to schedule uploads to the backend. If provided with an initial_interval that
@@ -55,7 +54,10 @@ class UploadScheduler {
   std::chrono::seconds min_interval_;
 };
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::uploader
+
+namespace cobalt::encoder {
+using uploader::UploadScheduler;
+}
 
 #endif  // COBALT_SRC_UPLOADER_UPLOAD_SCHEDULER_H_

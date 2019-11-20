@@ -28,8 +28,7 @@
 
 #include "grpc++/grpc++.h"
 
-namespace cobalt {
-namespace encoder {
+namespace cobalt::uploader {
 
 // ShippingManager is the client-side component of Cobalt responsible for
 // periodically sending Envelopes, encrypted to the Shuffler, from the device
@@ -338,7 +337,12 @@ class LocalShippingManager : public ShippingManager {
   const std::unique_ptr<util::FileSystem> fs_;
 };
 
-}  // namespace encoder
-}  // namespace cobalt
+}  // namespace cobalt::uploader
+
+namespace cobalt::encoder {
+using uploader::ClearcutV1ShippingManager;
+using uploader::LocalShippingManager;
+using uploader::ShippingManager;
+}  // namespace cobalt::encoder
 
 #endif  // COBALT_SRC_UPLOADER_SHIPPING_MANAGER_H_

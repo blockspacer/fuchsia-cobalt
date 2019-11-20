@@ -23,7 +23,7 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 #include "third_party/protobuf/src/google/protobuf/util/delimited_message_util.h"
 
-namespace cobalt::encoder {
+namespace cobalt::uploader {
 
 using cobalt::clearcut_extensions::LogEventExtension;
 using lib::statusor::StatusOr;
@@ -643,4 +643,4 @@ TEST_F(LocalShippingManagerTest, ScheduledSave) {
   EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
 }
 
-}  // namespace cobalt::encoder
+}  // namespace cobalt::uploader
