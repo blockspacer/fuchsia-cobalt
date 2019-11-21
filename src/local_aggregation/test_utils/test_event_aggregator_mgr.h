@@ -26,23 +26,21 @@ class TestEventAggregatorManager : public EventAggregatorManager {
   // Triggers an out of schedule run of GenerateObservations(). This does not change the schedule
   // of future runs.
   logger::Status GenerateObservations(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
-    return EventAggregatorManager::event_aggregator_->aggregate_store_->GenerateObservations(
-        day_index_utc, day_index_local);
+    return EventAggregatorManager::aggregate_store_->GenerateObservations(day_index_utc,
+                                                                          day_index_local);
   }
 
   // Triggers an out of schedule run of GarbageCollect(). This does not change the schedule of
   // future runs.
   logger::Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
-    return EventAggregatorManager::event_aggregator_->aggregate_store_->GarbageCollect(
-        day_index_utc, day_index_local);
+    return EventAggregatorManager::aggregate_store_->GarbageCollect(day_index_utc, day_index_local);
   }
 
   // Returns the number of aggregates of type per_device_numeric_aggregates.
   uint32_t NumPerDeviceNumericAggregatesInStore() {
     int count = 0;
     for (const auto& aggregates :
-         EventAggregatorManager::event_aggregator_->aggregate_store_->protected_aggregate_store_
-             .lock()
+         EventAggregatorManager::aggregate_store_->protected_aggregate_store_.lock()
              ->local_aggregate_store.by_report_key()) {
       if (aggregates.second.has_numeric_aggregates()) {
         count += aggregates.second.numeric_aggregates().by_component().size();

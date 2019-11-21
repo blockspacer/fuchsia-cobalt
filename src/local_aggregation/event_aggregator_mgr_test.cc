@@ -89,9 +89,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
     return event_aggregator_mgr_;
   }
 
-  void ShutDown(EventAggregatorManager* event_aggregator_mgr) {
-    event_aggregator_mgr->GetEventAggregator()->ShutDown();
-  }
+  void ShutDown(EventAggregatorManager* event_aggregator_mgr) { event_aggregator_mgr->ShutDown(); }
 
   bool IsInShutdownState(EventAggregatorManager* event_aggregator_mgr) {
     return (IsShutdownFlagSet(event_aggregator_mgr) && !IsWorkerJoinable(event_aggregator_mgr));
@@ -102,13 +100,11 @@ class EventAggregatorManagerTest : public ::testing::Test {
   }
 
   bool IsShutdownFlagSet(EventAggregatorManager* event_aggregator_mgr) {
-    return event_aggregator_mgr->GetEventAggregator()
-        ->protected_worker_thread_controller_.const_lock()
-        ->shut_down;
+    return event_aggregator_mgr->protected_worker_thread_controller_.const_lock()->shut_down;
   }
 
   bool IsWorkerJoinable(EventAggregatorManager* event_aggregator_mgr) {
-    return event_aggregator_mgr->GetEventAggregator()->worker_thread_.joinable();
+    return event_aggregator_mgr->worker_thread_.joinable();
   }
 
   // Returns the day index of the current day according to |test_clock_|, in
@@ -121,10 +117,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
   bool BackUpHappened() { return local_aggregate_proto_store_->write_count_ >= 1; }
 
   uint32_t NumberOfKVPairsInStore(EventAggregatorManager* event_aggregator_mgr) {
-    return event_aggregator_mgr->GetEventAggregator()
-        ->aggregate_store_->CopyLocalAggregateStore()
-        .by_report_key()
-        .size();
+    return event_aggregator_mgr->aggregate_store_->CopyLocalAggregateStore().by_report_key().size();
   }
 
   // Given a ProjectContext |project_context| and the MetricReportId of a UNIQUE_N_DAY_ACTIVES
@@ -144,8 +137,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
   }
 
   uint32_t GetNumberOfUniqueActivesAggregates(EventAggregatorManager* event_aggregator_mgr) {
-    auto local_aggregate_store =
-        event_aggregator_mgr->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store = event_aggregator_mgr->aggregate_store_->CopyLocalAggregateStore();
     uint32_t num_aggregates = 0;
     for (const auto& [report_key, aggregates] : local_aggregate_store.by_report_key()) {
       if (aggregates.type_case() != ReportAggregates::kUniqueActivesAggregates) {
@@ -164,8 +156,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
       EventAggregatorManager* event_aggregator_mgr,
       const std::shared_ptr<const ProjectContext>& project_context,
       const MetricReportId& metric_report_id, uint32_t day_index, uint32_t event_code) {
-    auto local_aggregate_store =
-        event_aggregator_mgr->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store = event_aggregator_mgr->aggregate_store_->CopyLocalAggregateStore();
     std::string key;
     if (!SerializeToBase64(MakeAggregationKey(*project_context, metric_report_id), &key)) {
       return AssertionFailure() << "Could not serialize key with metric id  "
@@ -206,16 +197,16 @@ class EventAggregatorManagerTest : public ::testing::Test {
     return AssertionSuccess();
   }
 
-  void TriggerAndWaitForDoScheduledTasks(EventAggregator* event_aggregator) {
+  void TriggerAndWaitForDoScheduledTasks(EventAggregatorManager* event_aggregator_mgr) {
     {
       // Acquire the lock to manually trigger the scheduled tasks.
-      auto locked = event_aggregator->protected_worker_thread_controller_.lock();
+      auto locked = event_aggregator_mgr->protected_worker_thread_controller_.lock();
       locked->immediate_run_trigger = true;
       locked->shutdown_notifier.notify_all();
     }
     while (true) {
       // Reacquire the lock to make sure that the scheduled tasks have completed.
-      auto locked = event_aggregator->protected_worker_thread_controller_.lock();
+      auto locked = event_aggregator_mgr->protected_worker_thread_controller_.lock();
       if (!locked->immediate_run_trigger) {
         break;
       }
@@ -368,7 +359,7 @@ TEST_F(EventAggregatorManagerTest, Run) {
   expected_obs[{expected_id, day_index}] = {{1, {false, true, true, true, true}},
                                             {7, {false, true, true, true, true}}};
 
-  TriggerAndWaitForDoScheduledTasks(event_aggregator_mgr->GetEventAggregator());
+  TriggerAndWaitForDoScheduledTasks(event_aggregator_mgr.get());
 
   EXPECT_EQ(kOK,
             event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
@@ -384,7 +375,7 @@ TEST_F(EventAggregatorManagerTest, Run) {
   AdvanceClock(kSecondsInOneDay);
   ResetObservationStore();
 
-  TriggerAndWaitForDoScheduledTasks(event_aggregator_mgr->GetEventAggregator());
+  TriggerAndWaitForDoScheduledTasks(event_aggregator_mgr.get());
 
   EXPECT_TRUE(CheckUniqueActivesObservations(expected_obs, observation_store_.get(),
                                              update_recipient_.get()));

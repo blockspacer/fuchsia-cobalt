@@ -418,8 +418,7 @@ void RealLoggerFactory::ResetLocalAggregation() {
 }
 
 bool RealLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
-  return kOK == event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->GenerateObservations(
-                    day_index);
+  return kOK == event_aggregator_mgr_->aggregate_store_->GenerateObservations(day_index);
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {
