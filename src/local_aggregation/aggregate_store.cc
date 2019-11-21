@@ -262,6 +262,31 @@ Status AggregateStore::MaybeInsertReportConfig(const ProjectContext& project_con
   return kOK;
 }
 
+Status AggregateStore::SetActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+                                 uint32_t report_id, uint64_t event_code, uint32_t day_index) {
+  std::string key;
+  if (!PopulateReportKey(customer_id, project_id, metric_id, report_id, &key)) {
+    return kInvalidArguments;
+  }
+
+  auto locked = protected_aggregate_store_.lock();
+  auto aggregates = locked->local_aggregate_store.mutable_by_report_key()->find(key);
+  if (aggregates == locked->local_aggregate_store.mutable_by_report_key()->end()) {
+    LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
+    return kInvalidArguments;
+  }
+  if (!aggregates->second.has_unique_actives_aggregates()) {
+    LOG(ERROR) << "The local aggregates for this report key are not of type "
+                  "UniqueActivesReportAggregates.";
+    return kInvalidArguments;
+  }
+  (*(*aggregates->second.mutable_unique_actives_aggregates()->mutable_by_event_code())[event_code]
+        .mutable_by_day_index())[day_index]
+      .mutable_activity_daily_aggregate()
+      ->set_activity_indicator(true);
+  return kOK;
+}
+
 RepeatedField<uint32_t> UnpackEventCodesProto(uint64_t packed_event_codes) {
   RepeatedField<uint32_t> fields;
   for (auto code : config::UnpackEventCodes(packed_event_codes)) {

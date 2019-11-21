@@ -261,6 +261,37 @@ class AggregateStoreTest : public ::testing::Test {
     return locked->local_aggregate_store.by_report_key().count(key) > 0;
   }
 
+  bool IsActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id, uint32_t report_id,
+                uint64_t event_code, uint32_t day_index) {
+    std::string key;
+    ReportAggregationKey key_data;
+    key_data.set_customer_id(customer_id);
+    key_data.set_project_id(project_id);
+    key_data.set_metric_id(metric_id);
+    key_data.set_report_id(report_id);
+    SerializeToBase64(key_data, &key);
+
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
+
+    auto aggregates = locked->local_aggregate_store.by_report_key().find(key);
+    if (aggregates == locked->local_aggregate_store.by_report_key().end()) {
+      return false;
+    }
+
+    auto by_event_code =
+        aggregates->second.unique_actives_aggregates().by_event_code().find(event_code);
+    if (by_event_code == aggregates->second.unique_actives_aggregates().by_event_code().end()) {
+      return false;
+    }
+
+    auto by_day_index = by_event_code->second.by_day_index().find(day_index);
+    if (by_day_index == by_event_code->second.by_day_index().end()) {
+      return false;
+    }
+
+    return by_day_index->second.activity_daily_aggregate().activity_indicator();
+  }
+
   AggregateStore* GetAggregateStore() { return event_aggregator_->aggregate_store_.get(); }
 
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
@@ -1039,7 +1070,8 @@ TEST_F(AggregateStoreTest, MaybeInsertReportConfigTwice) {
   EXPECT_TRUE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
 }
 
-// MaybeInsertReportConfig fails due to the fact that the given report does not have a aggregation.
+// MaybeInsertReportConfig fails due to the fact that the given report does not have an aggregation
+// window.
 TEST_F(AggregateStoreTest, MaybeInsertReportConfigFail) {
   auto [metric, report] = GetNotLocallyAggregatedMetricAndReport(kTestCustomerId, kTestProjectId,
                                                                  kTestMetricId, kTestReportId);
@@ -1048,6 +1080,59 @@ TEST_F(AggregateStoreTest, MaybeInsertReportConfigFail) {
   EXPECT_FALSE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
   ASSERT_EQ(kInvalidArguments,
             GetAggregateStore()->MaybeInsertReportConfig(*project_context, metric, report));
+}
+
+// The Aggregate store sets the record for an event to active using SetActive.
+TEST_F(AggregateStoreTest, SetActive) {
+  auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                          kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+  const uint64_t kEventCode = 1;
+  const uint32_t kDayIndex = 56;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
+                        kDayIndex));
+  ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
+                                                kTestReportId, kEventCode, kDayIndex));
+  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
+                       kDayIndex));
+}
+
+// SetActive returns kOK when the same config is inserted twice.
+TEST_F(AggregateStoreTest, SetActiveTwice) {
+  auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                          kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+  const uint64_t kEventCode = 1;
+  const uint32_t kDayIndex = 56;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
+                        kDayIndex));
+
+  ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
+                                                kTestReportId, kEventCode, kDayIndex));
+  ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
+                                                kTestReportId, kEventCode, kDayIndex));
+  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
+                       kDayIndex));
+}
+
+// SetActive fails due to the fact that UpdateAggregationConfigs was not called for the given report
+// does not have an aggregation.
+TEST_F(AggregateStoreTest, SetActiveFail) {
+  auto [metric, report] = GetNotLocallyAggregatedMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                                 kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+  const uint64_t kEventCode = 1;
+  const uint32_t kDayIndex = 56;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  ASSERT_EQ(kInvalidArguments,
+            GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
+                                           kTestReportId, kEventCode, kDayIndex));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
@@ -1783,8 +1868,8 @@ TEST_F(UniqueActivesNoiseFreeAggregateStoreTest, CheckObservationValuesWithBackf
       logger::testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
   const auto& expected_params =
       logger::testing::unique_actives_noise_free::kExpectedAggregationParams;
-  // Add eventsto the local aggregations for 9 days. Call GenerateObservations() on the first 6 day
-  // indices, and the 9th.
+  // Add eventsto the local aggregations for 9 days. Call GenerateObservations() on the first 6
+  // day indices, and the 9th.
   for (uint32_t offset = 0; offset < 9; offset++) {
     auto day_index = CurrentDayIndex();
     ResetObservationStore();
@@ -1953,8 +2038,8 @@ TEST_F(UniqueActivesNoiseFreeAggregateStoreTest, CheckObservationValuesWithBackf
   const auto& expected_params =
       logger::testing::unique_actives_noise_free::kExpectedAggregationParams;
 
-  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6 day
-  // indices, and the 9th.
+  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6
+  // day indices, and the 9th.
   for (uint32_t offset = 0; offset < 8; offset++) {
     auto day_index = CurrentDayIndex();
     ResetObservationStore();
@@ -2089,7 +2174,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, GarbageCollect) {
       auto day_index = CurrentDayIndex();
       for (const auto& id : count_metric_report_ids) {
         for (const auto& component : {"component_A", "component_B", "component_C"}) {
-          // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
+          // Adds 2 events to the local aggregations with event code 0, for each component A, B,
+          // C.
           EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 2, &logged_values));
           EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 3, &logged_values));
         }
@@ -2304,8 +2390,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, GenerateObservationsWithBackfill) {
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
-  // Add 2 events to the local aggregations each day for 35 days. Call GenerateObservations() on the
-  // first 5 day indices, and the 7th, out of every 10.
+  // Add 2 events to the local aggregations each day for 35 days. Call GenerateObservations() on
+  // the first 5 day indices, and the 7th, out of every 10.
   for (int offset = 0; offset < 35; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
@@ -2401,8 +2487,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, GenerateObservationsWithBackfillAndGc
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
-  // Add 2 events to the local aggregations each day for 35 days. Call GenerateObservations() on the
-  // first 5 day indices, and the 7th, out of every 10.
+  // Add 2 events to the local aggregations each day for 35 days. Call GenerateObservations() on
+  // the first 5 day indices, and the 7th, out of every 10.
   for (int offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
     for (int i = 0; i < 2; i++) {
@@ -2771,8 +2857,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, CheckObservationValuesWithBackfill) {
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
-  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6 day
-  // indices, and the 9th.
+  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6
+  // day indices, and the 9th.
   uint32_t num_days = 9;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
@@ -2911,8 +2997,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, EventCountCheckObservationValuesWithB
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
-  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6 day
-  // indices, and the 9th.
+  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6
+  // day indices, and the 9th.
   uint32_t num_days = 9;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
@@ -3146,8 +3232,8 @@ TEST_F(PerDeviceNumericAggregateStoreTest, ElapsedTimeCheckObservationValuesWith
   // Set |backfill_days_| to 3.
   size_t backfill_days = 3;
   SetBackfillDays(backfill_days);
-  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6 day
-  // indices, and the 9th.
+  // Add events to the local aggregations for 9 days. Call GenerateObservations() on the first 6
+  // day indices, and the 9th.
   uint32_t num_days = 9;
   for (uint32_t offset = 0; offset < num_days; offset++) {
     auto day_index = CurrentDayIndex();
@@ -3337,8 +3423,8 @@ TEST_F(PerDeviceHistogramAggregateStoreTest, GenerateObservations) {
 // the day index in UTC.
 TEST_F(NoiseFreeMixedTimeZoneAggregateStoreTest, LocalBeforeUTC) {
   std::vector<ExpectedUniqueActivesObservations> expected_obs(3);
-  // Begin at a time when the current day index is the same in both UTC and local time. Add 1 event
-  // to the local aggregations for event code 0 for each of the 2 reports, then generate
+  // Begin at a time when the current day index is the same in both UTC and local time. Add 1
+  // event to the local aggregations for event code 0 for each of the 2 reports, then generate
   // Observations and garbage-collect for the previous day index in each of UTC and local time.
   auto start_day_index = CurrentDayIndex();
   AddUniqueActivesEvent(logger::testing::mixed_time_zone::kDeviceBootsMetricReportId,
@@ -3374,9 +3460,9 @@ TEST_F(NoiseFreeMixedTimeZoneAggregateStoreTest, LocalBeforeUTC) {
   EXPECT_TRUE(CheckUniqueActivesObservations(expected_obs[1], observation_store_.get(),
                                              update_recipient_.get()));
   ResetObservationStore();
-  // Advance the day index in local time so that it is equal to the day index in UTC. Add 1 event to
-  // the local aggregations for event code 2 for each of the 2 reports, then generate Observations
-  // and garbage-collect for the previous day in each of UTC and local time.
+  // Advance the day index in local time so that it is equal to the day index in UTC. Add 1 event
+  // to the local aggregations for event code 2 for each of the 2 reports, then generate
+  // Observations and garbage-collect for the previous day in each of UTC and local time.
   AddUniqueActivesEvent(logger::testing::mixed_time_zone::kDeviceBootsMetricReportId,
                         start_day_index + 1, 2u);
   AddUniqueActivesEvent(logger::testing::mixed_time_zone::kFeaturesActiveMetricReportId,
@@ -3399,8 +3485,8 @@ TEST_F(NoiseFreeMixedTimeZoneAggregateStoreTest, LocalBeforeUTC) {
 // the day index in local time.
 TEST_F(NoiseFreeMixedTimeZoneAggregateStoreTest, LocalAfterUTC) {
   std::vector<ExpectedUniqueActivesObservations> expected_obs(3);
-  // Begin at a time when the current day index is the same in both UTC and local time. Add 1 event
-  // to the local aggregations for event code 0 for each of the 2 reports, then generate
+  // Begin at a time when the current day index is the same in both UTC and local time. Add 1
+  // event to the local aggregations for event code 0 for each of the 2 reports, then generate
   // Observations and garbage-collect for the previous day index in each of UTC and local time.
   auto start_day_index = CurrentDayIndex();
   AddUniqueActivesEvent(logger::testing::mixed_time_zone::kDeviceBootsMetricReportId,

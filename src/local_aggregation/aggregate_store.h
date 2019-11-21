@@ -88,6 +88,13 @@ class AggregateStore {
                                          const MetricDefinition& metric,
                                          const ReportDefinition& report);
 
+  // Updates the LocalAggregateStore to mark the device as active on the |day_index| day for an
+  // event with the given |customer_id|, |project_id|, |metric_id|, |report_id| and |event_code|.
+  // Expects that MaybeInsertReportConfig() has been called previously for the ids being passed.
+  // Returns kInvalidArguments if the operation fails, and kOK otherwise.
+  logger::Status SetActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+                           uint32_t report_id, uint64_t event_code, uint32_t day_index);
+
   // Writes a snapshot of the LocalAggregateStore to
   // |local_aggregate_proto_store_|.
   logger::Status BackUpLocalAggregateStore();

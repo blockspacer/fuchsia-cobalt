@@ -145,28 +145,9 @@ Status EventAggregator::AddUniqueActivesEvent(uint32_t report_id, const EventRec
     return kInvalidArguments;
   }
   auto* metric = event_record.metric();
-  std::string key;
-  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
-                         &key)) {
-    return kInvalidArguments;
-  }
-  auto locked = aggregate_store_->protected_aggregate_store_.lock();
-  auto aggregates = locked->local_aggregate_store.mutable_by_report_key()->find(key);
-  if (aggregates == locked->local_aggregate_store.mutable_by_report_key()->end()) {
-    LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
-    return kInvalidArguments;
-  }
-  if (!aggregates->second.has_unique_actives_aggregates()) {
-    LOG(ERROR) << "The local aggregates for this report key are not of type "
-                  "UniqueActivesReportAggregates.";
-    return kInvalidArguments;
-  }
-  (*(*aggregates->second.mutable_unique_actives_aggregates()
-          ->mutable_by_event_code())[event->occurrence_event().event_code()]
-        .mutable_by_day_index())[event->day_index()]
-      .mutable_activity_daily_aggregate()
-      ->set_activity_indicator(true);
-  return kOK;
+  return aggregate_store_->SetActive(metric->customer_id(), metric->project_id(), metric->id(),
+                                     report_id, event->occurrence_event().event_code(),
+                                     event->day_index());
 }
 
 Status EventAggregator::AddCountEvent(uint32_t report_id, const EventRecord& event_record) {
