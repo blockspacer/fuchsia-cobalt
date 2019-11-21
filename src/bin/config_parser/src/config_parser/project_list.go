@@ -146,11 +146,7 @@ func populateProjectList(y []interface{}, l *[]ProjectConfig) (err error) {
 func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err error) {
 	v, ok := p["project_name"]
 	if !ok {
-		// TODO(zmbush): Remove once config is updated to use project_name
-		v, ok = p["name"]
-		if !ok {
-			return fmt.Errorf("Missing name in project list.")
-		}
+		return fmt.Errorf("Missing name in project list.")
 	}
 	c.ProjectName, ok = v.(string)
 	if !ok {
@@ -160,7 +156,7 @@ func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err erro
 		return fmt.Errorf("Project name '%v' is invalid. Project names must match the regular expression '%v'", c.ProjectName, validNameRegexp)
 	}
 
-	c.CobaltVersion = CobaltVersion0
+	c.CobaltVersion = CobaltVersion1
 	v, ok = p["cobalt_version"]
 	if ok {
 		version, ok := v.(int)
@@ -183,11 +179,7 @@ func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err erro
 	if c.CobaltVersion == CobaltVersion1 {
 		v, ok := p["project_id"]
 		if !ok {
-			// TODO(zmbush): Remove once config is updated to use project_id
-			v, ok = p["id"]
-			if !ok {
-				return fmt.Errorf("Missing project_id for project %v.", c.ProjectName)
-			}
+			return fmt.Errorf("Missing project_id for project %v.", c.ProjectName)
 		}
 		projectId, ok := v.(int)
 		if !ok {
@@ -201,11 +193,7 @@ func populateProjectConfig(p map[string]interface{}, c *ProjectConfig) (err erro
 
 	v, ok = p["project_contact"]
 	if !ok {
-		// TODO(zmbush): Remove once config is updated to use project_contact
-		v, ok = p["contact"]
-		if !ok {
-			return fmt.Errorf("Missing contact for project %v.", c.ProjectName)
-		}
+		return fmt.Errorf("Missing contact for project %v.", c.ProjectName)
 	}
 	c.Contact, ok = v.(string)
 	if !ok {

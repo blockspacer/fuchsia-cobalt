@@ -30,14 +30,12 @@ func TestParseCustomerList(t *testing.T) {
   - project_name: ledger
     project_contact: ben
     project_id: 10
-    cobalt_version: 1
 - customer_name: test_project
   customer_id: 25
   projects:
   - project_name: ledger
     project_id: 10
     project_contact: ben
-    cobalt_version: 1
 `
 
 	e := []ProjectConfig{
@@ -81,13 +79,11 @@ func TestParseCustomerListDuplicateValues(t *testing.T) {
   projects:
   - project_name: ledger
     project_contact: ben
-    cobalt_version: 1
 - customer_name: fuchsia
   customer_id: 11
   projects:
   - project_name: ledger
     project_contact: ben
-    cobalt_version: 1
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -101,13 +97,11 @@ func TestParseCustomerListDuplicateValues(t *testing.T) {
   projects:
   - project_name: ledger
     project_contact: ben
-    cobalt_version: 1
 - customer_name: test_project
   customer_id: 10
   projects:
   - project_name: ledger
     project_contact: ben
-    cobalt_version: 1
 `
 
 	if err := parseCustomerList(y, &l); err == nil {
@@ -125,7 +119,6 @@ func TestParseCustomerListNameValidation(t *testing.T) {
 - customer_id: 20
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -139,7 +132,6 @@ func TestParseCustomerListNameValidation(t *testing.T) {
   customer_id: 10
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -153,7 +145,6 @@ func TestParseCustomerListNameValidation(t *testing.T) {
   customer_id: 10
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -172,7 +163,6 @@ func TestParseCustomerListIdValidation(t *testing.T) {
 - customer_name: fuchsia
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -186,7 +176,6 @@ func TestParseCustomerListIdValidation(t *testing.T) {
   customer_name: fuchsia
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -200,7 +189,6 @@ func TestParseCustomerListIdValidation(t *testing.T) {
   customer_name: fuchsia
   projects:
   - project_name: ledger
-    cobalt_version: 1
     project_contact: ben
 `
 
@@ -225,11 +213,9 @@ func TestPopulateProjectList(t *testing.T) {
 - project_name: ledger
   project_contact: ben,etienne
   project_id: 10
-  cobalt_version: 1
 - project_name: zircon
   project_id: 20
   project_contact: yvonne
-  cobalt_version: 1
 `
 
 	l := []ProjectConfig{}
@@ -263,10 +249,8 @@ func TestDuplicateProjectValuesValidation(t *testing.T) {
 	// Checks that an error is returned if a project_name is duplicated.
 	y = `
 - project_name: ledger
-  cobalt_version: 1
   project_contact: ben
 - project_name: ledger
-  cobalt_version: 1
   project_contact: yvonne
 `
 
@@ -339,7 +323,6 @@ cobalt_version: 0
 	y = `
 project_name: ledger
 project_contact: ben
-cobalt_version: 1
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -367,6 +350,7 @@ func TestPopulateProjectListIdValidation(t *testing.T) {
 	y = `
 project_name: ledger
 project_contact: ben
+cobalt_version: 0
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -377,7 +361,6 @@ project_contact: ben
 	y = `
 project_name: ledger
 project_contact: ben
-cobalt_version: 1
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -389,6 +372,7 @@ cobalt_version: 1
 project_name: ledger
 project_id: ledger
 project_contact: ben
+cobalt_version: 0
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {
@@ -400,6 +384,7 @@ project_contact: ben
 project_name: ledger
 project_id: -10
 project_contact: ben
+cobalt_version: 0
 `
 	c = ProjectConfig{}
 	if err := parseProjectConfigForTest(y, &c); err == nil {

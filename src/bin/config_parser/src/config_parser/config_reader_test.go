@@ -50,18 +50,15 @@ const customersYaml = `
     - project_name: ledger
       project_id: 1
       project_contact: bob
-      cobalt_version: 1
     - project_name: module_usage_tracking
       project_id: 2
       project_contact: bob
-      cobalt_version: 1
 - customer_name: test_customer
   customer_id: 100
   projects:
     - project_name: test_project
       project_id: 1
       project_contact: bob
-      cobalt_version: 1
 `
 
 const invalidCustomersYaml = `
@@ -71,18 +68,15 @@ const invalidCustomersYaml = `
     - naINVALIDme: ledger
       project_id: 1
       project_contact: bob
-      cobalt_version: 1
     - project_name: module_usage_tracking
       project_id: 2
       project_contact: bob
-      cobalt_version: 1
 - customer_name: test_customer
   customer_id: 100
   projects:
     - project_name: test_project
       project_id: 1
       project_contact: bob
-      cobalt_version: 1
 `
 
 const projectConfigYaml = `

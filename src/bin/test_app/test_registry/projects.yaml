@@ -4,5 +4,4 @@
   projects:
     - project_name: Cobalt
       project_id: 1
-      cobalt_version: 1
       project_contact: nobody@example.com
