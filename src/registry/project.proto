@@ -5,8 +5,6 @@ syntax = "proto3";
 
 package cobalt;
 
-import "src/registry/metric_definition.proto";
-
 // A Project message contains the names and IDs of a customer and a
 // project, as well as an identifier of the project's release stage.
 message Project {
