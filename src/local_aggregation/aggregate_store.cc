@@ -243,27 +243,21 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
   }
 }
 
-// Given a ProjectContext, MetricDefinition, and ReportDefinition and a pointer
-// to the LocalAggregateStore, checks whether a key with the same customer,
-// project, metric, and report ID already exists in the LocalAggregateStore. If
-// not, creates and inserts a new key and value. Returns kInvalidArguments if
-// creation of the key or value fails, and kOK otherwise. The caller should hold
-// the mutex protecting the LocalAggregateStore.
-Status AggregateStore::MaybeInsertReportConfigLocked(const ProjectContext& project_context,
-                                                     const MetricDefinition& metric,
-                                                     const ReportDefinition& report,
-                                                     LocalAggregateStore* store) {
+Status AggregateStore::MaybeInsertReportConfig(const ProjectContext& project_context,
+                                               const MetricDefinition& metric,
+                                               const ReportDefinition& report) {
+  auto locked = protected_aggregate_store_.lock();
   std::string key;
   if (!PopulateReportKey(project_context.project().customer_id(),
                          project_context.project().project_id(), metric.id(), report.id(), &key)) {
     return kInvalidArguments;
   }
   ReportAggregates report_aggregates;
-  if (store->by_report_key().count(key) == 0) {
+  if (locked->local_aggregate_store.by_report_key().count(key) == 0) {
     if (!PopulateReportAggregates(project_context, metric, report, &report_aggregates)) {
       return kInvalidArguments;
     }
-    (*store->mutable_by_report_key())[key] = report_aggregates;
+    (*locked->local_aggregate_store.mutable_by_report_key())[key] = report_aggregates;
   }
   return kOK;
 }

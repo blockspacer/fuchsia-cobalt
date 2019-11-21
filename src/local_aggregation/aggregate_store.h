@@ -80,16 +80,13 @@ class AggregateStore {
                  util::ConsistentProtoStore* local_aggregate_proto_store,
                  util::ConsistentProtoStore* obs_history_proto_store, size_t backfill_days = 0);
 
-  // Given a ProjectContext, MetricDefinition, and ReportDefinition and a pointer
-  // to the LocalAggregateStore, checks whether a key with the same customer,
-  // project, metric, and report ID already exists in the LocalAggregateStore. If
+  // Given a ProjectContext, MetricDefinition, and ReportDefinition checks whether a key with the
+  // same customer, project, metric, and report ID already exists in the LocalAggregateStore. If
   // not, creates and inserts a new key and value. Returns kInvalidArguments if
-  // creation of the key or value fails, and kOK otherwise. The caller should hold
-  // the mutex protecting the LocalAggregateStore.
-  logger::Status MaybeInsertReportConfigLocked(const logger::ProjectContext& project_context,
-                                               const MetricDefinition& metric,
-                                               const ReportDefinition& report,
-                                               LocalAggregateStore* store);
+  // creation of the key or value fails, and kOK otherwise.
+  logger::Status MaybeInsertReportConfig(const logger::ProjectContext& project_context,
+                                         const MetricDefinition& metric,
+                                         const ReportDefinition& report);
 
   // Writes a snapshot of the LocalAggregateStore to
   // |local_aggregate_proto_store_|.

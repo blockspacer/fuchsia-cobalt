@@ -81,7 +81,6 @@ void EventAggregator::Start(std::unique_ptr<util::SystemClockInterface> clock) {
 // TODO(pesk): update the EventAggregator's view of a Metric
 // or ReportDefinition when appropriate.
 Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_context) {
-  auto locked = aggregate_store_->protected_aggregate_store_.lock();
   Status status;
   for (const auto& metric : project_context.metrics()) {
     switch (metric.metric_type()) {
@@ -89,8 +88,7 @@ Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_c
         for (const auto& report : metric.reports()) {
           switch (report.report_type()) {
             case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
-              status = aggregate_store_->MaybeInsertReportConfigLocked(
-                  project_context, metric, report, &(locked->local_aggregate_store));
+              status = aggregate_store_->MaybeInsertReportConfig(project_context, metric, report);
               if (status != kOK) {
                 return status;
               }
@@ -108,8 +106,7 @@ Status EventAggregator::UpdateAggregationConfigs(const ProjectContext& project_c
           switch (report.report_type()) {
             case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
             case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-              status = aggregate_store_->MaybeInsertReportConfigLocked(
-                  project_context, metric, report, &(locked->local_aggregate_store));
+              status = aggregate_store_->MaybeInsertReportConfig(project_context, metric, report);
               if (status != kOK) {
                 return status;
               }

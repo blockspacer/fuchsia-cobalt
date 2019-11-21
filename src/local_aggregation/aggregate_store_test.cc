@@ -83,6 +83,11 @@ std::string SerializeAsStringDeterministic(const T& message) {
 constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
 constexpr char kObsHistoryFilename[] = "obs_history_backup";
 
+constexpr uint32_t kTestCustomerId = 34;
+constexpr uint32_t kTestProjectId = 123;
+constexpr uint32_t kTestMetricId = 1;
+constexpr uint32_t kTestReportId = 3;
+
 // A map keyed by base64-encoded, serialized ReportAggregationKeys. The value at
 // a key is a map of event codes to sets of day indices. Used in tests as
 // a record, external to the LocalAggregateStore, of the activity logged for
@@ -97,6 +102,56 @@ using LoggedActivity = std::map<std::string, std::map<uint32_t, std::set<uint32_
 using LoggedValues =
     std::map<std::string,
              std::map<std::string, std::map<uint32_t, std::map<uint32_t, std::vector<int64_t>>>>>;
+
+std::unique_ptr<ProjectContext> GetProjectContextFor(const MetricDefinition& metric) {
+  auto project_config = std::make_unique<ProjectConfig>();
+  project_config->set_project_name("test_project");
+  project_config->set_project_id(metric.project_id());
+  *project_config->add_metrics() = metric;
+  return std::make_unique<ProjectContext>(metric.customer_id(), "test_customer",
+                                          std::move(project_config));
+}
+
+MetricDefinition GetEventOccurredMetric(uint32_t customer_id, uint32_t project_id,
+                                        uint32_t metric_id) {
+  MetricDefinition metric_definition;
+  metric_definition.set_metric_name("test_metric");
+  metric_definition.set_id(metric_id);
+  metric_definition.set_customer_id(customer_id);
+  metric_definition.set_project_id(project_id);
+  metric_definition.set_metric_type(MetricDefinition::EVENT_OCCURRED);
+  return metric_definition;
+}
+
+std::tuple<MetricDefinition, ReportDefinition> GetUniqueActivesMetricAndReport(uint32_t customer_id,
+                                                                               uint32_t project_id,
+                                                                               uint32_t metric_id,
+                                                                               uint32_t report_id) {
+  ReportDefinition report_definition;
+  report_definition.set_report_name("test_unique_actives_report");
+  report_definition.set_id(report_id);
+  report_definition.set_report_type(ReportDefinition::UNIQUE_N_DAY_ACTIVES);
+  *report_definition.add_aggregation_window() = MakeDayWindow(1);
+
+  MetricDefinition metric_definition = GetEventOccurredMetric(customer_id, project_id, metric_id);
+  *metric_definition.add_reports() = report_definition;
+
+  return std::make_tuple(metric_definition, report_definition);
+}
+
+std::tuple<MetricDefinition, ReportDefinition> GetNotLocallyAggregatedMetricAndReport(
+    uint32_t customer_id, uint32_t project_id, uint32_t metric_id, uint32_t report_id) {
+  ReportDefinition report_definition;
+  report_definition.set_report_name("test_report");
+  report_definition.set_id(report_id);
+  report_definition.set_report_type(ReportDefinition::SIMPLE_OCCURRENCE_COUNT);
+  *report_definition.add_aggregation_window() = MakeDayWindow(1);
+
+  MetricDefinition metric_definition = GetEventOccurredMetric(customer_id, project_id, metric_id);
+  *metric_definition.add_reports() = report_definition;
+
+  return std::make_tuple(metric_definition, report_definition);
+}
 
 }  // namespace
 
@@ -191,6 +246,22 @@ class AggregateStoreTest : public ::testing::Test {
     return event_aggregator_->GenerateObservationsNoWorker(final_day_index_utc,
                                                            final_day_index_local);
   }
+
+  bool IsReportInStore(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+                       uint32_t report_id) {
+    std::string key;
+    ReportAggregationKey key_data;
+    key_data.set_customer_id(customer_id);
+    key_data.set_project_id(project_id);
+    key_data.set_metric_id(metric_id);
+    key_data.set_report_id(report_id);
+    SerializeToBase64(key_data, &key);
+
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
+    return locked->local_aggregate_store.by_report_key().count(key) > 0;
+  }
+
+  AggregateStore* GetAggregateStore() { return event_aggregator_->aggregate_store_.get(); }
 
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
     return event_aggregator_->aggregate_store_->GarbageCollect(day_index_utc, day_index_local);
@@ -943,6 +1014,40 @@ TEST_F(AggregateStoreTest, MaybeUpgradeObservationHistoryStoreUnsupported) {
   auto store = MakeNewObservationHistoryStore(kFutureVersion);
   ASSERT_EQ(kFutureVersion, store.version());
   EXPECT_EQ(kInvalidArguments, MaybeUpgradeObservationHistoryStore(&store));
+}
+
+// MaybeInsertReportConfig successfully updates the store.
+TEST_F(AggregateStoreTest, MaybeInsertReportConfig) {
+  auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                          kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+
+  EXPECT_FALSE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
+  ASSERT_EQ(kOK, GetAggregateStore()->MaybeInsertReportConfig(*project_context, metric, report));
+  EXPECT_TRUE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
+}
+
+// MaybeInsertReportConfig returns kOK when the same config is inserted twice.
+TEST_F(AggregateStoreTest, MaybeInsertReportConfigTwice) {
+  auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                          kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+
+  EXPECT_FALSE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
+  ASSERT_EQ(kOK, GetAggregateStore()->MaybeInsertReportConfig(*project_context, metric, report));
+  ASSERT_EQ(kOK, GetAggregateStore()->MaybeInsertReportConfig(*project_context, metric, report));
+  EXPECT_TRUE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
+}
+
+// MaybeInsertReportConfig fails due to the fact that the given report does not have a aggregation.
+TEST_F(AggregateStoreTest, MaybeInsertReportConfigFail) {
+  auto [metric, report] = GetNotLocallyAggregatedMetricAndReport(kTestCustomerId, kTestProjectId,
+                                                                 kTestMetricId, kTestReportId);
+  auto project_context = GetProjectContextFor(metric);
+
+  EXPECT_FALSE(IsReportInStore(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId));
+  ASSERT_EQ(kInvalidArguments,
+            GetAggregateStore()->MaybeInsertReportConfig(*project_context, metric, report));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive
