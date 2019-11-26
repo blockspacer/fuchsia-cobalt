@@ -29,6 +29,8 @@ source_set("aggregation_utils") {
   ]
 
   public_deps = [
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src/logger:status",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
 

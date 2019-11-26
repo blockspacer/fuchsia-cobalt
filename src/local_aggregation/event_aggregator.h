@@ -207,13 +207,6 @@ class EventAggregator {
   void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
                         std::chrono::steady_clock::time_point steady_time);
 
-  // Adds a numeric value to the LocalAggregateStore by adding |value| to the
-  // current daily aggregate in the bucket indexed by |report_key|, |day_index|,
-  // |component|, and |event_code|. This is a helper method called by
-  // AddCountEvent andAddElapsedTimeEvent.
-  logger::Status AddNumericEvent(const std::string& report_key, uint32_t day_index,
-                                 const std::string& component, uint64_t event_code, int64_t value);
-
   // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.
   void SetSteadyClock(util::SteadyClockInterface* clock) { steady_clock_.reset(clock); }
 

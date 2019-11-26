@@ -287,6 +287,45 @@ Status AggregateStore::SetActive(uint32_t customer_id, uint32_t project_id, uint
   return kOK;
 }
 
+Status AggregateStore::UpdateNumericAggregate(uint32_t customer_id, uint32_t project_id,
+                                              uint32_t metric_id, uint32_t report_id,
+                                              const std::string& component, uint64_t event_code,
+                                              uint32_t day_index, int64_t value) {
+  std::string report_key;
+  if (!PopulateReportKey(customer_id, project_id, metric_id, report_id, &report_key)) {
+    return kInvalidArguments;
+  }
+
+  auto locked = protected_aggregate_store_.lock();
+  auto aggregates = locked->local_aggregate_store.mutable_by_report_key()->find(report_key);
+  if (aggregates == locked->local_aggregate_store.mutable_by_report_key()->end()) {
+    LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
+    return kInvalidArguments;
+  }
+  if (!aggregates->second.has_numeric_aggregates()) {
+    LOG(ERROR) << "The local aggregates for this report key are not of a "
+                  "compatible type.";
+    return kInvalidArguments;
+  }
+
+  auto aggregates_by_day =
+      (*(*aggregates->second.mutable_numeric_aggregates()->mutable_by_component())[component]
+            .mutable_by_event_code())[event_code]
+          .mutable_by_day_index();
+  bool has_stored_aggregate = ((*aggregates_by_day).find(day_index) != aggregates_by_day->end());
+  auto day_aggregate = (*aggregates_by_day)[day_index].mutable_numeric_daily_aggregate();
+
+  auto [status, updated_value] = GetUpdatedAggregate(
+      aggregates->second.aggregation_config().report().aggregation_type(),
+      has_stored_aggregate ? std::optional<int64_t>{day_aggregate->value()} : std::nullopt, value);
+  if (status == kOK) {
+    day_aggregate->set_value(updated_value);
+    return kOK;
+  }
+
+  return status;
+}
+
 RepeatedField<uint32_t> UnpackEventCodesProto(uint64_t packed_event_codes) {
   RepeatedField<uint32_t> fields;
   for (auto code : config::UnpackEventCodes(packed_event_codes)) {

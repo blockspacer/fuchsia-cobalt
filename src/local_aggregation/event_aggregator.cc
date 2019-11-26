@@ -25,25 +25,8 @@ using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::Status;
 using util::ConsistentProtoStore;
-using util::SerializeToBase64;
 using util::SteadyClock;
 using util::TimeToDayIndex;
-
-namespace {
-
-// Populates a ReportAggregationKey proto message and then populates a string
-// with the base64 encoding of the serialized proto.
-bool PopulateReportKey(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
-                       uint32_t report_id, std::string* key) {
-  ReportAggregationKey key_data;
-  key_data.set_customer_id(customer_id);
-  key_data.set_project_id(project_id);
-  key_data.set_metric_id(metric_id);
-  key_data.set_report_id(report_id);
-  return SerializeToBase64(key_data, key);
-}
-
-}  // namespace
 
 EventAggregator::EventAggregator(const Encoder* encoder,
                                  const ObservationWriter* observation_writer,
@@ -155,15 +138,13 @@ Status EventAggregator::AddCountEvent(uint32_t report_id, const EventRecord& eve
   if (!ValidateEventType(Event::kCountEvent, *event)) {
     return kInvalidArguments;
   }
+
   auto* metric = event_record.metric();
-  std::string key;
-  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
-                         &key)) {
-    return kInvalidArguments;
-  }
   const CountEvent& count_event = event->count_event();
-  return AddNumericEvent(key, event->day_index(), count_event.component(),
-                         config::PackEventCodes(count_event.event_code()), count_event.count());
+
+  return aggregate_store_->UpdateNumericAggregate(
+      metric->customer_id(), metric->project_id(), metric->id(), report_id, count_event.component(),
+      config::PackEventCodes(count_event.event_code()), event->day_index(), count_event.count());
 }
 
 Status EventAggregator::AddElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {
@@ -171,16 +152,14 @@ Status EventAggregator::AddElapsedTimeEvent(uint32_t report_id, const EventRecor
   if (!ValidateEventType(Event::kElapsedTimeEvent, *event)) {
     return kInvalidArguments;
   }
-  std::string key;
+
   auto* metric = event_record.metric();
-  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
-                         &key)) {
-    return kInvalidArguments;
-  }
   const ElapsedTimeEvent& elapsed_time_event = event->elapsed_time_event();
-  return AddNumericEvent(key, event->day_index(), elapsed_time_event.component(),
-                         config::PackEventCodes(elapsed_time_event.event_code()),
-                         elapsed_time_event.elapsed_micros());
+
+  return aggregate_store_->UpdateNumericAggregate(
+      metric->customer_id(), metric->project_id(), metric->id(), report_id,
+      elapsed_time_event.component(), config::PackEventCodes(elapsed_time_event.event_code()),
+      event->day_index(), elapsed_time_event.elapsed_micros());
 }
 
 Status EventAggregator::AddFrameRateEvent(uint32_t report_id, const EventRecord& event_record) {
@@ -188,16 +167,13 @@ Status EventAggregator::AddFrameRateEvent(uint32_t report_id, const EventRecord&
   if (!ValidateEventType(Event::kFrameRateEvent, *event)) {
     return kInvalidArguments;
   }
-  std::string key;
   auto* metric = event_record.metric();
-  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
-                         &key)) {
-    return kInvalidArguments;
-  }
   const FrameRateEvent& frame_rate_event = event->frame_rate_event();
-  return AddNumericEvent(key, event->day_index(), frame_rate_event.component(),
-                         config::PackEventCodes(frame_rate_event.event_code()),
-                         frame_rate_event.frames_per_1000_seconds());
+
+  return aggregate_store_->UpdateNumericAggregate(
+      metric->customer_id(), metric->project_id(), metric->id(), report_id,
+      frame_rate_event.component(), config::PackEventCodes(frame_rate_event.event_code()),
+      event->day_index(), frame_rate_event.frames_per_1000_seconds());
 }
 
 Status EventAggregator::AddMemoryUsageEvent(uint32_t report_id, const EventRecord& event_record) {
@@ -205,58 +181,14 @@ Status EventAggregator::AddMemoryUsageEvent(uint32_t report_id, const EventRecor
   if (!ValidateEventType(Event::kMemoryUsageEvent, *event)) {
     return kInvalidArguments;
   }
-  std::string key;
-  auto* metric = event_record.metric();
-  if (!PopulateReportKey(metric->customer_id(), metric->project_id(), metric->id(), report_id,
-                         &key)) {
-    return kInvalidArguments;
-  }
-  const MemoryUsageEvent& memory_usage_event = event->memory_usage_event();
-  return AddNumericEvent(key, event->day_index(), memory_usage_event.component(),
-                         config::PackEventCodes(memory_usage_event.event_code()),
-                         memory_usage_event.bytes());
-}
 
-Status EventAggregator::AddNumericEvent(const std::string& report_key, uint32_t day_index,
-                                        const std::string& component, uint64_t event_code,
-                                        int64_t value) {
-  auto locked = aggregate_store_->protected_aggregate_store_.lock();
-  auto aggregates = locked->local_aggregate_store.mutable_by_report_key()->find(report_key);
-  if (aggregates == locked->local_aggregate_store.mutable_by_report_key()->end()) {
-    LOG(ERROR) << "The Local Aggregate Store received an unexpected key.";
-    return kInvalidArguments;
-  }
-  if (!aggregates->second.has_numeric_aggregates()) {
-    LOG(ERROR) << "The local aggregates for this report key are not of a "
-                  "compatible type.";
-    return kInvalidArguments;
-  }
-  auto aggregates_by_day =
-      (*(*aggregates->second.mutable_numeric_aggregates()->mutable_by_component())[component]
-            .mutable_by_event_code())[event_code]
-          .mutable_by_day_index();
-  bool first_event_today = ((*aggregates_by_day).find(day_index) == aggregates_by_day->end());
-  auto day_aggregate = (*aggregates_by_day)[day_index].mutable_numeric_daily_aggregate();
-  const auto& aggregation_type =
-      aggregates->second.aggregation_config().report().aggregation_type();
-  switch (aggregation_type) {
-    case ReportDefinition::SUM:
-      day_aggregate->set_value(value + day_aggregate->value());
-      return kOK;
-    case ReportDefinition::MAX:
-      day_aggregate->set_value(std::max(value, day_aggregate->value()));
-      return kOK;
-    case ReportDefinition::MIN:
-      if (first_event_today) {
-        day_aggregate->set_value(value);
-      } else {
-        day_aggregate->set_value(std::min(value, day_aggregate->value()));
-      }
-      return kOK;
-    default:
-      LOG(ERROR) << "Unexpected aggregation type " << aggregation_type;
-      return kInvalidArguments;
-  }
+  auto* metric = event_record.metric();
+  const MemoryUsageEvent& memory_usage_event = event->memory_usage_event();
+
+  return aggregate_store_->UpdateNumericAggregate(
+      metric->customer_id(), metric->project_id(), metric->id(), report_id,
+      memory_usage_event.component(), config::PackEventCodes(memory_usage_event.event_code()),
+      event->day_index(), memory_usage_event.bytes());
 }
 
 Status EventAggregator::GenerateObservationsNoWorker(uint32_t final_day_index_utc,

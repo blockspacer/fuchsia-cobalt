@@ -87,6 +87,8 @@ constexpr uint32_t kTestCustomerId = 34;
 constexpr uint32_t kTestProjectId = 123;
 constexpr uint32_t kTestMetricId = 1;
 constexpr uint32_t kTestReportId = 3;
+constexpr uint64_t kTestEventCode = 1;
+constexpr uint32_t kTestDayIndex = 56;
 
 // A map keyed by base64-encoded, serialized ReportAggregationKeys. The value at
 // a key is a map of event codes to sets of day indices. Used in tests as
@@ -112,14 +114,26 @@ std::unique_ptr<ProjectContext> GetProjectContextFor(const MetricDefinition& met
                                           std::move(project_config));
 }
 
-MetricDefinition GetEventOccurredMetric(uint32_t customer_id, uint32_t project_id,
-                                        uint32_t metric_id) {
+MetricDefinition GetMetricWithId(uint32_t customer_id, uint32_t project_id, uint32_t metric_id) {
   MetricDefinition metric_definition;
   metric_definition.set_metric_name("test_metric");
   metric_definition.set_id(metric_id);
   metric_definition.set_customer_id(customer_id);
   metric_definition.set_project_id(project_id);
+  return metric_definition;
+}
+
+MetricDefinition GetEventOccurredMetric(uint32_t customer_id, uint32_t project_id,
+                                        uint32_t metric_id) {
+  MetricDefinition metric_definition = GetMetricWithId(customer_id, project_id, metric_id);
   metric_definition.set_metric_type(MetricDefinition::EVENT_OCCURRED);
+  return metric_definition;
+}
+
+MetricDefinition GetEventCountMetric(uint32_t customer_id, uint32_t project_id,
+                                     uint32_t metric_id) {
+  MetricDefinition metric_definition = GetMetricWithId(customer_id, project_id, metric_id);
+  metric_definition.set_metric_type(MetricDefinition::EVENT_COUNT);
   return metric_definition;
 }
 
@@ -134,6 +148,22 @@ std::tuple<MetricDefinition, ReportDefinition> GetUniqueActivesMetricAndReport(u
   *report_definition.add_aggregation_window() = MakeDayWindow(1);
 
   MetricDefinition metric_definition = GetEventOccurredMetric(customer_id, project_id, metric_id);
+  *metric_definition.add_reports() = report_definition;
+
+  return std::make_tuple(metric_definition, report_definition);
+}
+
+std::tuple<MetricDefinition, ReportDefinition> GetPerDeviceNumericStatsMetricAndReport(
+    uint32_t customer_id, uint32_t project_id, uint32_t metric_id, uint32_t report_id,
+    ReportDefinition::OnDeviceAggregationType aggregation_type) {
+  ReportDefinition report_definition;
+  report_definition.set_report_name("test_per_device_numeric_stats_report");
+  report_definition.set_id(report_id);
+  report_definition.set_report_type(ReportDefinition::PER_DEVICE_NUMERIC_STATS);
+  report_definition.set_aggregation_type(aggregation_type);
+  *report_definition.add_aggregation_window() = MakeDayWindow(1);
+
+  MetricDefinition metric_definition = GetEventCountMetric(customer_id, project_id, metric_id);
   *metric_definition.add_reports() = report_definition;
 
   return std::make_tuple(metric_definition, report_definition);
@@ -290,6 +320,42 @@ class AggregateStoreTest : public ::testing::Test {
     }
 
     return by_day_index->second.activity_daily_aggregate().activity_indicator();
+  }
+
+  std::optional<int64_t> GetValue(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
+                                  uint32_t report_id, const std::string& component,
+                                  uint64_t event_code, uint32_t day_index) {
+    std::string key;
+    ReportAggregationKey key_data;
+    key_data.set_customer_id(customer_id);
+    key_data.set_project_id(project_id);
+    key_data.set_metric_id(metric_id);
+    key_data.set_report_id(report_id);
+    SerializeToBase64(key_data, &key);
+
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
+
+    auto aggregates = locked->local_aggregate_store.by_report_key().find(key);
+    if (aggregates == locked->local_aggregate_store.by_report_key().end()) {
+      return std::nullopt;
+    }
+
+    auto by_component = aggregates->second.numeric_aggregates().by_component().find(component);
+    if (by_component == aggregates->second.numeric_aggregates().by_component().end()) {
+      return std::nullopt;
+    }
+
+    auto by_event_code = by_component->second.by_event_code().find(event_code);
+    if (by_event_code == by_component->second.by_event_code().end()) {
+      return std::nullopt;
+    }
+
+    auto by_day_index = by_event_code->second.by_day_index().find(day_index);
+    if (by_day_index == by_event_code->second.by_day_index().end()) {
+      return std::nullopt;
+    }
+
+    return by_day_index->second.numeric_daily_aggregate().value();
   }
 
   AggregateStore* GetAggregateStore() { return event_aggregator_->aggregate_store_.get(); }
@@ -1087,17 +1153,15 @@ TEST_F(AggregateStoreTest, SetActive) {
   auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
                                                           kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
-  const uint64_t kEventCode = 1;
-  const uint32_t kDayIndex = 56;
 
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
 
-  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
-                        kDayIndex));
+  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                        kTestEventCode, kTestDayIndex));
   ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
-                                                kTestReportId, kEventCode, kDayIndex));
-  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
-                       kDayIndex));
+                                                kTestReportId, kTestEventCode, kTestDayIndex));
+  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                       kTestEventCode, kTestDayIndex));
 }
 
 // SetActive returns kOK when the same config is inserted twice.
@@ -1105,19 +1169,17 @@ TEST_F(AggregateStoreTest, SetActiveTwice) {
   auto [metric, report] = GetUniqueActivesMetricAndReport(kTestCustomerId, kTestProjectId,
                                                           kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
-  const uint64_t kEventCode = 1;
-  const uint32_t kDayIndex = 56;
 
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
-  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
-                        kDayIndex));
+  EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                        kTestEventCode, kTestDayIndex));
 
   ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
-                                                kTestReportId, kEventCode, kDayIndex));
+                                                kTestReportId, kTestEventCode, kTestDayIndex));
   ASSERT_EQ(kOK, GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
-                                                kTestReportId, kEventCode, kDayIndex));
-  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, kEventCode,
-                       kDayIndex));
+                                                kTestReportId, kTestEventCode, kTestDayIndex));
+  EXPECT_TRUE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                       kTestEventCode, kTestDayIndex));
 }
 
 // SetActive fails due to the fact that UpdateAggregationConfigs was not called for the given report
@@ -1126,13 +1188,94 @@ TEST_F(AggregateStoreTest, SetActiveFail) {
   auto [metric, report] = GetNotLocallyAggregatedMetricAndReport(kTestCustomerId, kTestProjectId,
                                                                  kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
-  const uint64_t kEventCode = 1;
-  const uint32_t kDayIndex = 56;
 
   EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   ASSERT_EQ(kInvalidArguments,
             GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
-                                           kTestReportId, kEventCode, kDayIndex));
+                                           kTestReportId, kTestEventCode, kTestDayIndex));
+}
+
+// The Aggregate store updates the local store with the sum of two values when the aggregation is of
+// type SUM.
+TEST_F(AggregateStoreTest, UpdateAggregationSUM) {
+  auto [metric, report] = GetPerDeviceNumericStatsMetricAndReport(
+      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, ReportDefinition::SUM);
+  auto project_context = GetProjectContextFor(metric);
+
+  const int64_t kFirstValue = 3;
+  const int64_t kSecondValue = 7;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kFirstValue));
+  EXPECT_EQ(kFirstValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                                  kTestEventCode, kTestDayIndex));
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kSecondValue));
+  EXPECT_EQ(kSecondValue + kFirstValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId,
+                                                 kTestReportId, "", kTestEventCode, kTestDayIndex));
+}
+
+// The Aggregate store updates the local store with the sum of two values when the aggregation is of
+// type MAX.
+TEST_F(AggregateStoreTest, UpdateAggregationMAX) {
+  auto [metric, report] = GetPerDeviceNumericStatsMetricAndReport(
+      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, ReportDefinition::MAX);
+  auto project_context = GetProjectContextFor(metric);
+
+  const int64_t kFirstValue = 3;
+  const int64_t kSecondValue = 7;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kFirstValue));
+  EXPECT_EQ(kFirstValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                                  kTestEventCode, kTestDayIndex));
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kSecondValue));
+  EXPECT_EQ(kSecondValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                                   "", kTestEventCode, kTestDayIndex));
+}
+// The Aggregate store updates the local store with the sum of two values when the aggregation is of
+// type MIN.
+TEST_F(AggregateStoreTest, UpdateAggregationMIN) {
+  auto [metric, report] = GetPerDeviceNumericStatsMetricAndReport(
+      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, ReportDefinition::MIN);
+  auto project_context = GetProjectContextFor(metric);
+
+  const int64_t kFirstValue = 3;
+  const int64_t kSecondValue = 7;
+
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kFirstValue));
+  EXPECT_EQ(kFirstValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                                  kTestEventCode, kTestDayIndex));
+  EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
+                     kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                     kTestEventCode, kTestDayIndex, kSecondValue));
+  EXPECT_EQ(kFirstValue, GetValue(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
+                                  kTestEventCode, kTestDayIndex));
+}
+
+// UpdateAggregationConfigs fails due to the fact that UpdateAggregationConfigs was not called for
+// the given report.
+TEST_F(AggregateStoreTest, UpdateAggregationFail) {
+  auto [metric, report] = GetPerDeviceNumericStatsMetricAndReport(
+      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, ReportDefinition::SUM);
+  auto project_context = GetProjectContextFor(metric);
+
+  ASSERT_EQ(kInvalidArguments, GetAggregateStore()->UpdateNumericAggregate(
+                                   kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
+                                   "", kTestEventCode, kTestDayIndex, /*value*/ 4));
 }
 
 // Tests that EventAggregator::GenerateObservations() returns a positive

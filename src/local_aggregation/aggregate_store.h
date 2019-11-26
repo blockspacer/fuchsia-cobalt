@@ -95,6 +95,15 @@ class AggregateStore {
   logger::Status SetActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
                            uint32_t report_id, uint64_t event_code, uint32_t day_index);
 
+  // Updates the LocalAggregateStore by adding |value| to the current daily aggregate in the bucket
+  // indexed by |customer_id|, |project_id|, |metric_id|, |report_id|, |component|, |event_code| and
+  // |day_index|. Expects that MaybeInsertReportConfig() has been called previously for the ids
+  // being passed. Returns kInvalidArguments if the operation fails, and kOK otherwise.
+  logger::Status UpdateNumericAggregate(uint32_t customer_id, uint32_t project_id,
+                                        uint32_t metric_id, uint32_t report_id,
+                                        const std::string& component, uint64_t event_code,
+                                        uint32_t day_index, int64_t value);
+
   // Writes a snapshot of the LocalAggregateStore to
   // |local_aggregate_proto_store_|.
   logger::Status BackUpLocalAggregateStore();
