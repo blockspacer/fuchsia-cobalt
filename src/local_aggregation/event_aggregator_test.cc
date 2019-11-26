@@ -18,6 +18,7 @@
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
 #include "src/local_aggregation/aggregation_utils.h"
+#include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
@@ -112,9 +113,9 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   void ResetEventAggregator() {
-    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                          local_aggregate_proto_store_.get(),
-                                                          obs_history_proto_store_.get());
+    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+        obs_history_proto_store_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
     test_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     // Initilize it to 10 years after the beginning of time.
@@ -123,13 +124,13 @@ class EventAggregatorTest : public ::testing::Test {
     unowned_test_clock_ = test_clock_.get();
     day_store_created_ = CurrentDayIndex();
     test_steady_clock_ = new IncrementingSteadyClock(std::chrono::system_clock::duration(0));
-    event_aggregator_->SetSteadyClock(test_steady_clock_);
+    event_aggregator_mgr_->GetEventAggregator()->SetSteadyClock(test_steady_clock_);
   }
 
   // Destruct the EventAggregator (thus calling EventAggregator::ShutDown())
   // before destructing the objects which the EventAggregator points to but does
   // not own.
-  void TearDown() override { event_aggregator_.reset(); }
+  void TearDown() override { event_aggregator_mgr_.reset(); }
 
   // Advances |test_clock_| by |num_seconds| seconds.
   void AdvanceClock(int num_seconds) {
@@ -144,22 +145,26 @@ class EventAggregatorTest : public ::testing::Test {
                           time_zone);
   }
 
-  size_t GetBackfillDays() { return event_aggregator_->aggregate_store_->backfill_days_; }
+  size_t GetBackfillDays() {
+    return event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->backfill_days_;
+  }
 
   LocalAggregateStore CopyLocalAggregateStore() {
-    return event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
+    return event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
   }
 
   void TriggerAndWaitForDoScheduledTasks() {
     {
       // Acquire the lock to manually trigger the scheduled tasks.
-      auto locked = event_aggregator_->protected_worker_thread_controller_.lock();
+      auto locked =
+          event_aggregator_mgr_->GetEventAggregator()->protected_worker_thread_controller_.lock();
       locked->immediate_run_trigger = true;
       locked->shutdown_notifier.notify_all();
     }
     while (true) {
       // Reacquire the lock to make sure that the scheduled tasks have completed.
-      auto locked = event_aggregator_->protected_worker_thread_controller_.lock();
+      auto locked =
+          event_aggregator_mgr_->GetEventAggregator()->protected_worker_thread_controller_.lock();
       if (!locked->immediate_run_trigger) {
         break;
       }
@@ -187,7 +192,8 @@ class EventAggregatorTest : public ::testing::Test {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
     event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
-    auto status = event_aggregator_->AddUniqueActivesEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
+        metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
       return status;
     }
@@ -216,7 +222,8 @@ class EventAggregatorTest : public ::testing::Test {
     count_event->set_component(component);
     count_event->add_event_code(event_code);
     count_event->set_count(count);
-    auto status = event_aggregator_->AddCountEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddCountEvent(
+        metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -245,7 +252,8 @@ class EventAggregatorTest : public ::testing::Test {
     elapsed_time_event->set_component(component);
     elapsed_time_event->add_event_code(event_code);
     elapsed_time_event->set_elapsed_micros(micros);
-    auto status = event_aggregator_->AddElapsedTimeEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddElapsedTimeEvent(
+        metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -275,7 +283,8 @@ class EventAggregatorTest : public ::testing::Test {
     frame_rate_event->add_event_code(event_code);
     int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
-    auto status = event_aggregator_->AddFrameRateEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddFrameRateEvent(
+        metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -307,7 +316,8 @@ class EventAggregatorTest : public ::testing::Test {
       memory_usage_event->add_event_code(event_code);
     }
     memory_usage_event->set_bytes(bytes);
-    auto status = event_aggregator_->AddMemoryUsageEvent(metric_report_id.second, event_record);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddMemoryUsageEvent(
+        metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -334,7 +344,8 @@ class EventAggregatorTest : public ::testing::Test {
   // of reference.
   bool CheckUniqueActivesAggregates(const LoggedActivity& logged_activity,
                                     uint32_t /*current_day_index*/) {
-    auto local_aggregate_store = event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store =
+        event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more UniqueActives
     // aggregates than |logged_activity| and |day_last_garbage_collected_|
     // should imply.
@@ -449,7 +460,8 @@ class EventAggregatorTest : public ::testing::Test {
 
   bool CheckPerDeviceNumericAggregates(const LoggedValues& logged_values,
                                        uint32_t /*current_day_index*/) {
-    auto local_aggregate_store = event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store =
+        event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more PerDeviceNumeric
     // aggregates than |logged_values| and |day_last_garbage_collected_| should
     // imply.
@@ -664,7 +676,7 @@ class EventAggregatorTest : public ::testing::Test {
                : day_store_created_ - backfill_days;
   }
 
-  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -696,7 +708,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
 
   void SetUp() override {
     EventAggregatorTest::SetUp();
-    event_aggregator_->UpdateAggregationConfigs(*project_context_);
+    event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context_);
   }
 
   // Adds an OccurrenceEvent to the local aggregations for the MetricReportId of a locally
@@ -799,17 +811,21 @@ class EventAggregatorWorkerTest : public EventAggregatorTest {
  protected:
   void SetUp() override { EventAggregatorTest::SetUp(); }
 
-  void ShutDownWorkerThread() { event_aggregator_->ShutDown(); }
+  void ShutDownWorkerThread() { event_aggregator_mgr_->GetEventAggregator()->ShutDown(); }
 
   bool in_shutdown_state() { return (shutdown_flag_set() && !worker_joinable()); }
 
   bool in_run_state() { return (!shutdown_flag_set() && worker_joinable()); }
 
   bool shutdown_flag_set() {
-    return event_aggregator_->protected_worker_thread_controller_.const_lock()->shut_down;
+    return event_aggregator_mgr_->GetEventAggregator()
+        ->protected_worker_thread_controller_.const_lock()
+        ->shut_down;
   }
 
-  bool worker_joinable() { return event_aggregator_->worker_thread_.joinable(); }
+  bool worker_joinable() {
+    return event_aggregator_mgr_->GetEventAggregator()->worker_thread_.joinable();
+  }
 };
 
 // Tests that an empty LocalAggregateStore is updated with
@@ -822,7 +838,8 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigs) {
   // Provide the unique_actives test registry to the EventAggregator.
   auto unique_actives_project_context =
       GetTestProject(logger::testing::unique_actives::kCobaltRegistryBase64);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*unique_actives_project_context));
+  EXPECT_EQ(kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(
+                     *unique_actives_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of locally aggregated reports in the unique_actives
   // test registry.
@@ -859,7 +876,8 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // Provide the unique_actives test registry to the EventAggregator.
   auto unique_actives_project_context =
       GetTestProject(logger::testing::unique_actives::kCobaltRegistryBase64);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*unique_actives_project_context));
+  EXPECT_EQ(kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(
+                     *unique_actives_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of locally aggregated reports in the unique_actives
   // test registry.
@@ -868,8 +886,8 @@ TEST_F(EventAggregatorTest, UpdateAggregationConfigsWithSameKey) {
   // Provide the unique_actives_noise_free test registry to the EventAggregator.
   auto unique_actives_noise_free_project_context =
       GetTestProject(logger::testing::unique_actives_noise_free::kCobaltRegistryBase64);
-  EXPECT_EQ(
-      kOK, event_aggregator_->UpdateAggregationConfigs(*unique_actives_noise_free_project_context));
+  EXPECT_EQ(kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(
+                     *unique_actives_noise_free_project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of distinct MetricReportIds of locally
   // aggregated reports in the union of the unique_actives and
@@ -912,7 +930,8 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   // Provide the unique_actives test registry to the EventAggregator.
   std::shared_ptr<ProjectContext> unique_actives_project_context =
       GetTestProject(logger::testing::unique_actives::kCobaltRegistryBase64);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*unique_actives_project_context));
+  EXPECT_EQ(kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(
+                     *unique_actives_project_context));
   // Attempt to log a UniqueActivesEvent for
   // |kEventsOccurredMetricReportId|, which is not in the unique_actives
   // registry. Check that the result is |kInvalidArguments|.
@@ -922,7 +941,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
                                logger::testing::unique_actives_noise_free::kEventsOccurredMetricId);
   bad_event_record.event()->set_day_index(CurrentDayIndex());
   bad_event_record.event()->mutable_occurrence_event()->set_event_code(0u);
-  EXPECT_EQ(kInvalidArguments, event_aggregator_->AddUniqueActivesEvent(
+  EXPECT_EQ(kInvalidArguments, event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
                                    logger::testing::unique_actives_noise_free::
                                        kEventsOccurredEventsOccurredUniqueDevicesReportId,
                                    bad_event_record));
@@ -933,7 +952,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
                                 logger::testing::unique_actives::kFeaturesActiveMetricId);
   bad_event_record2.event()->mutable_count_event();
   EXPECT_EQ(kInvalidArguments,
-            event_aggregator_->AddUniqueActivesEvent(
+            event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
                 logger::testing::unique_actives::kFeaturesActiveFeaturesActiveUniqueDevicesReportId,
                 bad_event_record2));
   // Attempt to call AddPerDeviceCountEvent() with a valid metric and report
@@ -943,7 +962,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
       noise_free_project_context,
       logger::testing::per_device_numeric_stats::kConnectionFailuresMetricReportId.first);
   bad_event_record3.event()->mutable_occurrence_event();
-  EXPECT_EQ(kInvalidArguments, event_aggregator_->AddCountEvent(
+  EXPECT_EQ(kInvalidArguments, event_aggregator_mgr_->GetEventAggregator()->AddCountEvent(
                                    logger::testing::per_device_numeric_stats::
                                        kConnectionFailuresConnectionFailuresPerDeviceCountReportId,
                                    bad_event_record3));
@@ -1028,8 +1047,7 @@ TEST_F(UniqueActivesNoiseFreeEventAggregatorTest, Run) {
       logger::testing::unique_actives_noise_free::kEventsOccurredMetricReportId;
   expected_obs[{expected_id, day_index}] = {{1, {false, true, true, true, true}},
                                             {7, {false, true, true, true, true}}};
-
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   // Trigger the initial call to DoScheduledTasks and wait for it to have completed.
   TriggerAndWaitForDoScheduledTasks();
 
@@ -1200,7 +1218,7 @@ TEST_F(PerDeviceHistogramEventAggregatorTest, LogEvents) {
 // TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   EXPECT_TRUE(in_run_state());
 }
 
@@ -1211,7 +1229,7 @@ TEST_F(EventAggregatorWorkerTest, StartWorkerThread) {
 // TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
   EXPECT_TRUE(in_shutdown_state());
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   EXPECT_TRUE(in_run_state());
   ShutDownWorkerThread();
   EXPECT_TRUE(in_shutdown_state());
@@ -1222,7 +1240,7 @@ TEST_F(EventAggregatorWorkerTest, StartAndShutDownWorkerThread) {
 //
 // TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   ShutDownWorkerThread();
   EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
 }
@@ -1232,10 +1250,11 @@ TEST_F(EventAggregatorWorkerTest, BackUpBeforeShutdown) {
 //
 // TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   // Provide the EventAggregator with the all_report_types registry.
   auto project_context = GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(
+      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
   // Check that the number of key-value pairs in the LocalAggregateStore is
   // now equal to the number of locally aggregated reports in the
   // all_report_types registry.
@@ -1250,11 +1269,12 @@ TEST_F(EventAggregatorWorkerTest, UpdateAggregationConfigs) {
 // TODO(ninai): remove duplicate test when the duplicate functions are removed.
 TEST_F(EventAggregatorWorkerTest, LogEvents) {
   auto day_index = CurrentDayIndex();
-  event_aggregator_->Start(std::move(test_clock_));
+  event_aggregator_mgr_->Start(std::move(test_clock_));
   // Provide the EventAggregator with the all_report_types registry.
   std::shared_ptr<ProjectContext> project_context =
       GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
-  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(
+      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
   // // Adds some events to the local aggregations.
   LoggedActivity logged_activity;
   EXPECT_EQ(kOK, AddUniqueActivesEvent(
