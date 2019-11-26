@@ -252,9 +252,28 @@ def _fmt(args):
 
 def _lint(args):
   status = 0
-  status += clang_tidy.main(args.directory)
-  status += golint.main()
-  status += gnlint.main()
+  failure_list = []
+
+  result = clang_tidy.main(args.directory)
+  failure_list.append(('clang_tidy', result))
+  status += result
+
+  result = golint.main()
+  failure_list.append(('golint', result))
+  status += result
+
+  result = gnlint.main()
+  failure_list.append(('gnlint', result))
+  status += result
+
+
+  if status > 0:
+    print('')
+    print('******************* SOME LINTERS FAILED *******************')
+    for linter, result in failure_list:
+      print('%s returned: %s' % (linter, result))
+  else:
+    print('All linters passed')
 
   exit(status)
 
