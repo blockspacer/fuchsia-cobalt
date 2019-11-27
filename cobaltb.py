@@ -684,6 +684,11 @@ def main():
       'lint',
       parents=[parent_parser],
       help='Run language linters on all source files.')
+  sub_parser.add_argument(
+      '--all',
+      action='store_true',
+      default=False,
+      help='Currently does nothing, soon will force linting all files.')
   sub_parser.add_argument('directory', nargs='*')
   sub_parser.set_defaults(func=_lint)
 
