@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "src/algorithms/rappor/rappor_config_validator.h"
-#include "src/lib/crypto_util/hash.h"
 #include "src/lib/crypto_util/random.h"
 #include "src/pb/observation.pb.h"
 #include "src/system_data/client_secret.h"
@@ -31,80 +30,6 @@ enum Status {
   kOK = 0,
   kInvalidConfig,
   kInvalidInput,
-};
-
-// Performs String RAPPOR encoding.
-class RapporEncoder {
- public:
-  // Constructor.
-  // The |client_secret| is used to determine the cohort and the PRR.
-  RapporEncoder(const RapporConfig& config, system_data::ClientSecret client_secret);
-  virtual ~RapporEncoder() = default;
-
-  // Encodes |value| using RAPPOR encoding. Returns kOK on success, or
-  // kInvalidConfig if the |config| passed to the constructor is not valid.
-  Status Encode(const ValuePart& value, RapporObservation* observation_out);
-
-  [[nodiscard]] uint32_t cohort() const { return cohort_num_; }
-
- private:
-  friend class StringRapporEncoderTest;
-  friend class RapporAnalyzer;
-
-  // Allows Friend classess to set a special RNG for use in tests.
-  void SetRandomForTesting(std::unique_ptr<crypto::Random> random) { random_ = std::move(random); }
-
-  // Computes a hash of the given |serialized value| and |cohort_num| and writes
-  // the result to |hashed_value|. This plus ExtractBitIndex() are used by
-  // MakeBloomBits() to form the Bloom filter. These two functions have been
-  // extracted from MakeBloomBits() so that they can be shared by RaporAnalyzer.
-  //
-  // |num_hashes| indicates the the upper bound for the values of |hash_index|
-  // that will be passed to ExtractBitIndex() after this method returns.
-  //
-  // Returns true for success or false if the hash operation fails for any
-  // reason.
-  static bool HashValueAndCohort(const std::string& serialized_value, uint32_t cohort_num,
-                                 uint32_t num_hashes,
-                                 crypto::byte hashed_value[crypto::hash::DIGEST_SIZE]);
-
-  // Extracts a bit index from the given |hashed_value| for the given
-  // |hash_index|. This plus HashValueAndCohort are used by MakeBloomBits()
-  // to form the Bloom filter. These two functions have been extracted from
-  // MakeBloomBits() so that they can be shared by RaporAnalyzer.
-  //
-  // IMPORTANT: We index bits "from the right." This means that bit number zero
-  // is the least significant bit of the last byte of the Bloom filter.
-  static uint32_t ExtractBitIndex(crypto::byte const hashed_value[crypto::hash::DIGEST_SIZE],
-                                  size_t hash_index, uint32_t num_bits);
-
-  // Generates the array of bloom bits derived from |value|. Returns the
-  // empty string on error.
-  std::string MakeBloomBits(const ValuePart& value);
-
-  // Derives an integer in the range [0, config_.num_cohorts_2_power_) from
-  // |client_secret_| and |attempt_number|. The distribution of values in this
-  // range will be (approximately) uniform as the Client Secret and
-  // |attempt_number| vary uniformly.
-  //
-  // This method is invoked iteratively from DeriveCohortFromSecret() with
-  // increasing attempt_numbers until the returned value is less than
-  // config_.num_cohorts_.
-  //
-  // Returns UINT32_MAX to indicate failure.
-  uint32_t AttemptDeriveCohortFromSecret(size_t attempt_number);
-
-  // Derives an integer in the range [0, config_.num_cohorts_) from
-  // |client_secret_|. The distribution of values in this range will be
-  // (approximately) uniform as the Client Secret varies uniformly.
-  //
-  // Returns UINT32_MAX to indicate failure.
-  uint32_t DeriveCohortFromSecret();
-
-  std::unique_ptr<RapporConfigValidator> config_;
-  std::unique_ptr<crypto::Random> random_;
-  system_data::ClientSecret client_secret_;
-  uint32_t cohort_num_;
 };
 
 // Performs encoding for Basic RAPPOR, a.k.a Categorical RAPPOR. No cohorts

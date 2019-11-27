@@ -17,13 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "src/lib/crypto_util/hash.h"
 #include "src/logging.h"
 #include "src/pb/observation.pb.h"
 
 namespace cobalt::rappor {
-
-using crypto::hash::DIGEST_SIZE;
 
 namespace {
 // Factors out some common validation logic.
@@ -113,57 +110,8 @@ uint32_t RapporConfigValidator::MinPower2Above(uint16_t x) {
   return v + 1;
 }
 
-constexpr uint32_t max_num_hashes = 8;
-// Constructor for String RAPPOR
-RapporConfigValidator::RapporConfigValidator(const RapporConfig& config)
-    : prob_0_becomes_1_(config.prob_0_becomes_1),
-      prob_1_stays_1_(config.prob_1_stays_1),
-      num_bits_(config.num_bloom_bits),
-      num_hashes_(config.num_hashes),
-      num_cohorts_(config.num_cohorts),
-      // num_cohorts_2_power_ is computed below.
-      num_cohorts_2_power_(0) {
-  valid_ = false;
-  if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr)) {
-    return;
-  }
-  if (num_bits_ <= 1 || num_bits_ > max_num_categories) {
-    LOG(ERROR) << "For k = num_bits we require 1 < k <= 1024.";
-    return;
-  }
-  if ((num_bits_ & (num_bits_ - 1)) != 0) {
-    LOG(ERROR) << "k = num_bits must be a power of 2.";
-    return;
-  }
-  if (num_hashes_ < 1 || num_hashes_ > max_num_hashes || num_hashes_ >= num_bits_) {
-    LOG(ERROR) << "For k = num_bits and h = num_hashes we require  1 <= h <= 8 "
-                  "and h < k.";
-    return;
-  }
-  // We consume 2 bytes of the digest per hash.
-  if (num_hashes_ * 2 > DIGEST_SIZE) {
-    // This should not happen unless DIGEST_SIZE is changed to a value that is
-    // too small.
-    LOG(ERROR) << "DIGEST_SIZE too small for number of hashes: " << DIGEST_SIZE;
-    return;
-  }
-  if (num_cohorts_ < 1 || num_cohorts_ > max_num_categories) {
-    LOG(ERROR) << "For m = num_cohorts we require 1 <= m <= 1024.";
-    return;
-  }
-  num_cohorts_2_power_ = MinPower2Above((uint16_t(num_cohorts_)));
-  CHECK_GT(num_cohorts_2_power_, 0u);
-  CHECK_LE(num_cohorts_2_power_, 1024u);
-  valid_ = true;
-}
-
-// Constructor for Basic RAPPOR
 RapporConfigValidator::RapporConfigValidator(const BasicRapporConfig& config)
-    : prob_0_becomes_1_(config.prob_0_becomes_1),
-      prob_1_stays_1_(config.prob_1_stays_1),
-      num_bits_(0),
-      num_hashes_(0),
-      num_cohorts_(1) {
+    : prob_0_becomes_1_(config.prob_0_becomes_1), prob_1_stays_1_(config.prob_1_stays_1) {
   valid_ = false;
   if (!CommonValidate(prob_0_becomes_1_, prob_1_stays_1_, config.prob_rr)) {
     return;
@@ -188,8 +136,7 @@ RapporConfigValidator::RapporConfigValidator(const BasicRapporConfig& config)
 }
 
 // Returns the bit-index of |category| or -1 if |category| is not one of the
-// basic RAPPOR categories (or if this object was not initialized with a
-// BasicRapporConfig.)
+// basic RAPPOR categories.
 int RapporConfigValidator::bit_index(const ValuePart& category) {
   std::string serialized_value;
   category.SerializeToString(&serialized_value);

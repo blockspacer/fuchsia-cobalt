@@ -14,36 +14,6 @@
 
 namespace cobalt::rappor {
 
-struct RapporConfig {
-  // k = the number of Bloom filter bits. This must be a power of 2 and
-  // it must satisfy:
-  // 1 <= h < k <= 1024, where h = num_hashes.
-  uint32_t num_bloom_bits = 0;
-
-  // h = the number of hashes. This must satisfy
-  // 1 <= h <=  8
-  uint32_t num_hashes = 0;
-
-  // m = the number of cohorts. This must satisfy
-  // 1 <= m <= 1024
-  uint32_t num_cohorts = 0;
-
-  // All probabilities below must be in the range [0.0, 1.0]
-
-  // prob_0_becomes_1 MAY NOT BE EQUAL to prob_1_stays_1.
-
-  // p = p(a zero bit is changed to a one bit in the IRR)
-  float prob_0_becomes_1 = 0.0;
-
-  // q = p(a one bit remains a one bit in the IRR)
-  float prob_1_stays_1 = 0.0;
-
-  // f = p(a bit is randomly assigned a value in the PRR)
-  // Note: Not Implemented in version 0.1 of Cobalt.
-  // This value must not be set to a non-zero value.
-  float prob_rr = 0.0;
-};
-
 struct BasicRapporConfig {
   // All probabilities below must be in the range [0.0, 1.0].
 

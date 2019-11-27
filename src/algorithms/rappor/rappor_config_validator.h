@@ -28,9 +28,6 @@ namespace rappor {
 
 class RapporConfigValidator {
  public:
-  // Constructor for String RAPPOR
-  explicit RapporConfigValidator(const RapporConfig& config);
-
   // Constructor for Basic RAPPOR
   explicit RapporConfigValidator(const BasicRapporConfig& config);
 
@@ -43,13 +40,9 @@ class RapporConfigValidator {
   bool valid() { return valid_; }
 
   uint32_t num_bits() { return num_bits_; }
-  uint32_t num_hashes() { return num_hashes_; }
-  uint32_t num_cohorts() { return num_cohorts_; }
-  uint32_t num_cohorts_2_power() { return num_cohorts_2_power_; }
 
   // Returns the bit-index of |category| or -1 if |category| is not one of the
-  // basic RAPPOR categories (or if this object was not initialized with a
-  // BasicRapporConfig.)
+  // basic RAPPOR categories.
   int bit_index(const ValuePart& category);
 
   // Gives access to the vector of Categories if this object was initialized
@@ -66,12 +59,6 @@ class RapporConfigValidator {
   float prob_0_becomes_1_;
   float prob_1_stays_1_;
   uint32_t num_bits_;
-
-  // Used only in string RAPPOR
-  uint32_t num_hashes_;
-  uint32_t num_cohorts_;
-  // This is the least power of 2 greater than or equal to num_cohorts_.
-  uint32_t num_cohorts_2_power_;
 
   // Used only in Basic RAPPOR. |categories_| is the list of all
   // categories. The keys to |category_to_bit_index_| are serialized

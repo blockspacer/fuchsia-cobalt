@@ -51,20 +51,6 @@ std::string CategoryName(uint32_t index);
 // REQUIRES: 0 <= index < num_bits.
 std::string BuildBitPatternString(int num_bits, int index, char index_char, char other_char);
 
-std::string CandidateString(int i);
-
-// Populates |candidate_list| with |num_candidates| candidates;
-void PopulateRapporCandidateList(uint32_t num_candidates, RapporCandidateList* candidate_list);
-
-// Makes a RapporConfig with the given data.
-RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes, float p,
-                    float q);
-
-// Given a string of "0"s and "1"s of length a multiple of 8, and a cohort,
-// returns a RapporObservation for the given cohort whose data is equal to the
-// bytes whose binary representation is given by the string.
-RapporObservation RapporObservationFromString(uint32_t cohort, const std::string& binary_string);
-
 }  // namespace cobalt::rappor
 
 #endif  // COBALT_SRC_ALGORITHMS_RAPPOR_RAPPOR_TEST_UTILS_H_

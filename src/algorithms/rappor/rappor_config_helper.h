@@ -23,9 +23,6 @@ class RapporConfigHelper {
   // We do not support RAPPOR's PRR in Cobalt.
   static const float kProbRR;  // = 0
 
-  // For String RAPPOR's number of hashes, always use h = 2.
-  static const size_t kNumHashes = 2;
-
   // Returns the probability of flipping a bit in the RAPPOR encoding,
   // or kInvalidProbability.
   //
@@ -38,12 +35,6 @@ class RapporConfigHelper {
   // Returns the number of categories to use for the Basic RAPPOR encoding.
   // This is the same as the number of bits.
   static size_t BasicRapporNumCategories(const MetricDefinition& metric_definition);
-
-  // Returns the number of cohorts to use for the String RAPPOR encoding.
-  static size_t StringRapporNumCohorts(const ReportDefinition& report_definition);
-
-  // Returns the number of bits to use for the String RAPPOR encoding.
-  static size_t StringRapporNumBloomBits(const ReportDefinition& report_definition);
 };
 
 }  // namespace rappor

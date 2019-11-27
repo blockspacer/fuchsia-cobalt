@@ -36,8 +36,8 @@ option go_package = "config";
 // An instance of ReportDefinition is always associated with an instance of
 // MetricDefinition called the owning MetricDefinition.
 message ReportDefinition {
-  reserved 7;
-  reserved "threshold";
+  reserved 5, 6, 7;
+  reserved "expected_population_size", "expected_string_set_size", "threshold";
   // Next id: 17
 
   // Unique name for this Report within its owning MetricDefinition.
@@ -284,7 +284,7 @@ message ReportDefinition {
   // A level of random noise to use when encoding observations for RAPPOR.
   enum LocalPrivacyNoiseLevel {
     // local_privacy_noise_level must be explicitly set when using
-    // Basic RAPPOR or String RAPPOR.
+    // Basic RAPPOR.
     NOISE_LEVEL_UNSET = 0;
 
     // p = 0.0, q = 1.0
@@ -301,15 +301,9 @@ message ReportDefinition {
   }
 
   // This field is used only with Report types SIMPLE_OCCURRENCE_COUNT and
-  // HIGH_FREQUENCY_STRING_COUNTS. Its value must not be changed
-  // after data collection has begun or the data will become corrupted.
+  // UniqueNDayActives. Its value must not be changed after data collection
+  // has begun or the data will become corrupted.
   LocalPrivacyNoiseLevel local_privacy_noise_level = 4;
-
-  // This field is not in use.
-  uint32 expected_population_size = 5 [deprecated = true];
-
-  // This field is not in use.
-  uint32 expected_string_set_size = 6 [deprecated = true];
 
   // Explicit list of known string values. Either this or |candidate_file|
   // should be used, not both. Used for the hashed |component_name|
@@ -507,9 +501,4 @@ message IntegerBuckets {
     ExponentialIntegerBuckets exponential = 1;
     LinearIntegerBuckets linear = 2;
   }
-}
-
-// A list of candidates to use during a string RAPPOR analysis.
-message RapporCandidateList {
-  repeated string candidates = 1;
 }

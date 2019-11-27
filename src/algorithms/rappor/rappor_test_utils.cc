@@ -81,36 +81,4 @@ std::string BuildBitPatternString(int num_bits, int index, char index_char, char
          std::string(index, other_char);
 }
 
-std::string CandidateString(int i) { return std::string("candidate string") + std::to_string(i); }
-
-// Populates |candidate_list| with |num_candidates| candidates;
-void PopulateRapporCandidateList(uint32_t num_candidates, RapporCandidateList* candidate_list) {
-  candidate_list->Clear();
-  for (size_t i = 0; i < num_candidates; i++) {
-    candidate_list->add_candidates(CandidateString(i));
-  }
-}
-
-// Makes a RapporConfig with the given data.
-RapporConfig Config(uint32_t num_bloom_bits, uint32_t num_cohorts, uint32_t num_hashes, float p,
-                    float q) {
-  RapporConfig config;
-  config.num_bloom_bits = num_bloom_bits;
-  config.num_hashes = num_hashes;
-  config.num_cohorts = num_cohorts;
-  config.prob_0_becomes_1 = p;
-  config.prob_1_stays_1 = q;
-  return config;
-}
-
-// Given a string of "0"s and "1"s of length a multiple of 8, and a cohort,
-// returns a RapporObservation for the given cohort whose data is equal to the
-// bytes whose binary representation is given by the string.
-RapporObservation RapporObservationFromString(uint32_t cohort, const std::string& binary_string) {
-  RapporObservation obs;
-  obs.set_cohort(cohort);
-  obs.set_data(BinaryStringToData(binary_string));
-  return obs;
-}
-
 }  // namespace cobalt::rappor
