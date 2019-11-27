@@ -15,7 +15,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
-#include "src/local_aggregation/event_aggregator.h"
+#include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/logger/encoder.h"
 #include "src/logger/fake_logger.h"
 #include "src/logger/internal_metrics_config.cb.h"
@@ -28,21 +28,18 @@
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/client_secret.h"
 
-namespace cobalt {
+namespace cobalt::logger {
 
-using local_aggregation::EventAggregator;
+using local_aggregation::EventAggregatorManager;
 using system_data::ClientSecret;
 using system_data::SystemDataInterface;
-using util::EncryptedMessageMaker;
-using util::IncrementingSteadyClock;
-using util::IncrementingSystemClock;
-
-namespace logger {
-
 using testing::FakeObservationStore;
 using testing::GetTestProject;
 using testing::MockConsistentProtoStore;
 using testing::TestUpdateRecipient;
+using util::EncryptedMessageMaker;
+using util::IncrementingSteadyClock;
+using util::IncrementingSystemClock;
 
 namespace {
 std::tm kSystemTime = {
@@ -77,9 +74,9 @@ class UndatedEventManagerTest : public ::testing::Test {
     local_aggregate_proto_store_ =
         std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
     obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                          local_aggregate_proto_store_.get(),
-                                                          obs_history_proto_store_.get());
+    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+        obs_history_proto_store_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
     mock_system_clock_ =
@@ -88,13 +85,13 @@ class UndatedEventManagerTest : public ::testing::Test {
     mock_steady_clock_ = new IncrementingSteadyClock();
 
     undated_event_manager_ = std::make_unique<UndatedEventManager>(
-        encoder_.get(), event_aggregator_.get(), observation_writer_.get(), system_data_.get(),
-        kMaxSavedEvents);
+        encoder_.get(), event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(),
+        system_data_.get(), kMaxSavedEvents);
     undated_event_manager_->SetSteadyClock(mock_steady_clock_);
   }
 
   void TearDown() override {
-    event_aggregator_.reset();
+    event_aggregator_mgr_.reset();
     undated_event_manager_.reset();
   }
 
@@ -108,7 +105,7 @@ class UndatedEventManagerTest : public ::testing::Test {
 
  private:
   std::unique_ptr<Encoder> encoder_;
-  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
@@ -300,5 +297,4 @@ TEST_F(UndatedEventManagerTest, SaveAfterFlush) {
   EXPECT_EQ(0, internal_logger_->call_count());
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger

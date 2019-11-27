@@ -220,7 +220,7 @@ source_set("undated_event_manager") {
     ":observation_writer",
     ":status",
     "$cobalt_root/src/lib/util:clock",
-    "$cobalt_root/src/local_aggregation:event_aggregator",
+    "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
     "//third_party/protobuf:protobuf_full",
   ]
 }
