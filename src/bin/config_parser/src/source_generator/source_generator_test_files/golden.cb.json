@@ -25,7 +25,7 @@
                 {
                   "name": "the_other_report",
                   "id": 20,
-                  "report_type": "STRING_COUNTS_WITH_THRESHOLD",
+                  "report_type": "NUMERIC_AGGREGATION",
                   "local_privacy_noise_level": "NOISE_LEVEL_UNSET"
                 }
               ]

@@ -89,7 +89,6 @@ source_set("encoder") {
 
   deps = [
     "$cobalt_root/src:tracing",
-    "$cobalt_root/src/algorithms/forculus:forculus_encrypter",
     "$cobalt_root/src/algorithms/rappor:rappor_encoder",
   ]
   public_deps = [
@@ -102,6 +101,7 @@ source_set("encoder") {
     "$cobalt_root/src/registry:buckets_config",
     "$cobalt_root/src/registry:cobalt_registry_proto",
     "$cobalt_root/src/registry:packed_event_codes",
+    "$cobalt_root/src/system_data:client_secret",
     "$cobalt_root/src/system_data:system_data",
     "//third_party/abseil-cpp",
   ]

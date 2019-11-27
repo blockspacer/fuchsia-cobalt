@@ -34,7 +34,7 @@ metric_definitions:
     report_type: CUSTOM_RAW_DUMP
   - report_name: the_other_report
     id: 20
-    report_type: STRING_COUNTS_WITH_THRESHOLD
+    report_type: NUMERIC_AGGREGATION
 - metric_name: the_other_metric_name
   id: 2
   time_zone_policy: LOCAL
@@ -74,7 +74,7 @@ metric_definitions:
 					&config.ReportDefinition{
 						ReportName: "the_other_report",
 						Id:         20,
-						ReportType: config.ReportDefinition_STRING_COUNTS_WITH_THRESHOLD,
+						ReportType: config.ReportDefinition_NUMERIC_AGGREGATION,
 					},
 				},
 			},

@@ -63,7 +63,7 @@ metric_definitions:
     report_type: CUSTOM_RAW_DUMP
   - report_name: the_other_report
     id: 20
-    report_type: STRING_COUNTS_WITH_THRESHOLD
+    report_type: NUMERIC_AGGREGATION
 - metric_name: the_other_metric_name
   id: 200
   time_zone_policy: LOCAL

@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 
-#include "src/algorithms/forculus/forculus_encrypter.h"
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/logger/project_context.h"
@@ -22,7 +21,6 @@ namespace cobalt::logger {
 using ::cobalt::config::IntegerBucketConfig;
 using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
-using ::cobalt::forculus::ForculusEncrypter;
 using ::cobalt::rappor::BasicRapporEncoder;
 using ::cobalt::rappor::RapporConfigHelper;
 using ::cobalt::rappor::RapporEncoder;
@@ -135,48 +133,6 @@ Encoder::Result Encoder::EncodeRapporObservation(MetricRef metric, const ReportD
                  << metric.ProjectDebugString() << ".";
       result.status = kInvalidArguments;
       return result;
-  }
-  return result;
-}
-
-Encoder::Result Encoder::EncodeForculusObservation(MetricRef metric, const ReportDefinition* report,
-                                                   uint32_t day_index,
-                                                   const std::string& str) const {
-  auto result = MakeObservation(metric, report, day_index);
-  auto* observation = result.observation.get();
-  auto* forculus_observation = observation->mutable_forculus();
-  forculus::ForculusConfig forculus_config;
-  if (report->threshold() < 2) {
-    LOG(ERROR) << "Invalid Cobalt config: Report " << report->report_name() << " for metric "
-               << metric.metric_name() << " in project " << metric.ProjectDebugString()
-               << " has an invalid value for |threshold|.";
-    result.status = kInvalidConfig;
-    return result;
-  }
-  forculus_config.threshold = report->threshold();
-  forculus_config.epoch_type = forculus::DAY;
-  ValuePart string_value;
-  string_value.set_string_value(str);
-  ForculusEncrypter forculus_encrypter(forculus_config, metric.project().customer_id(),
-                                       metric.project().project_id(), metric.metric_id(), "",
-                                       client_secret_);
-
-  switch (forculus_encrypter.EncryptValue(string_value, day_index, forculus_observation)) {
-    case ForculusEncrypter::kOK:
-      break;
-
-    case ForculusEncrypter::kInvalidConfig:
-      LOG(ERROR) << "ForculusEncrypter returned kInvalidConfig for: Report "
-                 << report->report_name() << " for metric " << metric.metric_name()
-                 << " in project " << metric.ProjectDebugString() << ".";
-      result.status = kInvalidConfig;
-      return result;
-
-    case ForculusEncrypter::kEncryptionFailed:
-      LOG(ERROR) << "ForculusEncrypter returned kEncryptionFailed for: Report "
-                 << report->report_name() << " for metric " << metric.metric_name()
-                 << " in project " << metric.ProjectDebugString() << ".";
-      result.status = kOther;
   }
   return result;
 }

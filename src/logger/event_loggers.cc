@@ -758,11 +758,6 @@ Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
                                                 &report, event.day_index(),
                                                 string_used_event.str());
     }
-    case ReportDefinition::STRING_COUNTS_WITH_THRESHOLD: {
-      return encoder()->EncodeForculusObservation(
-          event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
-          string_used_event.str());
-    }
 
     default:
       return BadReportType(event_record->project_context()->FullMetricName(metric), report);

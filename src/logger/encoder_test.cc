@@ -281,13 +281,6 @@ TEST_F(EncoderTest, EncodeRapporObservation) {
   EXPECT_LT(obs.cohort(), 256u);
   // Expect 128 Bloom bits and so 16 bytes.
   EXPECT_EQ(obs.data().size(), 16u);
-
-  // If we use the wrong report, it won't have local_privacy_noise_level
-  // set and we should get InvalidConfig
-  pair = GetMetricAndReport(kMetricName, "ModuleDownloads_WithThreshold");
-  result = encoder_->EncodeRapporObservation(project_context_->RefMetric(pair.first), pair.second,
-                                             kDayIndex, "Supercalifragilistic");
-  EXPECT_EQ(kInvalidConfig, result.status);
 }
 
 TEST_F(EncoderTest, EncodeCustomObservation) {

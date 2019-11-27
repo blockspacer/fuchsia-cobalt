@@ -1195,8 +1195,6 @@ std::string PrintReportType(ReportDefinition_ReportType type) {
       return "INT_RANGE_HISTOGRAM";
     case ReportDefinition::HIGH_FREQUENCY_STRING_COUNTS:
       return "HIGH_FREQUENCY_STRING_COUNTS";
-    case ReportDefinition::STRING_COUNTS_WITH_THRESHOLD:
-      return "STRING_COUNTS_WITH_THRESHOLD";
     case ReportDefinition::NUMERIC_PERF_RAW_DUMP:
       return "NUMERIC_PERF_RAW_DUMP";
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES:

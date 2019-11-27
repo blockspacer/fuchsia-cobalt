@@ -396,18 +396,15 @@ TEST_F(LoggerTest, LogIntHistogram) {
 TEST_F(LoggerTest, LogString) {
   ASSERT_EQ(kOK, logger_->LogString(testing::all_report_types::kModuleDownloadsMetricId,
                                     "www.mymodule.com"));
-  std::vector<Observation2> observations(2);
-  std::vector<uint32_t> expected_report_ids = {
-      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId,
-      testing::all_report_types::kModuleDownloadsModuleDownloadsWithThresholdReportId};
-  ASSERT_TRUE(FetchObservations(&observations, expected_report_ids, observation_store_.get(),
-                                update_recipient_.get()));
+  Observation2 observation;
+  uint32_t expected_report_id =
+      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId;
 
-  ASSERT_TRUE(observations[0].has_string_rappor());
-  EXPECT_FALSE(observations[0].string_rappor().data().empty());
+  ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
+                                     update_recipient_.get()));
 
-  ASSERT_TRUE(observations[1].has_forculus());
-  EXPECT_FALSE(observations[1].forculus().ciphertext().empty());
+  ASSERT_TRUE(observation.has_string_rappor());
+  EXPECT_FALSE(observation.string_rappor().data().empty());
 }
 
 // Tests the method LogCustomEvent().

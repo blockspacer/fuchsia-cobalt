@@ -53,11 +53,6 @@ metric_definitions:
       expected_population_size: 20000
       expected_string_set_size: 10000
       system_profile_field: [BOARD_NAME, PRODUCT_NAME]
-    - report_name: ModuleDownloads_WithThreshold
-      id: 4
-      report_type: STRING_COUNTS_WITH_THRESHOLD
-      threshold: 200
-      system_profile_field: [BOARD_NAME, PRODUCT_NAME]
 
 - id: 8
   metric_name: ModuleInstalls

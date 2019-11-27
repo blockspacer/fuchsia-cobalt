@@ -219,7 +219,6 @@ message MetricDefinition {
     //
     // Compatible report types:
     // - HIGH_FREQUENCY_STRING_COUNTS
-    // - STRING_COUNTS_WITH_THRESHOLD
     STRING_USED = 7;
 
     // Allows users of Cobalt to define custom Metrics with custom semantics and

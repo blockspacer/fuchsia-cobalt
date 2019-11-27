@@ -219,22 +219,6 @@ class Encoder {
   Result EncodeRapporObservation(MetricRef metric, const ReportDefinition* report,
                                  uint32_t day_index, const std::string& str) const;
 
-  // Encodes an Observation of type ForculusObservation.
-  //
-  // metric: Provides access to the names and IDs of the customer, project and
-  // metric associated with the Observation being encoded.
-  //
-  // report: The definition of the Report associated with the Observation being
-  // encoded. In addition to the common fields always required, this method also
-  // requires that the |threshold| field be set. This will be
-  // used as the threshold in Forculus threshold encryption.
-  //
-  // day_index: The day index associated with the Observation being encoded.
-  //
-  // str: The string to encrypt using Forculus.
-  Result EncodeForculusObservation(MetricRef metric, const ReportDefinition* report,
-                                   uint32_t day_index, const std::string& str) const;
-
   // Encodes an Observation of type UniqueActivesObservation.
   //
   // metric: Provides access to the names and IDs of the customer, project and

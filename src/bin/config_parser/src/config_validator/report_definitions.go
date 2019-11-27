@@ -50,7 +50,6 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 	},
 	config.MetricDefinition_STRING_USED: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS: true,
-		config.ReportDefinition_STRING_COUNTS_WITH_THRESHOLD: true,
 	},
 	config.MetricDefinition_CUSTOM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_CUSTOM_RAW_DUMP: true,

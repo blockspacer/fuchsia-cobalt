@@ -154,11 +154,6 @@ metric_definitions:
       local_privacy_noise_level: SMALL
       expected_population_size: 20000
       expected_string_set_size: 10000
-    # Report ID: 823581688
-    - report_name: "ModuleDownloads_WithThreshold"
-      id: 17
-      report_type: STRING_COUNTS_WITH_THRESHOLD
-      threshold: 200
 
 - id: 8
   metric_name: "ModuleInstalls"
