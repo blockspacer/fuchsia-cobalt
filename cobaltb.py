@@ -254,15 +254,15 @@ def _lint(args):
   status = 0
   failure_list = []
 
-  result = clang_tidy.main(args.directory)
+  result = clang_tidy.main(args.directory, args.all)
   failure_list.append(('clang_tidy', result))
   status += result
 
-  result = golint.main()
+  result = golint.main(args.directory, args.all)
   failure_list.append(('golint', result))
   status += result
 
-  result = gnlint.main()
+  result = gnlint.main(args.directory, args.all)
   failure_list.append(('gnlint', result))
   status += result
 
@@ -683,12 +683,16 @@ def main():
   sub_parser = subparsers.add_parser(
       'lint',
       parents=[parent_parser],
-      help='Run language linters on all source files.')
+      help='Run language linters on some source files. By default it uses '
+      '`git diff` against the newest parent commit in the upstream branch '
+      '(or against HEAD if no such commit is found). Files that are locally '
+      'modified, staged or touched by any commits introduced on the local '
+      'branch are linted.')
   sub_parser.add_argument(
       '--all',
       action='store_true',
       default=False,
-      help='Currently does nothing, soon will force linting all files.')
+      help='Run on all tracked files.')
   sub_parser.add_argument('directory', nargs='*')
   sub_parser.set_defaults(func=_lint)
 

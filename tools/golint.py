@@ -16,58 +16,29 @@
 
 from __future__ import print_function
 
-import os
-import shutil
 import subprocess
-import sys
 
-THIS_DIR = os.path.dirname(__file__)
-SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
-
-SKIP_LINT_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'out'),
-    os.path.join(SRC_ROOT_DIR, 'sysroot'),
-    os.path.join(SRC_ROOT_DIR, 'third_party'),
-    os.path.join(SRC_ROOT_DIR, 'src', 'bin', 'config_parser', 'src',
-                 'source_generator', 'source_generator_test_files'),
-]
+import get_files
 
 
-# Given a directory's parent path and name, returns a boolean indicating whether
-# or not the directory should be skipped for liniting.
-def should_skip_dir(parent_path, name):
-  if name.startswith('.'):
-    return True
-  full_path = os.path.join(parent_path, name)
-  for p in SKIP_LINT_DIRS:
-    if full_path.startswith(p):
-      return True
-  return False
-
-
-def main():
+def main(only_directories=[], all_files=False):
   status = 0
-  files_to_lint = []
-  for root, dirs, files in os.walk(SRC_ROOT_DIR):
-    for f in files:
-      if f.endswith('.go'):
-        files_to_lint.append(os.path.join(root, f))
-
-    dirs_to_skip = [dir for dir in dirs if should_skip_dir(root, dir)]
-    for d in dirs_to_skip:
-      dirs.remove(d)
+  files_to_lint = get_files.files_to_lint(
+      ('.go',), only_directories=only_directories, all_files=all_files)
 
   print('Linting %d go files' % len(files_to_lint))
-  p = subprocess.Popen(['gofmt', '-l'] + files_to_lint, stdout=subprocess.PIPE)
-  out, err = p.communicate()
+  if files_to_lint:
+    p = subprocess.Popen(
+        ['gofmt', '-l'] + files_to_lint, stdout=subprocess.PIPE)
+    out, err = p.communicate()
 
-  if p.returncode != 0:
-    print('Received non-zero return code (%s)' % p.returncode)
-    status += 1
+    if p.returncode != 0:
+      print('Received non-zero return code (%s)' % p.returncode)
+      status += 1
 
-  if len(out) > 0:
-    print('The following files do not match gofmt:\n%s' % out)
-    status += 1
+    if len(out) > 0:
+      print('The following files do not match gofmt:\n%s' % out)
+      status += 1
 
   return status
 

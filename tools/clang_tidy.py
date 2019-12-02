@@ -8,10 +8,10 @@
 from __future__ import print_function
 
 import os
-import shutil
 import subprocess
-import sys
 import re
+
+import get_files
 
 THIS_DIR = os.path.dirname(__file__)
 SRC_ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
@@ -21,17 +21,6 @@ CLANG_TIDY = os.path.join(SRC_ROOT_DIR, 'sysroot', 'share', 'clang',
 CHECK_HEADER_GUARDS = os.path.join(SRC_ROOT_DIR, 'tools', 'style',
                                    'check-header-guards.py')
 
-# A list of directories which should be skipped while walking the directory
-# tree looking for C++ files to be linted. We also skip directories starting
-# with a "." such as ".git"
-SKIP_LINT_DIRS = [
-    os.path.join(SRC_ROOT_DIR, 'out'),
-    os.path.join(SRC_ROOT_DIR, 'sysroot'),
-    os.path.join(SRC_ROOT_DIR, 'third_party'),
-    os.path.join(SRC_ROOT_DIR, 'src', 'bin', 'config_parser', 'src',
-                 'source_generator', 'source_generator_test_files'),
-]
-
 TEST_FILE_REGEX = re.compile('.*_(unit)?tests?.cc$')
 TEST_FILE_CLANG_TIDY_CHECKS = [
     '-readability-magic-numbers',
@@ -39,49 +28,23 @@ TEST_FILE_CLANG_TIDY_CHECKS = [
 ]
 
 
-# Given a directory's parent path and name, returns a boolean indicating whether
-# or not the directory should be skipped for liniting.
-def should_skip_dir(parent_path, name):
-  if name.startswith('.'):
-    return True
-  full_path = os.path.join(parent_path, name)
-  for p in SKIP_LINT_DIRS:
-    if full_path.startswith(p):
-      return True
-  return False
-
-
-def main(only_directories=[]):
+def main(only_directories=[], all_files=False):
   status = 0
 
   clang_tidy_files = []
   clang_tidy_test_files = []
 
-  only_directories = [os.path.join(SRC_ROOT_DIR, d) for d in only_directories]
+  files_to_lint = get_files.files_to_lint(
+      ('.h', '.cc'), only_directories=only_directories, all_files=all_files)
 
-  for root, dirs, files in os.walk(SRC_ROOT_DIR):
-    for f in files:
-      if f.endswith('.h') or f.endswith('.cc'):
-        full_path = os.path.join(root, f)
+  for full_path in files_to_lint:
+    if TEST_FILE_REGEX.match(full_path):
+      clang_tidy_test_files.append(full_path)
+    else:
+      clang_tidy_files.append(full_path)
 
-        if only_directories and len(
-            [d for d in only_directories if full_path.startswith(d)]) == 0:
-          continue
-
-        if TEST_FILE_REGEX.match(full_path):
-          clang_tidy_test_files.append(full_path)
-        else:
-          clang_tidy_files.append(full_path)
-
-    # Before recursing into directories remove the ones we want to skip.
-    dirs_to_skip = [dir for dir in dirs if should_skip_dir(root, dir)]
-    for d in dirs_to_skip:
-      dirs.remove(d)
-
-  header_files = [
-      f for f in clang_tidy_files + clang_tidy_test_files
-      if f.endswith('.h') and not os.path.islink(f)
-  ]
+  header_files = [f for f in files_to_lint
+                  if f.endswith('.h') and not os.path.islink(f)]
   print('Running check-header-guards.py on %d files' % len(header_files))
   if len(header_files) > 0:
     try:
@@ -91,14 +54,14 @@ def main(only_directories=[]):
 
   clang_tidy_command = [CLANG_TIDY, '-quiet', '-p', OUT_DIR]
   print('Running clang-tidy on %d source files' % len(clang_tidy_files))
-  if len(clang_tidy_files) > 0:
+  if clang_tidy_files:
     try:
       subprocess.check_call(clang_tidy_command + clang_tidy_files)
     except:
       status += 1
 
   print('Running clang-tidy on %d test files' % len(clang_tidy_test_files))
-  if len(clang_tidy_test_files) > 0:
+  if clang_tidy_test_files:
     try:
       subprocess.check_call(
           clang_tidy_command +
