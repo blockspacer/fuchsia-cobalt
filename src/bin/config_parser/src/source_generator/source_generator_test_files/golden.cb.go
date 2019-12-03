@@ -45,50 +45,58 @@ _ TheOtherMetricNameMetricDimension0 = iota
 // Alias for event groups (Metric Dimension The First Group) which has the same event codes
 type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0
 
-// Enum for event groups (Metric Dimension A second group)
-type EventGroupsMetricDimensionASecondGroup uint32
+// Enum for project (Metric Dimension A second group)
+type ProjectMetricDimensionASecondGroup uint32
 const (
-_ EventGroupsMetricDimensionASecondGroup = iota
+_ ProjectMetricDimensionASecondGroup = iota
   This = 1
   Is = 2
   Another = 3
   Test = 4
 )
+// Alias for event groups (Metric Dimension A second group) which has the same event codes
+type EventGroupsMetricDimensionASecondGroup = ProjectMetricDimensionASecondGroup
 
-// Enum for event groups (Metric Dimension 2)
-type EventGroupsMetricDimension2 uint32
+// Enum for project (Metric Dimension 2)
+type ProjectMetricDimension2 uint32
 const (
-_ EventGroupsMetricDimension2 = iota
+_ ProjectMetricDimension2 = iota
   ThisMetric = 0
   HasNo = 2
   Name = 4
 )
+// Alias for event groups (Metric Dimension 2) which has the same event codes
+type EventGroupsMetricDimension2 = ProjectMetricDimension2
 
-// Enum for metric (Metric Dimension First)
-type MetricMetricDimensionFirst uint32
+// Enum for project (Metric Dimension First)
+type ProjectMetricDimensionFirst uint32
 const (
-_ MetricMetricDimensionFirst = iota
+_ ProjectMetricDimensionFirst = iota
   A = 1
   Set = 2
   OfEvent = 3
   Codes = 4
 )
+// Alias for metric (Metric Dimension First) which has the same event codes
+type MetricMetricDimensionFirst = ProjectMetricDimensionFirst
 
 // Alias for second metric (Metric Dimension First) which has the same event codes
-type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst
+type SecondMetricMetricDimensionFirst = ProjectMetricDimensionFirst
 
-// Enum for metric (Metric Dimension Second)
-type MetricMetricDimensionSecond uint32
+// Enum for project (Metric Dimension Second)
+type ProjectMetricDimensionSecond uint32
 const (
-_ MetricMetricDimensionSecond = iota
+_ ProjectMetricDimensionSecond = iota
   Some = 0
   More = 4
   Event = 8
   Codes = 16
 )
+// Alias for metric (Metric Dimension Second) which has the same event codes
+type MetricMetricDimensionSecond = ProjectMetricDimensionSecond
 
 // Alias for second metric (Metric Dimension Second) which has the same event codes
-type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond
+type SecondMetricMetricDimensionSecond = ProjectMetricDimensionSecond
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 const Config string = "KooHCghjdXN0b21lchAKGvsGCgdwcm9qZWN0EAUaVQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhEKCnRoZV9yZXBvcnQQChiPTmIWChB0aGVfb3RoZXJfcmVwb3J0EBQYA3IIY3VzdG9tZXJ6B3Byb2plY3QafwoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiEAoKdGhlX3JlcG9ydBAKGAdyCGN1c3RvbWVyegdwcm9qZWN0ggE1EgsIABIHQW5FdmVudBIQCAESDEFub3RoZXJFdmVudBIRCAISDUEgdGhpcmQgZXZlbnQYyAEa+gEKDGV2ZW50IGdyb3VwcxAKGAUgrAIoAVABYhAKCnRoZV9yZXBvcnQQHhgHcghjdXN0b21lcnoHcHJvamVjdIIBRQoPVGhlIEZpcnN0IEdyb3VwEgsIABIHQW5FdmVudBIQCAESDEFub3RoZXJFdmVudBIRCAISDUEgdGhpcmQgZXZlbnQYAoIBOQoOQSBzZWNvbmQgZ3JvdXASCAgBEgRUaGlzEgYIAhICSXMSCwgDEgdhbm90aGVyEggIBBIEVGVzdIIBNRIOCAASClRoaXNNZXRyaWMSCQgCEgVIYXNObxIICAQSBE5hbWUqDgoFSGFzTm8SBUFsaWFzGjMKDmxpbmVhciBidWNrZXRzEAoYBSCQA0IHEgUQjAEYBXIIY3VzdG9tZXJ6B3Byb2plY3QaRQoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiFAoGcmVwb3J0EChSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdBqJAQoGbWV0cmljEAoYBSDYBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVzGpABCg1zZWNvbmQgbWV0cmljEAoYBSDZBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVz";

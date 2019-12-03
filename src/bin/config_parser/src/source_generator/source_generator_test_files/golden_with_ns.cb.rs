@@ -44,50 +44,58 @@ pub enum TheOtherMetricNameMetricDimension0 {
 // Alias for event groups (Metric Dimension The First Group) which has the same event codes
 pub type EventGroupsMetricDimensionTheFirstGroup = TheOtherMetricNameMetricDimension0;
 
-// Enum for event groups (Metric Dimension A second group)
+// Enum for project (Metric Dimension A second group)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum EventGroupsMetricDimensionASecondGroup {
+pub enum ProjectMetricDimensionASecondGroup {
   This = 1,
   Is = 2,
   Another = 3,
   Test = 4,
 }
+// Alias for event groups (Metric Dimension A second group) which has the same event codes
+pub type EventGroupsMetricDimensionASecondGroup = ProjectMetricDimensionASecondGroup;
 
-// Enum for event groups (Metric Dimension 2)
+// Enum for project (Metric Dimension 2)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum EventGroupsMetricDimension2 {
+pub enum ProjectMetricDimension2 {
   ThisMetric = 0,
   HasNo = 2,
   Name = 4,
 }
-impl EventGroupsMetricDimension2 {
+impl ProjectMetricDimension2 {
   #[allow(non_upper_case_globals)]
-  pub const Alias: EventGroupsMetricDimension2 = EventGroupsMetricDimension2::HasNo;
+  pub const Alias: ProjectMetricDimension2 = ProjectMetricDimension2::HasNo;
 }
+// Alias for event groups (Metric Dimension 2) which has the same event codes
+pub type EventGroupsMetricDimension2 = ProjectMetricDimension2;
 
-// Enum for metric (Metric Dimension First)
+// Enum for project (Metric Dimension First)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum MetricMetricDimensionFirst {
+pub enum ProjectMetricDimensionFirst {
   A = 1,
   Set = 2,
   OfEvent = 3,
   Codes = 4,
 }
+// Alias for metric (Metric Dimension First) which has the same event codes
+pub type MetricMetricDimensionFirst = ProjectMetricDimensionFirst;
 
 // Alias for second metric (Metric Dimension First) which has the same event codes
-pub type SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+pub type SecondMetricMetricDimensionFirst = ProjectMetricDimensionFirst;
 
-// Enum for metric (Metric Dimension Second)
+// Enum for project (Metric Dimension Second)
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
-pub enum MetricMetricDimensionSecond {
+pub enum ProjectMetricDimensionSecond {
   Some = 0,
   More = 4,
   Event = 8,
   Codes = 16,
 }
+// Alias for metric (Metric Dimension Second) which has the same event codes
+pub type MetricMetricDimensionSecond = ProjectMetricDimensionSecond;
 
 // Alias for second metric (Metric Dimension Second) which has the same event codes
-pub type SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+pub type SecondMetricMetricDimensionSecond = ProjectMetricDimensionSecond;
 
 // The base64 encoding of the bytes of a serialized CobaltRegistry proto message.
 pub const CONFIG: &str = "KooHCghjdXN0b21lchAKGvsGCgdwcm9qZWN0EAUaVQoPdGhlX21ldHJpY19uYW1lEAoYBSBkYhEKCnRoZV9yZXBvcnQQChiPTmIWChB0aGVfb3RoZXJfcmVwb3J0EBQYA3IIY3VzdG9tZXJ6B3Byb2plY3QafwoVdGhlX290aGVyX21ldHJpY19uYW1lEAoYBSDIASgBUAFiEAoKdGhlX3JlcG9ydBAKGAdyCGN1c3RvbWVyegdwcm9qZWN0ggE1EgsIABIHQW5FdmVudBIQCAESDEFub3RoZXJFdmVudBIRCAISDUEgdGhpcmQgZXZlbnQYyAEa+gEKDGV2ZW50IGdyb3VwcxAKGAUgrAIoAVABYhAKCnRoZV9yZXBvcnQQHhgHcghjdXN0b21lcnoHcHJvamVjdIIBRQoPVGhlIEZpcnN0IEdyb3VwEgsIABIHQW5FdmVudBIQCAESDEFub3RoZXJFdmVudBIRCAISDUEgdGhpcmQgZXZlbnQYAoIBOQoOQSBzZWNvbmQgZ3JvdXASCAgBEgRUaGlzEgYIAhICSXMSCwgDEgdhbm90aGVyEggIBBIEVGVzdIIBNRIOCAASClRoaXNNZXRyaWMSCQgCEgVIYXNObxIICAQSBE5hbWUqDgoFSGFzTm8SBUFsaWFzGjMKDmxpbmVhciBidWNrZXRzEAoYBSCQA0IHEgUQjAEYBXIIY3VzdG9tZXJ6B3Byb2plY3QaRQoTZXhwb25lbnRpYWwgYnVja2V0cxAKGAUg9ANiFAoGcmVwb3J0EChSCAoGEAMYAiACcghjdXN0b21lcnoHcHJvamVjdBqJAQoGbWV0cmljEAoYBSDYBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVzGpABCg1zZWNvbmQgbWV0cmljEAoYBSDZBHIIY3VzdG9tZXJ6B3Byb2plY3SCAS8KBUZpcnN0EgUIARIBQRIHCAISA1NldBILCAMSB09mRXZlbnQSCQgEEgVDb2Rlc4IBMgoGU2Vjb25kEggIABIEU29tZRIICAQSBE1vcmUSCQgIEgVFdmVudBIJCBASBUNvZGVz";
