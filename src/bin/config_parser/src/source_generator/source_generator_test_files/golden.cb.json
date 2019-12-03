@@ -1,11 +1,11 @@
 {
   "customers": [
     {
-      "name": "customer",
+      "name": "the_customer",
       "id": 10,
       "projects": [
         {
-          "name": "project",
+          "name": "the_project",
           "id": 5,
           "project_contact": "",
           "metrics": [

@@ -155,11 +155,11 @@ func readGoldenFile(filename string) (string, error) {
 
 func getConfigFrom(config string, cobalt_version config_parser.CobaltVersion) config.CobaltRegistry {
 	r := memConfigReader{}
-	r.SetProject("customer", "project", config)
+	r.SetProject("the_customer", "the_project", config)
 	con := config_parser.ProjectConfig{
-		CustomerName:  "customer",
+		CustomerName:  "the_customer",
 		CustomerId:    10,
-		ProjectName:   "project",
+		ProjectName:   "the_project",
 		ProjectId:     5,
 		CobaltVersion: cobalt_version,
 	}
