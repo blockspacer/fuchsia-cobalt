@@ -58,14 +58,14 @@ def _should_skip_dir(parent_path, name):
 def _get_diff_base():
   try:
     upstream = _run_command(
-        'git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '"@{u}"')
+        'git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '"@{u}"').strip()
   except subprocess.CalledProcessError:
     upstream = 'origin/master'
   local_commit = _run_command(
-      'git', 'rev-list', 'HEAD', '^' + upstream).split('\n')[-1]
+      'git', 'rev-list', 'HEAD', '^' + upstream).strip().split('\n')[-1]
   if not local_commit:
     return 'HEAD'
-  return _run_command('git', 'rev-parse', local_commit + '^')
+  return _run_command('git', 'rev-parse', local_commit + '^').strip()
 
 
 # Get the source files that have been modified in this branch. By default this
@@ -73,7 +73,7 @@ def _get_diff_base():
 # against HEAD if no such commit is found).
 def _get_git_files():
   diff_base = _get_diff_base()
-  return _run_command('git', 'diff', '--name-only', diff_base).split('\n')
+  return _run_command('git', 'diff', '--name-only', diff_base).strip().split('\n')
 
 
 def files_to_lint(extensions, only_directories=[], all_files=False):
