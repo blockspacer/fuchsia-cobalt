@@ -30,7 +30,7 @@ class InternalMetrics {
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
   // every call to Logger along with which method was called and the project
   // that called it.
-  virtual void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+  virtual void LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method,
                             const Project& project) = 0;
 
   // cobalt_internal::metrics::per_device_bytes_uploaded is logged when the
@@ -76,7 +76,7 @@ class InternalMetrics {
 // no LoggerInterface* was provided.
 class NoOpInternalMetrics : public InternalMetrics {
  public:
-  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+  void LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method,
                     const Project& project) override {}
 
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,
@@ -107,7 +107,7 @@ class InternalMetricsImpl : public InternalMetrics {
  public:
   explicit InternalMetricsImpl(LoggerInterface* logger);
 
-  void LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+  void LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method,
                     const Project& project) override;
 
   void BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus upload_status,

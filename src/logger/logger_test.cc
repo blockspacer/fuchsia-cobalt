@@ -477,13 +477,13 @@ TEST_F(LoggerTest, CheckNumAggregatedObsMultipleEvents) {
 TEST_F(LoggerTest, TestPausingLogging) {
   ASSERT_EQ(internal_logger_->call_count(), 0);
   ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
-  ASSERT_EQ(internal_logger_->call_count(), 2);
+  ASSERT_EQ(internal_logger_->call_count(), 1);
   logger_->PauseInternalLogging();
   ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
-  ASSERT_EQ(internal_logger_->call_count(), 2);
+  ASSERT_EQ(internal_logger_->call_count(), 1);
   logger_->ResumeInternalLogging();
   ASSERT_EQ(kOK, logger_->LogEvent(testing::all_report_types::kErrorOccurredMetricId, 42));
-  ASSERT_EQ(internal_logger_->call_count(), 4);
+  ASSERT_EQ(internal_logger_->call_count(), 2);
 }
 
 // Tests the events are not sent to the UndatedEventManager.

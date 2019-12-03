@@ -32,10 +32,10 @@ TEST_F(InternalMetricsImplTest, LoggerCalled) {
   testing::FakeLogger logger;
   InternalMetricsImpl metrics(&logger);
 
-  metrics.LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+  metrics.LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
                        GetTestProject());
 
-  ASSERT_EQ(logger.call_count(), 2);
+  ASSERT_EQ(logger.call_count(), 1);
   ASSERT_TRUE(logger.last_event_logged().has_count_event());
   ASSERT_EQ(logger.last_event_logged().count_event().component(), "test/project");
 }
@@ -46,7 +46,7 @@ TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
 
   metrics.PauseLogging();
   for (int i = 0; i < kMany; i++) {
-    metrics.LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
+    metrics.LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
                          GetTestProject());
   }
   metrics.ResumeLogging();

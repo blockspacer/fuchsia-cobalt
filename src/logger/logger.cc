@@ -17,7 +17,7 @@ namespace cobalt::logger {
 
 using local_aggregation::EventAggregator;
 
-using LoggerMethod = LoggerCallsMadeMetricDimensionLoggerMethod;
+using LoggerMethod = PerProjectLoggerCallsMadeMetricDimensionLoggerMethod;
 
 namespace {
 

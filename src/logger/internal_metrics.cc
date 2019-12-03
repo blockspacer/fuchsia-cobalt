@@ -24,21 +24,17 @@ InternalMetricsImpl::InternalMetricsImpl(LoggerInterface* logger)
   CHECK(logger_);
 }
 
-void InternalMetricsImpl::LoggerCalled(LoggerCallsMadeMetricDimensionLoggerMethod method,
+void InternalMetricsImpl::LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method,
                                        const Project& project) {
   if (paused_) {
     return;
   }
 
-  auto status = logger_->LogEvent(kLoggerCallsMadeMetricId, method);
-
-  if (status != kOK) {
-    VLOG(1) << "InternalMetricsImpl::LoggerCalled: LogEvent() returned status=" << status;
-  }
+  // TODO(ninai): re-add metric LoggerCallsMade once it is redefined as type EVENT_COUNT.
 
   std::ostringstream component;
   component << project.customer_name() << '/' << project.project_name();
-  status =
+  auto status =
       logger_->LogEventCount(kPerProjectLoggerCallsMadeMetricId, method, component.str(), 0, 1);
 
   if (status != kOK) {

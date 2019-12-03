@@ -152,7 +152,7 @@ class Logger : public LoggerInterface {
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
   // every call to Logger along with which method was called and the project
   // that called it.
-  void RecordLoggerCall(LoggerCallsMadeMetricDimensionLoggerMethod method) {
+  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) {
     internal_metrics_->LoggerCalled(method, project_context_->project());
   }
 
