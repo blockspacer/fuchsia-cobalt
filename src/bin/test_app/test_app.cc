@@ -23,7 +23,7 @@
 #include "src/lib/util/file_util.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
-#include "src/local_aggregation/event_aggregator.h"
+#include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/local_aggregation/local_aggregation.pb.h"
 #include "src/logger/encoder.h"
 #include "src/logger/project_context.h"
@@ -44,7 +44,7 @@
 namespace cobalt {
 
 using google::protobuf::RepeatedPtrField;
-using local_aggregation::EventAggregator;
+using local_aggregation::EventAggregatorManager;
 using logger::Encoder;
 using logger::EventValuesPtr;
 using logger::HistogramPtr;
@@ -349,7 +349,7 @@ class RealLoggerFactory : public LoggerFactory {
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<ObservationWriter> observation_writer_;
-  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::shared_ptr<UndatedEventManager> undated_event_manager_;
   std::unique_ptr<FakeValidatedClock> validated_clock_;
   std::unique_ptr<SystemClockInterface> mock_clock_;
@@ -378,11 +378,12 @@ RealLoggerFactory::RealLoggerFactory(
   encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
   observation_writer_ = std::make_unique<ObservationWriter>(
       observation_store_.get(), shipping_manager_.get(), observation_encrypter_.get());
-  event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                        local_aggregate_proto_store_.get(),
-                                                        obs_history_proto_store_.get());
+  event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+      encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+      obs_history_proto_store_.get());
   undated_event_manager_ = std::make_shared<UndatedEventManager>(
-      encoder_.get(), event_aggregator_.get(), observation_writer_.get(), system_data_.get());
+      encoder_.get(), event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(),
+      system_data_.get());
 }
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index) {
@@ -397,7 +398,7 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index
   validated_clock_ = std::make_unique<FakeValidatedClock>(mock_clock_.get());
   std::unique_ptr<Logger> logger = std::make_unique<Logger>(
       project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
-      event_aggregator_.get(), observation_writer_.get(), system_data_.get(),
+      event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(), system_data_.get(),
       validated_clock_.get(), undated_event_manager_);
   return std::move(logger);
 }
@@ -411,13 +412,14 @@ void RealLoggerFactory::ResetObservationCount() { observation_store_->ResetObser
 // TODO(pesk): also clear the contents of the ConsistentProtoStores if we
 // implement a mode which uses them.
 void RealLoggerFactory::ResetLocalAggregation() {
-  event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                        local_aggregate_proto_store_.get(),
-                                                        obs_history_proto_store_.get());
+  event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+      encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+      obs_history_proto_store_.get());
 }
 
 bool RealLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
-  return kOK == event_aggregator_->GenerateObservationsNoWorker(day_index);
+  return kOK == event_aggregator_mgr_->GetEventAggregator()->aggregate_store_->GenerateObservations(
+                    day_index);
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {

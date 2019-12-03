@@ -21,6 +21,8 @@
 
 namespace cobalt::local_aggregation {
 
+constexpr int64_t kHoursInADay = 24;
+
 class EventAggregatorManager {
  public:
   // Constructs a class to manage local aggregation and provide EventAggregators.
@@ -64,7 +66,7 @@ class EventAggregatorManager {
                          size_t backfill_days = 0,
                          std::chrono::seconds aggregate_backup_interval = std::chrono::minutes(1),
                          std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
-                         std::chrono::seconds gc_interval = std::chrono::hours(24));
+                         std::chrono::seconds gc_interval = std::chrono::hours(kHoursInADay));
 
   // Starts the worker thread.
   //
