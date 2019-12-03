@@ -129,7 +129,7 @@ type EnumEntry struct {
 // export the enum values. For a metric called "foo_bar" with a event named
 // "baz", it would generate the constant:
 // "FooBarEventCode_Baz = FooBarEventCode::Baz"
-func (so *sourceOutputter) writeEnum(entry EnumEntry, projectName string, allEnums []EnumEntry) {
+func (so *sourceOutputter) writeEnum(entry EnumEntry) {
 	if len(entry.events) == 0 {
 		return
 	}
@@ -144,59 +144,23 @@ func (so *sourceOutputter) writeEnum(entry EnumEntry, projectName string, allEnu
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
-	hasGlobalName := so.language.supportsTypeAlias()
-	firstSuffix := entry.names[0].suffix
-
-	if so.language.supportsTypeAlias() {
-		// Verify that all suffixes are the same for this entry
-		for _, name := range entry.names {
-			if name.suffix != firstSuffix {
-				hasGlobalName = false
-			}
-		}
-
-		// Verify that no other entry has this suffix
-		for _, enum := range allEnums {
-			if !reflect.DeepEqual(enum, entry) {
-				for _, name := range enum.names {
-					if name.suffix == firstSuffix {
-						hasGlobalName = false
-					}
-				}
-			}
-		}
-	}
-
-	projectNamePrefix := projectName
-
 	for i, name := range entry.names {
 		if i == 0 || !so.language.supportsTypeAlias() {
-			prefix := name.prefix
-			if hasGlobalName {
-				prefix = projectNamePrefix
-			}
-			so.writeCommentFmt("Enum for %s (%s)", prefix, name.suffix)
-			so.language.writeEnumBegin(so, prefix, name.suffix)
+			so.writeCommentFmt("Enum for %s (%s)", name.prefix, name.suffix)
+			so.language.writeEnumBegin(so, name.prefix, name.suffix)
 			for _, id := range keys {
 				name := entry.events[id]
 				so.language.writeEnumEntry(so, id, name)
 			}
 			if len(entry.aliases) > 0 {
-				so.language.writeEnumAliasesBegin(so, prefix, name.suffix)
+				so.language.writeEnumAliasesBegin(so, name.prefix, name.suffix)
 				for from, to := range entry.aliases {
-					so.language.writeEnumAlias(so, []string{prefix, name.suffix}, []string{from}, []string{to})
+					so.language.writeEnumAlias(so, []string{name.prefix, name.suffix}, []string{from}, []string{to})
 				}
 			}
-			so.language.writeEnumEnd(so, prefix, name.suffix)
-			if hasGlobalName {
-				so.writeCommentFmt("Alias for %s (%s) which has the same event codes", name.prefix, name.suffix)
-				so.language.writeTypeAlias(so, []string{prefix, name.suffix}, []string{name.prefix, name.suffix})
-			}
+			so.language.writeEnumEnd(so, name.prefix, name.suffix)
 		} else {
 			first := entry.names[0]
-			if hasGlobalName {
-				first = EnumName{prefix: projectNamePrefix, suffix: first.suffix}
-			}
 			so.writeCommentFmt("Alias for %s (%s) which has the same event codes", name.prefix, name.suffix)
 			so.language.writeTypeAlias(so, []string{first.prefix, first.suffix}, []string{name.prefix, name.suffix})
 		}
@@ -305,7 +269,7 @@ func (so *sourceOutputter) writeV1Constants(c *config.CobaltRegistry) error {
 	}
 
 	for _, e := range enums {
-		so.writeEnum(e, c.Customers[0].Projects[0].ProjectName, enums)
+		so.writeEnum(e)
 	}
 
 	return nil
