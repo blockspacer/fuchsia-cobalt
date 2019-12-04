@@ -35,7 +35,7 @@ TEST_F(InternalMetricsImplTest, LoggerCalled) {
   metrics.LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod::LogMemoryUsage,
                        GetTestProject());
 
-  ASSERT_EQ(logger.call_count(), 1);
+  ASSERT_EQ(logger.call_count(), 2);
   ASSERT_TRUE(logger.last_event_logged().has_count_event());
   ASSERT_EQ(logger.last_event_logged().count_event().component(), "test/project");
 }

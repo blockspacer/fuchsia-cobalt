@@ -30,11 +30,15 @@ void InternalMetricsImpl::LoggerCalled(PerProjectLoggerCallsMadeMetricDimensionL
     return;
   }
 
-  // TODO(ninai): re-add metric LoggerCallsMade once it is redefined as type EVENT_COUNT.
+  auto status = logger_->LogEventCount(kLoggerCallsMadeMetricId, method, "", 0, 1);
+
+  if (status != kOK) {
+    VLOG(1) << "InternalMetricsImpl::LoggerCalled: LogEventCount() returned status=" << status;
+  }
 
   std::ostringstream component;
   component << project.customer_name() << '/' << project.project_name();
-  auto status =
+  status =
       logger_->LogEventCount(kPerProjectLoggerCallsMadeMetricId, method, component.str(), 0, 1);
 
   if (status != kOK) {
