@@ -56,75 +56,83 @@ const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirst
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AnotherEvent = EventGroupsMetricDimensionTheFirstGroup::AnotherEvent;
 const EventGroupsMetricDimensionTheFirstGroup EventGroupsMetricDimensionTheFirstGroup_AThirdEvent = EventGroupsMetricDimensionTheFirstGroup::AThirdEvent;
 
-// Enum for event groups (Metric Dimension A second group)
-namespace __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__ {
+// Enum for project (Metric Dimension A second group)
+namespace __project_metric_dimension_a_second_group_internal_scope_do_not_use__ {
 enum Enum {
   This = 1,
   Is = 2,
   Another = 3,
   Test = 4,
 };
-}  // __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__
-using EventGroupsMetricDimensionASecondGroup = __event_groups_metric_dimension_a_second_group_internal_scope_do_not_use__::Enum;
+}  // __project_metric_dimension_a_second_group_internal_scope_do_not_use__
+using ProjectMetricDimensionASecondGroup = __project_metric_dimension_a_second_group_internal_scope_do_not_use__::Enum;
+// Alias for event groups (Metric Dimension A second group) which has the same event codes
+using EventGroupsMetricDimensionASecondGroup = ProjectMetricDimensionASecondGroup;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_This = EventGroupsMetricDimensionASecondGroup::This;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Is = EventGroupsMetricDimensionASecondGroup::Is;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Another = EventGroupsMetricDimensionASecondGroup::Another;
 const EventGroupsMetricDimensionASecondGroup EventGroupsMetricDimensionASecondGroup_Test = EventGroupsMetricDimensionASecondGroup::Test;
 
-// Enum for event groups (Metric Dimension 2)
-namespace __event_groups_metric_dimension_2_internal_scope_do_not_use__ {
+// Enum for project (Metric Dimension 2)
+namespace __project_metric_dimension_2_internal_scope_do_not_use__ {
 enum Enum {
   ThisMetric = 0,
   HasNo = 2,
   Name = 4,
   Alias = HasNo,
 };
-}  // __event_groups_metric_dimension_2_internal_scope_do_not_use__
-using EventGroupsMetricDimension2 = __event_groups_metric_dimension_2_internal_scope_do_not_use__::Enum;
+}  // __project_metric_dimension_2_internal_scope_do_not_use__
+using ProjectMetricDimension2 = __project_metric_dimension_2_internal_scope_do_not_use__::Enum;
+// Alias for event groups (Metric Dimension 2) which has the same event codes
+using EventGroupsMetricDimension2 = ProjectMetricDimension2;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_ThisMetric = EventGroupsMetricDimension2::ThisMetric;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_HasNo = EventGroupsMetricDimension2::HasNo;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Name = EventGroupsMetricDimension2::Name;
 const EventGroupsMetricDimension2 EventGroupsMetricDimension2_Alias = EventGroupsMetricDimension2::Alias;
 
-// Enum for metric (Metric Dimension First)
-namespace __metric_metric_dimension_first_internal_scope_do_not_use__ {
+// Enum for project (Metric Dimension First)
+namespace __project_metric_dimension_first_internal_scope_do_not_use__ {
 enum Enum {
   A = 1,
   Set = 2,
   OfEvent = 3,
   Codes = 4,
 };
-}  // __metric_metric_dimension_first_internal_scope_do_not_use__
-using MetricMetricDimensionFirst = __metric_metric_dimension_first_internal_scope_do_not_use__::Enum;
+}  // __project_metric_dimension_first_internal_scope_do_not_use__
+using ProjectMetricDimensionFirst = __project_metric_dimension_first_internal_scope_do_not_use__::Enum;
+// Alias for metric (Metric Dimension First) which has the same event codes
+using MetricMetricDimensionFirst = ProjectMetricDimensionFirst;
 const MetricMetricDimensionFirst MetricMetricDimensionFirst_A = MetricMetricDimensionFirst::A;
 const MetricMetricDimensionFirst MetricMetricDimensionFirst_Set = MetricMetricDimensionFirst::Set;
 const MetricMetricDimensionFirst MetricMetricDimensionFirst_OfEvent = MetricMetricDimensionFirst::OfEvent;
 const MetricMetricDimensionFirst MetricMetricDimensionFirst_Codes = MetricMetricDimensionFirst::Codes;
 
 // Alias for second metric (Metric Dimension First) which has the same event codes
-using SecondMetricMetricDimensionFirst = MetricMetricDimensionFirst;
+using SecondMetricMetricDimensionFirst = ProjectMetricDimensionFirst;
 const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_A = SecondMetricMetricDimensionFirst::A;
 const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_Set = SecondMetricMetricDimensionFirst::Set;
 const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_OfEvent = SecondMetricMetricDimensionFirst::OfEvent;
 const SecondMetricMetricDimensionFirst SecondMetricMetricDimensionFirst_Codes = SecondMetricMetricDimensionFirst::Codes;
 
-// Enum for metric (Metric Dimension Second)
-namespace __metric_metric_dimension_second_internal_scope_do_not_use__ {
+// Enum for project (Metric Dimension Second)
+namespace __project_metric_dimension_second_internal_scope_do_not_use__ {
 enum Enum {
   Some = 0,
   More = 4,
   Event = 8,
   Codes = 16,
 };
-}  // __metric_metric_dimension_second_internal_scope_do_not_use__
-using MetricMetricDimensionSecond = __metric_metric_dimension_second_internal_scope_do_not_use__::Enum;
+}  // __project_metric_dimension_second_internal_scope_do_not_use__
+using ProjectMetricDimensionSecond = __project_metric_dimension_second_internal_scope_do_not_use__::Enum;
+// Alias for metric (Metric Dimension Second) which has the same event codes
+using MetricMetricDimensionSecond = ProjectMetricDimensionSecond;
 const MetricMetricDimensionSecond MetricMetricDimensionSecond_Some = MetricMetricDimensionSecond::Some;
 const MetricMetricDimensionSecond MetricMetricDimensionSecond_More = MetricMetricDimensionSecond::More;
 const MetricMetricDimensionSecond MetricMetricDimensionSecond_Event = MetricMetricDimensionSecond::Event;
 const MetricMetricDimensionSecond MetricMetricDimensionSecond_Codes = MetricMetricDimensionSecond::Codes;
 
 // Alias for second metric (Metric Dimension Second) which has the same event codes
-using SecondMetricMetricDimensionSecond = MetricMetricDimensionSecond;
+using SecondMetricMetricDimensionSecond = ProjectMetricDimensionSecond;
 const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_Some = SecondMetricMetricDimensionSecond::Some;
 const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_More = SecondMetricMetricDimensionSecond::More;
 const SecondMetricMetricDimensionSecond SecondMetricMetricDimensionSecond_Event = SecondMetricMetricDimensionSecond::Event;
