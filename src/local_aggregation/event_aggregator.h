@@ -18,19 +18,7 @@
 #include "src/logger/observation_writer.h"
 #include "src/logger/status.h"
 
-namespace cobalt {
-
-// Forward declaration used for friend tests. These will be removed once the
-// tests are moved to using mocks rather than private methods.
-// TODO(ninai): remove these
-namespace logger {
-
-class UniqueActivesLoggerTest;
-class TestEventAggregator;
-
-}  // namespace logger
-
-namespace local_aggregation {
+namespace cobalt::local_aggregation {
 
 // The EventAggregator manages the Loggers' interactions with the local aggregation.
 //
@@ -183,8 +171,7 @@ class EventAggregator {
   friend class EventAggregatorTest;
   friend class EventAggregatorManagerTest;
   friend class EventAggregatorWorkerTest;
-  friend class logger::TestEventAggregator;
-  friend class logger::UniqueActivesLoggerTest;
+  friend class TestEventAggregatorManager;
 
   // Request that the worker thread shut down and wait for it to exit. The
   // worker thread backs up the LocalAggregateStore before exiting.
@@ -244,7 +231,6 @@ class EventAggregator {
   std::unique_ptr<util::SteadyClockInterface> steady_clock_;
 };
 
-}  // namespace local_aggregation
-}  // namespace cobalt
+}  // namespace cobalt::local_aggregation
 
 #endif  // COBALT_SRC_LOCAL_AGGREGATION_EVENT_AGGREGATOR_H_

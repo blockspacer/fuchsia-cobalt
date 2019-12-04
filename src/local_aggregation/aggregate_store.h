@@ -18,17 +18,7 @@
 #include "src/logger/project_context.h"
 #include "src/logger/status.h"
 
-namespace cobalt {
-
-// Forward declaration used for friend tests. This will be removed.
-// TODO(ninai): remove this
-namespace logger {
-
-class TestEventAggregator;
-
-}  // namespace logger
-
-namespace local_aggregation {
+namespace cobalt::local_aggregation {
 
 const std::chrono::hours kOneDay(24);
 
@@ -161,7 +151,7 @@ class AggregateStore {
   friend class AggregateStoreTest;
   friend class EventAggregatorTest;
   friend class EventAggregatorManagerTest;
-  friend class logger::TestEventAggregator;
+  friend class TestEventAggregatorManager;
 
   // Make a LocalAggregateStore which is empty except that its version number is set to |version|.
   LocalAggregateStore MakeNewLocalAggregateStore(
@@ -302,7 +292,6 @@ class AggregateStore {
   size_t backfill_days_ = 0;
 };
 
-}  // namespace local_aggregation
-}  // namespace cobalt
+}  // namespace cobalt::local_aggregation
 
 #endif  // COBALT_SRC_LOCAL_AGGREGATION_AGGREGATE_STORE_H_

@@ -306,6 +306,7 @@ source_set("event_loggers_test") {
     ":event_loggers",
     ":logger_test_utils",
     ":testing_constants",
+    "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
     "//third_party/googletest:gtest",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -327,6 +328,7 @@ source_set("logger_test") {
     ":logger",
     ":logger_test_utils",
     ":testing_constants",
+    "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
     "//third_party/googletest:gtest",
   ]
 }

@@ -78,6 +78,7 @@ class EventAggregatorManager {
   EventAggregator* GetEventAggregator() { return event_aggregator_.get(); }
 
  private:
+  friend class TestEventAggregatorManager;
   friend class EventAggregatorManagerTest;
 
   // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.

@@ -14,7 +14,8 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
-#include "src/local_aggregation/event_aggregator.h"
+#include "src/local_aggregation/event_aggregator_mgr.h"
+#include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
 #include "src/logger/encoder.h"
 #include "src/logger/fake_logger.h"
 #include "src/logger/logger_test_utils.h"
@@ -31,18 +32,12 @@
 using ::google::protobuf::util::MessageDifferencer;
 #endif
 
-namespace cobalt {
+namespace cobalt::logger {
 
-using local_aggregation::EventAggregator;
+using local_aggregation::EventAggregatorManager;
+using local_aggregation::TestEventAggregatorManager;
 using system_data::ClientSecret;
 using system_data::SystemDataInterface;
-using util::EncryptedMessageMaker;
-using util::FakeValidatedClock;
-using util::IncrementingSystemClock;
-using util::TimeToDayIndex;
-
-namespace logger {
-
 using testing::CheckNumericEventObservations;
 using testing::ExpectedAggregationParams;
 using testing::ExpectedPerDeviceNumericObservations;
@@ -54,6 +49,10 @@ using testing::FetchSingleObservation;
 using testing::GetTestProject;
 using testing::MockConsistentProtoStore;
 using testing::TestUpdateRecipient;
+using util::EncryptedMessageMaker;
+using util::FakeValidatedClock;
+using util::IncrementingSystemClock;
+using util::TimeToDayIndex;
 
 namespace {
 // Number of seconds in a day
@@ -87,9 +86,9 @@ class LoggerTest : public ::testing::Test {
     local_aggregate_proto_store_ =
         std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
     obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                          local_aggregate_proto_store_.get(),
-                                                          obs_history_proto_store_.get());
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
+        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+        obs_history_proto_store_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
     // Create a mock clock which does not increment by default when called.
@@ -101,16 +100,17 @@ class LoggerTest : public ::testing::Test {
     validated_clock_->SetAccurate(true);
 
     undated_event_manager_ = std::make_shared<UndatedEventManager>(
-        encoder_.get(), event_aggregator_.get(), observation_writer_.get(), system_data_.get());
+        encoder_.get(), event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(),
+        system_data_.get());
 
-    logger_ = std::make_unique<Logger>(GetTestProject(registry_base64), encoder_.get(),
-                                       event_aggregator_.get(), observation_writer_.get(),
-                                       system_data_.get(), validated_clock_.get(),
-                                       undated_event_manager_, internal_logger_.get());
+    logger_ = std::make_unique<Logger>(
+        GetTestProject(registry_base64), encoder_.get(),
+        event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(), system_data_.get(),
+        validated_clock_.get(), undated_event_manager_, internal_logger_.get());
   }
 
   void TearDown() override {
-    event_aggregator_.reset();
+    event_aggregator_mgr_.reset();
     logger_.reset();
   }
 
@@ -129,10 +129,6 @@ class LoggerTest : public ::testing::Test {
     update_recipient_->invocation_count = 0;
   }
 
-  Status GenerateAggregatedObservations(uint32_t day_index) {
-    return event_aggregator_->GenerateObservationsNoWorker(day_index);
-  }
-
   std::unique_ptr<Logger> logger_;
   std::unique_ptr<testing::FakeLogger> internal_logger_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -142,9 +138,8 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<TestUpdateRecipient> update_recipient_;
   ExpectedAggregationParams expected_aggregation_params_;
 
- private:
   std::unique_ptr<Encoder> encoder_;
-  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
@@ -459,7 +454,8 @@ TEST_F(LoggerTest, CheckNumAggregatedObsMultipleEvents) {
   ASSERT_TRUE(FetchObservations(&immediate_observations, expected_immediate_report_ids,
                                 observation_store_.get(), update_recipient_.get()));
   // Generate locally aggregated observations for the current day index.
-  ASSERT_EQ(kOK, GenerateAggregatedObservations(CurrentDayIndex(MetricDefinition::UTC)));
+  ASSERT_EQ(kOK,
+            event_aggregator_mgr_->GenerateObservations(CurrentDayIndex(MetricDefinition::UTC)));
   // Update |expected_aggregation_params_| to account for the events logged by
   // this test. In addition to the initial values, we expect 1 Observation for
   // the SettingsChanged_PerDeviceCount report, for each of the 2 window sizes
@@ -580,19 +576,19 @@ class NoValidatedClockLoggerTest : public ::testing::Test {
     local_aggregate_proto_store_ =
         std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
     obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
-                                                          local_aggregate_proto_store_.get(),
-                                                          obs_history_proto_store_.get());
+    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+        obs_history_proto_store_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
-    logger_ =
-        std::make_unique<Logger>(GetTestProject(testing::all_report_types::kCobaltRegistryBase64),
-                                 encoder_.get(), event_aggregator_.get(), observation_writer_.get(),
-                                 system_data_.get(), internal_logger_.get());
+    logger_ = std::make_unique<Logger>(
+        GetTestProject(testing::all_report_types::kCobaltRegistryBase64), encoder_.get(),
+        event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(), system_data_.get(),
+        internal_logger_.get());
   }
 
   void TearDown() override {
-    event_aggregator_.reset();
+    event_aggregator_mgr_.reset();
     logger_.reset();
   }
 
@@ -604,7 +600,7 @@ class NoValidatedClockLoggerTest : public ::testing::Test {
 
  private:
   std::unique_ptr<Encoder> encoder_;
-  std::unique_ptr<EventAggregator> event_aggregator_;
+  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
@@ -620,5 +616,4 @@ TEST_F(NoValidatedClockLoggerTest, AccurateClockEventsLogged) {
   CHECK_GT(observation_store_->metadata_received[0]->day_index(), 18000);
 }
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger
