@@ -72,25 +72,6 @@ message ValuePart {
   }
 }
 
-// Observations of this type contain an encryption of a string. The string
-// is encrypted using Forculus threshold encryption so that it may only be
-// decrypted if sufficiently many distinct clients transmit the same string.
-//
-// This type of Observation is used in the following case:
-//
-// A MetricDefinition of type STRING_USED and Report of type
-// STRING_COUNTS_WITH_THRESHOLD. In this case the Observation is
-// *immediate* meaning it is generated directly from a single
-// STRING_USED Event as soon as the Event is logged. The Event contains
-// the string that was used. The fields of a ForculusObservation contain
-// the data necessary to represent the threshold-encrypted ciphertext of
-// the string.
-message ForculusObservation {
-  bytes ciphertext = 1;
-  bytes point_x = 2;
-  bytes point_y = 3;
-}
-
 // Observations of this type contain an encoding of a string. The encoding uses
 // String RAPPOR to provide local differential privacy.
 //
@@ -143,9 +124,11 @@ message UnencodedObservation {
 
 // The encoding of a ValuePart. This is produced by an Encoder.
 message ObservationPart {
+  reserved 2;
+  reserved "forculus";
+
   oneof value {
     UnencodedObservation unencoded = 1;
-    ForculusObservation forculus = 2;
     RapporObservation rappor = 3;
     BasicRapporObservation basic_rappor = 4;
   }
