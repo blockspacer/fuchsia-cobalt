@@ -45,7 +45,7 @@ func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
 func (_ Rust) writeEnumExport(so *sourceOutputter, enumName, name []string) {}
 
 func (_ Rust) writeTypeAlias(so *sourceOutputter, from, to []string) {
-	so.writeLineFmt("pub type %s = %s;", toPascalCase(to...), toPascalCase(from...))
+	so.writeLineFmt("pub use %s as %s;", toPascalCase(from...), toPascalCase(to...))
 }
 
 func (_ Rust) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {
