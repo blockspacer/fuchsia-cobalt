@@ -29,7 +29,7 @@ def main(only_directories=[], all_files=False):
   print('Linting %d go files' % len(files_to_lint))
   if files_to_lint:
     p = subprocess.Popen(
-        ['gofmt', '-l'] + files_to_lint, stdout=subprocess.PIPE)
+        ['gofmt', '-d'] + files_to_lint, stdout=subprocess.PIPE)
     out, err = p.communicate()
 
     if p.returncode != 0:
@@ -37,7 +37,7 @@ def main(only_directories=[], all_files=False):
       status += 1
 
     if len(out) > 0:
-      print('The following files do not match gofmt:\n%s' % out)
+      print('The following differences were found with gofmt:\n%s' % out)
       status += 1
 
   return status

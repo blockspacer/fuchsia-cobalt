@@ -34,8 +34,9 @@ def main(only_directories=[], all_files=False):
     try:
       subprocess.check_call(['gn', 'format', '--dry-run', f])
     except:
-      print('%s: Does not match expected format. Please run `gn format`' %
-            os.path.relpath(f, SRC_ROOT_DIR))
+      print('%(file)s: Does not match expected format. '
+            'Please run `sysroot/bin/gn format %(file)s`' %
+            {'file': os.path.relpath(f, SRC_ROOT_DIR)})
       status += 1
 
   return status
