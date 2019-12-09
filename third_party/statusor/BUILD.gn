@@ -1,3 +1,0 @@
-group("statusor") {
-  deps = ["$cobalt_root/src/lib/statusor"]
-}
