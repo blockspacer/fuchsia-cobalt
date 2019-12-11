@@ -18,7 +18,7 @@
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
 #include "src/local_aggregation/aggregation_utils.h"
-#include "src/local_aggregation/event_aggregator_mgr.h"
+#include "src/local_aggregation/event_aggregator.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
@@ -204,9 +204,9 @@ class AggregateStoreTest : public ::testing::Test {
   }
 
   void ResetEventAggregator() {
-    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+    event_aggregator_ = std::make_unique<EventAggregator>(encoder_.get(), observation_writer_.get(),
+                                                          local_aggregate_proto_store_.get(),
+                                                          obs_history_proto_store_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
     test_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     // Initilize it to 10 years after the beginning of time.
@@ -215,13 +215,13 @@ class AggregateStoreTest : public ::testing::Test {
     unowned_test_clock_ = test_clock_.get();
     day_store_created_ = CurrentDayIndex();
     test_steady_clock_ = new IncrementingSteadyClock(std::chrono::system_clock::duration(0));
-    event_aggregator_mgr_->SetSteadyClock(test_steady_clock_);
+    event_aggregator_->SetSteadyClock(test_steady_clock_);
   }
 
   // Destruct the EventAggregator (thus calling EventAggregator::ShutDown())
   // before destructing the objects which the EventAggregator points to but does
   // not own.
-  void TearDown() override { event_aggregator_mgr_.reset(); }
+  void TearDown() override { event_aggregator_.reset(); }
 
   // Advances |test_clock_| by |num_seconds| seconds.
   void AdvanceClock(int num_seconds) {
@@ -236,45 +236,45 @@ class AggregateStoreTest : public ::testing::Test {
                           time_zone);
   }
 
-  size_t GetBackfillDays() { return event_aggregator_mgr_->aggregate_store_->backfill_days_; }
+  size_t GetBackfillDays() { return event_aggregator_->aggregate_store_->backfill_days_; }
 
   void SetBackfillDays(size_t num_days) {
-    event_aggregator_mgr_->aggregate_store_->backfill_days_ = num_days;
+    event_aggregator_->aggregate_store_->backfill_days_ = num_days;
   }
 
   Status BackUpLocalAggregateStore() {
-    return event_aggregator_mgr_->aggregate_store_->BackUpLocalAggregateStore();
+    return event_aggregator_->aggregate_store_->BackUpLocalAggregateStore();
   }
 
   Status BackUpObservationHistory() {
-    return event_aggregator_mgr_->aggregate_store_->BackUpObservationHistory();
+    return event_aggregator_->aggregate_store_->BackUpObservationHistory();
   }
 
   LocalAggregateStore MakeNewLocalAggregateStore(
       uint32_t version = kCurrentLocalAggregateStoreVersion) {
-    return event_aggregator_mgr_->aggregate_store_->MakeNewLocalAggregateStore(version);
+    return event_aggregator_->aggregate_store_->MakeNewLocalAggregateStore(version);
   }
 
   AggregatedObservationHistoryStore MakeNewObservationHistoryStore(
       uint32_t version = kCurrentObservationHistoryStoreVersion) {
-    return event_aggregator_mgr_->aggregate_store_->MakeNewObservationHistoryStore(version);
+    return event_aggregator_->aggregate_store_->MakeNewObservationHistoryStore(version);
   }
 
   Status MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store) {
-    return event_aggregator_mgr_->aggregate_store_->MaybeUpgradeLocalAggregateStore(store);
+    return event_aggregator_->aggregate_store_->MaybeUpgradeLocalAggregateStore(store);
   }
 
   Status MaybeUpgradeObservationHistoryStore(AggregatedObservationHistoryStore* store) {
-    return event_aggregator_mgr_->aggregate_store_->MaybeUpgradeObservationHistoryStore(store);
+    return event_aggregator_->aggregate_store_->MaybeUpgradeObservationHistoryStore(store);
   }
 
   LocalAggregateStore CopyLocalAggregateStore() {
-    return event_aggregator_mgr_->aggregate_store_->CopyLocalAggregateStore();
+    return event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
   }
 
   Status GenerateObservations(uint32_t final_day_index_utc, uint32_t final_day_index_local = 0u) {
-    return event_aggregator_mgr_->aggregate_store_->GenerateObservations(final_day_index_utc,
-                                                                         final_day_index_local);
+    return event_aggregator_->GenerateObservationsNoWorker(final_day_index_utc,
+                                                           final_day_index_local);
   }
 
   bool IsReportInStore(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
@@ -287,7 +287,7 @@ class AggregateStoreTest : public ::testing::Test {
     key_data.set_report_id(report_id);
     SerializeToBase64(key_data, &key);
 
-    auto locked = event_aggregator_mgr_->aggregate_store_->protected_aggregate_store_.lock();
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
     return locked->local_aggregate_store.by_report_key().count(key) > 0;
   }
 
@@ -301,7 +301,7 @@ class AggregateStoreTest : public ::testing::Test {
     key_data.set_report_id(report_id);
     SerializeToBase64(key_data, &key);
 
-    auto locked = event_aggregator_mgr_->aggregate_store_->protected_aggregate_store_.lock();
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
 
     auto aggregates = locked->local_aggregate_store.by_report_key().find(key);
     if (aggregates == locked->local_aggregate_store.by_report_key().end()) {
@@ -333,7 +333,7 @@ class AggregateStoreTest : public ::testing::Test {
     key_data.set_report_id(report_id);
     SerializeToBase64(key_data, &key);
 
-    auto locked = event_aggregator_mgr_->aggregate_store_->protected_aggregate_store_.lock();
+    auto locked = event_aggregator_->aggregate_store_->protected_aggregate_store_.lock();
 
     auto aggregates = locked->local_aggregate_store.by_report_key().find(key);
     if (aggregates == locked->local_aggregate_store.by_report_key().end()) {
@@ -358,18 +358,18 @@ class AggregateStoreTest : public ::testing::Test {
     return by_day_index->second.numeric_daily_aggregate().value();
   }
 
-  AggregateStore* GetAggregateStore() { return event_aggregator_mgr_->aggregate_store_.get(); }
+  AggregateStore* GetAggregateStore() { return event_aggregator_->aggregate_store_.get(); }
 
   Status GarbageCollect(uint32_t day_index_utc, uint32_t day_index_local = 0u) {
-    return event_aggregator_mgr_->aggregate_store_->GarbageCollect(day_index_utc, day_index_local);
+    return event_aggregator_->aggregate_store_->GarbageCollect(day_index_utc, day_index_local);
   }
 
   void DoScheduledTasksNow() {
     // Steady values don't matter, just tell DoScheduledTasks to run everything.
     auto steady_time = std::chrono::steady_clock::now();
-    event_aggregator_mgr_->next_generate_obs_ = steady_time;
-    event_aggregator_mgr_->next_gc_ = steady_time;
-    event_aggregator_mgr_->DoScheduledTasks(unowned_test_clock_->now(), steady_time);
+    event_aggregator_->next_generate_obs_ = steady_time;
+    event_aggregator_->next_gc_ = steady_time;
+    event_aggregator_->DoScheduledTasks(unowned_test_clock_->now(), steady_time);
   }
 
   // Clears the FakeObservationStore and resets the counts of Observations
@@ -392,8 +392,7 @@ class AggregateStoreTest : public ::testing::Test {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
     event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
-        metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddUniqueActivesEvent(metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
       return status;
     }
@@ -422,8 +421,7 @@ class AggregateStoreTest : public ::testing::Test {
     count_event->set_component(component);
     count_event->add_event_code(event_code);
     count_event->set_count(count);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddCountEvent(
-        metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddCountEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -452,8 +450,7 @@ class AggregateStoreTest : public ::testing::Test {
     elapsed_time_event->set_component(component);
     elapsed_time_event->add_event_code(event_code);
     elapsed_time_event->set_elapsed_micros(micros);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddElapsedTimeEvent(
-        metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddElapsedTimeEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -483,8 +480,7 @@ class AggregateStoreTest : public ::testing::Test {
     frame_rate_event->add_event_code(event_code);
     int64_t frames_per_1000_seconds = std::round(fps * 1000.0);
     frame_rate_event->set_frames_per_1000_seconds(frames_per_1000_seconds);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddFrameRateEvent(
-        metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddFrameRateEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -516,8 +512,7 @@ class AggregateStoreTest : public ::testing::Test {
       memory_usage_event->add_event_code(event_code);
     }
     memory_usage_event->set_bytes(bytes);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddMemoryUsageEvent(
-        metric_report_id.second, event_record);
+    auto status = event_aggregator_->AddMemoryUsageEvent(metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
     }
@@ -544,7 +539,7 @@ class AggregateStoreTest : public ::testing::Test {
   // of reference.
   bool CheckUniqueActivesAggregates(const LoggedActivity& logged_activity,
                                     uint32_t /*current_day_index*/) {
-    auto local_aggregate_store = event_aggregator_mgr_->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store = event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more UniqueActives
     // aggregates than |logged_activity| and |day_last_garbage_collected_|
     // should imply.
@@ -659,7 +654,7 @@ class AggregateStoreTest : public ::testing::Test {
 
   bool CheckPerDeviceNumericAggregates(const LoggedValues& logged_values,
                                        uint32_t /*current_day_index*/) {
-    auto local_aggregate_store = event_aggregator_mgr_->aggregate_store_->CopyLocalAggregateStore();
+    auto local_aggregate_store = event_aggregator_->aggregate_store_->CopyLocalAggregateStore();
     // Check that the LocalAggregateStore contains no more PerDeviceNumeric
     // aggregates than |logged_values| and |day_last_garbage_collected_| should
     // imply.
@@ -874,7 +869,7 @@ class AggregateStoreTest : public ::testing::Test {
                : day_store_created_ - backfill_days;
   }
 
-  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
+  std::unique_ptr<EventAggregator> event_aggregator_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -906,7 +901,7 @@ class AggregateStoreTestWithProjectContext : public AggregateStoreTest {
 
   void SetUp() override {
     AggregateStoreTest::SetUp();
-    event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context_);
+    event_aggregator_->UpdateAggregationConfigs(*project_context_);
   }
 
   // Adds an OccurrenceEvent to the local aggregations for the MetricReportId of a locally
@@ -1020,17 +1015,17 @@ class AggregateStoreWorkerTest : public AggregateStoreTest {
  protected:
   void SetUp() override { AggregateStoreTest::SetUp(); }
 
-  void ShutDownWorkerThread() { event_aggregator_mgr_->ShutDown(); }
+  void ShutDownWorkerThread() { event_aggregator_->ShutDown(); }
 
   bool in_shutdown_state() { return (shutdown_flag_set() && !worker_joinable()); }
 
   bool in_run_state() { return (!shutdown_flag_set() && worker_joinable()); }
 
   bool shutdown_flag_set() {
-    return event_aggregator_mgr_->protected_worker_thread_controller_.const_lock()->shut_down;
+    return event_aggregator_->protected_worker_thread_controller_.const_lock()->shut_down;
   }
 
-  bool worker_joinable() { return event_aggregator_mgr_->worker_thread_.joinable(); }
+  bool worker_joinable() { return event_aggregator_->worker_thread_.joinable(); }
 };
 
 // Tests that the Read() method of each ConsistentProtoStore is called once
@@ -1159,8 +1154,7 @@ TEST_F(AggregateStoreTest, SetActive) {
                                                           kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
 
   EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
                         kTestEventCode, kTestDayIndex));
@@ -1176,8 +1170,7 @@ TEST_F(AggregateStoreTest, SetActiveTwice) {
                                                           kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   EXPECT_FALSE(IsActive(kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId,
                         kTestEventCode, kTestDayIndex));
 
@@ -1196,8 +1189,7 @@ TEST_F(AggregateStoreTest, SetActiveFail) {
                                                                  kTestMetricId, kTestReportId);
   auto project_context = GetProjectContextFor(metric);
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   ASSERT_EQ(kInvalidArguments,
             GetAggregateStore()->SetActive(kTestCustomerId, kTestProjectId, kTestMetricId,
                                            kTestReportId, kTestEventCode, kTestDayIndex));
@@ -1213,8 +1205,7 @@ TEST_F(AggregateStoreTest, UpdateAggregationSUM) {
   const int64_t kFirstValue = 3;
   const int64_t kSecondValue = 7;
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
 
   EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
                      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
@@ -1238,8 +1229,7 @@ TEST_F(AggregateStoreTest, UpdateAggregationMAX) {
   const int64_t kFirstValue = 3;
   const int64_t kSecondValue = 7;
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
 
   EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
                      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
@@ -1262,8 +1252,7 @@ TEST_F(AggregateStoreTest, UpdateAggregationMIN) {
   const int64_t kFirstValue = 3;
   const int64_t kSecondValue = 7;
 
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
 
   EXPECT_EQ(kOK, GetAggregateStore()->UpdateNumericAggregate(
                      kTestCustomerId, kTestProjectId, kTestMetricId, kTestReportId, "",
@@ -1295,8 +1284,7 @@ TEST_F(AggregateStoreTest, UpdateAggregationFail) {
 TEST_F(AggregateStoreTest, GenerateObservationsNoEvents) {
   // Provide the all_report_types test registry to the EventAggregator.
   auto project_context = GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Generate locally aggregated Observations for the current day index.
   EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
   std::vector<Observation2> observations(0);
@@ -1310,8 +1298,7 @@ TEST_F(AggregateStoreTest, GenerateObservationsNoEvents) {
 TEST_F(AggregateStoreTest, GenerateObservationsTwice) {
   // Provide the all_report_types test registry to the EventAggregator.
   auto project_context = GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   // Check that Observations are generated when GenerateObservations is called
   // for the current day index for the first time.
   auto current_day_index = CurrentDayIndex();
@@ -1351,8 +1338,7 @@ TEST_F(AggregateStoreTest, GenerateObservationsFromBadStoreMultiReport) {
   ResetEventAggregator();
   // Provide the all_report_types test registry to the EventAggregator.
   auto project_context = GetTestProject(logger::testing::all_report_types::kCobaltRegistryBase64);
-  EXPECT_EQ(
-      kOK, event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+  EXPECT_EQ(kOK, event_aggregator_->UpdateAggregationConfigs(*project_context));
   EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
   std::vector<Observation2> observations(0);
   EXPECT_TRUE(FetchAggregatedObservations(

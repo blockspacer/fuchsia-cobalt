@@ -147,6 +147,7 @@ class AggregateStore {
                                       uint32_t final_day_index_local = 0u);
 
  private:
+  friend class EventAggregator;  // used for transition during redesign.
   friend class AggregateStoreTest;
   friend class EventAggregatorTest;
   friend class EventAggregatorManagerTest;
