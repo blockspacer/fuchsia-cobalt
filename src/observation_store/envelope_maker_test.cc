@@ -177,6 +177,13 @@ class EnvelopeMakerTest : public ::testing::Test {
     }
   }
 
+  // Returns the ObservationBatch containing the given |metadata|. If
+  // this is the first time we have seen the given |metadata| then a
+  // new ObservationBatch is created.
+  StoredObservationBatch* GetBatch(std::unique_ptr<ObservationMetadata> metadata) {
+    return envelope_maker_->GetBatch(std::move(metadata));
+  }
+
  protected:
   std::unique_ptr<EnvelopeMaker> envelope_maker_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_;
@@ -365,10 +372,7 @@ TEST_F(EnvelopeMakerTest, CanReadUnencrypted) {
   metadata->set_project_id(kProjectId);
   metadata->set_metric_id(10);
 
-  envelope_maker_->GetBatch(std::move(metadata))
-      ->add_observation()
-      ->mutable_unencrypted()
-      ->Swap(observation.get());
+  GetBatch(std::move(metadata))->add_observation()->mutable_unencrypted()->Swap(observation.get());
 
   auto read_env = envelope_maker_->GetEnvelope(encrypt_.get());
   ASSERT_EQ(read_env.batch_size(), 1);

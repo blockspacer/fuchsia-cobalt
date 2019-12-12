@@ -14,7 +14,6 @@
 #include "src/observation_store/observation_store.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "src/pb/observation.pb.h"
-#include "third_party/googletest/googletest/include/gtest/gtest_prod.h"
 
 namespace cobalt::observation_store {
 
@@ -72,7 +71,6 @@ class EnvelopeMaker : public ObservationStore::EnvelopeHolder {
 
  private:
   friend class EnvelopeMakerTest;
-  FRIEND_TEST(EnvelopeMakerTest, CanReadUnencrypted);
 
   // Returns the ObservationBatch containing the given |metadata|. If
   // this is the first time we have seen the given |metadata| then a
