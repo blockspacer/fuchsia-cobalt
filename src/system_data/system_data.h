@@ -11,9 +11,9 @@
 #include <utility>
 #include <vector>
 
+#include "src/lib/util/protected_fields.h"
 #include "src/pb/observation_batch.pb.h"
 #include "src/registry/metric_definition.pb.h"
-#include "third_party/abseil-cpp/absl/synchronization/mutex.h"
 
 namespace cobalt::system_data {
 
@@ -64,18 +64,18 @@ class SystemData : public SystemDataInterface {
   ~SystemData() override = default;
 
   // Returns a vector with all experiments the system has a notion of.
-  const std::vector<Experiment>& experiments() const override LOCKS_EXCLUDED(experiments_mutex_) {
-    absl::ReaderMutexLock lock(&experiments_mutex_);
-    return experiments_;
+  const std::vector<Experiment>& experiments() const override {
+    auto unprotected_experiments = protected_experiments_.const_lock();
+    return unprotected_experiments->experiments;
   }
 
   // Returns the SystemProfile for the current system.
   const SystemProfile& system_profile() const override { return system_profile_; }
 
   // Resets the experiment state to the one provided.
-  void SetExperimentState(std::vector<Experiment> experiments) LOCKS_EXCLUDED(experiments_mutex_) {
-    absl::WriterMutexLock lock(&experiments_mutex_);
-    experiments_ = std::move(experiments);
+  void SetExperimentState(std::vector<Experiment> experiments) {
+    auto unprotected_experiments = protected_experiments_.lock();
+    unprotected_experiments->experiments = std::move(experiments);
   }
 
   // Resets the current channel value.
@@ -92,8 +92,10 @@ class SystemData : public SystemDataInterface {
   void PopulateSystemProfile();
 
   SystemProfile system_profile_;
-  mutable absl::Mutex experiments_mutex_;
-  std::vector<Experiment> experiments_ GUARDED_BY(experiments_mutex_);
+  struct UnprotectedExperiments {
+    std::vector<Experiment> experiments;
+  };
+  util::RWProtectedFields<UnprotectedExperiments> protected_experiments_;
   ReleaseStage release_stage_;
 };
 

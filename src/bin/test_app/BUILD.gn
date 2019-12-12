@@ -63,7 +63,6 @@ source_set("tests") {
     "$cobalt_root/src/bin/test_app/test_registry",
     "$cobalt_root/src/logger:logger_test_utils",
     "$cobalt_root/src/logger:project_context_factory",
-    "//third_party/abseil-cpp/absl/synchronization",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
     "//third_party/tink/cc/util:status",
