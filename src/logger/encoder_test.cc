@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/repeated_field.h>
+
 #include "src/lib/crypto_util/base64.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/project_context.h"

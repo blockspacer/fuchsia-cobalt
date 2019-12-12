@@ -9,6 +9,7 @@
 
 #include <third_party/abseil-cpp/absl/strings/str_cat.h>
 
+#include "src/logger/project_context.h"
 #include "src/pb/event.pb.h"
 #include "src/registry/metric_definition.pb.h"
 

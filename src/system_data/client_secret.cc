@@ -18,6 +18,7 @@
 
 #include "src/lib/crypto_util/base64.h"
 #include "src/lib/crypto_util/random.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 
 namespace cobalt::system_data {
 

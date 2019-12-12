@@ -7,6 +7,8 @@
 #include <memory>
 #include <string>
 
+#include <google/protobuf/repeated_field.h>
+
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/logger/event_record.h"

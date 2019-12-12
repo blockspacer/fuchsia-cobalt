@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 
+#include <google/protobuf/repeated_field.h>
+
 #include "src/lib/statusor/statusor.h"
 #include "src/logger/status.h"
 #include "src/registry/cobalt_registry.pb.h"

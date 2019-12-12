@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+#include <google/protobuf/repeated_field.h>
+
 #include "src/pb/event.pb.h"
 #include "src/pb/observation2.pb.h"
 #include "src/registry/metric_definition.pb.h"

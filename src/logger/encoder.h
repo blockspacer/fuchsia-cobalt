@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <google/protobuf/repeated_field.h>
+
 #include "src/algorithms/rappor/rappor_encoder.h"
 #include "src/lib/crypto_util/random.h"
 #include "src/logger/project_context.h"

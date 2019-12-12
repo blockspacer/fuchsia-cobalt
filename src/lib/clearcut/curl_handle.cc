@@ -11,12 +11,7 @@
 
 namespace cobalt::lib::clearcut {
 
-CurlHandle::CurlHandle() {
-  handle_ = curl_easy_init();
-  if (handle_ == nullptr) {
-    throw Status(util::StatusCode::INTERNAL, "curl_easy_init() returned nullptr");
-  }
-}
+CurlHandle::CurlHandle(CURL *handle) : handle_(handle) {}
 
 CurlHandle::~CurlHandle() {
   if (handle_ != nullptr) {
@@ -26,15 +21,15 @@ CurlHandle::~CurlHandle() {
 }
 
 StatusOr<std::unique_ptr<CurlHandle>> CurlHandle::Init() {
-  try {
-    std::unique_ptr<CurlHandle> handle(new CurlHandle());
-    RETURN_IF_ERROR(handle->Setopt(CURLOPT_ERRORBUFFER, handle->errbuf_));
-    RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEDATA, &handle->response_body_));
-    RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEFUNCTION, CurlHandle::WriteResponseData));
-    return handle;
-  } catch (const Status &s) {
-    return s;
+  CURL *handle_ptr = curl_easy_init();
+  if (handle_ptr == nullptr) {
+    return Status(util::StatusCode::INTERNAL, "curl_easy_init() returned nullptr");
   }
+  std::unique_ptr<CurlHandle> handle(new CurlHandle(handle_ptr));
+  RETURN_IF_ERROR(handle->Setopt(CURLOPT_ERRORBUFFER, handle->errbuf_));
+  RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEDATA, &handle->response_body_));
+  RETURN_IF_ERROR(handle->Setopt(CURLOPT_WRITEFUNCTION, CurlHandle::WriteResponseData));
+  return handle;
 }
 
 size_t CurlHandle::WriteResponseData(char *ptr, size_t size, size_t nmemb, void *userdata) {

@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "src/registry/cobalt_registry.pb.h"
+#include "src/registry/metric_definition.pb.h"
+#include "src/registry/report_definition.pb.h"
 
 namespace cobalt {
 namespace config {
