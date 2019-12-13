@@ -79,9 +79,20 @@ class EventAggregatorManager {
   // Returns a pointer to an EventAggregator to be used for logging.
   EventAggregator* GetEventAggregator() { return event_aggregator_.get(); }
 
+  // Checks that the worker thread is shut down, and if so, triggers an out of schedule
+  // AggregateStore::GenerateObservations() and returns its result. Returns kOther if the
+  // worker thread is joinable. See the documentation on AggregateStore::GenerateObservations()
+  // for a description of the parameters.
+  //
+  // This method is intended for use in the Cobalt testapps which require a single thread to
+  // both log events to and generate Observations from an EventAggregator.
+  logger::Status GenerateObservationsNoWorker(uint32_t final_day_index_utc,
+                                              uint32_t final_day_index_local = 0u);
+
  private:
   friend class TestEventAggregatorManager;
   friend class EventAggregatorManagerTest;
+  friend class CobaltControllerImpl;
 
   // Sets the EventAggregator's SteadyClockInterface. Only for use in tests.
   void SetSteadyClock(util::SteadyClockInterface* clock) {

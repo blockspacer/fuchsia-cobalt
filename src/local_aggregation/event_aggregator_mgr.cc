@@ -25,4 +25,9 @@ void EventAggregatorManager::Start(std::unique_ptr<util::SystemClockInterface> c
   event_aggregator_->Start(std::move(clock));
 }
 
+logger::Status EventAggregatorManager::GenerateObservationsNoWorker(
+    uint32_t final_day_index_utc, uint32_t final_day_index_local) {
+  return event_aggregator_->GenerateObservationsNoWorker(final_day_index_utc,
+                                                         final_day_index_local);
+}
 }  // namespace cobalt::local_aggregation
