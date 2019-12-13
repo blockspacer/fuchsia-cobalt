@@ -182,9 +182,9 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
   CHECK_LE(backfill_days, kMaxAllowedBackfillDays)
       << "backfill_days must be less than or equal to " << kMaxAllowedBackfillDays;
   backfill_days_ = backfill_days;
-  auto locked = protected_aggregate_store_.lock();
+  auto locked_store = protected_aggregate_store_.lock();
   auto restore_aggregates_status =
-      local_aggregate_proto_store_->Read(&(locked->local_aggregate_store));
+      local_aggregate_proto_store_->Read(&(locked_store->local_aggregate_store));
   switch (restore_aggregates_status.error_code()) {
     case StatusCode::OK: {
       VLOG(4) << "Read LocalAggregateStore from disk.";
@@ -194,7 +194,7 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
       VLOG(4) << "No file found for local_aggregate_proto_store. Proceeding "
                  "with empty LocalAggregateStore. File will be created on "
                  "first snapshot of the LocalAggregateStore.";
-      locked->local_aggregate_store = MakeNewLocalAggregateStore();
+      locked_store->local_aggregate_store = MakeNewLocalAggregateStore();
       break;
     }
     default: {
@@ -203,18 +203,19 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
                  << "\nError message: " << restore_aggregates_status.error_message()
                  << "\nError details: " << restore_aggregates_status.error_details()
                  << "\nProceeding with empty LocalAggregateStore.";
-      locked->local_aggregate_store = MakeNewLocalAggregateStore();
+      locked_store->local_aggregate_store = MakeNewLocalAggregateStore();
     }
   }
-  if (auto status = MaybeUpgradeLocalAggregateStore(&(locked->local_aggregate_store));
+  if (auto status = MaybeUpgradeLocalAggregateStore(&(locked_store->local_aggregate_store));
       status != kOK) {
     LOG(ERROR) << "Failed to upgrade LocalAggregateStore to current version with status " << status
                << ".\nProceeding with empty "
                   "LocalAggregateStore.";
-    locked->local_aggregate_store = MakeNewLocalAggregateStore();
+    locked_store->local_aggregate_store = MakeNewLocalAggregateStore();
   }
 
-  auto restore_history_status = obs_history_proto_store_->Read(&obs_history_);
+  auto locked_obs_history = protected_obs_history_.lock();
+  auto restore_history_status = obs_history_proto_store_->Read(&locked_obs_history->obs_history);
   switch (restore_history_status.error_code()) {
     case StatusCode::OK: {
       VLOG(4) << "Read AggregatedObservationHistoryStore from disk.";
@@ -232,14 +233,15 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
                  << "\nError message: " << restore_history_status.error_message()
                  << "\nError details: " << restore_history_status.error_details()
                  << "\nProceeding with empty AggregatedObservationHistoryStore.";
-      obs_history_ = MakeNewObservationHistoryStore();
+      locked_obs_history->obs_history = MakeNewObservationHistoryStore();
     }
   }
-  if (auto status = MaybeUpgradeObservationHistoryStore(&obs_history_); status != kOK) {
+  if (auto status = MaybeUpgradeObservationHistoryStore(&locked_obs_history->obs_history);
+      status != kOK) {
     LOG(ERROR)
         << "Failed to upgrade AggregatedObservationHistoryStore to current version with status "
         << status << ".\nProceeding with empty AggregatedObservationHistoryStore.";
-    obs_history_ = MakeNewObservationHistoryStore();
+    locked_obs_history->obs_history = MakeNewObservationHistoryStore();
   }
 }
 
@@ -349,7 +351,8 @@ Status AggregateStore::BackUpLocalAggregateStore() {
 }
 
 Status AggregateStore::BackUpObservationHistory() {
-  auto status = obs_history_proto_store_->Write(obs_history_);
+  auto obs_history = protected_obs_history_.lock()->obs_history;
+  auto status = obs_history_proto_store_->Write(obs_history);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to back up the AggregatedObservationHistoryStore. "
                   "::cobalt::util::Status error code: "
@@ -614,11 +617,12 @@ bool IsActivityInWindow(uint32_t active_day_index, uint32_t obs_day_index,
 
 }  // namespace
 
-uint32_t AggregateStore::UniqueActivesLastGeneratedDayIndex(const std::string& report_key,
-                                                            uint32_t event_code,
-                                                            uint32_t aggregation_days) const {
-  auto report_history = obs_history_.by_report_key().find(report_key);
-  if (report_history == obs_history_.by_report_key().end()) {
+uint32_t AggregateStore::GetUniqueActivesLastGeneratedDayIndex(const std::string& report_key,
+                                                               uint32_t event_code,
+                                                               uint32_t aggregation_days) const {
+  auto obs_history = protected_obs_history_.const_lock()->obs_history;
+  auto report_history = obs_history.by_report_key().find(report_key);
+  if (report_history == obs_history.by_report_key().end()) {
     return 0u;
   }
   auto event_code_history =
@@ -631,6 +635,17 @@ uint32_t AggregateStore::UniqueActivesLastGeneratedDayIndex(const std::string& r
     return 0u;
   }
   return window_history->second;
+}
+
+void AggregateStore::SetUniqueActivesLastGeneratedDayIndex(const std::string& report_key,
+                                                           uint32_t event_code,
+                                                           uint32_t aggregation_days,
+                                                           uint32_t value) {
+  auto locked = protected_obs_history_.lock();
+  (*(*(*locked->obs_history.mutable_by_report_key())[report_key]
+          .mutable_unique_actives_history()
+          ->mutable_by_event_code())[event_code]
+        .mutable_by_window_size())[aggregation_days] = value;
 }
 
 Status AggregateStore::GenerateSingleUniqueActivesObservation(
@@ -688,7 +703,7 @@ Status AggregateStore::GenerateUniqueActivesObservations(const MetricRef metric_
       // been generated for this report, event code, and window size. If
       // that day index is later than |final_day_index|, no Observation is
       // generated on this invocation.
-      auto last_gen = UniqueActivesLastGeneratedDayIndex(report_key, event_code, window.days());
+      auto last_gen = GetUniqueActivesLastGeneratedDayIndex(report_key, event_code, window.days());
       auto first_day_index = std::max(last_gen + 1, backfill_period_start);
       // The latest day index on which |event_type| is known to have
       // occurred, so far. This value will be updated as we search
@@ -721,12 +736,8 @@ Status AggregateStore::GenerateUniqueActivesObservations(const MetricRef metric_
         if (status != kOK) {
           return status;
         }
-        // Update |obs_history_| with the latest date of Observation
-        // generation for this report, event code, and window size.
-        (*(*(*obs_history_.mutable_by_report_key())[report_key]
-                .mutable_unique_actives_history()
-                ->mutable_by_event_code())[event_code]
-              .mutable_by_window_size())[window.days()] = obs_day_index;
+
+        SetUniqueActivesLastGeneratedDayIndex(report_key, event_code, window.days(), obs_day_index);
       }
     }
   }
@@ -735,12 +746,13 @@ Status AggregateStore::GenerateUniqueActivesObservations(const MetricRef metric_
 
 ////////// GenerateObsFromNumericAggregates and helper methods /////////////
 
-uint32_t AggregateStore::PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
-                                                               const std::string& component,
-                                                               uint32_t event_code,
-                                                               uint32_t aggregation_days) const {
-  const auto& report_history = obs_history_.by_report_key().find(report_key);
-  if (report_history == obs_history_.by_report_key().end()) {
+uint32_t AggregateStore::GetPerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
+                                                                  const std::string& component,
+                                                                  uint32_t event_code,
+                                                                  uint32_t aggregation_days) const {
+  auto obs_history = protected_obs_history_.const_lock()->obs_history;
+  const auto& report_history = obs_history.by_report_key().find(report_key);
+  if (report_history == obs_history.by_report_key().end()) {
     return 0u;
   }
   if (!report_history->second.has_per_device_numeric_history()) {
@@ -763,13 +775,35 @@ uint32_t AggregateStore::PerDeviceNumericLastGeneratedDayIndex(const std::string
   return window_history->second;
 }
 
-uint32_t AggregateStore::ReportParticipationLastGeneratedDayIndex(
+void AggregateStore::SetPerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
+                                                              const std::string& component,
+                                                              uint32_t event_code,
+                                                              uint32_t aggregation_days,
+                                                              uint32_t value) {
+  auto locked = protected_obs_history_.lock();
+  (*(*(*(*locked->obs_history.mutable_by_report_key())[report_key]
+            .mutable_per_device_numeric_history()
+            ->mutable_by_component())[component]
+          .mutable_by_event_code())[event_code]
+        .mutable_by_window_size())[aggregation_days] = value;
+}
+
+uint32_t AggregateStore::GetReportParticipationLastGeneratedDayIndex(
     const std::string& report_key) const {
-  const auto& report_history = obs_history_.by_report_key().find(report_key);
-  if (report_history == obs_history_.by_report_key().end()) {
+  auto obs_history = protected_obs_history_.const_lock()->obs_history;
+  const auto& report_history = obs_history.by_report_key().find(report_key);
+  if (report_history == obs_history.by_report_key().end()) {
     return 0u;
   }
   return report_history->second.report_participation_history().last_generated();
+}
+
+void AggregateStore::SetReportParticipationLastGeneratedDayIndex(const std::string& report_key,
+                                                                 uint32_t value) {
+  auto locked = protected_obs_history_.lock();
+  (*locked->obs_history.mutable_by_report_key())[report_key]
+      .mutable_report_participation_history()
+      ->set_last_generated(value);
 }
 
 Status AggregateStore::GenerateSinglePerDeviceNumericObservation(
@@ -862,8 +896,8 @@ Status AggregateStore::GenerateObsFromNumericAggregates(const MetricRef metric_r
           LOG(INFO) << "Skipping unsupported aggregation window.";
           continue;
         }
-        auto last_gen =
-            PerDeviceNumericLastGeneratedDayIndex(report_key, component, event_code, window.days());
+        auto last_gen = GetPerDeviceNumericLastGeneratedDayIndex(report_key, component, event_code,
+                                                                 window.days());
         auto first_day_index = std::max(last_gen + 1, backfill_period_start);
         for (auto obs_day_index = first_day_index; obs_day_index <= final_day_index;
              obs_day_index++) {
@@ -956,27 +990,21 @@ Status AggregateStore::GenerateObsFromNumericAggregates(const MetricRef metric_r
                 return kInvalidArguments;
             }
           }
-          // Update |obs_history_| with the latest date of Observation
-          // generation for this report, component, event code, and window.
-          (*(*(*(*obs_history_.mutable_by_report_key())[report_key]
-                    .mutable_per_device_numeric_history()
-                    ->mutable_by_component())[component]
-                  .mutable_by_event_code())[event_code]
-                .mutable_by_window_size())[window.days()] = obs_day_index;
+
+          SetPerDeviceNumericLastGeneratedDayIndex(report_key, component, event_code, window.days(),
+                                                   obs_day_index);
         }
       }
     }
   }
   // Generate any necessary ReportParticipationObservations for this report.
-  auto participation_last_gen = ReportParticipationLastGeneratedDayIndex(report_key);
+  auto participation_last_gen = GetReportParticipationLastGeneratedDayIndex(report_key);
   auto participation_first_day_index = std::max(participation_last_gen + 1, backfill_period_start);
   for (auto obs_day_index = participation_first_day_index; obs_day_index <= final_day_index;
        obs_day_index++) {
     GenerateSingleReportParticipationObservation(
         metric_ref, &report_aggregates.aggregation_config().report(), obs_day_index);
-    (*obs_history_.mutable_by_report_key())[report_key]
-        .mutable_report_participation_history()
-        ->set_last_generated(obs_day_index);
+    SetReportParticipationLastGeneratedDayIndex(report_key, obs_day_index);
   }
   return kOK;
 }

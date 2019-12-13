@@ -1278,6 +1278,43 @@ TEST_F(AggregateStoreTest, UpdateAggregationFail) {
                                    "", kTestEventCode, kTestDayIndex, /*value*/ 4));
 }
 
+TEST_F(AggregateStoreTest, SetUniqueActivesLastGeneratedDayIndex) {
+  const std::string kReportKey = "test_key";
+  const int64_t kFirstValue = 3;
+
+  EXPECT_EQ(0u,
+            GetAggregateStore()->GetUniqueActivesLastGeneratedDayIndex(kReportKey, kTestEventCode,
+                                                                       /*aggregation_days*/ 1));
+  GetAggregateStore()->SetUniqueActivesLastGeneratedDayIndex(kReportKey, kTestEventCode,
+                                                             /*aggregation_days*/ 1, kFirstValue);
+  EXPECT_EQ(kFirstValue,
+            GetAggregateStore()->GetUniqueActivesLastGeneratedDayIndex(kReportKey, kTestEventCode,
+                                                                       /*aggregation_days*/ 1));
+}
+TEST_F(AggregateStoreTest, SetPerDeviceNumericLastGeneratedDayIndex) {
+  const std::string kReportKey = "test_key";
+  const int64_t kFirstValue = 3;
+
+  EXPECT_EQ(0u, GetAggregateStore()->GetPerDeviceNumericLastGeneratedDayIndex(
+                    kReportKey, "", kTestEventCode,
+                    /*aggregation_days*/ 1));
+  GetAggregateStore()->SetPerDeviceNumericLastGeneratedDayIndex(kReportKey, "", kTestEventCode,
+                                                                /*aggregation_days*/ 1,
+                                                                kFirstValue);
+  EXPECT_EQ(kFirstValue, GetAggregateStore()->GetPerDeviceNumericLastGeneratedDayIndex(
+                             kReportKey, "", kTestEventCode,
+                             /*aggregation_days*/ 1));
+}
+TEST_F(AggregateStoreTest, SetReportParticipationLastGeneratedDayIndex) {
+  const std::string kReportKey = "test_key";
+  const int64_t kFirstValue = 3;
+
+  EXPECT_EQ(0u, GetAggregateStore()->GetReportParticipationLastGeneratedDayIndex(kReportKey));
+  GetAggregateStore()->SetReportParticipationLastGeneratedDayIndex(kReportKey, kFirstValue);
+  EXPECT_EQ(kFirstValue,
+            GetAggregateStore()->GetReportParticipationLastGeneratedDayIndex(kReportKey));
+}
+
 // Tests that EventAggregator::GenerateObservations() returns a positive
 // status and that the expected number of Observations is generated when no
 // Events have been logged to the EventAggregator.

@@ -146,6 +146,45 @@ class AggregateStore {
   logger::Status GenerateObservations(uint32_t final_day_index_utc,
                                       uint32_t final_day_index_local = 0u);
 
+  // Returns the most recent day index for which an Observation was generated
+  // for a given UNIQUE_N_DAY_ACTIVES report, event code, and day-based aggregation window,
+  // according to |protected_obs_history|. Returns 0 if no Observation has been generated
+  // for the given arguments.
+  uint32_t GetUniqueActivesLastGeneratedDayIndex(const std::string& report_key, uint32_t event_code,
+                                                 uint32_t aggregation_days) const;
+
+  // Sets the most recent day index for which an Observation was generated
+  // for a given UNIQUE_N_DAY_ACTIVES report, event code, and day-based aggregation window,
+  // to |value| in |protected_obs_history|
+  void SetUniqueActivesLastGeneratedDayIndex(const std::string& report_key, uint32_t event_code,
+                                             uint32_t aggregation_days, uint32_t value);
+
+  // Returns the most recent day index for which an Observation was generated for a given
+  // PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM report, component, event code, and day-based
+  // aggregation window, according to |protected_obs_history|. Returns 0 if no Observation has been
+  // generated for the given arguments.
+  uint32_t GetPerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
+                                                    const std::string& component,
+                                                    uint32_t event_code,
+                                                    uint32_t aggregation_days) const;
+
+  // Sets the most recent day index for which an Observation was generated for a given
+  // PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM report, component, event code, and day-based
+  // aggregation window, according to |protected_obs_history|.
+  void SetPerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
+                                                const std::string& component, uint32_t event_code,
+                                                uint32_t aggregation_days, uint32_t value);
+
+  // Returns the most recent day index for which a
+  // ReportParticipationObservation was generated for a given report, according
+  // to |obs_history_|. Returns 0 if no Observation has been generated for the
+  // given arguments.
+  uint32_t GetReportParticipationLastGeneratedDayIndex(const std::string& report_key) const;
+
+  // Set the most recent day index for which a ReportParticipationObservation was generated for a
+  // given report to |value|, according to |protected_obs_history|
+  void SetReportParticipationLastGeneratedDayIndex(const std::string& report_key, uint32_t value);
+
  private:
   friend class EventAggregator;  // used for transition during redesign.
   friend class AggregateStoreTest;
@@ -184,27 +223,6 @@ class AggregateStore {
   // may be used to create the new store.
   logger::Status MaybeUpgradeLocalAggregateStore(LocalAggregateStore* store);
   logger::Status MaybeUpgradeObservationHistoryStore(AggregatedObservationHistoryStore* store);
-
-  // Returns the most recent day index for which an Observation was generated
-  // for a given UNIQUE_N_DAY_ACTIVES report, event code, and day-based aggregation window,
-  // according to |obs_history_|. Returns 0 if no Observation has been generated
-  // for the given arguments.
-  uint32_t UniqueActivesLastGeneratedDayIndex(const std::string& report_key, uint32_t event_code,
-                                              uint32_t aggregation_days) const;
-
-  // Returns the most recent day index for which an Observation was generated for a given
-  // PER_DEVICE_NUMERIC_STATS or PER_DEVICE_HISTOGRAM report, component, event code, and day-based
-  // aggregation window, according to |obs_history_|. Returns 0 if no Observation has been generated
-  // for the given arguments.
-  uint32_t PerDeviceNumericLastGeneratedDayIndex(const std::string& report_key,
-                                                 const std::string& component, uint32_t event_code,
-                                                 uint32_t aggregation_days) const;
-
-  // Returns the most recent day index for which a
-  // ReportParticipationObservation was generated for a given report, according
-  // to |obs_history_|. Returns 0 if no Observation has been generated for the
-  // given arguments.
-  uint32_t ReportParticipationLastGeneratedDayIndex(const std::string& report_key) const;
 
   // For a fixed report of type UNIQUE_N_DAY_ACTIVES, generates an Observation
   // for each event code of the parent metric, for each day-based aggregation window of the
@@ -282,14 +300,25 @@ class AggregateStore {
     LocalAggregateStore local_aggregate_store;
   };
 
-  const logger::Encoder* encoder_;
-  const logger::ObservationWriter* observation_writer_;
-  util::ConsistentProtoStore* local_aggregate_proto_store_;
-  util::ConsistentProtoStore* obs_history_proto_store_;
-  util::ProtectedFields<AggregateStoreFields> protected_aggregate_store_;
-  // Not protected by a mutex. Should only be accessed by the Event Aggregator's |worker_thread_|.
-  AggregatedObservationHistoryStore obs_history_;
+  struct AggregatedObservationHistoryStoreFields {
+    AggregatedObservationHistoryStore obs_history;
+  };
+
+  // The number of past days for which the AggregateStore generates and sends Observations, in
+  // addition to a requested day index.
   size_t backfill_days_ = 0;
+
+  // Objects used to generate observations.
+  const logger::Encoder* encoder_;                       // not owned
+  const logger::ObservationWriter* observation_writer_;  // not owned
+
+  // Used for loading and backing up the proto stores to disk.
+  util::ConsistentProtoStore* local_aggregate_proto_store_;  // not owned
+  util::ConsistentProtoStore* obs_history_proto_store_;      // not owned
+
+  // In memory store of local aggregations and data needed to derive them.
+  util::ProtectedFields<AggregateStoreFields> protected_aggregate_store_;
+  util::ProtectedFields<AggregatedObservationHistoryStoreFields> protected_obs_history_;
 };
 
 }  // namespace cobalt::local_aggregation
