@@ -367,6 +367,10 @@ template("metrics_registry") {
       edition = "2018"
       source_root = rust_source_file
 
+      deps = [
+        "$cobalt_root/src/lib/client/rust:cobalt-client",
+      ]
+
       non_rust_deps = [ ":$gen_target_name" ]
     }
   }

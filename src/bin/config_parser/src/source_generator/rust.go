@@ -13,6 +13,8 @@ func (_ Rust) getCommentPrefix() string { return "//" }
 func (_ Rust) supportsTypeAlias() bool  { return true }
 
 func (_ Rust) writeExtraHeader(so *sourceOutputter, projectName, customerName string, namespaces []string) {
+	so.writeLine("use cobalt_client::traits::AsEventCode;")
+	so.writeLine("")
 }
 func (_ Rust) writeExtraFooter(so *sourceOutputter, projectName, customerName string, namespaces []string) {
 }
@@ -37,7 +39,14 @@ func (_ Rust) writeEnumAlias(so *sourceOutputter, name, from, to []string) {
 }
 
 func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
-	so.writeLineFmt("}")
+	so.writeLine("}")
+	so.writeLine("")
+	so.writeLineFmt("impl AsEventCode for %s {", toPascalCase(name...))
+	so.writeLine("  fn as_event_code(&self) -> u32 {")
+	so.writeLine("    *self as u32")
+	so.writeLine("  }")
+	so.writeLine("}")
+
 }
 
 // We don't alias Enums in rust, since this can easily be accomplished with a
