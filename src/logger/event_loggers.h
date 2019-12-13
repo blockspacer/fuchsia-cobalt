@@ -251,18 +251,6 @@ class IntHistogramEventLogger : public EventLogger {
                                                   EventRecord* event_record) override;
 };
 
-// Implementation of EventLogger for metrics of type STRING_USED.
-class StringUsedEventLogger : public EventLogger {
- public:
-  using EventLogger::EventLogger;
-  ~StringUsedEventLogger() override = default;
-
- private:
-  Encoder::Result MaybeEncodeImmediateObservation(const ReportDefinition& report,
-                                                  bool may_invalidate,
-                                                  EventRecord* event_record) override;
-};
-
 // Implementation of EventLogger for metrics of type CUSTOM.
 class CustomEventLogger : public EventLogger {
  public:

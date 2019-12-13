@@ -387,21 +387,6 @@ TEST_F(LoggerTest, LogIntHistogram) {
   }
 }
 
-// Tests the method LogString().
-TEST_F(LoggerTest, LogString) {
-  ASSERT_EQ(kOK, logger_->LogString(testing::all_report_types::kModuleDownloadsMetricId,
-                                    "www.mymodule.com"));
-  Observation2 observation;
-  uint32_t expected_report_id =
-      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId;
-
-  ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
-                                     update_recipient_.get()));
-
-  ASSERT_TRUE(observation.has_string_rappor());
-  EXPECT_FALSE(observation.string_rappor().data().empty());
-}
-
 // Tests the method LogCustomEvent().
 TEST_F(LoggerTest, LogCustomEvent) {
   CustomDimensionValue module_value, number_value;

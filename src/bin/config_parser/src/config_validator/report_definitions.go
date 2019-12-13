@@ -48,9 +48,6 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 	config.MetricDefinition_INT_HISTOGRAM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM: true,
 	},
-	config.MetricDefinition_STRING_USED: map[config.ReportDefinition_ReportType]bool{
-		config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS: true,
-	},
 	config.MetricDefinition_CUSTOM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_CUSTOM_RAW_DUMP: true,
 	},
@@ -135,8 +132,6 @@ func validateReportDefinitionForType(r config.ReportDefinition) error {
 	switch r.ReportType {
 	case config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT:
 		return validateSimpleOccurrenceCountReportDef(r)
-	case config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS:
-		return validateHighFrequencyStringCountsReportDef(r)
 	case config.ReportDefinition_UNIQUE_N_DAY_ACTIVES:
 		return validateUniqueActivesReportDef(r)
 	case config.ReportDefinition_PER_DEVICE_NUMERIC_STATS:
@@ -151,14 +146,6 @@ func validateReportDefinitionForType(r config.ReportDefinition) error {
 }
 
 func validateSimpleOccurrenceCountReportDef(r config.ReportDefinition) error {
-	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func validateHighFrequencyStringCountsReportDef(r config.ReportDefinition) error {
 	if err := validateLocalPrivacyNoiseLevel(r); err != nil {
 		return err
 	}

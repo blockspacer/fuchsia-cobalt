@@ -107,16 +107,6 @@ func TestValidateReportDefinitionForSimpleOccurrenceCount(t *testing.T) {
 	}
 }
 
-// Test that local_privacy_noise_level must be set if the report type is HIGH_FREQUENCY_STRING_COUNTS.
-func TestValidateReportDefinitionForHighFrequencyStringCounts(t *testing.T) {
-	r := makeValidReport()
-	r.ReportType = config.ReportDefinition_HIGH_FREQUENCY_STRING_COUNTS
-
-	if err := validateReportDefinition(r); err == nil {
-		t.Error("Accepted report definition of type HIGH_FREQUENCY_STRING_COUNTS with local_privacy_noise_level unset.")
-	}
-}
-
 // Test that local_privacy_noise_level and window_size must be set if the report type is UNIQUE_N_DAY_ACTIVES.
 func TestValidateReportDefinitionForUniqueActives(t *testing.T) {
 	r := makeValidReport()

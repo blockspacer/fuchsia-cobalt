@@ -25,10 +25,6 @@ namespace crypto {
 
 namespace hash {
 
-// Note(rudominer) Hash() is used for generating the Bloom Filter bits for
-// String RAPPOR. We allow up to 1024 Bloom bits and so we need to consume
-// two bytes of digest per hash in the Bloom filter. We allow up to 8 hashes
-// and so the DIGEST_SIZE must be at least 16.
 static const size_t DIGEST_SIZE = 32;  // SHA-256 outputs 32 bytes.
 
 // Computes the SHA256 digest of |data_len| bytes from |data| and writes the

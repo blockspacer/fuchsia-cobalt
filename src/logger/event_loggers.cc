@@ -59,10 +59,6 @@ std::unique_ptr<EventLogger> EventLogger::Create(
       return std::make_unique<internal::IntHistogramEventLogger>(encoder, event_aggregator,
                                                                  observation_writer, system_data);
     }
-    case MetricDefinition::STRING_USED: {
-      return std::make_unique<internal::StringUsedEventLogger>(encoder, event_aggregator,
-                                                               observation_writer, system_data);
-    }
     case MetricDefinition::CUSTOM: {
       return std::make_unique<internal::CustomEventLogger>(encoder, event_aggregator,
                                                            observation_writer, system_data);
@@ -133,9 +129,6 @@ std::string EventLogger::TraceEvent(const EventRecord& event_record) {
     for (const auto& bucket : e.buckets()) {
       ss << "| " << bucket.index() << " = " << bucket.count() << std::endl;
     }
-  } else if (event->has_string_used_event()) {
-    const auto& e = event->string_used_event();
-    ss << "StringUsedEvent: " << e.str() << std::endl;
   } else if (event->has_custom_event()) {
     const auto& e = event->custom_event();
     ss << "CustomEvent:";
@@ -736,29 +729,6 @@ Encoder::Result IntHistogramEventLogger::MaybeEncodeImmediateObservation(
           event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
           int_histogram_event->event_code(), int_histogram_event->component(),
           std::move(histogram));
-    }
-
-    default:
-      return BadReportType(event_record->project_context()->FullMetricName(metric), report);
-  }
-}
-
-/////////////// StringUsedEventLogger method implementations ///////////////////
-
-Encoder::Result StringUsedEventLogger::MaybeEncodeImmediateObservation(
-    const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
-  TRACE_DURATION("cobalt_core", "StringUsedEventLogger::MaybeEncodeImmediateObservation");
-  const MetricDefinition& metric = *(event_record->metric());
-  const Event& event = *(event_record->event());
-  CHECK(event.has_string_used_event());
-  const auto& string_used_event = event_record->event()->string_used_event();
-  switch (report.report_type()) {
-    // Each report type has its own logic for generating immediate
-    // observations.
-    case ReportDefinition::HIGH_FREQUENCY_STRING_COUNTS: {
-      return encoder()->EncodeRapporObservation(event_record->project_context()->RefMetric(&metric),
-                                                &report, event.day_index(),
-                                                string_used_event.str());
     }
 
     default:

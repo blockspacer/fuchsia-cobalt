@@ -1173,8 +1173,6 @@ std::string PrintMetricType(MetricDefinition_MetricType type) {
       return "MEMORY_USAGE";
     case MetricDefinition::INT_HISTOGRAM:
       return "INT_HISTOGRAM";
-    case MetricDefinition::STRING_USED:
-      return "STRING_USED";
     case MetricDefinition::CUSTOM:
       return "CUSTOM";
     default:
@@ -1195,8 +1193,6 @@ std::string PrintReportType(ReportDefinition_ReportType type) {
       return "NUMERIC_AGGREGATION";
     case ReportDefinition::INT_RANGE_HISTOGRAM:
       return "INT_RANGE_HISTOGRAM";
-    case ReportDefinition::HIGH_FREQUENCY_STRING_COUNTS:
-      return "HIGH_FREQUENCY_STRING_COUNTS";
     case ReportDefinition::NUMERIC_PERF_RAW_DUMP:
       return "NUMERIC_PERF_RAW_DUMP";
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES:

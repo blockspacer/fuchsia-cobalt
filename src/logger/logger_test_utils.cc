@@ -13,6 +13,7 @@
 
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/lib/crypto_util/hash.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/encoder.h"

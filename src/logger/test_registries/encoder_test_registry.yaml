@@ -42,18 +42,6 @@ metric_definitions:
         - OS
         - ARCH
 
-- id: 7
-  metric_name: ModuleDownloads
-  metric_type: STRING_USED
-  reports:
-    - report_name: ModuleDownloads_HeavyHitters
-      id: 3
-      report_type: HIGH_FREQUENCY_STRING_COUNTS
-      local_privacy_noise_level: SMALL
-      expected_population_size: 20000
-      expected_string_set_size: 10000
-      system_profile_field: [BOARD_NAME, PRODUCT_NAME]
-
 - id: 8
   metric_name: ModuleInstalls
   metric_type: CUSTOM

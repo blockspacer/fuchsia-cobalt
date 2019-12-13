@@ -144,8 +144,6 @@ class Logger : public LoggerInterface {
   Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                          const std::string& component, HistogramPtr histogram) override;
 
-  Status LogString(uint32_t metric_id, const std::string& str) override;
-
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and

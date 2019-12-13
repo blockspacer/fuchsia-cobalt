@@ -135,14 +135,6 @@ Status Logger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& 
   return Log(metric_id, MetricDefinition::INT_HISTOGRAM, std::move(event_record));
 }
 
-Status Logger::LogString(uint32_t metric_id, const std::string& str) {
-  internal_metrics_->LoggerCalled(LoggerMethod::LogString, project_context_->project());
-  auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
-  auto* string_used_event = event_record->event()->mutable_string_used_event();
-  string_used_event->set_str(str);
-  return Log(metric_id, MetricDefinition::STRING_USED, std::move(event_record));
-}
-
 Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogCustomEvent, project_context_->project());
   auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);

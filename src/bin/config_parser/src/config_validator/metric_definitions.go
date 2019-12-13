@@ -223,8 +223,6 @@ func validateMetricDefinitionForType(m config.MetricDefinition) error {
 		return validateMetricDimensions(m)
 	case config.MetricDefinition_INT_HISTOGRAM:
 		return validateIntHistogram(m)
-	case config.MetricDefinition_STRING_USED:
-		return validateStringUsed(m)
 	case config.MetricDefinition_CUSTOM:
 		return validateCustom(m)
 	}
@@ -264,13 +262,6 @@ func validateIntHistogram(m config.MetricDefinition) error {
 	}
 
 	return validateMetricDimensions(m)
-}
-
-func validateStringUsed(m config.MetricDefinition) error {
-	if len(m.MetricDimensions) > 0 {
-		return fmt.Errorf("metric_dimensions must not be set for metrics of type STRING_USED")
-	}
-	return nil
 }
 
 // TODO(ninai): remove this function when Cobalt 1.0 is done.

@@ -228,18 +228,6 @@ class EventLoggersTest : public ::testing::Test {
     return logger_->Log(std::move(event_record), mock_clock_->now());
   }
 
-  Status LogString(uint32_t metric_id, const std::string& str) {
-    auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
-    auto* string_used_event = event_record->event()->mutable_string_used_event();
-    string_used_event->set_str(str);
-    Status valid;
-    if (kOK != (valid = logger_->PrepareAndValidateEvent(metric_id, MetricDefinition::STRING_USED,
-                                                         event_record.get()))) {
-      return valid;
-    }
-    return logger_->Log(std::move(event_record), mock_clock_->now());
-  }
-
   Status LogCustomEvent(uint32_t metric_id, const std::vector<std::string>& dimension_names,
                         const std::vector<CustomDimensionValue>& values) {
     auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
@@ -281,8 +269,6 @@ class FrameRateEventLoggerTest : public EventLoggersTest<internal::FrameRateEven
 class MemoryUsageEventLoggerTest : public EventLoggersTest<internal::MemoryUsageEventLogger> {};
 
 class IntHistogramEventLoggerTest : public EventLoggersTest<internal::IntHistogramEventLogger> {};
-
-class StringUsedEventLoggerTest : public EventLoggersTest<internal::StringUsedEventLogger> {};
 
 class CustomEventLoggerTest : public EventLoggersTest<internal::CustomEventLogger> {};
 
@@ -606,20 +592,6 @@ TEST_F(IntHistogramEventLoggerTest, Log) {
     EXPECT_EQ(bucket.index(), indices[i]);
     EXPECT_EQ(bucket.count(), counts[i]);
   }
-}
-
-// Tests the StringUsedEventLogger.
-TEST_F(StringUsedEventLoggerTest, Log) {
-  ASSERT_EQ(kOK,
-            LogString(testing::all_report_types::kModuleDownloadsMetricId, "www.mymodule.com"));
-  Observation2 observation;
-  uint32_t expected_report_id =
-      testing::all_report_types::kModuleDownloadsModuleDownloadsHeavyHittersReportId;
-  ASSERT_TRUE(FetchSingleObservation(&observation, expected_report_id, observation_store_.get(),
-                                     update_recipient_.get()));
-
-  ASSERT_TRUE(observation.has_string_rappor());
-  EXPECT_FALSE(observation.string_rappor().data().empty());
 }
 
 // Tests the CustomEventLogger.

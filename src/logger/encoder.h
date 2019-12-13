@@ -202,25 +202,6 @@ class Encoder {
   Result EncodeCustomObservation(MetricRef metric, const ReportDefinition* report,
                                  uint32_t day_index, EventValuesPtr event_values) const;
 
-  // Encodes an Observation of type RapporObservation.
-  //
-  // metric: Provides access to the names and IDs of the customer, project and
-  // metric associated with the Observation being encoded.
-  //
-  // report: The definition of the Report associated with the Observation being
-  // encoded. In addition to the common fields always required, this method also
-  // requires that the |local_privacy_noise_level| field be set. This is used to
-  // determine the p and q values for String RAPPOR. Additionally
-  // The fields |expected_population_size| and |expected_string_set_size| from
-  // the ReportDefinition will be consulted when configuring the String
-  // RAPPOR algorithm.
-  //
-  // day_index: The day index associated with the Observation being encoded.
-  //
-  // str: The string to encode using String RAPPOR.
-  Result EncodeRapporObservation(MetricRef metric, const ReportDefinition* report,
-                                 uint32_t day_index, const std::string& str) const;
-
   // Encodes an Observation of type UniqueActivesObservation.
   //
   // metric: Provides access to the names and IDs of the customer, project and

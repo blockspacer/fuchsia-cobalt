@@ -268,23 +268,6 @@ TEST_F(EncoderTest, EncodeHistogramObservation) {
   }
 }
 
-TEST_F(EncoderTest, EncodeRapporObservation) {
-  const char kMetricName[] = "ModuleDownloads";
-  const char kReportName[] = "ModuleDownloads_HeavyHitters";
-  const uint32_t kExpectedMetricId = 7;
-  auto pair = GetMetricAndReport(kMetricName, kReportName);
-  auto result = encoder_->EncodeRapporObservation(project_context_->RefMetric(pair.first),
-                                                  pair.second, kDayIndex, "Supercalifragilistic");
-  CheckResult(result, kExpectedMetricId, kModuleDownloadsModuleDownloadsHeavyHittersReportId,
-              kDayIndex);
-  CheckDefaultSystemProfile(result);
-  ASSERT_TRUE(result.observation->has_string_rappor());
-  const RapporObservation& obs = result.observation->string_rappor();
-  EXPECT_LT(obs.cohort(), 256u);
-  // Expect 128 Bloom bits and so 16 bytes.
-  EXPECT_EQ(obs.data().size(), 16u);
-}
-
 TEST_F(EncoderTest, EncodeCustomObservation) {
   const char kMetricName[] = "ModuleInstalls";
   const char kReportName[] = "ModuleInstalls_DetailedData";

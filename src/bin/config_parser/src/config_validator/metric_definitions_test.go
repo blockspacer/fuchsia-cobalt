@@ -407,15 +407,6 @@ func TestValidateIntHistogramNoBuckets(t *testing.T) {
 	}
 }
 
-func TestValidateStringUsedEventCodesSet(t *testing.T) {
-	m := makeValidMetric()
-	m.MetricDimensions[0].EventCodes = map[uint32]string{1: "hello"}
-
-	if err := validateStringUsed(m); err == nil {
-		t.Error("Accepted STRING_USED metric with event_codes set.")
-	}
-}
-
 func TestValidateCustomEventCodesSetOld(t *testing.T) {
 	m := makeValidMetric()
 	m.Parts = map[string]*config.MetricPart{"hello": nil}

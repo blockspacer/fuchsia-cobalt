@@ -57,8 +57,8 @@ message ReportDefinition {
 
   // A Report has one of the following types.
   enum ReportType {
-    reserved 6;
-    reserved "STRING_COUNTS_WITH_THRESHOLD";
+    reserved 5, 6;
+    reserved "HIGH_FREQUENCY_STRING_COUNTS", "STRING_COUNTS_WITH_THRESHOLD";
 
     REPORT_TYPE_UNSET = 0;
 
@@ -135,45 +135,6 @@ message ReportDefinition {
     // Report row type: IntRangeHistogramReportRow
     // (See report_row.proto)
     INT_RANGE_HISTOGRAM = 4;
-
-    // Gives the approximate distribution of the most commonly used strings in a
-    // specific context specified by comments in the owning MetricDefinition.
-    // Supports the use of local differential privacy.
-    //
-    // Supported Input Types:
-    //   - Metric types: STRING_USED
-    //     Encoding: String RAPPOR
-    //     Observation type: StringRapporObservation
-    //
-    // ReportDefinition fields particular to this type:
-    //   - local_privacy_noise_level # Gives RAPPOR parameters p,q
-    //   - expected_population_size  # Hint for RAPPOR num cohorts
-    //   - expected_string_set_size  # Hint for RAPPOR num bits
-    //   - candidate_list # All known string values
-    //   - candidate_file # File with all known string values
-    //
-    // Report fields:
-    //   - date
-    //   - system_profile # One or more fields from the SystemProfile message
-    //                      type (cobalt/observation.proto) describing the
-    //                      system on which the events occurred.
-    //   - string # The string that was used
-    //   - count # An estimate of the total number of times the string was used
-    //           # for the given date, over devices with that system profile.
-    //   - std_err: # Estimate of the std err in the value of Count estimate.
-    //
-    // Example report:
-    //
-    // Date, SystemProfile, String, Count, std_err
-    // ------------------------------------------
-    // 2018-7-25,<sys-prof 1>,"www.alpha.com", 12345, 1.3
-    // 2018-7-25,<sys-prof 1>,"www.beta.com", 23456, 1.3
-    // 2018-7-25,<sys-prof 2>,"www.gamma.com", 34567, 1.3
-    // 2018-7-25,<sys-prof 2>,"www.delta.com", 78901, 1.3
-    //
-    // Note that the report will only include the most frequently used strings,
-    // the so-called "heavy-hitters."
-    HIGH_FREQUENCY_STRING_COUNTS = 5;
 
     // Gives a raw dump of the Observations for a day of one of the numeric
     // performance metrics.
@@ -344,33 +305,20 @@ message ReportDefinition {
   // after data collection has begun or the data will become corrupted.
   LocalPrivacyNoiseLevel local_privacy_noise_level = 4;
 
-  // This field is used only with Report type
-  // HIGH_FREQUENCY_STRING_COUNTS.
-  // An estimate of the number of different devices that will be participating
-  // in collecting data for the report. This helps to tune the RAPPOR
-  // algorithm. This must not be changed after data collection has
-  // begun or the data may become corrupted.
-  uint32 expected_population_size = 5;
+  // This field is not in use.
+  uint32 expected_population_size = 5 [deprecated = true];
 
-  // This field is used only with Report type
-  // HIGH_FREQUENCY_STRING_COUNTS.
-  // An estimate of the size of the set of all strings that are likely to
-  // be logged. This helps to tune the RAPPOR algorithm. This
-  // must not be changed after data collection has begun or the data may
-  // become corrupted.
-  uint32 expected_string_set_size = 6;
+  // This field is not in use.
+  uint32 expected_string_set_size = 6 [deprecated = true];
 
   // Explicit list of known string values. Either this or |candidate_file|
   // should be used, not both. Used for the hashed |component_name|
-  // field for several Report types and the encoded |string| field for the
-  // HIGH_FREQUENCY_STRING_COUNTS Report type.
+  // field for several Report types.
   repeated string candidate_list = 8 [(cobalt_options).hide_on_client = true];
 
   // Simple name or full path to file containing known string values.
   // Either this or |candidate_list| should be used, not both. Used for the
-  // hashed |component_name| field for several report types and the encoded
-  // |string| field for the
-  // HIGH_FREQUENCY_STRING_COUNTS Report type.
+  // hashed |component_name| field for several report types.
   string candidate_file = 9;
 
   // This field is used only with the INT_RANGE_HISTOGRAM Report type, but

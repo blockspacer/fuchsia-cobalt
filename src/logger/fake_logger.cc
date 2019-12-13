@@ -115,17 +115,6 @@ Status FakeLogger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_
   return Status::kOK;
 }
 
-Status FakeLogger::LogString(uint32_t metric_id, const std::string& str) {
-  call_count_ += 1;
-
-  Event event;
-  event.set_metric_id(metric_id);
-  event.mutable_string_used_event()->set_str(str);
-  last_event_logged_ = event;
-
-  return Status::kOK;
-}
-
 Status FakeLogger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
   call_count_ += 1;
 

@@ -168,25 +168,6 @@ class LoggerInterface {
                            std::move(histogram));
   }
 
-  // Logs the fact that a given string was used, in a specific context.
-  // The semantics of the context and the string is specified in the
-  // Metric definition.
-  //
-  //  This method is intended to be used in the following situation:
-  //  * The string s being logged does not contain PII or passwords.
-  //  * The set S of all possible strings that may be logged is large.
-  //    If the set S is small consider using LogEvent() instead.
-  //  * The ultimate data of interest is the statistical distribution of the
-  //    most commonly used strings from S over the population of all Fuchsia
-  //    devices.
-  //
-  // |metric_id| ID of the Metric the logged Event will belong to. It must
-  // be one of the Metrics from the ProjectContext passed to the constructor,
-  // and it must be of type STRING_USED.
-  //
-  // |str| The human-readable string to log.
-  virtual Status LogString(uint32_t metric_id, const std::string& str) = 0;
-
   // Logs a custom event. The structure of the event is defined in a proto file
   // in the project's config folder.
   //

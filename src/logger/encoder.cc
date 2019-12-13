@@ -9,6 +9,7 @@
 
 #include "src/algorithms/rappor/rappor_config_helper.h"
 #include "src/algorithms/rappor/rappor_encoder.h"
+#include "src/lib/crypto_util/hash.h"
 #include "src/logger/project_context.h"
 #include "src/logging.h"
 #include "src/pb/observation2.pb.h"
@@ -23,7 +24,6 @@ using ::cobalt::crypto::byte;
 using ::cobalt::crypto::hash::DIGEST_SIZE;
 using ::cobalt::rappor::BasicRapporEncoder;
 using ::cobalt::rappor::RapporConfigHelper;
-using ::cobalt::rappor::RapporEncoder;
 using ::cobalt::system_data::ClientSecret;
 using ::cobalt::system_data::SystemDataInterface;
 using ::google::protobuf::RepeatedField;
@@ -95,45 +95,6 @@ Encoder::Result Encoder::EncodeBasicRapporObservation(MetricRef metric,
   index_value.set_index_value(value_index);
   result.status = TranslateBasicRapporEncoderStatus(
       metric, report, basic_rappor_encoder.Encode(index_value, basic_rappor_observation));
-  return result;
-}
-
-Encoder::Result Encoder::EncodeRapporObservation(MetricRef metric, const ReportDefinition* report,
-                                                 uint32_t day_index, const std::string& str) const {
-  auto result = MakeObservation(metric, report, day_index);
-  auto* observation = result.observation.get();
-  auto* rappor_observation = observation->mutable_string_rappor();
-
-  rappor::RapporConfig rappor_config;
-  rappor_config.num_hashes = RapporConfigHelper::kNumHashes;
-  rappor_config.num_cohorts = RapporConfigHelper::StringRapporNumCohorts(*report);
-  rappor_config.num_bloom_bits = RapporConfigHelper::StringRapporNumBloomBits(*report);
-  rappor_config.prob_rr = RapporConfigHelper::kProbRR;
-  float prob_bit_flip = RapporConfigHelper::ProbBitFlip(*report, metric.FullyQualifiedName());
-  rappor_config.prob_0_becomes_1 = prob_bit_flip;
-  rappor_config.prob_1_stays_1 = 1.0f - prob_bit_flip;
-
-  RapporEncoder rappor_encoder(rappor_config, client_secret_);
-  ValuePart string_value;
-  string_value.set_string_value(str);
-  switch (rappor_encoder.Encode(string_value, rappor_observation)) {
-    case rappor::kOK:
-      break;
-
-    case rappor::kInvalidConfig:
-      LOG(ERROR) << "RapporEncoder returned kInvalidConfig for: Report " << report->report_name()
-                 << " for metric " << metric.metric_name() << " in project "
-                 << metric.ProjectDebugString() << ".";
-      result.status = kInvalidConfig;
-      return result;
-
-    case rappor::kInvalidInput:
-      LOG(ERROR) << "RapporEncoder returned kInvalidInput for: Report " << report->report_name()
-                 << " for metric " << metric.metric_name() << " in project "
-                 << metric.ProjectDebugString() << ".";
-      result.status = kInvalidArguments;
-      return result;
-  }
   return result;
 }
 
