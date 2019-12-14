@@ -49,7 +49,8 @@ class TestEventAggregatorManager : public EventAggregatorManager {
     return count;
   }
 
-  // TODO(ninai): Add SetSteadyClock() to this class.
+  // Sets the EventAggregatorManager's SteadyClockInterface.
+  void SetSteadyClock(util::SteadyClockInterface* clock) { steady_clock_.reset(clock); }
 };
 
 }  // namespace cobalt::local_aggregation

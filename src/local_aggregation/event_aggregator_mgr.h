@@ -146,9 +146,6 @@ class EventAggregatorManager {
   void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
                         std::chrono::steady_clock::time_point steady_time);
 
-  // Sets the EventAggregatorManager's SteadyClockInterface. Only for use in tests.
-  void SetSteadyClock(util::SteadyClockInterface* clock) { steady_clock_.reset(clock); }
-
   struct WorkerThreadController {
     // Setting this value to true requests that the worker thread stop.
     bool shut_down = true;

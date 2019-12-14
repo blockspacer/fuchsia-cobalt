@@ -7,6 +7,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
+#include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
 #include "src/registry/packed_event_codes.h"
@@ -80,9 +81,9 @@ class EventAggregatorManagerTest : public ::testing::Test {
     return test_steady_clock_ptr_;
   }
 
-  std::unique_ptr<EventAggregatorManager> GetEventAggregatorManager(
+  std::unique_ptr<TestEventAggregatorManager> GetEventAggregatorManager(
       IncrementingSteadyClock* steady_clock) {
-    auto event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+    auto event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
         encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
         obs_history_proto_store_.get());
     event_aggregator_mgr_->SetSteadyClock(steady_clock);

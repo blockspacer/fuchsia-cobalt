@@ -19,6 +19,7 @@
 #include "src/lib/util/proto_util.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
+#include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/testing_constants.h"
 #include "src/pb/event.pb.h"
@@ -111,7 +112,7 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   void ResetEventAggregator() {
-    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
         encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
         obs_history_proto_store_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
@@ -668,7 +669,7 @@ class EventAggregatorTest : public ::testing::Test {
                : day_store_created_ - backfill_days;
   }
 
-  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
+  std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
