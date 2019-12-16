@@ -81,6 +81,60 @@ var metricstests = []struct {
 		},
 		false,
 	},
+	{
+		"ChangingMaxEventCodeAllowedForNonEventOccurred",
+		&config.MetricDefinition{
+			MetaData: &config.MetricDefinition_Metadata{
+				MaxReleaseStage: config.ReleaseStage_GA,
+			},
+			MetricDimensions: []*config.MetricDefinition_MetricDimension{{
+				EventCodes: map[uint32]string{
+					100: "A code",
+				},
+				MaxEventCode: 100,
+			}},
+		},
+		&config.MetricDefinition{
+			MetaData: &config.MetricDefinition_Metadata{
+				MaxReleaseStage: config.ReleaseStage_GA,
+			},
+			MetricDimensions: []*config.MetricDefinition_MetricDimension{{
+				EventCodes: map[uint32]string{
+					100: "A code",
+				},
+				MaxEventCode: 101,
+			}},
+		},
+		true,
+	},
+	{
+		"ChangingMaxEventCodeNotAllowedEventOccurred",
+		&config.MetricDefinition{
+			MetaData: &config.MetricDefinition_Metadata{
+				MaxReleaseStage: config.ReleaseStage_GA,
+			},
+			MetricType: config.MetricDefinition_EVENT_OCCURRED,
+			MetricDimensions: []*config.MetricDefinition_MetricDimension{{
+				EventCodes: map[uint32]string{
+					100: "A code",
+				},
+				MaxEventCode: 100,
+			}},
+		},
+		&config.MetricDefinition{
+			MetaData: &config.MetricDefinition_Metadata{
+				MaxReleaseStage: config.ReleaseStage_GA,
+			},
+			MetricType: config.MetricDefinition_EVENT_OCCURRED,
+			MetricDimensions: []*config.MetricDefinition_MetricDimension{{
+				EventCodes: map[uint32]string{
+					100: "A code",
+				},
+				MaxEventCode: 101,
+			}},
+		},
+		false,
+	},
 }
 
 func TestCompareMetrics(t *testing.T) {

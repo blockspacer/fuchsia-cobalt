@@ -37,6 +37,12 @@ func CompareMetrics(oldMetric, newMetric *config.MetricDefinition, ignoreCompatC
 			if err != nil {
 				return fmt.Errorf("for dimension index '%d': %v", ix, err)
 			}
+
+			if oldMetric.MetricType == config.MetricDefinition_EVENT_OCCURRED || newMetric.MetricType == config.MetricDefinition_EVENT_OCCURRED {
+				if oldDimension.MaxEventCode != newDimension.MaxEventCode && !ignoreCompatChecks {
+					return fmt.Errorf("for dimension index '%d': changing max_event_code is not allowed for EVENT_OCCURRED metrics", ix)
+				}
+			}
 		}
 	}
 
