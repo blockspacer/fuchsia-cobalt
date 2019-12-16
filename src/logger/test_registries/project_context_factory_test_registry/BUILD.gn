@@ -6,7 +6,7 @@ import("$cobalt_root/metrics_registry.gni")
 
 metrics_registry("a") {
   customer_id = 11
-  project_name = "Project11"
+  project_id = 1
   skip_validation = true
   for_testing = true
   directory = "."
@@ -19,7 +19,7 @@ metrics_registry("a") {
 
 metrics_registry("b") {
   customer_id = 22
-  project_name = "Project22"
+  project_id = 1
   skip_validation = true
   for_testing = true
   directory = "."

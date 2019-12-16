@@ -5,7 +5,7 @@
 import("$cobalt_root/metrics_registry.gni")
 
 metrics_registry("test_registry") {
-  project_name = "Cobalt"
+  project_id = 1
 
   skip_validation = true
   for_testing = true

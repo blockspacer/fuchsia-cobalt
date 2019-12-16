@@ -6,8 +6,10 @@ import("//third_party/protobuf/proto_library.gni")
 import("$cobalt_root/metrics_registry.gni")
 
 metrics_registry("internal_metrics_config") {
+  # This must match the IDs of our Cobalt project as specified in:
+  # third_party/cobalt_config/projects.yaml
   customer_id = 2147483647
-  project_name = "metrics"
+  project_id = 205836624
   namespace = "cobalt.logger"
 
   generate_binarypb = false
