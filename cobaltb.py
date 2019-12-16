@@ -289,7 +289,7 @@ def _test(args):
   # it represents. Note that 'cloud_bt' and 'perf' tests are special. They are
   # not included in 'all'. They are only run if asked for explicitly.
   FILTER_MAP = {
-      'all': ['cpp', 'go', 'other'],
+      'all': ['cpp', 'go', 'other', 'rust'],
       'cpp': ['cpp'],
       'go': ['go'],
       'perf': ['perf'],
