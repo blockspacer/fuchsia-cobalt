@@ -12,6 +12,7 @@ using logger::kOK;
 using logger::kOther;
 using logger::Status;
 using util::ConsistentProtoStore;
+using util::SteadyClock;
 using util::TimeToDayIndex;
 
 EventAggregatorManager::EventAggregatorManager(const logger::Encoder* encoder,
@@ -30,6 +31,7 @@ EventAggregatorManager::EventAggregatorManager(const logger::Encoder* encoder,
       std::make_unique<AggregateStore>(encoder, observation_writer, local_aggregate_proto_store,
                                        obs_history_proto_store, backfill_days);
   event_aggregator_ = std::make_unique<EventAggregator>(aggregate_store_.get());
+  steady_clock_ = std::make_unique<SteadyClock>();
 }
 
 void EventAggregatorManager::Start(std::unique_ptr<util::SystemClockInterface> clock) {
