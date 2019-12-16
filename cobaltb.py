@@ -279,7 +279,7 @@ def _lint(args):
 
 
 # Specifiers of subsets of tests to run
-TEST_FILTERS = ['all', 'cpp', 'nocpp', 'go', 'nogo', 'perf', 'perf', 'other']
+TEST_FILTERS = ['all', 'cpp', 'nocpp', 'go', 'nogo', 'perf', 'perf', 'rust', 'other']
 
 
 # Returns 0 if all tests pass, otherwise returns 1. Prints a failure or success
@@ -294,6 +294,7 @@ def _test(args):
       'go': ['go'],
       'perf': ['perf'],
       'other': ['other'],
+      'rust': ['rust'],
   }
 
   # By default try each test just once.

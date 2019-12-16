@@ -155,7 +155,7 @@ def main():
         print(TERM_COLOR_END)
         return -1
 
-    third_party_json = json.load(open(args.third_party_deps_data))
+    third_party_json = {"crates": {}, "patches": []}
 
     deps = {}
     if args.dep_data:

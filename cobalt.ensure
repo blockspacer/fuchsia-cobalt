@@ -6,6 +6,9 @@
 fuchsia/clang/${platform} git_revision:2eacf698802b5c8bc3c9e0031ac11cd0d79f9eae
 fuchsia/sysroot/linux-amd64 git_revision:a4aaacde9d37ccf91a0f8dc8267cb7ad5d9be283
 
+# Rust
+fuchsia/rust/${platform} git_revision:3964a55ba59bb6c3d4badcbddc49f6929ef76862
+
 # Ninja
 @Subdir bin
 infra/ninja/${platform} version:1.8.2

@@ -10,9 +10,7 @@ if (is_mac) {
   import("//build/config/mac/mac_sdk.gni")
 }
 
-default_rustc_prefix =
-    rebase_path("//prebuilt/third_party/rust/host_platform/bin",
-                root_build_dir)
+default_rustc_prefix = rebase_path("//sysroot/bin", root_build_dir)
 
 declare_args() {
   # Sets a custom base directory for `rustc` and `cargo`.
@@ -21,10 +19,6 @@ declare_args() {
 
   # Sets the default LTO type for rustc bulids.
   rust_lto = ""
-
-  # Sets the panic type for Rust on fuchsia.
-  # Valid values are "unwind" and "abort".
-  rust_panic = "unwind"
 
   # Sets the fuchsia toolchain target triple suffix (after arch)
   rust_toolchain_triple_suffix = "fuchsia"
@@ -44,9 +38,6 @@ declare_args() {
   # Valid values are "none", "thin", and "fat".
   rust_override_lto = ""
 }
-
-assert(rust_panic == "unwind" || rust_panic == "abort",
-       "rust_panic was neither 'unwind' nor 'panic'")
 
 _sysroot = sysroot
 sysroot_deps = []
@@ -113,30 +104,6 @@ clang_resource_dir = exec_script(rebase_path("$clang_prefix_rebased/clang"),
                                  "trim string",
                                  [])
 
-# rust_config collects common arguments and dependencies for rustc builds
-cmake_dir = rebase_path("//prebuilt/third_party/cmake/host_platform/bin")
-rust_build_args =
-    [
-      "--rustc",
-      "$rustc_prefix/rustc",
-      "--cmake-dir",
-      cmake_dir,
-      "--lib-dir",
-      rebase_path(get_label_info(":any(shlib_toolchain)", "root_out_dir")),
-      "--target",
-      target,
-      "--sysroot",
-      _sysroot,
-      "--clang_prefix",
-      clang_prefix_rebased,
-      "--clang-resource-dir",
-      clang_resource_dir,
-      "--symbol-level",
-      "symbol_level",
-      "--panic",
-      rust_panic,
-    ] + _platform_args
-
 rust_build_deps = sysroot_deps + std_deps
 
 # We want to force a recompile of the Rust world whenever Rust toolchain
@@ -144,5 +111,5 @@ rust_build_deps = sysroot_deps + std_deps
 # may not be compatible with newer ones.
 # To achieve this, we insert a build dependency on the rust version.
 rust_build_inputs = [
-  "//prebuilt/third_party/rust/host_platform/.versions/rust.cipd_version",
+  "//sysroot/.versions/rust.cipd_version",
 ]

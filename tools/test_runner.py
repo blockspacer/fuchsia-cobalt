@@ -59,7 +59,8 @@ def run_all_tests(test_dir, verbose_count=0, vmodule=None, test_args=None):
 
   if test_args is None:
     test_args = []
-  test_args.append("-logtostderr")
+  if "rust" not in tdir:
+    test_args.append("-logtostderr")
   if verbose_count > 0:
     test_args.append("-v=%d" % verbose_count)
 
