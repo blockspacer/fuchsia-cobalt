@@ -11,7 +11,7 @@ fuchsia/sysroot/linux-amd64 git_revision:a4aaacde9d37ccf91a0f8dc8267cb7ad5d9be28
 infra/ninja/${platform} version:1.8.2
 
 # GN
-gn/gn/${platform} git_revision:2e73d712d9f386375973a6d39442dbfc0076d000
+gn/gn/${platform} git_revision:5624679422865c7126aaa90355caafe1e4848971
 fuchsia/tools/buildidtool/${platform} git_revision:699fade2611740d319b552ae0813b4e63816e87c
 
 # Go

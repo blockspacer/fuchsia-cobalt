@@ -1,0 +1,36 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/rust/toolchain.gni")
+import("//build/toolchain/clang_toolchain.gni")
+import("//build/toolchain/concurrent_jobs.gni")
+
+declare_args() {
+  # Maximum number of Rust processes to run in parallel.
+  #
+  # We run multiple rustc jobs in parallel, each of which can cause significant
+  # amount of memory, especially when using LTO. To avoid out-of-memory errors
+  # we explicitly reduce the number of jobs.
+  concurrent_rust_jobs = default_concurrent_jobs.rust
+}
+
+if (current_toolchain == default_toolchain) {
+  pool("pool") {
+    depth = concurrent_rust_jobs
+  }
+}
+
+# A toolchain dedicated to processing Rust code.
+# The only targets in this toolchain are action() targets, so it
+# has no real tools.  But every toolchain needs stamp and copy.
+toolchain("rustlang") {
+  tool("stamp") {
+    command = stamp_command
+    description = stamp_description
+  }
+  tool("copy") {
+    command = copy_command
+    description = copy_description
+  }
+}
