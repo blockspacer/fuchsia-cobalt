@@ -12,8 +12,6 @@ static_library("crypto_util") {
     "errors.h",
     "hash.cc",
     "hash.h",
-    "mac.cc",
-    "mac.h",
     "random.cc",
     "random.h",
   ]
@@ -30,7 +28,6 @@ source_set("tests") {
     "base64_test.cc",
     "cipher_test.cc",
     "hash_test.cc",
-    "mac_test.cc",
     "random_test.cc",
   ]
 
