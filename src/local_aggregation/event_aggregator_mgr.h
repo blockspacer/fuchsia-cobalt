@@ -6,6 +6,7 @@
 #define COBALT_SRC_LOCAL_AGGREGATION_EVENT_AGGREGATOR_MGR_H_
 
 #include <condition_variable>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <thread>
@@ -19,6 +20,7 @@
 #include "src/logger/encoder.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/status.h"
+#include "src/public/cobalt_config.h"
 
 namespace cobalt {
 
@@ -81,14 +83,17 @@ class EventAggregatorManager {
   // and |gc_interval|, since each of Observation generation and garbage collection will be done at
   // the smallest multiple of |aggregate_backup_interval| which is greater than or equal to its
   // specified interval.
-  EventAggregatorManager(const logger::Encoder* encoder,
-                         const logger::ObservationWriter* observation_writer,
-                         util::ConsistentProtoStore* local_aggregate_proto_store,
-                         util::ConsistentProtoStore* obs_history_proto_store,
-                         size_t backfill_days = 0,
-                         std::chrono::seconds aggregate_backup_interval = std::chrono::minutes(1),
-                         std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
-                         std::chrono::seconds gc_interval = std::chrono::hours(kHoursInADay));
+  EventAggregatorManager(
+      const logger::Encoder* encoder, const logger::ObservationWriter* observation_writer,
+      util::ConsistentProtoStore* local_aggregate_proto_store,
+      util::ConsistentProtoStore* obs_history_proto_store, size_t backfill_days = 0,
+      std::chrono::seconds aggregate_backup_interval = kDefaultAggregateBackupInterval,
+      std::chrono::seconds generate_obs_interval = kDefaultGenerateObsInterval,
+      std::chrono::seconds gc_interval = kDefaultGCInterval);
+
+  EventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
+                         const logger::Encoder* encoder,
+                         const logger::ObservationWriter* observation_writer);
 
   // Shut down the worker thread before destructing the EventAggregatorManager.
   ~EventAggregatorManager() { ShutDown(); }
@@ -100,6 +105,12 @@ class EventAggregatorManager {
   //         the caller should wait to invoke this method until after it is known that the clock is
   //         accurate.
   void Start(std::unique_ptr<util::SystemClockInterface> clock);
+
+  // Resets the state of the local aggregator.
+  //
+  // TODO(pesk): also clear the contents of the ConsistentProtoStores if we
+  // implement a mode which uses them.
+  void Reset();
 
   // Returns a pointer to an EventAggregator to be used for logging.
   EventAggregator* GetEventAggregator() { return event_aggregator_.get(); }
@@ -168,7 +179,9 @@ class EventAggregatorManager {
     std::condition_variable_any shutdown_notifier;
   };
 
-  size_t backfill_days_;
+  const logger::Encoder* encoder_;
+  const logger::ObservationWriter* observation_writer_;
+  size_t backfill_days_ = 0;
   std::chrono::seconds aggregate_backup_interval_;
   std::chrono::seconds generate_obs_interval_;
   std::chrono::seconds gc_interval_;
@@ -178,7 +191,13 @@ class EventAggregatorManager {
   std::unique_ptr<util::SteadyClockInterface> steady_clock_;
 
   std::unique_ptr<AggregateStore> aggregate_store_;
+  std::unique_ptr<util::ConsistentProtoStore> owned_local_aggregate_proto_store_;
+  std::unique_ptr<util::ConsistentProtoStore> owned_obs_history_proto_store_;
   std::unique_ptr<EventAggregator> event_aggregator_;
+
+  static const std::chrono::seconds kDefaultAggregateBackupInterval;
+  static const std::chrono::seconds kDefaultGenerateObsInterval;
+  static const std::chrono::seconds kDefaultGCInterval;
 
   std::thread worker_thread_;
   util::ProtectedFields<WorkerThreadController> protected_worker_thread_controller_;

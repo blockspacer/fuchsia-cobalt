@@ -52,9 +52,8 @@ class FileObservationStoreTest : public ::testing::Test {
   }
 
   void MakeStore() {
-    store_ = std::make_unique<FileObservationStore>(
-        kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal,
-        std::make_unique<PosixFileSystem>(), test_dir_name_);
+    store_ = std::make_unique<FileObservationStore>(kMaxBytesPerObservation, kMaxBytesPerEnvelope,
+                                                    kMaxBytesTotal, &fs_, test_dir_name_);
   }
 
   void TearDown() override { store_->Delete(); }
@@ -76,6 +75,7 @@ class FileObservationStoreTest : public ::testing::Test {
   }
 
  protected:
+  PosixFileSystem fs_;
   std::string test_dir_name_;
   std::unique_ptr<FileObservationStore> store_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_;

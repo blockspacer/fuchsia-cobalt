@@ -4,7 +4,11 @@
 
 #include "src/local_aggregation/event_aggregator_mgr.h"
 
+#include <memory>
+
+#include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/datetime_util.h"
+#include "src/lib/util/file_system.h"
 
 namespace cobalt::local_aggregation {
 
@@ -14,6 +18,12 @@ using logger::Status;
 using util::ConsistentProtoStore;
 using util::SteadyClock;
 using util::TimeToDayIndex;
+
+const std::chrono::seconds EventAggregatorManager::kDefaultAggregateBackupInterval =
+    std::chrono::minutes(1);
+const std::chrono::seconds EventAggregatorManager::kDefaultGenerateObsInterval =
+    std::chrono::hours(1);
+const std::chrono::seconds EventAggregatorManager::kDefaultGCInterval = std::chrono::hours(24);
 
 EventAggregatorManager::EventAggregatorManager(const logger::Encoder* encoder,
                                                const logger::ObservationWriter* observation_writer,
@@ -32,6 +42,19 @@ EventAggregatorManager::EventAggregatorManager(const logger::Encoder* encoder,
                                        obs_history_proto_store, backfill_days);
   event_aggregator_ = std::make_unique<EventAggregator>(aggregate_store_.get());
   steady_clock_ = std::make_unique<SteadyClock>();
+}
+
+EventAggregatorManager::EventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
+                                               const logger::Encoder* encoder,
+                                               const logger::ObservationWriter* observation_writer)
+    : encoder_(encoder),
+      observation_writer_(observation_writer),
+      backfill_days_(cfg.local_aggregation_backfill_days),
+      owned_local_aggregate_proto_store_(
+          new ConsistentProtoStore(cfg.local_aggregate_proto_store_path, fs)),
+      owned_obs_history_proto_store_(
+          new ConsistentProtoStore(cfg.obs_history_proto_store_path, fs)) {
+  Reset();
 }
 
 void EventAggregatorManager::Start(std::unique_ptr<util::SystemClockInterface> clock) {
@@ -144,4 +167,13 @@ logger::Status EventAggregatorManager::GenerateObservationsNoWorker(
   }
   return aggregate_store_->GenerateObservations(final_day_index_utc, final_day_index_local);
 }
+
+void EventAggregatorManager::Reset() {
+  aggregate_store_ = std::make_unique<AggregateStore>(
+      encoder_, observation_writer_, owned_local_aggregate_proto_store_.get(),
+      owned_obs_history_proto_store_.get(), backfill_days_);
+
+  event_aggregator_ = std::make_unique<EventAggregator>(aggregate_store_.get());
+}
+
 }  // namespace cobalt::local_aggregation

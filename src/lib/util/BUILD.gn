@@ -175,16 +175,25 @@ static_library("status") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
-static_library("posix_file_system") {
+source_set("file_system") {
   sources = [
     "file_system.h",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  public_deps = [
+    ":proto_serialization",
+    "$cobalt_root/src/lib/statusor",
+  ]
+}
+
+static_library("posix_file_system") {
+  sources = [
     "posix_file_system.cc",
     "posix_file_system.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
-  deps = [
-    ":proto_serialization",
-    "$cobalt_root/src/lib/statusor",
+  public_deps = [
+    ":file_system",
   ]
 }
 

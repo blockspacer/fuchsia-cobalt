@@ -53,9 +53,11 @@ source_set("event_aggregator_mgr") {
     "$cobalt_root/src/lib/util:clock",
     "$cobalt_root/src/lib/util:consistent_proto_store",
     "$cobalt_root/src/lib/util:datetime_util",
+    "$cobalt_root/src/lib/util:file_system",
     "$cobalt_root/src/logger:encoder",
     "$cobalt_root/src/logger:observation_writer",
     "$cobalt_root/src/logger:status",
+    "$cobalt_root/src/public:cobalt_config",
   ]
 
   configs += [ "$cobalt_root:cobalt_config" ]

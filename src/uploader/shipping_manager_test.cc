@@ -591,8 +591,8 @@ class LocalShippingManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     fs_.Delete(test_file_name_);
-    shipping_manager_ = std::make_unique<LocalShippingManager>(
-        &observation_store_, test_file_name_, std::make_unique<util::PosixFileSystem>());
+    shipping_manager_ =
+        std::make_unique<LocalShippingManager>(&observation_store_, test_file_name_, &fs_);
     shipping_manager_->Start();
   }
 

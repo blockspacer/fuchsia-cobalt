@@ -36,11 +36,11 @@ constexpr uint64_t kMaxRandomNumber = 9999999999;
 
 FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
                                            size_t max_bytes_per_envelope, size_t max_bytes_total,
-                                           std::unique_ptr<FileSystem> fs,
-                                           std::string root_directory, std::string name,
+                                           FileSystem *fs, std::string root_directory,
+                                           std::string name,
                                            logger::LoggerInterface *internal_logger)
     : ObservationStore(max_bytes_per_observation, max_bytes_per_envelope, max_bytes_total),
-      fs_(std::move(fs)),
+      fs_(fs),
       root_directory_(std::move(root_directory)),
       active_file_name_(FullPath(kActiveFileName)),
       name_(std::move(name)),
@@ -287,7 +287,7 @@ std::unique_ptr<ObservationStore::EnvelopeHolder> FileObservationStore::TakeNext
 
   auto oldest_file_name = oldest_file_name_or.ConsumeValueOrDie();
   fields->files_taken.insert(oldest_file_name);
-  return std::make_unique<FileEnvelopeHolder>(fs_.get(), this, root_directory_, oldest_file_name);
+  return std::make_unique<FileEnvelopeHolder>(fs_, this, root_directory_, oldest_file_name);
 }
 
 void FileObservationStore::ReturnEnvelopeHolder(

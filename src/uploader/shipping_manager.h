@@ -119,6 +119,10 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   size_t num_failed_attempts() const;
   grpc::Status last_send_status() const;
 
+  // Resets the internal metrics for the ShippingManager and the ClearcutUploader to use the
+  // provided logger.
+  virtual void ResetInternalMetrics(logger::LoggerInterface* internal_logger) = 0;
+
  private:
   friend class ClearcutV1ShippingManager;
   friend class LocalShippingManager;
@@ -261,7 +265,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
 
   // Resets the internal metrics for the ShippingManager and the ClearcutUploader to use the
   // provided logger.
-  void ResetInternalMetrics(logger::LoggerInterface* internal_logger = nullptr);
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger) override;
 
  private:
   std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
@@ -291,15 +295,36 @@ class ClearcutV1ShippingManager : public ShippingManager {
 class LocalShippingManager : public ShippingManager {
  public:
   explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
-                                std::string output_file_path, std::unique_ptr<util::FileSystem> fs);
+                                std::string output_file_path, util::FileSystem* fs);
+
+  // DEPRECATED: Use non-owned FileSystem
+  explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                std::string output_file_path,
+                                std::unique_ptr<util::FileSystem> owned_fs)
+      : LocalShippingManager(observation_store, std::move(output_file_path), owned_fs.get()) {
+    owned_fs_ = std::move(owned_fs);
+  }
 
   explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
                                 util::EncryptedMessageMaker* encrypt_to_analyzer,
-                                std::string output_file_path, std::unique_ptr<util::FileSystem> fs);
+                                std::string output_file_path, util::FileSystem* fs);
+
+  // DEPRECATED: Use non-owned FileSystem
+  explicit LocalShippingManager(observation_store::ObservationStore* observation_store,
+                                util::EncryptedMessageMaker* encrypt_to_analyzer,
+                                std::string output_file_path,
+                                std::unique_ptr<util::FileSystem> owned_fs)
+      : LocalShippingManager(observation_store, encrypt_to_analyzer, std::move(output_file_path),
+                             owned_fs.get()) {
+    owned_fs_ = std::move(owned_fs);
+  }
 
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
   ~LocalShippingManager() override = default;
+
+  // We don't want to track internal metrics for LocalShippingManager
+  void ResetInternalMetrics(logger::LoggerInterface* internal_logger) override {}
 
  private:
   std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> SendEnvelopeToBackend(
@@ -309,7 +334,8 @@ class LocalShippingManager : public ShippingManager {
   [[nodiscard]] std::string name() const override { return "LocalShippingManager"; }
 
   std::string output_file_path_;
-  const std::unique_ptr<util::FileSystem> fs_;
+  std::unique_ptr<util::FileSystem> owned_fs_;
+  util::FileSystem* fs_;
 };
 
 }  // namespace cobalt::uploader

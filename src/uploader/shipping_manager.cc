@@ -394,19 +394,16 @@ void ShippingManager::WaitUntilWorkerWaiting(std::chrono::seconds max_wait) {
 }
 
 LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* observation_store,
-                                           std::string output_file_path,
-                                           std::unique_ptr<util::FileSystem> fs)
-    : LocalShippingManager(observation_store, nullptr, std::move(output_file_path), std::move(fs)) {
-}
+                                           std::string output_file_path, util::FileSystem* fs)
+    : LocalShippingManager(observation_store, nullptr, std::move(output_file_path), fs) {}
 
 LocalShippingManager::LocalShippingManager(observation_store::ObservationStore* observation_store,
                                            util::EncryptedMessageMaker* encrypt_to_analyzer,
-                                           std::string output_file_path,
-                                           std::unique_ptr<util::FileSystem> fs)
+                                           std::string output_file_path, util::FileSystem* fs)
     : ShippingManager({std::chrono::seconds::zero(), std::chrono::seconds::zero()},
                       observation_store, encrypt_to_analyzer),
       output_file_path_(std::move(output_file_path)),
-      fs_(std::move(fs)) {
+      fs_(fs) {
   CHECK(fs_);
 }
 

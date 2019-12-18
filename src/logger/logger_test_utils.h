@@ -125,8 +125,7 @@ class TestUpdateRecipient : public ::cobalt::observation_store::ObservationStore
 class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
  public:
   explicit MockConsistentProtoStore(std::string filename)
-      : ::cobalt::util::ConsistentProtoStore(std::move(filename),
-                                             std::make_unique<::cobalt::util::PosixFileSystem>()) {
+      : ::cobalt::util::ConsistentProtoStore(std::move(filename), &fs_) {
     read_count_ = 0;
     write_count_ = 0;
   }
@@ -161,6 +160,7 @@ class MockConsistentProtoStore : public ::cobalt::util::ConsistentProtoStore {
   }
 
  private:
+  ::cobalt::util::PosixFileSystem fs_;
   std::unique_ptr<google::protobuf::MessageLite> stored_proto_;
 };
 

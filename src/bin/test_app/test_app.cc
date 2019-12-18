@@ -16,53 +16,38 @@
 
 #include "gflags/gflags.h"
 #include "src/lib/clearcut/curl_http_client.h"
-#include "src/lib/statusor/statusor.h"
 #include "src/lib/util/clock.h"
-#include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/file_util.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
-#include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/local_aggregation/local_aggregation.pb.h"
-#include "src/logger/encoder.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
-#include "src/logger/undated_event_manager.h"
 #include "src/logging.h"
-#include "src/observation_store/memory_observation_store.h"
 #include "src/pb/observation2.pb.h"
+#include "src/public/cobalt_config.h"
+#include "src/public/cobalt_service.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project_configs.h"
 #include "src/registry/report_definition.pb.h"
-#include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
+#include "src/uploader/upload_scheduler.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 
 namespace cobalt {
 
 using google::protobuf::RepeatedPtrField;
-using local_aggregation::EventAggregatorManager;
-using logger::Encoder;
 using logger::EventValuesPtr;
 using logger::HistogramPtr;
 using logger::kOK;
-using logger::Logger;
 using logger::LoggerInterface;
-using logger::ObservationWriter;
 using logger::ProjectContext;
 using logger::ProjectContextFactory;
 using logger::Status;
-using logger::UndatedEventManager;
-using observation_store::MemoryObservationStore;
 using system_data::ClientSecret;
-using system_data::SystemData;
-using system_data::SystemDataInterface;
-using uploader::ClearcutV1ShippingManager;
-using util::ConsistentProtoStore;
-using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;
 using util::IncrementingSystemClock;
 using util::PosixFileSystem;
@@ -317,15 +302,9 @@ class RealLoggerFactory : public LoggerFactory {
  public:
   ~RealLoggerFactory() override = default;
 
-  RealLoggerFactory(std::unique_ptr<EncryptedMessageMaker> observation_encrypter,
-                    std::unique_ptr<EncryptedMessageMaker> envelope_encrypter,
+  RealLoggerFactory(std::unique_ptr<CobaltService> cobalt_service,
                     std::unique_ptr<ProjectContextFactory> project_context_factory,
-                    std::string customer_name, std::string project_name,
-                    std::unique_ptr<MemoryObservationStore> observation_store,
-                    std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-                    std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
-                    std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
-                    std::unique_ptr<SystemDataInterface> system_data);
+                    std::string customer_name, std::string project_name);
 
   std::unique_ptr<LoggerInterface> NewLogger(uint32_t day_index) override;
   size_t ObservationCount() override;
@@ -336,54 +315,23 @@ class RealLoggerFactory : public LoggerFactory {
   const ProjectContext* project_context() override { return project_context_.get(); }
 
  private:
-  std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
-  std::unique_ptr<EncryptedMessageMaker> envelope_encrypter_;
+  std::unique_ptr<CobaltService> cobalt_service_;
   std::unique_ptr<ProjectContextFactory> project_context_factory_;
   std::string customer_name_;
   std::string project_name_;
   std::unique_ptr<ProjectContext> project_context_;
-  std::unique_ptr<MemoryObservationStore> observation_store_;
-  std::unique_ptr<ClearcutV1ShippingManager> shipping_manager_;
-  std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<ConsistentProtoStore> obs_history_proto_store_;
-  std::unique_ptr<SystemDataInterface> system_data_;
-  std::unique_ptr<Encoder> encoder_;
-  std::unique_ptr<ObservationWriter> observation_writer_;
-  std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
-  std::shared_ptr<UndatedEventManager> undated_event_manager_;
   std::unique_ptr<FakeValidatedClock> validated_clock_;
   std::unique_ptr<SystemClockInterface> mock_clock_;
 };
 
-RealLoggerFactory::RealLoggerFactory(
-    std::unique_ptr<EncryptedMessageMaker> observation_encrypter,
-    std::unique_ptr<EncryptedMessageMaker> envelope_encrypter,
-    std::unique_ptr<ProjectContextFactory> project_context_factory, std::string customer_name,
-    std::string project_name, std::unique_ptr<MemoryObservationStore> observation_store,
-    std::unique_ptr<ClearcutV1ShippingManager> shipping_manager,
-    std::unique_ptr<ConsistentProtoStore> local_aggregate_proto_store,
-    std::unique_ptr<ConsistentProtoStore> obs_history_proto_store,
-    std::unique_ptr<SystemDataInterface> system_data)
-    : observation_encrypter_(std::move(observation_encrypter)),
-      envelope_encrypter_(std::move(envelope_encrypter)),
+RealLoggerFactory::RealLoggerFactory(std::unique_ptr<CobaltService> cobalt_service,
+                                     std::unique_ptr<ProjectContextFactory> project_context_factory,
+                                     std::string customer_name, std::string project_name)
+    : cobalt_service_(std::move(cobalt_service)),
       project_context_factory_(std::move(project_context_factory)),
       customer_name_(std::move(customer_name)),
       project_name_(std::move(project_name)),
-      project_context_(project_context_factory_->NewProjectContext(customer_name_, project_name_)),
-      observation_store_(std::move(observation_store)),
-      shipping_manager_(std::move(shipping_manager)),
-      local_aggregate_proto_store_(std::move(local_aggregate_proto_store)),
-      obs_history_proto_store_(std::move(obs_history_proto_store)),
-      system_data_(std::move(system_data)) {
-  encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
-  observation_writer_ = std::make_unique<ObservationWriter>(
-      observation_store_.get(), shipping_manager_.get(), observation_encrypter_.get());
-  event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
-      encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-      obs_history_proto_store_.get());
-  undated_event_manager_ = std::make_shared<UndatedEventManager>(
-      encoder_.get(), event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(),
-      system_data_.get());
+      project_context_(project_context_factory_->NewProjectContext(customer_name_, project_name_)) {
 }
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index) {
@@ -396,37 +344,68 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index
     mock_clock_ = std::make_unique<SystemClock>();
   }
   validated_clock_ = std::make_unique<FakeValidatedClock>(mock_clock_.get());
-  std::unique_ptr<Logger> logger = std::make_unique<Logger>(
-      project_context_factory_->NewProjectContext(customer_name_, project_name_), encoder_.get(),
-      event_aggregator_mgr_->GetEventAggregator(), observation_writer_.get(), system_data_.get(),
-      validated_clock_.get(), undated_event_manager_);
-  return std::move(logger);
+
+  return cobalt_service_->NewLogger(
+      project_context_factory_->NewProjectContext(customer_name_, project_name_));
 }
 
 size_t RealLoggerFactory::ObservationCount() {
-  return observation_store_->num_observations_added();
+  return cobalt_service_->observation_store()->num_observations_added();
 }
 
-void RealLoggerFactory::ResetObservationCount() { observation_store_->ResetObservationCounter(); }
+void RealLoggerFactory::ResetObservationCount() {
+  cobalt_service_->observation_store()->ResetObservationCounter();
+}
 
 // TODO(pesk): also clear the contents of the ConsistentProtoStores if we
 // implement a mode which uses them.
 void RealLoggerFactory::ResetLocalAggregation() {
-  event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
-      encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-      obs_history_proto_store_.get());
+  cobalt_service_->event_aggregator_manager()->Reset();
 }
 
 bool RealLoggerFactory::GenerateAggregatedObservations(uint32_t day_index) {
-  return kOK == event_aggregator_mgr_->aggregate_store_->GenerateObservations(day_index);
+  return kOK == cobalt_service_->event_aggregator_manager()->aggregate_store_->GenerateObservations(
+                    day_index);
 }
 
 bool RealLoggerFactory::SendAccumulatedObservations() {
-  shipping_manager_->RequestSendSoon();
-  shipping_manager_->WaitUntilIdle(kDeadlinePerSendAttempt);
-  auto status = shipping_manager_->last_send_status();
+  cobalt_service_->shipping_manager()->RequestSendSoon();
+  cobalt_service_->shipping_manager()->WaitUntilIdle(kDeadlinePerSendAttempt);
+  auto status = cobalt_service_->shipping_manager()->last_send_status();
   return status.ok();
 }
+
+class TestAppPipeline : public TargetPipelineInterface {
+ public:
+  TestAppPipeline() : TargetPipelineInterface(system_data::Environment::DEVEL) {}
+
+  [[nodiscard]] std::optional<std::string> analyzer_encryption_key() const override {
+    if (FLAGS_analyzer_tink_keyset_file.empty() || FLAGS_shuffler_tink_keyset_file.empty()) {
+      VLOG(2) << "WARNING: Observations will not be encrypted to the Analyzer. "
+                 "Rerun with the flag -analyzer_tink_keyset_file.";
+      return std::nullopt;
+    }
+    VLOG(2) << "Reading analyzer keyset file at " << FLAGS_analyzer_tink_keyset_file;
+    return cobalt::util::ReadNonEmptyTextFile(FLAGS_analyzer_tink_keyset_file).ValueOrDie();
+  }
+
+  [[nodiscard]] std::optional<std::string> shuffler_encryption_key() const override {
+    if (FLAGS_analyzer_tink_keyset_file.empty() || FLAGS_shuffler_tink_keyset_file.empty()) {
+      VLOG(2) << "WARNING: Envelopes will not be encrypted to the Shuffler. "
+                 "Rerun with the flag -shuffler_tink_keyset_file.";
+      return std::nullopt;
+    }
+    VLOG(2) << "Reading shuffler keyset file at " << FLAGS_shuffler_tink_keyset_file;
+    return cobalt::util::ReadNonEmptyTextFile(FLAGS_shuffler_tink_keyset_file).ValueOrDie();
+  }
+
+  [[nodiscard]] std::unique_ptr<lib::clearcut::HTTPClient> TakeHttpClient() override {
+    return std::make_unique<lib::clearcut::CurlHTTPClient>();
+  }
+
+  [[nodiscard]] std::string clearcut_endpoint() const override { return FLAGS_clearcut_endpoint; }
+  [[nodiscard]] size_t clearcut_max_retries() const override { return kDefaultClearcutMaxRetries; }
+};
 
 }  // namespace internal
 
@@ -446,71 +425,50 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
 
   auto mode = ParseMode();
 
-  std::unique_ptr<EncryptedMessageMaker> observation_encrypter;
-  if (FLAGS_analyzer_tink_keyset_file.empty()) {
-    VLOG(2) << "WARNING: Observations will not be encrypted to the Analyzer. "
-               "Rerun with the flag -analyzer_tink_keyset_file.";
-    observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
-  } else {
-    VLOG(2) << "Reading analyzer keyset file at " << FLAGS_analyzer_tink_keyset_file;
-    auto key_value =
-        cobalt::util::ReadNonEmptyTextFile(FLAGS_analyzer_tink_keyset_file).ValueOrDie();
-    observation_encrypter = EncryptedMessageMaker::MakeForObservations(key_value).ValueOrDie();
-  }
+  CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
 
-  std::unique_ptr<EncryptedMessageMaker> envelope_encrypter;
-  if (FLAGS_shuffler_tink_keyset_file.empty()) {
-    VLOG(2) << "WARNING: Envelopes will not be encrypted to the Shuffler. "
-               "Rerun with the flag -shuffler_tink_keyset_file.";
-    observation_encrypter = EncryptedMessageMaker::MakeUnencrypted();
-    envelope_encrypter = EncryptedMessageMaker::MakeUnencrypted();
-  } else {
-    VLOG(2) << "Reading shuffler keyset file at " << FLAGS_shuffler_tink_keyset_file;
-    auto key_value =
-        cobalt::util::ReadNonEmptyTextFile(FLAGS_shuffler_tink_keyset_file).ValueOrDie();
-    envelope_encrypter = EncryptedMessageMaker::MakeForObservations(key_value).ValueOrDie();
-  }
+  cfg.product_name = "test_app";
+  cfg.version = "";
+  cfg.release_stage = ReleaseStage::DEBUG;
 
-  std::unique_ptr<SystemDataInterface> system_data(
-      new SystemData("test_app", "", ReleaseStage::DEBUG));
+  cfg.file_system = std::make_unique<util::PosixFileSystem>();
 
-  auto observation_store = std::make_unique<MemoryObservationStore>(
-      kMaxBytesPerObservation, kMaxBytesPerEnvelope, kMaxBytesTotal);
-  auto local_aggregate_proto_store = std::make_unique<ConsistentProtoStore>(
-      FLAGS_local_aggregate_backup_file, std::make_unique<PosixFileSystem>());
-  auto obs_history_proto_store = std::make_unique<ConsistentProtoStore>(
-      FLAGS_aggregated_obs_history_backup_file, std::make_unique<PosixFileSystem>());
+  cfg.use_memory_observation_store = true;
+  cfg.max_bytes_per_event = kMaxBytesPerObservation;
+  cfg.max_bytes_per_envelope = kMaxBytesPerEnvelope;
+  cfg.max_bytes_total = kMaxBytesTotal;
+
+  cfg.local_aggregate_proto_store_path = FLAGS_local_aggregate_backup_file;
+  cfg.obs_history_proto_store_path = FLAGS_aggregated_obs_history_backup_file;
 
   // By using (kMaxSeconds, 0) here we are effectively putting the
-  // ShippingDispatcher in manual mode. It will never send
-  // automatically and it will send immediately in response to
-  // RequestSendSoon().
-  auto upload_scheduler =
-      uploader::UploadScheduler(uploader::UploadScheduler::kMaxSeconds, std::chrono::seconds(0));
+  // ShippingDispatcher in manual mode. It will never send automatically
+  // and it will send immediately in response to RequestSendSoon().
+  cfg.target_interval = uploader::UploadScheduler::kMaxSeconds;
+  cfg.min_interval = std::chrono::seconds(0);
+  cfg.initial_interval = uploader::UploadScheduler::kMaxSeconds;
+
+  cfg.target_pipeline = std::make_unique<internal::TestAppPipeline>();
+
   if (mode == TestApp::kAutomatic) {
     // In automatic mode, let the ShippingManager send to the Shuffler
     // every 10 seconds.
     const auto upload_interval = std::chrono::seconds(10);
-    upload_scheduler = uploader::UploadScheduler(upload_interval, std::chrono::seconds(1));
+    cfg.target_interval = upload_interval;
+    cfg.min_interval = std::chrono::seconds(1);
+    cfg.initial_interval = upload_interval;
   }
-  auto shipping_manager = std::make_unique<ClearcutV1ShippingManager>(
-      upload_scheduler, observation_store.get(), envelope_encrypter.get(),
-      observation_encrypter.get(),
-      std::make_unique<lib::clearcut::ClearcutUploader>(
-          FLAGS_clearcut_endpoint, std::make_unique<lib::clearcut::CurlHTTPClient>()));
-  shipping_manager->Start();
 
-  std::unique_ptr<LoggerFactory> logger_factory(new internal::RealLoggerFactory(
-      std::move(observation_encrypter), std::move(envelope_encrypter),
-      std::move(project_context_factory), FLAGS_customer_name, FLAGS_project_name,
-      std::move(observation_store), std::move(shipping_manager),
-      std::move(local_aggregate_proto_store), std::move(obs_history_proto_store),
-      std::move(system_data)));
+  auto cobalt_service = std::make_unique<CobaltService>(std::move(cfg));
+
+  std::unique_ptr<LoggerFactory> logger_factory(
+      new internal::RealLoggerFactory(std::move(cobalt_service), std::move(project_context_factory),
+                                      FLAGS_customer_name, FLAGS_project_name));
 
   std::unique_ptr<TestApp> test_app(
       new TestApp(std::move(logger_factory), FLAGS_metric_name, mode, &std::cout));
   return test_app;
-}
+}  // namespace cobalt
 
 TestApp::TestApp(std::unique_ptr<LoggerFactory> logger_factory,
                  const std::string& initial_metric_name, Mode mode, std::ostream* ostream)

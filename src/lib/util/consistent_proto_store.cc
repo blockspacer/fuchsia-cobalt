@@ -18,11 +18,19 @@ using google::protobuf::MessageLite;
 constexpr char kTmpSuffix[] = ".tmp";
 constexpr char kOverrideSuffix[] = ".override";
 
-ConsistentProtoStore::ConsistentProtoStore(std::string filename, std::unique_ptr<FileSystem> fs)
+ConsistentProtoStore::ConsistentProtoStore(std::string filename,
+                                           std::unique_ptr<FileSystem> owned_fs)
     : primary_file_(std::move(filename)),
       tmp_file_(primary_file_ + kTmpSuffix),
       override_file_(primary_file_ + kOverrideSuffix),
-      fs_(std::move(fs)) {}
+      owned_fs_(std::move(owned_fs)),
+      fs_(owned_fs_.get()) {}
+
+ConsistentProtoStore::ConsistentProtoStore(std::string filename, FileSystem *fs)
+    : primary_file_(std::move(filename)),
+      tmp_file_(primary_file_ + kTmpSuffix),
+      override_file_(primary_file_ + kOverrideSuffix),
+      fs_(fs) {}
 
 // Write uses a series of operations to write new data. The goal of each of
 // these operations is that if the operation is interrupted or fails, the

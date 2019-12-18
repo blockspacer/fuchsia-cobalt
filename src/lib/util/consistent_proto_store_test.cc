@@ -30,7 +30,7 @@ std::string GetTestDirName(const std::string &base) {
 class TestConsistentProtoStore : public ConsistentProtoStore {
  public:
   explicit TestConsistentProtoStore(const std::string &filename)
-      : ConsistentProtoStore(filename, std::make_unique<PosixFileSystem>()),
+      : ConsistentProtoStore(filename, &fs_),
         fail_write_tmp_(false),
         fail_move_tmp_(false),
         fail_delete_primary_(false),
@@ -76,6 +76,7 @@ class TestConsistentProtoStore : public ConsistentProtoStore {
     return ConsistentProtoStore::MoveOverrideToPrimary();
   }
 
+  PosixFileSystem fs_;
   bool fail_write_tmp_;
   bool fail_move_tmp_;
   bool fail_delete_primary_;

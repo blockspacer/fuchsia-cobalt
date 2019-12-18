@@ -1,0 +1,43 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("cobalt_config") {
+  sources = [
+    "cobalt_config.cc",
+    "cobalt_config.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    "$cobalt_root/src/lib/clearcut",
+    "$cobalt_root/src/lib/util:encrypted_message_util",
+    "$cobalt_root/src/lib/util:file_system",
+    "$cobalt_root/src/logger:project_context",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+    "$cobalt_root/src/system_data:client_secret",
+    "$cobalt_root/src/system_data:configuration_data",
+  ]
+}
+
+source_set("cobalt_service") {
+  sources = [
+    "cobalt_service.cc",
+    "cobalt_service.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    ":cobalt_config",
+    "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
+    "$cobalt_root/src/logger",
+    "$cobalt_root/src/logger:undated_event_manager",
+    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/system_data",
+    "$cobalt_root/src/system_data:client_secret",
+    "$cobalt_root/src/system_data:configuration_data",
+    "$cobalt_root/src/uploader:shipping_manager",
+  ]
+}

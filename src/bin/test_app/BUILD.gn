@@ -42,7 +42,7 @@ source_set("lib") {
     "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/logger:project_context_factory",
-    "$cobalt_root/src/observation_store",
+    "$cobalt_root/src/public:cobalt_service",
     "$cobalt_root/src/uploader:shipping_manager",
     "//third_party/abseil-cpp",
     "//third_party/grpc:grpc++",

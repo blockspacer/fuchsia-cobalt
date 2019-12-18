@@ -119,9 +119,20 @@ class FileObservationStore : public ObservationStore {
   // |name| is used in log messages to distinguish this instance of
   // FileObservationStore.
   FileObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
-                       size_t max_bytes_total, std::unique_ptr<util::FileSystem> fs,
-                       std::string root_directory, std::string name = "FileObservationStore",
+                       size_t max_bytes_total, util::FileSystem *fs, std::string root_directory,
+                       std::string name = "FileObservationStore",
                        logger::LoggerInterface *internal_logger = nullptr);
+
+  // DEPRECATED: Use non-owned FileSystem
+  FileObservationStore(size_t max_bytes_per_observation, size_t max_bytes_per_envelope,
+                       size_t max_bytes_total, std::unique_ptr<util::FileSystem> owned_fs,
+                       std::string root_directory, std::string name = "FileObservationStore",
+                       logger::LoggerInterface *internal_logger = nullptr)
+      : FileObservationStore(max_bytes_per_observation, max_bytes_per_envelope, max_bytes_total,
+                             owned_fs.get(), std::move(root_directory), std::move(name),
+                             internal_logger) {
+    owned_fs_ = std::move(owned_fs);
+  }
 
   using ObservationStore::StoreObservation;
   StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
@@ -183,7 +194,8 @@ class FileObservationStore : public ObservationStore {
   google::protobuf::io::ZeroCopyOutputStream *GetActiveFile(
       util::ProtectedFields<Fields>::LockedFieldsPtr *fields);
 
-  const std::unique_ptr<util::FileSystem> fs_;
+  std::unique_ptr<util::FileSystem> owned_fs_;
+  util::FileSystem *fs_;
   const std::string root_directory_;
   const std::string active_file_name_;
   const std::string name_;

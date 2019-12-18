@@ -24,7 +24,15 @@ class ConsistentProtoStore {
   //
   // |filename| the fully qualified path of the file to store data in.
   // |fs| is used for detecting the presence of, renaming, and deleting files.
-  explicit ConsistentProtoStore(std::string filename, std::unique_ptr<FileSystem> fs);
+  explicit ConsistentProtoStore(std::string filename, FileSystem *fs);
+
+  // Constructs a ConsistentProtoStore
+  //
+  // |filename| the fully qualified path of the file to store data in.
+  // |owned_fs| is used for detecting the presence of, renaming, and deleting files.
+  //
+  // DEPRECATED: Use non-owned FileSystem
+  explicit ConsistentProtoStore(std::string filename, std::unique_ptr<FileSystem> owned_fs);
 
   virtual ~ConsistentProtoStore() = default;
 
@@ -59,7 +67,8 @@ class ConsistentProtoStore {
   // read instead of primary_file_.
   const std::string override_file_;
 
-  std::unique_ptr<FileSystem> fs_;
+  std::unique_ptr<FileSystem> owned_fs_;
+  FileSystem *fs_;
 };
 
 }  // namespace util
