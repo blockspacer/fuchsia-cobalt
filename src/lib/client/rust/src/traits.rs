@@ -10,11 +10,19 @@ pub trait AsEventCode {
     fn as_event_code(&self) -> u32;
 }
 
-impl AsEventCode for u32 {
-    fn as_event_code(&self) -> u32 {
-        *self
-    }
+macro_rules! int_impls {
+    ($($I:ident)+) => {
+        $(
+            impl AsEventCode for $I {
+                fn as_event_code(&self) -> u32 {
+                    *self as u32
+                }
+            }
+        )+
+    };
 }
+
+int_impls!(u32 u16 u8 i32 i16 i8);
 
 /// `AsEventCodes` is any type that can be converted into a `Vec<u32>` for the purposes of reporting
 /// to cobalt.
@@ -129,9 +137,6 @@ mod tests {
         assert_eq!(vec![1, 2, 3, 4, 5].as_event_codes(), vec![1, 2, 3, 4, 5]);
 
         assert_eq!((EventCode1::A, EventCode2::C).as_event_codes(), vec![1, 3]);
-        assert_eq!(
-            (0, EventCode1::B, 10, EventCode2::D).as_event_codes(),
-            vec![0, 2, 10, 4]
-        );
+        assert_eq!((0, EventCode1::B, 10, EventCode2::D).as_event_codes(), vec![0, 2, 10, 4]);
     }
 }
