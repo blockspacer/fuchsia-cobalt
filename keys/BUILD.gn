@@ -32,6 +32,10 @@ test("keys_tests") {
     "//third_party/tink/proto:tink_proto",
   ]
   public_configs = [ "//third_party/tink:tink_config" ]
+  configs -= [
+    "//build/config:no_exceptions",
+    "//build/config:no_rtti",
+  ]
 }
 
 group("tests") {

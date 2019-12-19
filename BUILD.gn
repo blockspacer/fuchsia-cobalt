@@ -46,6 +46,8 @@ test("cobalt_core_unittests") {
     "//third_party/boringssl:crypto",
     "//third_party/googletest:gtest_main",
   ]
+
+  configs -= [ "//build/config:no_exceptions" ]
 }
 
 if (is_fuchsia_tree) {
