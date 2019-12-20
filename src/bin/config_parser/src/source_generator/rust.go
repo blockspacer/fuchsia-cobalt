@@ -5,8 +5,6 @@
 // This file implements outputLanguage for Rust
 package source_generator
 
-import "strings"
-
 type Rust struct{}
 
 func (_ Rust) getCommentPrefix() string { return "//" }
@@ -37,7 +35,14 @@ func (_ Rust) writeEnumAlias(so *sourceOutputter, name, from, to []string) {
 }
 
 func (_ Rust) writeEnumEnd(so *sourceOutputter, name ...string) {
-	so.writeLineFmt("}")
+	so.writeLine("}")
+	so.writeLine("")
+	so.writeLineFmt("impl cobalt_client::traits::AsEventCode for %s {", toPascalCase(name...))
+	so.writeLine("  fn as_event_code(&self) -> u32 {")
+	so.writeLine("    *self as u32")
+	so.writeLine("  }")
+	so.writeLine("}")
+
 }
 
 // We don't alias Enums in rust, since this can easily be accomplished with a
@@ -50,17 +55,17 @@ func (_ Rust) writeTypeAlias(so *sourceOutputter, from, to []string) {
 
 func (_ Rust) writeNamespacesBegin(so *sourceOutputter, namespaces []string) {
 	if len(namespaces) > 0 {
-		ns := make([]string, len(namespaces))
-		for i, v := range namespaces {
-			ns[i] = toSnakeCase(v)
+		for _, ns := range namespaces {
+			so.writeLineFmt("pub mod %s {", toSnakeCase(ns))
 		}
-		so.writeLineFmt("pub mod %s {", strings.Join(ns, "::"))
 	}
 }
 
 func (_ Rust) writeNamespacesEnd(so *sourceOutputter, namespaces []string) {
 	if len(namespaces) > 0 {
-		so.writeLine("}")
+		for _, _ = range namespaces {
+			so.writeLine("}")
+		}
 	}
 }
 

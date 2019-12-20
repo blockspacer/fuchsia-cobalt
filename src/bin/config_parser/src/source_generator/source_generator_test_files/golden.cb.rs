@@ -40,6 +40,12 @@ pub enum TheOtherMetricNameMetricDimension0 {
   AThirdEvent = 2,
 }
 
+impl cobalt_client::traits::AsEventCode for TheOtherMetricNameMetricDimension0 {
+  fn as_event_code(&self) -> u32 {
+    *self as u32
+  }
+}
+
 // Alias for event groups (Metric Dimension The First Group) which has the same event codes
 pub use TheOtherMetricNameMetricDimension0 as EventGroupsMetricDimensionTheFirstGroup;
 
@@ -50,6 +56,12 @@ pub enum TheProjectMetricDimensionASecondGroup {
   Is = 2,
   Another = 3,
   Test = 4,
+}
+
+impl cobalt_client::traits::AsEventCode for TheProjectMetricDimensionASecondGroup {
+  fn as_event_code(&self) -> u32 {
+    *self as u32
+  }
 }
 // Alias for event groups (Metric Dimension A second group) which has the same event codes
 pub use TheProjectMetricDimensionASecondGroup as EventGroupsMetricDimensionASecondGroup;
@@ -65,6 +77,12 @@ impl TheProjectMetricDimension2 {
   #[allow(non_upper_case_globals)]
   pub const Alias: TheProjectMetricDimension2 = TheProjectMetricDimension2::HasNo;
 }
+
+impl cobalt_client::traits::AsEventCode for TheProjectMetricDimension2 {
+  fn as_event_code(&self) -> u32 {
+    *self as u32
+  }
+}
 // Alias for event groups (Metric Dimension 2) which has the same event codes
 pub use TheProjectMetricDimension2 as EventGroupsMetricDimension2;
 
@@ -75,6 +93,12 @@ pub enum TheProjectMetricDimensionFirst {
   Set = 2,
   OfEvent = 3,
   Codes = 4,
+}
+
+impl cobalt_client::traits::AsEventCode for TheProjectMetricDimensionFirst {
+  fn as_event_code(&self) -> u32 {
+    *self as u32
+  }
 }
 // Alias for metric (Metric Dimension First) which has the same event codes
 pub use TheProjectMetricDimensionFirst as MetricMetricDimensionFirst;
@@ -89,6 +113,12 @@ pub enum TheProjectMetricDimensionSecond {
   More = 4,
   Event = 8,
   Codes = 16,
+}
+
+impl cobalt_client::traits::AsEventCode for TheProjectMetricDimensionSecond {
+  fn as_event_code(&self) -> u32 {
+    *self as u32
+  }
 }
 // Alias for metric (Metric Dimension Second) which has the same event codes
 pub use TheProjectMetricDimensionSecond as MetricMetricDimensionSecond;

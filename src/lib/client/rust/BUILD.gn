@@ -1,4 +1,37 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 import("//build/rust/rustc_library.gni")
+import("//build/rust/rustc_test.gni")
+import("$cobalt_root/metrics_registry.gni")
+
+metrics_registry("rustc_registry") {
+  customer_id = 1
+  project_id = 1
+  generate_rust = true
+
+  directory = "tests/test_registry"
+}
+
+metrics_registry("rustc_registry_ns") {
+  customer_id = 1
+  project_id = 1
+  generate_rust = true
+  namespace = "one.two"
+
+  directory = "tests/test_registry"
+}
+
+rustc_test("source_generator_interop_test") {
+  edition = "2018"
+  source_root = "tests/source_generator_interop_test.rs"
+
+  deps = [
+    ":rustc_registry_ns_rustlib",
+    ":rustc_registry_rustlib",
+  ]
+}
 
 rustc_library("cobalt-client") {
   name = "cobalt_client"
@@ -12,5 +45,6 @@ group("tests") {
   testonly = true
   deps = [
     ":cobalt-client_test_build",
+    ":source_generator_interop_test",
   ]
 }
