@@ -88,10 +88,40 @@ source_set("random_test") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("distributions") {
+  sources = [
+    "distributions.cc",
+    "distributions.h",
+  ]
+
+  deps = [
+    ":random",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("distributions_test") {
+  testonly = true
+  sources = [
+    "distributions_test.cc",
+  ]
+
+  deps = [
+    ":distributions",
+    ":random",
+    "//third_party/gflags",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
 group("tests") {
   testonly = true
   deps = [
     ":count_min_test",
+    ":distributions_test",
     ":hash_test",
     ":random_test",
   ]
