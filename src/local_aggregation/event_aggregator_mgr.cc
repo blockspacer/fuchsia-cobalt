@@ -174,6 +174,7 @@ void EventAggregatorManager::Reset() {
       owned_obs_history_proto_store_.get(), backfill_days_);
 
   event_aggregator_ = std::make_unique<EventAggregator>(aggregate_store_.get());
+  steady_clock_ = std::make_unique<SteadyClock>();
 }
 
 }  // namespace cobalt::local_aggregation
