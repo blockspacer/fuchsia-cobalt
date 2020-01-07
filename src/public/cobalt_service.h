@@ -71,6 +71,7 @@ class CobaltService {
 
  private:
   friend class internal::RealLoggerFactory;
+  friend class CobaltControllerImpl;
 
   observation_store::ObservationStore *observation_store() { return observation_store_.get(); }
 
