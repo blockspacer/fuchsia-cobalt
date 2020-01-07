@@ -58,30 +58,6 @@ func ReadProjectConfigFromDir(rootDir string, customerId uint32, projectId uint3
 	return c, fmt.Errorf("Could not find config for customer %d, project %d", customerId, projectId)
 }
 
-func ReadProjectConfigFromDirByName(rootDir string, customerId uint32, projectName string) (c ProjectConfig, err error) {
-	r, err := newConfigReaderForDir(rootDir)
-	if err != nil {
-		return c, err
-	}
-
-	l := []ProjectConfig{}
-	if err = readProjectsList(r, &l); err != nil {
-		return c, err
-	}
-
-	for i := range l {
-		config := &l[i]
-		if config.CustomerId == customerId && config.ProjectName == projectName {
-			if err = ReadProjectConfig(r, config); err != nil {
-				return c, fmt.Errorf("Error reading config for %v %v: %v", config.CustomerName, config.ProjectName, err)
-			}
-			return *config, nil
-		}
-	}
-
-	return c, fmt.Errorf("Could not find config for customer %d, project %q", customerId, projectName)
-}
-
 // ReadConfigFromYaml reads the configuration for a single project from a single yaml file.
 // See project_config.go for the format.
 func ReadConfigFromYaml(yamlConfigPath string, customerId uint32, projectId uint32, version CobaltVersion) (c ProjectConfig, err error) {

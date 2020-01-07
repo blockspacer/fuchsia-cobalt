@@ -20,7 +20,6 @@ var (
 	configFile    = flag.String("config_file", "", "File containing the config for a single project. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
 	customerId    = flag.Int64("customer_id", -1, "Customer Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectId     = flag.Int64("project_id", -1, "Project Id for the config to be read. Must be set if and only if 'config_file' is set.")
-	projectName   = flag.String("project_name", "", "Project name for the config to be read. Must be set if and only if 'config_dir' is set.")
 	v1Project     = flag.Bool("v1_project", false, "Specified project is a Cobalt 1.0 project. Can be set if and only if 'config_file' is set.")
 	gitTimeoutSec = flag.Int64("git_timeout", 60, "How many seconds should I wait on git commands?")
 )
@@ -31,12 +30,8 @@ func checkFlags() error {
 		return fmt.Errorf("Exactly one of 'repo_url', 'config_file' and 'config_dir' must be set.")
 	}
 
-	if *projectId >= 0 && *projectName != "" {
-		return fmt.Errorf("Exactly one of 'project_id' and 'project_name' must be set.")
-	}
-
-	if *configFile == "" && *configDir == "" && (*customerId >= 0 || *projectId >= 0 || *projectName != "") {
-		return fmt.Errorf("'customer_id' and 'project_(id/name)'  must be set if and only if 'config_file' or 'config_dir' are set.")
+	if *configFile == "" && *configDir == "" && (*customerId >= 0 || *projectId >= 0) {
+		return fmt.Errorf("'customer_id' and 'project_id'  must be set if and only if 'config_file' or 'config_dir' are set.")
 	}
 
 	if *v1Project && *configFile == "" {
@@ -72,9 +67,6 @@ func ParseConfigFromFlags() ([]ProjectConfig, error) {
 		configs = append(configs, pc)
 	} else if *customerId >= 0 && *projectId >= 0 {
 		pc, err = ReadProjectConfigFromDir(*configDir, uint32(*customerId), uint32(*projectId))
-		configs = append(configs, pc)
-	} else if *customerId >= 0 && *projectName != "" {
-		pc, err = ReadProjectConfigFromDirByName(*configDir, uint32(*customerId), *projectName)
 		configs = append(configs, pc)
 	} else {
 		configs, err = ReadConfigFromDir(*configDir)

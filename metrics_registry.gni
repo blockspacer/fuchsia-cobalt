@@ -10,8 +10,6 @@
 #   global: (default: false) Should generate the global config.
 #   customer_id: (default: 1) Override the customer for the config.
 #   project_id: numeric project_id of the project to generate the config of
-#   project_name: The string name of the project to use (cobalt v1.0 configs
-#                 only)
 #   output_name: base of the filename for the output
 #   generate_binarypb: (default: true) should we generate a *.pb file with a
 #                      binary representation of the config.
@@ -46,16 +44,11 @@ template("metrics_registry") {
     customer_id = 1
   }
 
-  if (defined(invoker.project_id) && !defined(invoker.project_name)) {
+  if (defined(invoker.project_id)) {
     not_needed([ "global" ])
     project_id = invoker.project_id
-  } else if (!defined(invoker.project_id) && defined(invoker.project_name)) {
-    not_needed([ "global" ])
-    project_name = invoker.project_name
   } else {
-    assert(
-        global,
-        "Exactly one of 'project_id' and 'project_name' or 'global' must be defined")
+    assert(global, "Exactly one of 'project_id' or 'global' must be defined")
   }
 
   if (defined(invoker.namespace)) {
@@ -249,11 +242,6 @@ template("metrics_registry") {
       args += [
         "-project_id",
         "$project_id",
-      ]
-    } else if (defined(project_name)) {
-      args += [
-        "-project_name",
-        "$project_name",
       ]
     }
 
