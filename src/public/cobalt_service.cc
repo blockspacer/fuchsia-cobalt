@@ -121,21 +121,27 @@ CobaltService::CobaltService(CobaltConfig cfg)
           &logger_encoder_, event_aggregator_manager_.GetEventAggregator(), &observation_writer_,
           &system_data_)),
       validated_clock_(cfg.validated_clock),
-      internal_logger_(NewLogger(std::move(cfg.internal_logger_project_context))) {
+      internal_logger_(NewLogger(std::move(cfg.internal_logger_project_context), false)) {
   shipping_manager_->Start();
 }
 
 std::unique_ptr<logger::Logger> CobaltService::NewLogger(
     std::unique_ptr<logger::ProjectContext> project_context) {
+  return NewLogger(std::move(project_context), true);
+}
+
+std::unique_ptr<logger::Logger> CobaltService::NewLogger(
+    std::unique_ptr<logger::ProjectContext> project_context, bool include_internal_logger) {
+  auto logger = include_internal_logger ? internal_logger_.get() : nullptr;
   if (undated_event_manager_) {
-    return std::make_unique<logger::Logger>(
-        std::move(project_context), &logger_encoder_,
-        event_aggregator_manager_.GetEventAggregator(), &observation_writer_, &system_data_,
-        validated_clock_.get(), undated_event_manager_, internal_logger_.get());
+    return std::make_unique<logger::Logger>(std::move(project_context), &logger_encoder_,
+                                            event_aggregator_manager_.GetEventAggregator(),
+                                            &observation_writer_, &system_data_,
+                                            validated_clock_.get(), undated_event_manager_, logger);
   }
-  return std::make_unique<logger::Logger>(
-      std::move(project_context), &logger_encoder_, event_aggregator_manager_.GetEventAggregator(),
-      &observation_writer_, &system_data_, internal_logger_.get());
+  return std::make_unique<logger::Logger>(std::move(project_context), &logger_encoder_,
+                                          event_aggregator_manager_.GetEventAggregator(),
+                                          &observation_writer_, &system_data_, logger);
 }
 
 void CobaltService::SystemClockIsAccurate(std::unique_ptr<util::SystemClockInterface> system_clock,

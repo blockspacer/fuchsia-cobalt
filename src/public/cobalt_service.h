@@ -54,6 +54,11 @@ class CobaltService {
   std::unique_ptr<logger::Logger> NewLogger(
       std::unique_ptr<logger::ProjectContext> project_context);
 
+ private:
+  std::unique_ptr<logger::Logger> NewLogger(std::unique_ptr<logger::ProjectContext> project_context,
+                                            bool include_internal_logger);
+
+ public:
   // SystemClockIsAccurate lets CobaltService know that it no longer needs to maintain an
   // UndatedEventManager, and can flush the data from it into the observation store.
   //
