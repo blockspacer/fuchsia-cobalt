@@ -131,7 +131,8 @@ source_set("randomized_response") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
-test("randomized_response_test") {
+source_set("randomized_response_test") {
+  testonly = true
   sources = [
     "randomized_response_test.cc",
   ]
@@ -142,7 +143,6 @@ test("randomized_response_test") {
     "//third_party/gflags",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
-    "//third_party/googletest:gtest_main",
   ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
