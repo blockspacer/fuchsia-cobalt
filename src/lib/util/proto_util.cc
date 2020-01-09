@@ -4,13 +4,11 @@
 
 #include "src/lib/util/proto_util.h"
 
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
+
 using ::google::protobuf::MessageLite;
 
-namespace cobalt {
-
-using crypto::Base64Encode;
-
-namespace util {
+namespace cobalt::util {
 
 bool SerializeToBase64(const MessageLite& message, std::string* encoded_message) {
   std::string serialized_message;
@@ -18,12 +16,9 @@ bool SerializeToBase64(const MessageLite& message, std::string* encoded_message)
     LOG(ERROR) << "Failed to serialize proto message.";
     return false;
   }
-  if (!Base64Encode(serialized_message, encoded_message)) {
-    LOG(ERROR) << "Failed to base64-encode serialized message.";
-    return false;
-  }
+
+  absl::Base64Escape(serialized_message, encoded_message);
   return true;
 }
 
-}  // namespace util
-}  // namespace cobalt
+}  // namespace cobalt::util

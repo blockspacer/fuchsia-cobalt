@@ -68,7 +68,7 @@ class ClientSecret {
   // This method is not thread safe.
   std::string GetToken();
 
-  [[nodiscard]] const byte* data() const { return bytes_.data(); }
+  [[nodiscard]] const byte* data() const { return reinterpret_cast<const byte*>(bytes_.data()); }
 
   static const size_t kNumSecretBytes = 16;
 
@@ -79,7 +79,7 @@ class ClientSecret {
  private:
   // Private default constructor
   ClientSecret() = default;
-  std::vector<byte> bytes_;
+  std::string bytes_;
 };
 
 }  // namespace cobalt::system_data

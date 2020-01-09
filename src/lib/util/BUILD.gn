@@ -57,7 +57,7 @@ source_set("encrypted_message_util") {
   deps = [
     "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/lib/statusor",
-    "//third_party/abseil-cpp",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 
   public_deps = [
@@ -247,7 +247,7 @@ static_library("proto_util") {
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     "$cobalt_root/src:logging",
-    "$cobalt_root/src/lib/crypto_util",
+    "//third_party/abseil-cpp",
     "//third_party/protobuf:protobuf_lite",
   ]
 }

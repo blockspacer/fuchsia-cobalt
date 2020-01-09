@@ -4,8 +4,6 @@
 
 static_library("crypto_util") {
   sources = [
-    "base64.cc",
-    "base64.h",
     "cipher.cc",
     "cipher.h",
     "errors.cc",
@@ -25,7 +23,6 @@ static_library("crypto_util") {
 source_set("tests") {
   testonly = true
   sources = [
-    "base64_test.cc",
     "cipher_test.cc",
     "hash_test.cc",
     "random_test.cc",

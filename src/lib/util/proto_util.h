@@ -9,7 +9,6 @@
 
 #include <google/protobuf/message_lite.h>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logging.h"
 
 namespace cobalt {

@@ -94,8 +94,8 @@ source_set("project_configs") {
 
   public_deps = [
     "$cobalt_root/src:logging",
-    "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/registry:cobalt_registry_proto",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 
@@ -106,6 +106,7 @@ source_set("project_configs_test") {
   ]
   deps = [
     ":project_configs",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]

@@ -13,11 +13,11 @@
 
 #include "gflags/gflags.h"
 #include "src/bin/test_app/test_registry/test_registry.cb.h"
-#include "src/lib/crypto_util/base64.h"
 #include "src/logger/logger_test_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
@@ -41,7 +41,7 @@ constexpr int kNumAggregatedObservations = 20;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string proto;
-  if (!crypto::Base64Decode(test_app::testing::kConfig, &proto)) {
+  if (!absl::Base64Unescape(test_app::testing::kConfig, &proto)) {
     return false;
   }
 

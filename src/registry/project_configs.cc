@@ -4,15 +4,15 @@
 
 #include "src/registry/project_configs.h"
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 
 namespace cobalt::config {
 
 std::unique_ptr<ProjectConfigs> ProjectConfigs::CreateFromCobaltRegistryBase64(
     const std::string& cobalt_registry_base64) {
   std::string cobalt_registry_bytes;
-  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_registry_bytes)) {
+  if (!absl::Base64Unescape(cobalt_registry_base64, &cobalt_registry_bytes)) {
     LOG(ERROR) << "Unable to parse the provided string as base-64";
     return nullptr;
   }

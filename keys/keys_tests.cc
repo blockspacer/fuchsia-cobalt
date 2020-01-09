@@ -4,7 +4,6 @@
 
 #include "glog/logging.h"
 #include "proto/tink.pb.h"
-#include "src/lib/crypto_util/base64.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/lib/util/file_util.h"
 #include "src/pb/encrypted_message.pb.h"

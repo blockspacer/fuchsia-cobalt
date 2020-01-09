@@ -74,7 +74,7 @@ source_set("project_context_factory") {
     "$cobalt_root/src/registry:cobalt_registry_proto",
 
     # This is for base64 decoding.
-    "$cobalt_root/src/lib/crypto_util",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 
   public_deps = [
@@ -369,6 +369,7 @@ source_set("encoder_test") {
     ":encoder",
     "$cobalt_root/src/local_aggregation:aggregation_utils",
     "test_registries:encoder_test_registry",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -381,9 +382,9 @@ source_set("project_context_test") {
   ]
   public_deps = [
     ":project_context",
-    "$cobalt_root/src/lib/crypto_util",
     "$cobalt_root/src/pb",
     "test_registries:project_context_test_registry",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",
   ]
 }
@@ -398,6 +399,7 @@ source_set("project_context_factory_test") {
     "test_registries/project_context_factory_test_registry:a",
     "test_registries/project_context_factory_test_registry:b",
     "test_registries/project_context_factory_test_registry:c",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",
   ]
 }

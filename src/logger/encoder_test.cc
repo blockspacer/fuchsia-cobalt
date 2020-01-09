@@ -11,7 +11,6 @@
 
 #include <google/protobuf/repeated_field.h>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
@@ -22,6 +21,7 @@
 #include "src/pb/observation2.pb.h"
 #include "src/registry/packed_event_codes.h"
 #include "src/system_data/fake_system_data.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt {
@@ -45,7 +45,7 @@ constexpr uint32_t kValue = 314159;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string cobalt_registry_bytes;
-  if (!crypto::Base64Decode(kCobaltRegistryBase64, &cobalt_registry_bytes)) {
+  if (!absl::Base64Unescape(kCobaltRegistryBase64, &cobalt_registry_bytes)) {
     return false;
   }
   return cobalt_registry->ParseFromString(cobalt_registry_bytes);

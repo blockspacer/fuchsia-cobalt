@@ -7,7 +7,6 @@
 #include <string>
 #include <utility>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/lib/crypto_util/cipher.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "src/pb/envelope.pb.h"

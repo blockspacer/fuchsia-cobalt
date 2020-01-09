@@ -6,11 +6,11 @@
 
 #include <utility>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logging.h"
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/project.pb.h"
 #include "src/registry/project_configs.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 
 namespace cobalt::logger {
 
@@ -31,7 +31,7 @@ std::unique_ptr<CobaltRegistry> ParseRegistryBytes(const std::string& cobalt_reg
 std::unique_ptr<ProjectContextFactory> ProjectContextFactory::CreateFromCobaltRegistryBase64(
     const std::string& cobalt_registry_base64) {
   std::string cobalt_registry_bytes;
-  if (!crypto::Base64Decode(cobalt_registry_base64, &cobalt_registry_bytes)) {
+  if (!absl::Base64Unescape(cobalt_registry_base64, &cobalt_registry_bytes)) {
     LOG(ERROR) << "Unable to parse the provided string as base-64";
     return nullptr;
   }

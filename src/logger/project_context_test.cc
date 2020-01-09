@@ -11,11 +11,11 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logger/test_registries/project_context_test_registry.cb.h"
 #include "src/logging.h"
 #include "src/pb/observation2.pb.h"
 #include "src/registry/project_configs.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 using cobalt::config::ProjectConfigs;
@@ -31,7 +31,7 @@ constexpr uint32_t kMetricA1aId = 1;
 
 bool PopulateCobaltRegistry(CobaltRegistry* cobalt_registry) {
   std::string cobalt_registry_bytes;
-  if (!crypto::Base64Decode(kCobaltRegistryBase64, &cobalt_registry_bytes)) {
+  if (!absl::Base64Unescape(kCobaltRegistryBase64, &cobalt_registry_bytes)) {
     return false;
   }
   return cobalt_registry->ParseFromString(cobalt_registry_bytes);

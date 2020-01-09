@@ -9,11 +9,11 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/a.cb.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/b.cb.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/c.cb.h"
 #include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::logger {
@@ -41,7 +41,7 @@ std::string GetCobaltRegistryBytes(int which_registry) {
       LOG(FATAL) << "Unexpected value for which_registry: " << which_registry;
   }
   std::string registry_bytes;
-  EXPECT_TRUE(crypto::Base64Decode(registry_text, &registry_bytes));
+  EXPECT_TRUE(absl::Base64Unescape(registry_text, &registry_bytes));
   return registry_bytes;
 }
 

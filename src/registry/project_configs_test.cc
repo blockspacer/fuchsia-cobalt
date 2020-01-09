@@ -6,8 +6,8 @@
 
 #include <sstream>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace cobalt::config {
@@ -307,7 +307,7 @@ TEST_F(ProjectConfigsTest, CreateFromCobaltRegistryBase64) {
   std::string bytes;
   cobalt_registry->SerializeToString(&bytes);
   std::string cobalt_registry_base64;
-  crypto::Base64Encode(bytes, &cobalt_registry_base64);
+  absl::Base64Escape(bytes, &cobalt_registry_base64);
   auto project_configs = ProjectConfigs::CreateFromCobaltRegistryBase64(cobalt_registry_base64);
   EXPECT_TRUE(CheckProjectConfigs(*project_configs));
 }

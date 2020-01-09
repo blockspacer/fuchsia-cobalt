@@ -16,7 +16,6 @@
 
 #include <utility>
 
-#include "src/lib/crypto_util/base64.h"
 #include "src/lib/crypto_util/random.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
 
@@ -32,21 +31,17 @@ ClientSecret ClientSecret::GenerateNewSecret() {
 ClientSecret ClientSecret::GenerateNewSecret(crypto::Random* rand) {
   ClientSecret client_secret;
   client_secret.bytes_.resize(kNumSecretBytes);
-  rand->RandomBytes(client_secret.bytes_.data(), kNumSecretBytes);
+  rand->RandomBytes(reinterpret_cast<byte*>(client_secret.bytes_.data()), kNumSecretBytes);
   return client_secret;
 }
 
 // static
 ClientSecret ClientSecret::FromToken(const std::string& token) {
   ClientSecret client_secret;
-  crypto::Base64Decode(token, &client_secret.bytes_);
+  absl::Base64Unescape(token, &client_secret.bytes_);
   return client_secret;
 }
 
-std::string ClientSecret::GetToken() {
-  std::string token;
-  crypto::Base64Encode(bytes_, &token);
-  return token;
-}
+std::string ClientSecret::GetToken() { return absl::Base64Escape(bytes_); }
 
 }  // namespace cobalt::system_data
