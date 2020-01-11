@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	repoUrl       = flag.String("repo_url", "", "URL of the repository containing the config. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
-	configDir     = flag.String("config_dir", "", "Directory containing the config. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
+	repoUrls      flagList
+	configDirs    flagList
 	configFile    = flag.String("config_file", "", "File containing the config for a single project. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
 	customerId    = flag.Int64("customer_id", -1, "Customer Id for the config to be read. Must be set if and only if 'config_file' is set.")
 	projectId     = flag.Int64("project_id", -1, "Project Id for the config to be read. Must be set if and only if 'config_file' is set.")
@@ -24,14 +24,31 @@ var (
 	gitTimeoutSec = flag.Int64("git_timeout", 60, "How many seconds should I wait on git commands?")
 )
 
+type flagList []string
+
+func (f *flagList) String() string {
+	return fmt.Sprintf("%q", *f)
+}
+
+func (f *flagList) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
+// Initialization function that is run before any main().
+func init() {
+	flag.Var(&repoUrls, "repo_url", "URL of the repository containing the config, can be specified multiple times. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
+	flag.Var(&configDirs, "config_dir", "Directory containing the config, can be specified multiple times. Exactly one of 'repo_url', 'config_file' or 'config_dir' must be specified.")
+}
+
 // checkFlags verifies that the specified flags are compatible with each other.
 func checkFlags() error {
-	if (*repoUrl == "") == (*configDir == "") == (*configFile == "") {
+	if (len(repoUrls) == 0) == (len(configDirs) == 0) == (*configFile == "") {
 		return fmt.Errorf("Exactly one of 'repo_url', 'config_file' and 'config_dir' must be set.")
 	}
 
-	if *configFile == "" && *configDir == "" && (*customerId >= 0 || *projectId >= 0) {
-		return fmt.Errorf("'customer_id' and 'project_id'  must be set if and only if 'config_file' or 'config_dir' are set.")
+	if *configFile == "" && len(configDirs) == 0 && (*customerId >= 0 || *projectId >= 0) {
+		return fmt.Errorf("'customer_id' and 'project_id' must be set if and only if 'config_file' or 'config_dir' are set.")
 	}
 
 	if *v1Project && *configFile == "" {
@@ -55,9 +72,13 @@ func ParseConfigFromFlags() ([]ProjectConfig, error) {
 	configs := []ProjectConfig{}
 	var pc ProjectConfig
 	var err error
-	if *repoUrl != "" {
+	if len(repoUrls) != 0 {
 		gitTimeout := time.Duration(*gitTimeoutSec) * time.Second
-		configs, err = ReadConfigFromRepo(*repoUrl, gitTimeout)
+		var repoConfigs []ProjectConfig
+		for _, repoUrl := range repoUrls {
+			repoConfigs, err = ReadConfigFromRepo(repoUrl, gitTimeout)
+			configs = append(configs, repoConfigs...)
+		}
 	} else if *configFile != "" {
 		version := CobaltVersion0
 		if *v1Project {
@@ -66,10 +87,16 @@ func ParseConfigFromFlags() ([]ProjectConfig, error) {
 		pc, err = ReadConfigFromYaml(*configFile, uint32(*customerId), uint32(*projectId), CobaltVersion(version))
 		configs = append(configs, pc)
 	} else if *customerId >= 0 && *projectId >= 0 {
-		pc, err = ReadProjectConfigFromDir(*configDir, uint32(*customerId), uint32(*projectId))
-		configs = append(configs, pc)
+		for _, configDir := range configDirs {
+			pc, err = ReadProjectConfigFromDir(configDir, uint32(*customerId), uint32(*projectId))
+			configs = append(configs, pc)
+		}
 	} else {
-		configs, err = ReadConfigFromDir(*configDir)
+		var dirConfigs []ProjectConfig
+		for _, configDir := range configDirs {
+			dirConfigs, err = ReadConfigFromDir(configDir)
+			configs = append(configs, dirConfigs...)
+		}
 	}
 	return configs, err
 }
@@ -82,8 +109,15 @@ func GetConfigFilesListFromFlags() ([]string, error) {
 	}
 	if *configFile != "" {
 		return []string{*configFile}, nil
-	} else if *configDir != "" {
-		return GetConfigFilesListFromConfigDir(*configDir)
+	} else if len(configDirs) != 0 {
+		files := []string{}
+		var dirFiles []string
+		var err error
+		for _, configDir := range configDirs {
+			dirFiles, err = GetConfigFilesListFromConfigDir(configDir)
+			files = append(files, dirFiles...)
+		}
+		return files, err
 	}
 	return nil, fmt.Errorf("-dep_file requires -config_dir or -config_file")
 }
