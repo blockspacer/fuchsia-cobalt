@@ -35,6 +35,10 @@ class IntegerBucketConfig {
   // Returns the index of the overflow bucket.
   [[nodiscard]] uint32_t OverflowBucket() const { return floors_.size(); }
 
+  // Returns the floor of bucket |index|. Returns INT64_MIN if |index| is the index of the underflow
+  // bucket, or if |index| is not a valid bucket index.
+  [[nodiscard]] int64_t BucketFloor(uint32_t index) const;
+
  private:
   // Constructs an IntegerBucketConfig with the specified floors. See floors_.
   explicit IntegerBucketConfig(std::vector<int64_t> floors) : floors_(std::move(floors)) {}

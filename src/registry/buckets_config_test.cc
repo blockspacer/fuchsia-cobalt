@@ -266,4 +266,28 @@ TEST(IntegerBucketConfigTest, ExponentialTestLarge) {
   EXPECT_EQ(uint32_t(18), int_bucket_config->BucketIndex(1994356000000));
 }
 
+TEST(IntegerBucketConfigTest, BucketFloor) {
+  IntegerBuckets buckets;
+  LinearIntegerBuckets* linear = buckets.mutable_linear();
+  linear->set_floor(0);
+  linear->set_num_buckets(10);
+  linear->set_step_size(1);
+  std::unique_ptr<IntegerBucketConfig> bucket_config =
+      IntegerBucketConfig::CreateFromProto(buckets);
+
+  EXPECT_EQ(INT64_MIN, bucket_config->BucketFloor(0));
+  EXPECT_EQ(0, bucket_config->BucketFloor(1));
+  EXPECT_EQ(1, bucket_config->BucketFloor(2));
+  EXPECT_EQ(2, bucket_config->BucketFloor(3));
+  EXPECT_EQ(3, bucket_config->BucketFloor(4));
+  EXPECT_EQ(4, bucket_config->BucketFloor(5));
+  EXPECT_EQ(5, bucket_config->BucketFloor(6));
+  EXPECT_EQ(6, bucket_config->BucketFloor(7));
+  EXPECT_EQ(7, bucket_config->BucketFloor(8));
+  EXPECT_EQ(8, bucket_config->BucketFloor(9));
+  EXPECT_EQ(9, bucket_config->BucketFloor(10));
+  EXPECT_EQ(10, bucket_config->BucketFloor(11));
+  EXPECT_EQ(INT64_MIN, bucket_config->BucketFloor(12));
+}
+
 }  // namespace cobalt::config

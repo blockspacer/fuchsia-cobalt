@@ -148,12 +148,48 @@ source_set("randomized_response_test") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("integer_encoder") {
+  sources = [
+    "integer_encoder.cc",
+    "integer_encoder.h",
+  ]
+
+  deps = [
+    ":distributions",
+    ":random",
+    ":randomized_response",
+    "$cobalt_root/src/registry:buckets_config",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("integer_encoder_test") {
+  testonly = true
+  sources = [
+    "integer_encoder_test.cc",
+  ]
+
+  deps = [
+    ":integer_encoder",
+    ":random",
+    ":randomized_response",
+    "$cobalt_root/src/registry:buckets_config",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
 group("tests") {
   testonly = true
   deps = [
     ":count_min_test",
     ":distributions_test",
     ":hash_test",
+    ":integer_encoder_test",
     ":random_test",
     ":randomized_response_test",
   ]

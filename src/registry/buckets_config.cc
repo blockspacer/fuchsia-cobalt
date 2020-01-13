@@ -43,6 +43,14 @@ std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateFromProto(
   }
 }
 
+int64_t IntegerBucketConfig::BucketFloor(uint32_t index) const {
+  int64_t floor = INT64_MIN;
+  if (index > 0 && index <= floors_.size()) {
+    floor = floors_[index - 1];
+  }
+  return floor;
+}
+
 std::unique_ptr<IntegerBucketConfig> IntegerBucketConfig::CreateLinear(int64_t floor,
                                                                        uint32_t num_buckets,
                                                                        uint32_t step_size) {
