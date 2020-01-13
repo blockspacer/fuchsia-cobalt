@@ -99,7 +99,22 @@ metrics_registry("project_context_test_registry") {
   global = true
   skip_validation = true
   for_testing = true
-  directory = "project_context_test_registry"
+  directories = [ "project_context_test_registry" ]
+  namespace = "cobalt.logger"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = false
+  generate_cc = true
+}
+
+metrics_registry("multiple_project_context_test_registry_directories") {
+  global = true
+  skip_validation = true
+  for_testing = true
+  directories = [
+    "project_context_factory_test_registry",
+    "project_context_test_registry",
+  ]
   namespace = "cobalt.logger"
   var_name = "cobalt_registry_base64"
 

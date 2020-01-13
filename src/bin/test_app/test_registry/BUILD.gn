@@ -9,7 +9,7 @@ metrics_registry("test_registry") {
 
   skip_validation = true
   for_testing = true
-  directory = "."
+  directories = [ "." ]
   namespace = "cobalt.test_app.testing"
   generate_binarypb = false
   generate_cc = true

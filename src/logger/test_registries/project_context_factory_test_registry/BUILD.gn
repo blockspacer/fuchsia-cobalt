@@ -9,7 +9,7 @@ metrics_registry("a") {
   project_id = 1
   skip_validation = true
   for_testing = true
-  directory = "."
+  directories = [ "." ]
   namespace = "cobalt.logger.a"
   var_name = "cobalt_registry_base64"
 
@@ -22,7 +22,7 @@ metrics_registry("b") {
   project_id = 1
   skip_validation = true
   for_testing = true
-  directory = "."
+  directories = [ "." ]
   namespace = "cobalt.logger.b"
   var_name = "cobalt_registry_base64"
 
@@ -34,7 +34,7 @@ metrics_registry("c") {
   global = true
   skip_validation = true
   for_testing = true
-  directory = "."
+  directories = [ "." ]
   namespace = "cobalt.logger.c"
   var_name = "cobalt_registry_base64"
 

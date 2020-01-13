@@ -17,7 +17,7 @@
 #   generate_dart: (default: false) Should we generate a dart library.
 #   generate_rust: (default: false) Should we generate a rust crate.
 #   v1_project: (default: true) Is this a v1 project.
-#   directory: (default: //third_party/cobalt_config) The directory to parse.
+#   directories: (default: [//third_party/cobalt_config]) The directories to parse.
 #
 # Note: Other args are forwarded to dart_library when generate_dart is true.
 #
@@ -127,10 +127,10 @@ template("metrics_registry") {
     output_name = target_name
   }
 
-  if (defined(invoker.directory)) {
-    cobalt_config_dir = invoker.directory
+  if (defined(invoker.directories)) {
+    cobalt_config_dirs = invoker.directories
   } else {
-    cobalt_config_dir = "//third_party/cobalt_config"
+    cobalt_config_dirs = [ "//third_party/cobalt_config" ]
   }
 
   out_format = ""
@@ -174,9 +174,10 @@ template("metrics_registry") {
 
     depfile = "$target_gen_dir/$output_name.d"
     outputs = generated_files
-    inputs = [
-      "$cobalt_config_dir/projects.yaml",
-    ]
+    inputs = []
+    foreach(config_dir, cobalt_config_dirs) {
+      inputs += [ "$config_dir/projects.yaml" ]
+    }
 
     script = "//build/gn_run_binary.sh"
     args = [
@@ -218,10 +219,13 @@ template("metrics_registry") {
       }
     } else {
       not_needed([ "v1_project" ])
-      args += [
-        "-config_dir",
-        rebase_path(cobalt_config_dir, root_build_dir),
-      ]
+
+      foreach(config_dir, cobalt_config_dirs) {
+        args += [
+          "-config_dir",
+          rebase_path(config_dir, root_build_dir),
+        ]
+      }
     }
 
     if (defined(customer_id)) {

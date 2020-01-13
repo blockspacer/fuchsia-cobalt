@@ -11,7 +11,7 @@ metrics_registry("rustc_registry") {
   project_id = 1
   generate_rust = true
 
-  directory = "tests/test_registry"
+  directories = [ "tests/test_registry" ]
 }
 
 metrics_registry("rustc_registry_ns") {
@@ -20,7 +20,7 @@ metrics_registry("rustc_registry_ns") {
   generate_rust = true
   namespace = "one.two"
 
-  directory = "tests/test_registry"
+  directories = [ "tests/test_registry" ]
 }
 
 rustc_test("source_generator_interop_test") {
