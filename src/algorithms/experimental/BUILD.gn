@@ -154,7 +154,7 @@ source_set("integer_encoder") {
     "integer_encoder.h",
   ]
 
-  deps = [
+  public_deps = [
     ":distributions",
     ":random",
     ":randomized_response",
@@ -183,12 +183,44 @@ source_set("integer_encoder_test") {
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
+source_set("histogram_encoder") {
+  sources = [
+    "histogram_encoder.cc",
+    "histogram_encoder.h",
+  ]
+
+  deps = [
+    ":integer_encoder",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("histogram_encoder_test") {
+  testonly = true
+  sources = [
+    "histogram_encoder_test.cc",
+  ]
+
+  deps = [
+    ":histogram_encoder",
+    ":integer_encoder",
+    ":random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
 group("tests") {
   testonly = true
   deps = [
     ":count_min_test",
     ":distributions_test",
     ":hash_test",
+    ":histogram_encoder_test",
     ":integer_encoder_test",
     ":random_test",
     ":randomized_response_test",
