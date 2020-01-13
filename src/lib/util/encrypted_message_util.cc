@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "google/protobuf/message_lite.h"
-#include "src/lib/crypto_util/cipher.h"
 #include "src/lib/util/status.h"
 #include "src/lib/util/status_codes.h"
 #include "src/logging.h"
@@ -20,9 +19,6 @@
 #include "third_party/tink/cc/keyset_handle.h"
 
 namespace cobalt::util {
-
-using ::cobalt::crypto::byte;
-using ::cobalt::crypto::HybridCipher;
 
 namespace {
 constexpr char kShufflerContextInfo[] = "cobalt-1.0-shuffler";
@@ -164,50 +160,6 @@ bool UnencryptedMessageMaker::Encrypt(const google::protobuf::MessageLite& messa
   encrypted_message->set_scheme(EncryptedMessage::NONE);
   encrypted_message->set_ciphertext(serialized_message);
   VLOG(5) << "EncryptedMessage: encryption_scheme=NONE.";
-  return true;
-}
-
-MessageDecrypter::MessageDecrypter(const std::string& private_key_pem)
-    : cipher_(new HybridCipher()) {
-  if (!cipher_->set_private_key_pem(private_key_pem)) {
-    cipher_.reset();
-    return;
-  }
-}
-
-bool MessageDecrypter::DecryptMessage(const EncryptedMessage& encrypted_message,
-                                      google::protobuf::MessageLite* recovered_message) const {
-  if (!recovered_message) {
-    return false;
-  }
-
-  if (encrypted_message.scheme() == EncryptedMessage::NONE) {
-    if (!recovered_message->ParseFromString(encrypted_message.ciphertext())) {
-      return false;
-    }
-    VLOG(5) << "WARNING: Deserialized unencrypted message!";
-    return true;
-  }
-
-  if (encrypted_message.scheme() != EncryptedMessage::HYBRID_ECDH_V1) {
-    // HYBRID_ECDH_V1 is the only other scheme we know about.
-    return false;
-  }
-
-  if (!cipher_) {
-    return false;
-  }
-
-  std::vector<byte> ptext;
-  if (!cipher_->Decrypt(reinterpret_cast<const byte*>(encrypted_message.ciphertext().data()),
-                        encrypted_message.ciphertext().size(), &ptext)) {
-    return false;
-  }
-  std::string serialized_observation(reinterpret_cast<const char*>(ptext.data()), ptext.size());
-  if (!recovered_message->ParseFromString(serialized_observation)) {
-    return false;
-  }
-  VLOG(5) << "Successfully decrypted message.";
   return true;
 }
 

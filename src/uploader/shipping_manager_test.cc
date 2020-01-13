@@ -53,7 +53,6 @@ class FakeHTTPClient : public lib::clearcut::HTTPClient {
       lib::clearcut::HTTPRequest request,
       std::chrono::steady_clock::time_point /*ignored*/) override {
     std::unique_lock<std::mutex> lock(mutex);
-    util::MessageDecrypter decrypter("");
 
     lib::clearcut::LogRequest req;
     req.ParseFromString(request.body);
@@ -62,8 +61,7 @@ class FakeHTTPClient : public lib::clearcut::HTTPClient {
       EXPECT_TRUE(event.HasExtension(LogEventExtension::ext));
       auto log_event = event.GetExtension(LogEventExtension::ext);
       Envelope recovered_envelope;
-      EXPECT_TRUE(
-          decrypter.DecryptMessage(log_event.cobalt_encrypted_envelope(), &recovered_envelope));
+      EXPECT_TRUE(recovered_envelope.ParseFromString(log_event.cobalt_encrypted_envelope().ciphertext()));
       EXPECT_EQ(1, recovered_envelope.batch_size());
       EXPECT_EQ(kMetricId, recovered_envelope.batch(0).meta_data().metric_id());
       observation_count += recovered_envelope.batch(0).encrypted_observation_size();

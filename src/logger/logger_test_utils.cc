@@ -30,7 +30,6 @@ using crypto::hash::DIGEST_SIZE;
 using local_aggregation::MakeDayWindow;
 using rappor::BasicRapporEncoder;
 using system_data::ClientSecret;
-using util::MessageDecrypter;
 
 namespace logger::testing {
 
@@ -180,7 +179,6 @@ bool FetchObservations(std::vector<Observation2>* observations,
   if (num_received != expected_num_received) {
     return false;
   }
-  MessageDecrypter message_decrypter("");
 
   for (auto i = 0u; i < expected_num_received; i++) {
     bool isNull = (observation_store->metadata_received[i].get() == nullptr);
@@ -198,7 +196,7 @@ bool FetchObservations(std::vector<Observation2>* observations,
     const auto& message = *observation_store->messages_received[i];
     if (message.has_encrypted()) {
       bool successfullyDeserialized =
-          message_decrypter.DecryptMessage(message.encrypted(), &(observations->at(i)));
+        observations->at(i).ParseFromString(message.encrypted().ciphertext());
       EXPECT_TRUE(successfullyDeserialized);
       if (!successfullyDeserialized) {
         return false;
@@ -247,7 +245,6 @@ bool FetchAggregatedObservations(std::vector<Observation2>* observations,
     return false;
   }
   observations->resize(expected_params.daily_num_obs);
-  MessageDecrypter message_decrypter("");
   // Get the expected number of Observations for each report ID.
   // Decrement the expected number as received Observations are counted.
   auto expected_num_obs_by_id = expected_params.num_obs_per_report;
@@ -270,7 +267,7 @@ bool FetchAggregatedObservations(std::vector<Observation2>* observations,
     const auto& message = *observation_store->messages_received[i];
     if (message.has_encrypted()) {
       bool successfullyDeserialized =
-          message_decrypter.DecryptMessage(message.encrypted(), &(observations->at(i)));
+        observations->at(i).ParseFromString(message.encrypted().ciphertext());
       EXPECT_TRUE(successfullyDeserialized);
       if (!successfullyDeserialized) {
         return false;

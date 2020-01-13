@@ -7,7 +7,6 @@
 #include <string>
 #include <utility>
 
-#include "src/lib/crypto_util/cipher.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "src/pb/envelope.pb.h"
 #include "src/pb/key.pb.h"
@@ -54,11 +53,9 @@ TEST(EncryptedMessageUtilTest, NoEncryption) {
   EncryptedMessage encrypted_message;
   EXPECT_TRUE(maker->Encrypt(observation, &encrypted_message));
 
-  // Make a MessageDecrypter.
-  MessageDecrypter decrypter("dummy_key");
   // Decrypt and check.
   observation.Clear();
-  EXPECT_TRUE(decrypter.DecryptMessage(encrypted_message, &observation));
+  EXPECT_TRUE(observation.ParseFromString(encrypted_message.ciphertext()));
   EXPECT_EQ(1u, observation.parts().count("hello"));
 }
 

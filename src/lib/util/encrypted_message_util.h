@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "google/protobuf/message_lite.h"
-#include "src/lib/crypto_util/cipher.h"
 #include "src/lib/statusor/statusor.h"
 #include "src/pb/encrypted_message.pb.h"
 #include "third_party/tink/cc/hybrid_encrypt.h"
@@ -95,21 +94,6 @@ class UnencryptedMessageMaker : public EncryptedMessageMaker {
   [[nodiscard]] EncryptedMessage::EncryptionScheme scheme() const override {
     return EncryptedMessage::NONE;
   }
-};
-
-class MessageDecrypter {
- public:
-  // TODO(rudominer) For key-rotation support the MessageDecrypter
-  // should accept multiple (public, private) key pairs and use the
-  // fingerprint field of EncryptedMessage to select the appropriate private
-  // key.
-  explicit MessageDecrypter(const std::string& private_key_pem);
-
-  bool DecryptMessage(const EncryptedMessage& encrypted_message,
-                      google::protobuf::MessageLite* recovered_message) const;
-
- private:
-  std::unique_ptr<crypto::HybridCipher> cipher_;
 };
 
 }  // namespace util
