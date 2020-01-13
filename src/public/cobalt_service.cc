@@ -132,6 +132,10 @@ std::unique_ptr<logger::Logger> CobaltService::NewLogger(
 
 std::unique_ptr<logger::Logger> CobaltService::NewLogger(
     std::unique_ptr<logger::ProjectContext> project_context, bool include_internal_logger) {
+  if (project_context == nullptr) {
+    return nullptr;
+  }
+
   auto logger = include_internal_logger ? internal_logger_.get() : nullptr;
   if (undated_event_manager_) {
     return std::make_unique<logger::Logger>(std::move(project_context), &logger_encoder_,
