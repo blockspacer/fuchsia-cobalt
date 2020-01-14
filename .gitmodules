@@ -68,7 +68,7 @@
 	url = https://fuchsia.googlesource.com/third_party/curl
 [submodule "third_party/cobalt_config"]
 	path = third_party/cobalt_config
-	url = https://cobalt-analytics.googlesource.com/config
+	url = https://fuchsia.googlesource.com/cobalt-registry
 [submodule "third_party/go/src/golang.org/x/oauth2"]
 	path = third_party/go/src/golang.org/x/oauth2
 	url = https://fuchsia.googlesource.com/third_party/golang.org/x/oauth2
