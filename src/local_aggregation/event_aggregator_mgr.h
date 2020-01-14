@@ -125,6 +125,12 @@ class EventAggregatorManager {
   logger::Status GenerateObservationsNoWorker(uint32_t final_day_index_utc,
                                               uint32_t final_day_index_local = 0u);
 
+  void Disable(bool is_disabled) { aggregate_store_->Disable(is_disabled); }
+  void DeleteData() {
+    aggregate_store_->DeleteData();
+    TriggerBackups();
+  }
+
  private:
   friend class TestEventAggregatorManager;
   friend class EventAggregatorManagerTest;
@@ -157,6 +163,12 @@ class EventAggregatorManager {
   void DoScheduledTasks(std::chrono::system_clock::time_point system_time,
                         std::chrono::steady_clock::time_point steady_time);
 
+  // Triggers the work thread to wake up and back up the LocalAggregateStore and the
+  // ObservationHistory.
+  //
+  // TODO(zmbush): Rename "backup" nomenclature to "checkpoint".
+  void TriggerBackups();
+
   struct WorkerThreadController {
     // Setting this value to true requests that the worker thread stop.
     bool shut_down = true;
@@ -166,17 +178,12 @@ class EventAggregatorManager {
     // its work, it will reset this value to false.
     bool immediate_run_trigger = false;
 
-    // Used to wait on to execute periodic EventAggregator tasks.
-    std::condition_variable_any shutdown_notifier;
-  };
+    // Setting this value to true requests that the worker thread wake up and back up the aggregate
+    // store and the observation history, before going back to sleep.
+    bool back_up_now = false;
 
-  struct ShutDownFlag {
-    // Used to trigger a shutdown of the EventAggregator.
-    bool shut_down = true;
-    // Used in tests to manually trigger a run of the EventAggregator's scheduled tasks.
-    bool manual_trigger = false;
     // Used to wait on to execute periodic EventAggregator tasks.
-    std::condition_variable_any shutdown_notifier;
+    std::condition_variable_any wakeup_notifier;
   };
 
   const logger::Encoder* encoder_;

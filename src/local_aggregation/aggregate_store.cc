@@ -183,6 +183,7 @@ AggregateStore::AggregateStore(const Encoder* encoder, const ObservationWriter* 
       << "backfill_days must be less than or equal to " << kMaxAllowedBackfillDays;
   backfill_days_ = backfill_days;
   auto locked_store = protected_aggregate_store_.lock();
+  locked_store->empty_local_aggregate_store = MakeNewLocalAggregateStore();
   auto restore_aggregates_status =
       local_aggregate_proto_store_->Read(&(locked_store->local_aggregate_store));
   switch (restore_aggregates_status.error_code()) {
@@ -261,11 +262,23 @@ Status AggregateStore::MaybeInsertReportConfig(const ProjectContext& project_con
     }
     (*locked->local_aggregate_store.mutable_by_report_key())[key] = report_aggregates;
   }
+
+  // Make sure that the 'empty' store has the key as well.
+  ReportAggregates empty_report_aggregates;
+  if (locked->empty_local_aggregate_store.by_report_key().count(key) == 0) {
+    if (!PopulateReportAggregates(project_context, metric, report, &empty_report_aggregates)) {
+      return kInvalidArguments;
+    }
+    (*locked->empty_local_aggregate_store.mutable_by_report_key())[key] = empty_report_aggregates;
+  }
   return kOK;
 }
 
 Status AggregateStore::SetActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
                                  uint32_t report_id, uint64_t event_code, uint32_t day_index) {
+  if (is_disabled_) {
+    return kOK;
+  }
   std::string key;
   if (!PopulateReportKey(customer_id, project_id, metric_id, report_id, &key)) {
     return kInvalidArguments;
@@ -293,6 +306,9 @@ Status AggregateStore::UpdateNumericAggregate(uint32_t customer_id, uint32_t pro
                                               uint32_t metric_id, uint32_t report_id,
                                               const std::string& component, uint64_t event_code,
                                               uint32_t day_index, int64_t value) {
+  if (is_disabled_) {
+    return kOK;
+  }
   std::string report_key;
   if (!PopulateReportKey(customer_id, project_id, metric_id, report_id, &report_key)) {
     return kInvalidArguments;
@@ -804,6 +820,22 @@ void AggregateStore::SetReportParticipationLastGeneratedDayIndex(const std::stri
   (*locked->obs_history.mutable_by_report_key())[report_key]
       .mutable_report_participation_history()
       ->set_last_generated(value);
+}
+
+void AggregateStore::DeleteData() {
+  LOG(INFO) << "AggregateStore: Deleting stored data";
+
+  {
+    auto locked = protected_aggregate_store_.lock();
+    locked->local_aggregate_store = locked->empty_local_aggregate_store;
+  }
+  protected_obs_history_.lock()->obs_history = MakeNewObservationHistoryStore();
+}
+
+void AggregateStore::Disable(bool is_disabled) {
+  LOG(INFO) << "AggregateStore: " << (is_disabled ? "Disabling" : "Enabling")
+            << " event aggregate storage.";
+  is_disabled_ = is_disabled;
 }
 
 Status AggregateStore::GenerateSinglePerDeviceNumericObservation(

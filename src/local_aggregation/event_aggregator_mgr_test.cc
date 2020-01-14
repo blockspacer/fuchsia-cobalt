@@ -203,7 +203,7 @@ class EventAggregatorManagerTest : public ::testing::Test {
       // Acquire the lock to manually trigger the scheduled tasks.
       auto locked = event_aggregator_mgr->protected_worker_thread_controller_.lock();
       locked->immediate_run_trigger = true;
-      locked->shutdown_notifier.notify_all();
+      locked->wakeup_notifier.notify_all();
     }
     while (true) {
       // Reacquire the lock to make sure that the scheduled tasks have completed.
@@ -286,6 +286,106 @@ TEST_F(EventAggregatorManagerTest, UpdateAggregationConfigs) {
   // all_report_types registry.
   EXPECT_EQ(logger::testing::all_report_types::kExpectedAggregationParams.metric_report_ids.size(),
             NumberOfKVPairsInStore(event_aggregator_mgr.get()));
+}
+
+TEST_F(EventAggregatorManagerTest, LogEventsAfterDelete) {
+  auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
+  event_aggregator_mgr->Start(GetTestSystemClock());
+
+  auto day_index = CurrentDayIndex();
+  // Provide the EventAggregator with the all_report_types registry.
+  std::shared_ptr<ProjectContext> project_context = GetTestProject(kCobaltRegistryBase64);
+  EXPECT_EQ(kOK,
+            event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                       kDeviceBootsMetricReportId, day_index, /*event_code*/ 0u));
+
+  event_aggregator_mgr->DeleteData();
+
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kFeaturesActiveMetricReportId, day_index, /*event_code*/ 4u));
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kEventsOccurredMetricReportId, day_index, /*event_code*/ 1u));
+
+  EXPECT_EQ(2, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
+  EXPECT_FALSE(ContainsValidUniqueActivesAggregate(event_aggregator_mgr.get(), project_context,
+                                                   kDeviceBootsMetricReportId, day_index,
+                                                   /*event_code*/ 0u));
+  EXPECT_TRUE(ContainsValidUniqueActivesAggregate(event_aggregator_mgr.get(), project_context,
+                                                  kFeaturesActiveMetricReportId, day_index,
+                                                  /*event_code*/ 4u));
+  EXPECT_TRUE(ContainsValidUniqueActivesAggregate(event_aggregator_mgr.get(), project_context,
+                                                  kEventsOccurredMetricReportId, day_index,
+                                                  /*event_code*/ 1u));
+
+  ShutDown(event_aggregator_mgr.get());
+  EXPECT_TRUE(BackUpHappened());
+}
+
+TEST_F(EventAggregatorManagerTest, DeleteData) {
+  auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
+  event_aggregator_mgr->Start(GetTestSystemClock());
+
+  auto day_index = CurrentDayIndex();
+  // Provide the EventAggregator with the all_report_types registry.
+  std::shared_ptr<ProjectContext> project_context = GetTestProject(kCobaltRegistryBase64);
+  EXPECT_EQ(kOK,
+            event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                       kDeviceBootsMetricReportId, day_index, /*event_code*/ 0u));
+
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kFeaturesActiveMetricReportId, day_index, /*event_code*/ 4u));
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kEventsOccurredMetricReportId, day_index, /*event_code*/ 1u));
+
+  EXPECT_EQ(3, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
+  event_aggregator_mgr->DeleteData();
+  EXPECT_EQ(0, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
+}
+
+TEST_F(EventAggregatorManagerTest, Disable) {
+  auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
+  event_aggregator_mgr->Start(GetTestSystemClock());
+
+  auto day_index = CurrentDayIndex();
+  // Provide the EventAggregator with the all_report_types registry.
+  std::shared_ptr<ProjectContext> project_context = GetTestProject(kCobaltRegistryBase64);
+  EXPECT_EQ(kOK,
+            event_aggregator_mgr->GetEventAggregator()->UpdateAggregationConfigs(*project_context));
+
+  event_aggregator_mgr->Disable(true);
+
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                       kDeviceBootsMetricReportId, day_index, /*event_code*/ 0u));
+
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kFeaturesActiveMetricReportId, day_index, /*event_code*/ 4u));
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kEventsOccurredMetricReportId, day_index, /*event_code*/ 1u));
+
+  EXPECT_EQ(0, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
+
+  event_aggregator_mgr->Disable(false);
+
+  EXPECT_EQ(kOK, AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                       kDeviceBootsMetricReportId, day_index, /*event_code*/ 0u));
+
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kFeaturesActiveMetricReportId, day_index, /*event_code*/ 4u));
+  EXPECT_EQ(kOK,
+            AddUniqueActivesEvent(event_aggregator_mgr.get(), project_context,
+                                  kEventsOccurredMetricReportId, day_index, /*event_code*/ 1u));
+  EXPECT_EQ(3, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
 }
 
 TEST_F(EventAggregatorManagerTest, LogEvents) {

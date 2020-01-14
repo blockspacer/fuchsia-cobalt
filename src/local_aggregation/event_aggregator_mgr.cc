@@ -71,7 +71,7 @@ void EventAggregatorManager::ShutDown() {
     {
       auto locked = protected_worker_thread_controller_.lock();
       locked->shut_down = true;
-      locked->shutdown_notifier.notify_all();
+      locked->wakeup_notifier.notify_all();
     }
     worker_thread_.join();
   } else {
@@ -97,14 +97,18 @@ void EventAggregatorManager::Run(std::unique_ptr<util::SystemClockInterface> sys
     // Sleep until the next scheduled backup of the LocalAggregateStore or
     // until notified of shutdown. Back up the LocalAggregateStore after
     // waking.
-    locked->shutdown_notifier.wait_for(locked, aggregate_backup_interval_, [&locked]() {
+    locked->wakeup_notifier.wait_for(locked, aggregate_backup_interval_, [&locked]() {
       if (locked->immediate_run_trigger) {
         locked->immediate_run_trigger = false;
         return true;
       }
-      return locked->shut_down;
+      return locked->shut_down || locked->back_up_now;
     });
     aggregate_store_->BackUpLocalAggregateStore();
+    if (locked->back_up_now) {
+      locked->back_up_now = false;
+      aggregate_store_->BackUpObservationHistory();
+    }
     // If the worker thread was woken up by a shutdown request, exit.
     // Otherwise, complete any scheduled Observation generation and garbage
     // collection.
@@ -166,6 +170,12 @@ logger::Status EventAggregatorManager::GenerateObservationsNoWorker(
     return kOther;
   }
   return aggregate_store_->GenerateObservations(final_day_index_utc, final_day_index_local);
+}
+
+void EventAggregatorManager::TriggerBackups() {
+  auto locked = protected_worker_thread_controller_.lock();
+  locked->back_up_now = true;
+  locked->wakeup_notifier.notify_all();
 }
 
 void EventAggregatorManager::Reset() {

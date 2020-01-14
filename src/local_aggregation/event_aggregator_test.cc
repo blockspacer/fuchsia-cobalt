@@ -155,7 +155,7 @@ class EventAggregatorTest : public ::testing::Test {
       // Acquire the lock to manually trigger the scheduled tasks.
       auto locked = event_aggregator_mgr_->protected_worker_thread_controller_.lock();
       locked->immediate_run_trigger = true;
-      locked->shutdown_notifier.notify_all();
+      locked->wakeup_notifier.notify_all();
     }
     while (true) {
       // Reacquire the lock to make sure that the scheduled tasks have completed.

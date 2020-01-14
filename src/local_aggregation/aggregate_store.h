@@ -82,6 +82,9 @@ class AggregateStore {
   // event with the given |customer_id|, |project_id|, |metric_id|, |report_id| and |event_code|.
   // Expects that MaybeInsertReportConfig() has been called previously for the ids being passed.
   // Returns kInvalidArguments if the operation fails, and kOK otherwise.
+  //
+  // N.B. If the AggregateStore has been disabled (is_disabled_ == true), this method will do
+  // nothing, and will always return kOK.
   logger::Status SetActive(uint32_t customer_id, uint32_t project_id, uint32_t metric_id,
                            uint32_t report_id, uint64_t event_code, uint32_t day_index);
 
@@ -89,6 +92,9 @@ class AggregateStore {
   // indexed by |customer_id|, |project_id|, |metric_id|, |report_id|, |component|, |event_code| and
   // |day_index|. Expects that MaybeInsertReportConfig() has been called previously for the ids
   // being passed. Returns kInvalidArguments if the operation fails, and kOK otherwise.
+  //
+  // N.B. If the AggregateStore has been disabled (is_disabled_ == true), this method will do
+  // nothing, and will always return kOK.
   logger::Status UpdateNumericAggregate(uint32_t customer_id, uint32_t project_id,
                                         uint32_t metric_id, uint32_t report_id,
                                         const std::string& component, uint64_t event_code,
@@ -184,6 +190,19 @@ class AggregateStore {
   // Set the most recent day index for which a ReportParticipationObservation was generated for a
   // given report to |value|, according to |protected_obs_history|
   void SetReportParticipationLastGeneratedDayIndex(const std::string& report_key, uint32_t value);
+
+  // DeleteData removes all device-specific information from the LocalAggregateStore and the
+  // AggregatedObservationHistoryStore. The only data that remains is the data derived from the
+  // Metrics Registry in `MaybeInsertReportConfig`.
+  void DeleteData();
+
+  // Disable allows enabling/disabling the AggregateStore. When the store is disabled, the following
+  // will happen:
+  //
+  // 1. Calls to SetActive and UpdateNumericAggregate will do nothing and immediately return kOK.
+  // 2. Calls to MaybeInsertReportConfig will continue to function, but since this only stores
+  //    information derived from the Metrics Registry, this is not a problem.
+  void Disable(bool is_disabled);
 
  private:
   friend class AggregateStoreTest;
@@ -297,11 +316,22 @@ class AggregateStore {
 
   struct AggregateStoreFields {
     LocalAggregateStore local_aggregate_store;
+
+    // When clients connect to Cobalt, their ProjectContext is supplied to the AggregateStore in
+    // MaybeInsertReportConfig. This creates structures in the LocalAggregateStore that are required
+    // for SetActive and UpdateNumericAggregate to function. In order to allow deleting the data
+    // from the AggregateStore without needing to restart Cobalt, we store a copy of all these
+    // report configs here without any device-specific information. This way, when the DeleteData
+    // method is called, we can replace local_aggregate_store with empty_local_aggregate_store, and
+    // both SetActive and UpdateNumericAggregate will continue to function as expected.
+    LocalAggregateStore empty_local_aggregate_store;
   };
 
   struct AggregatedObservationHistoryStoreFields {
     AggregatedObservationHistoryStore obs_history;
   };
+
+  bool is_disabled_ = false;
 
   // The number of past days for which the AggregateStore generates and sends Observations, in
   // addition to a requested day index.
