@@ -160,4 +160,31 @@ void CobaltService::SystemClockIsAccurate(std::unique_ptr<util::SystemClockInter
   }
 }
 
+void CobaltService::SetDataCollectionPolicy(CobaltService::DataCollectionPolicy policy) {
+  switch (policy) {
+    case CobaltService::DataCollectionPolicy::COLLECT_AND_UPLOAD:
+      LOG(INFO) << "CobaltService: Switch to DataCollectionPolicy COLLECT_AND_UPLOAD";
+      observation_store_->Disable(false);
+      event_aggregator_manager_.Disable(false);
+      shipping_manager_->Disable(false);
+      break;
+    case CobaltService::DataCollectionPolicy::DO_NOT_UPLOAD:
+      LOG(INFO) << "CobaltService: Switch to DataCollectionPolicy DO_NOT_UPLOAD";
+      observation_store_->Disable(false);
+      event_aggregator_manager_.Disable(false);
+      shipping_manager_->Disable(true);
+      break;
+    case CobaltService::DataCollectionPolicy::DO_NOT_COLLECT:
+      LOG(INFO) << "CobaltService: Switch to DataCollectionPolicy DO_NOT_COLLECT";
+      observation_store_->Disable(true);
+      event_aggregator_manager_.Disable(true);
+
+      observation_store_->DeleteData();
+      event_aggregator_manager_.DeleteData();
+
+      shipping_manager_->Disable(true);
+      break;
+  }
+}
+
 }  // namespace cobalt

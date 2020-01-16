@@ -74,6 +74,23 @@ class CobaltService {
   // updating the Expirement state or channel in SystemData.
   system_data::SystemData *system_data() { return &system_data_; }
 
+  enum class DataCollectionPolicy {
+    // In COLLECT_AND_UPLOAD mode, we collect and upload data as normal.
+    COLLECT_AND_UPLOAD,
+
+    // In DO_NOT_UPLOAD mode, we collect data but do not upload it. This is intended to be a
+    // temporary state, and should be followed by setting the policy to either COLLECT_AND_UPLOAD or
+    // DO_NOT_COLLECT.
+    DO_NOT_UPLOAD,
+
+    // In DO_NOT_COLLECT mode, we silently drop all logged events. When switching to DO_NOT_COLLECT
+    // mode, all stored device-specific data will be deleted.
+    DO_NOT_COLLECT,
+  };
+
+  // Sets the data collection policy.
+  void SetDataCollectionPolicy(DataCollectionPolicy policy);
+
  private:
   friend class internal::RealLoggerFactory;
   friend class CobaltControllerImpl;
