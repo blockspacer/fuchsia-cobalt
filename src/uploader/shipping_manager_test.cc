@@ -61,7 +61,8 @@ class FakeHTTPClient : public lib::clearcut::HTTPClient {
       EXPECT_TRUE(event.HasExtension(LogEventExtension::ext));
       auto log_event = event.GetExtension(LogEventExtension::ext);
       Envelope recovered_envelope;
-      EXPECT_TRUE(recovered_envelope.ParseFromString(log_event.cobalt_encrypted_envelope().ciphertext()));
+      EXPECT_TRUE(
+          recovered_envelope.ParseFromString(log_event.cobalt_encrypted_envelope().ciphertext()));
       EXPECT_EQ(1, recovered_envelope.batch_size());
       EXPECT_EQ(kMetricId, recovered_envelope.batch(0).meta_data().metric_id());
       observation_count += recovered_envelope.batch(0).encrypted_observation_size();
@@ -176,6 +177,43 @@ TEST_F(ShippingManagerTest, SendOne) {
 
   // Confirm it has not been sent yet.
   CheckCallCount(0, 0);
+
+  // Invoke RequestSendSoon.
+  shipping_manager_->RequestSendSoon();
+
+  // Wait for it to be sent.
+  shipping_manager_->WaitUntilIdle(kMaxSeconds);
+
+  // Confirm it has been sent.
+  EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
+  EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
+  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  CheckCallCount(1, 1);
+}
+
+TEST_F(ShippingManagerTest, DisallowUploading) {
+  // Init with a very long time for the regular schedule interval but
+  // zero for the minimum interval so the test doesn't have to wait.
+  Init(kMaxSeconds, std::chrono::seconds::zero());
+
+  shipping_manager_->Disable(true);
+
+  // Add one Observation().
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
+
+  // Confirm it has not been sent yet.
+  CheckCallCount(0, 0);
+
+  // Invoke RequestSendSoon.
+  shipping_manager_->RequestSendSoon();
+
+  // Wait for it to be sent.
+  shipping_manager_->WaitUntilIdle(kMaxSeconds);
+
+  // Confirm it has still not been sent.
+  CheckCallCount(0, 0);
+
+  shipping_manager_->Disable(false);
 
   // Invoke RequestSendSoon.
   shipping_manager_->RequestSendSoon();

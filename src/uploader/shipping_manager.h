@@ -119,6 +119,10 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   size_t num_failed_attempts() const;
   grpc::Status last_send_status() const;
 
+  // Disable allows enabling/disabling the ShippingManager. When the ShippingManager is disabled,
+  // all calls to SendAllEnvelopes will return immediately without uploading any data.
+  void Disable(bool is_disabled);
+
   // Resets the internal metrics for the ShippingManager and the ClearcutUploader to use the
   // provided logger.
   virtual void ResetInternalMetrics(logger::LoggerInterface* internal_logger) = 0;
@@ -142,6 +146,9 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   void Run();
 
   // Helper method used by Run(). Does not assume mutex_ lock is held.
+  //
+  // N.B. If the ShippingManager has been disabled (protected_fields_.is_disabled == true), this
+  // method will do nothing, and will return immediately.
   void SendAllEnvelopes();
 
   // Invoked by SendAllEnvelopes() to actually perform the send..
@@ -184,10 +191,9 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
     // Set shut_down to true in order to stop "Run()".
     bool shut_down = false;
 
-    // We initialize idle_ and waiting_for_schedule_ to true because initially
-    // the worker thread isn't even started so WaitUntilIdle() and
-    // WaitUntilWorkerWaiting() should return immediately if invoked. We will
-    // set them to false in Start().
+    // We initialize idle and waiting_for_schedule to true because initially the worker thread isn't
+    // even started so WaitUntilIdle() and WaitUntilWorkerWaiting() should return immediately if
+    // invoked. We will set them to false in Start().
     bool idle = true;
     bool waiting_for_schedule = true;
 
@@ -197,6 +203,7 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
     size_t num_failed_attempts = 0;
     grpc::Status last_send_status;
 
+    bool is_disabled = false;
     observation_store::ObservationStore* observation_store;
 
     std::condition_variable_any add_observation_notifier;
@@ -204,6 +211,10 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
     std::condition_variable_any shutdown_notifier;
     std::condition_variable_any idle_notifier;
     std::condition_variable_any waiting_for_schedule_notifier;
+
+    [[nodiscard]] bool ObservationsAvailable() const {
+      return !observation_store->Empty() && !is_disabled;
+    }
   };
   using Fields = util::ProtectedFields<UnprotectedFields>;
 

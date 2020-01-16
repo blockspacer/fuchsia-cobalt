@@ -151,6 +151,21 @@ grpc::Status ShippingManager::last_send_status() const {
   return protected_fields_.const_lock()->last_send_status;
 }
 
+void ShippingManager::Disable(bool is_disabled) {
+  LOG(INFO) << name() << ": " << (is_disabled ? "Disabling" : "Enabling")
+            << " observation uploading.";
+  auto locked = protected_fields_.lock();
+  locked->is_disabled = is_disabled;
+  if (!is_disabled) {
+    // Set idle false when setting is_disabled to false to make sure that the worker thread wakes up
+    // and runs through another loop. Even if there are no observations to send, we want to make
+    // sure that any thread that invokes WaitUntilIdle() after this will actually wait until the
+    // ShippingManager returns to the idle state.
+    locked->idle = false;
+    locked->add_observation_notifier.notify_all();
+  }
+}
+
 void ShippingManager::Run() {
   while (true) {
     auto locked = protected_fields_.lock();
@@ -174,20 +189,30 @@ void ShippingManager::Run() {
       return;
     }
 
-    if (locked->observation_store->Empty()) {
-      // There are no Observations at all in the observation_store_. Wait
-      // forever until notified that one arrived or shut down.
+    if (!locked->ObservationsAvailable()) {
+      // There are no Observations at all in the observation_store_, or the ShippingManager is
+      // disabled. Wait forever until one of the following occurs:
+      //
+      // 1. An observation is added.
+      // 2. The value of is_disabled changes.
+      // 3. The ShippingManager shuts down.
       VLOG(5) << name()
               << " worker: waiting for an Observation to "
                  "be added.";
-      // If we are about to leave idle, we should make sure that we invoke all
-      // of the SendCallbacks so they don't have to wait until the next time
-      // observations are added.
+      // If we are about to enter idle, we should make sure that we invoke all of the SendCallbacks
+      // so they don't have to wait until the next time observations are added.
       InvokeSendCallbacksLockHeld(&locked, true);
       locked->idle = true;
       locked->idle_notifier.notify_all();
-      locked->add_observation_notifier.wait(
-          locked, [&locked] { return (locked->shut_down || !locked->observation_store->Empty()); });
+      locked->add_observation_notifier.wait(locked, [&locked] {
+        return (
+            locked->shut_down ||
+            // If there are now observations available to upload, we should leave the waiting state.
+            locked->ObservationsAvailable() ||
+            // The ObservationStore has manually been set to non-idle by either Disable or
+            // NotifyObservationAdded. We should leave the wait state and run another loop.
+            !locked->idle);
+      });
       VLOG(5) << name()
               << " worker: Waking up because an Observation was "
                  "added.";
@@ -221,6 +246,10 @@ void ShippingManager::Run() {
 }
 
 void ShippingManager::SendAllEnvelopes() {
+  if (protected_fields_.const_lock()->is_disabled) {
+    return;
+  }
+
   VLOG(5) << name() << ": SendAllEnvelopes().";
   bool success = true;
   size_t failures_without_success = 0;
