@@ -17,13 +17,32 @@ class ResponseRandomizerTest : public ::testing::Test {
   std::unique_ptr<RandomNumberGenerator> gen_;
 };
 
+// Encode each index from 0 to 999 inclusive with a max index of 999, without randomizing. Each
+// index should be equal to its own encoding.
+TEST_F(ResponseRandomizerTest, Encode) {
+  uint32_t max_index = 999;
+  double p = 0.0;
+  auto randomizer = ResponseRandomizer(GetGenerator(), max_index, p);
+  std::vector<uint32_t> encoded_indices;
+  for (uint32_t i = 0; i <= max_index; i++) {
+    encoded_indices.push_back(randomizer.Encode(i));
+  }
+  int diff = 0;
+  for (uint32_t i = 0; i < max_index; i++) {
+    if (i != encoded_indices[i]) {
+      ++diff;
+    }
+  }
+  EXPECT_EQ(diff, 0);
+}
+
 // Encode each index from 0 to 999 inclusive, giving a data-independent response with probability
 // p = 0.25 and a max index of 999. The probability that an index is equal to its own encoding is:
 // (1 - p) + p / (max_index + 1) = 0.7525.
 //
 // Count how many of the 1000 indices differ from their encoding. Fail if a Z-test at level 0.01
 // rejects the hypothesis that Pr[i == randomizer.Encode(i)] is equal to 0.2475.
-TEST_F(ResponseRandomizerTest, Encode) {
+TEST_F(ResponseRandomizerTest, DISABLED_EncodeNonzeroP) {
   uint32_t max_index = 999;
   double p = 0.25;
   auto randomizer = ResponseRandomizer(GetGenerator(), max_index, p);
