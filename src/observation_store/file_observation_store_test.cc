@@ -56,7 +56,10 @@ class FileObservationStoreTest : public ::testing::Test {
                                                     kMaxBytesTotal, &fs_, test_dir_name_);
   }
 
-  void TearDown() override { store_->Delete(); }
+  void TearDown() override {
+    store_->DeleteData();
+    fs_.Delete(test_dir_name_);
+  }
 
   // Adds an Observation to the FileObservationStore with the given |metric_id|
   // and such that FileObservationStore will consider the size of the
@@ -112,6 +115,45 @@ TEST_F(FileObservationStoreTest, AddRetrieveSingleObservation) {
   // Since we haven't written kMaxBytesPerEnvelope yet, there are no finalized
   // envelopes, TakeNextEnvelopeHolder should force the active file to finalize.
   EXPECT_NE(envelope, nullptr);
+}
+
+TEST_F(FileObservationStoreTest, Disable) {
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(50));
+  store_->Disable(true);
+  auto envelope = store_->TakeNextEnvelopeHolder();
+  // The observation that was added before the store started ignoring, should still be returned.
+  EXPECT_NE(envelope, nullptr);
+
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(50));
+  envelope = store_->TakeNextEnvelopeHolder();
+  // Since the observation was ignored, there should be no envelope to return.
+  EXPECT_EQ(envelope, nullptr);
+
+  store_->Disable(false);
+  // This should still be null, even though the observation store accepts data again.
+  EXPECT_EQ(envelope, nullptr);
+
+  EXPECT_EQ(ObservationStore::kOk, AddObservation(50));
+
+  envelope = store_->TakeNextEnvelopeHolder();
+  // There should now be data stored.
+  EXPECT_NE(envelope, nullptr);
+}
+
+TEST_F(FileObservationStoreTest, DeleteData) {
+  // Note that kMaxBytesPerObservation = 100 and kMaxBytesPerEnvelope = 400.
+  //
+  // This will add enough to finalize one envelope, and have another in progress.
+  for (int i = 0; i < 6; i++) {
+    EXPECT_EQ(ObservationStore::kOk, AddObservation(kMaxBytesPerObservation));
+  }
+
+  EXPECT_NE(store_->Size(), 0);
+
+  store_->DeleteData();
+
+  EXPECT_EQ(store_->Size(), 0);
+  EXPECT_EQ(store_->TakeNextEnvelopeHolder(), nullptr);
 }
 
 TEST_F(FileObservationStoreTest, AddRetrieveFullEnvelope) {

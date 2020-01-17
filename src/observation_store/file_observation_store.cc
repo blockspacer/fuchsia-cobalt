@@ -77,6 +77,10 @@ FileObservationStore::FileObservationStore(size_t max_bytes_per_observation,
 
 ObservationStore::StoreStatus FileObservationStore::StoreObservation(
     std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
+  if (IsDisabled()) {
+    return kOk;
+  }
+
   TRACE_DURATION("cobalt_core", "FileObservationStore::StoreObservation");
   auto fields = protected_fields_.lock();
 
@@ -317,14 +321,6 @@ size_t FileObservationStore::Size() const {
 
 bool FileObservationStore::Empty() const { return Size() == 0; }
 
-void FileObservationStore::Delete() {
-  auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});
-  for (const auto &file : files) {
-    fs_->Delete(FullPath(file));
-  }
-  fs_->Delete(root_directory_);
-}
-
 FileObservationStore::FileEnvelopeHolder::~FileEnvelopeHolder() {
   auto fields = store_->protected_fields_.lock();
   for (const auto &file_name : file_names_) {
@@ -418,6 +414,25 @@ size_t FileObservationStore::FileEnvelopeHolder::Size() {
     cached_file_size_ += fs_->FileSize(FullPath(file_name)).ConsumeValueOr(0);
   }
   return cached_file_size_;
+}
+
+void FileObservationStore::DeleteData() {
+  LOG(INFO) << "FileObservationStore: Deleting stored data";
+
+  auto fields = protected_fields_.lock();
+
+  FinalizeActiveFile(&fields);
+
+  fields->metadata_written = false;
+  fields->last_written_metadata = "";
+  fields->active_file = nullptr;
+  fields->files_taken = {};
+  fields->finalized_bytes = 0;
+
+  auto files = fs_->ListFiles(root_directory_).ConsumeValueOr({});
+  for (const auto &file : files) {
+    fs_->Delete(FullPath(file));
+  }
 }
 
 }  // namespace cobalt::observation_store

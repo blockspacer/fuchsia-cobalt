@@ -69,4 +69,10 @@ std::vector<uint64_t> ObservationStore::num_observations_added_for_reports(
 
 void ObservationStore::ResetObservationCounter() { num_obs_per_report_.clear(); }
 
+void ObservationStore::Disable(bool is_disabled) {
+  LOG(INFO) << "ObservationStore: " << (is_disabled ? "Disabling" : "Enabling")
+            << " observation storage.";
+  is_disabled_ = is_disabled;
+}
+
 }  // namespace cobalt::observation_store

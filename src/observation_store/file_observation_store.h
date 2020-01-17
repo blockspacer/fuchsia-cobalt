@@ -143,13 +143,11 @@ class FileObservationStore : public ObservationStore {
   size_t Size() const override;
   bool Empty() const override;
 
+  void DeleteData() override;
+
   void ResetInternalMetrics(logger::LoggerInterface *internal_logger) override {
     internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
   }
-
-  // Delete removes all of the files associated with this FileObservationStore.
-  // This is useful for cleaning up after testing.
-  void Delete();
 
   // ListFinalizedFiles lists all files in root directory that match the format
   // <13-digit timestamp>-<7 digit random number>.data

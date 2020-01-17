@@ -29,6 +29,10 @@ MemoryObservationStore::MemoryObservationStore(size_t max_bytes_per_observation,
 
 ObservationStore::StoreStatus MemoryObservationStore::StoreObservation(
     std::unique_ptr<StoredObservation> observation, std::unique_ptr<ObservationMetadata> metadata) {
+  if (IsDisabled()) {
+    return kOk;
+  }
+
   std::unique_lock<std::mutex> lock(envelope_mutex_);
 
   internal_metrics_->BytesStored(logger::PerProjectBytesStoredMetricDimensionStatus::Attempted,
@@ -131,6 +135,15 @@ size_t MemoryObservationStore::Size() const {
 bool MemoryObservationStore::Empty() const {
   std::unique_lock<std::mutex> lock(envelope_mutex_);
   return current_envelope_->Empty() && finalized_envelopes_.empty();
+}
+
+void MemoryObservationStore::DeleteData() {
+  LOG(INFO) << "MemoryObservationStore: Deleting stored data";
+
+  std::unique_lock<std::mutex> lock(envelope_mutex_);
+  current_envelope_ = NewEnvelopeMaker();
+  finalized_envelopes_.clear();
+  finalized_envelopes_size_ = 0;
 }
 
 }  // namespace cobalt::observation_store

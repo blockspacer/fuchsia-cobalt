@@ -148,6 +148,9 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // Adds the given (StoredObservation, ObservationMetadata) pair into the store. If this causes the
   // pool of observations to exceed max_bytes_per_envelope, then the ObservationStore will construct
   // an EnvelopeHolder to be returned from TakeNextEnvelopeHolder().
+  //
+  // N.B. If the store has been disabled (IsDisabled() returns true) this method will always return
+  // kOk, even though the observation has not been stored.
   StoreStatus StoreObservation(std::unique_ptr<StoredObservation> observation,
                                std::unique_ptr<ObservationMetadata> metadata) override = 0;
 
@@ -189,6 +192,18 @@ class ObservationStore : public ObservationStoreWriterInterface {
   // ObservationStore.
   void ResetObservationCounter();
 
+  // Disable allows enabling/disabling the ObservationStore. When the store is disabled,
+  // StoreObservation() will return kOk but the observation will not be stored.
+  void Disable(bool is_disabled);
+
+  // IsDisabled returns true if the ObservationStore is disabled and should ignore incoming
+  // observations, by returning kOk and not storing the data.
+  bool IsDisabled() { return is_disabled_; }
+
+  // DeleteData removes all stored Observations from the device. After this method is called, a call
+  // to Size() or TakeNextEnvelopeHolder() will return 0 and nullptr respectively.
+  virtual void DeleteData() = 0;
+
  protected:
   // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   const size_t max_bytes_per_observation_;
@@ -200,6 +215,9 @@ class ObservationStore : public ObservationStoreWriterInterface {
   const size_t almost_full_threshold_;
   // NOLINTNEXTLINE misc-non-private-member-variables-in-classes
   std::map<uint32_t, uint64_t> num_obs_per_report_;
+
+ private:
+  bool is_disabled_ = false;
 };
 
 }  // namespace observation_store

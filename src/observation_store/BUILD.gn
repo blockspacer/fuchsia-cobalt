@@ -64,6 +64,7 @@ source_set("tests") {
   sources = [
     "envelope_maker_test.cc",
     "file_observation_store_test.cc",
+    "memory_observation_store_test.cc",
   ]
 
   deps = [
