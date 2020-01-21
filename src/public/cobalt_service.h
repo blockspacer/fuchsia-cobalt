@@ -112,7 +112,6 @@ class CobaltService {
   std::unique_ptr<observation_store::ObservationStore> observation_store_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_to_analyzer_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_to_shuffler_;
-  std::vector<std::unique_ptr<util::EncryptedMessageMaker>> extra_encrypt_to_shufflers_;
   std::unique_ptr<uploader::ShippingManager> shipping_manager_;
   logger::Encoder logger_encoder_;
   logger::ObservationWriter observation_writer_;
