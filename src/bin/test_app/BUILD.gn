@@ -33,7 +33,6 @@ source_set("lib") {
     "//third_party/googletest:gtest",
   ]
   deps = [
-    "$cobalt_root:registry",
     "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/clearcut:curl_http_client",
     "$cobalt_root/src/lib/util:clock",

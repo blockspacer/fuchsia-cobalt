@@ -4,7 +4,6 @@
 
 import("//build/test.gni")
 import("//third_party/protobuf/proto_library.gni")
-import("$cobalt_root/metrics_registry.gni")
 
 declare_args() {
   extra_package_labels = []
@@ -22,10 +21,6 @@ config("cobalt_config") {
       "//zircon/system/ulib/syslog/include",
     ]
   }
-}
-
-metrics_registry("registry") {
-  global = true
 }
 
 group("tests") {
