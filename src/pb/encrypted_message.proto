@@ -1,20 +1,23 @@
-// Copyright 2016 The Fuchsia Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
 syntax = "proto3";
 
 package cobalt;
 
+
+
 option go_package = "cobalt";
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// NOTE: This copy of encrypted_message.proto is used by the Cobalt client.
-// A second copy of this file is used by the Cobalt Shuffler and Analyzer
-// running in Google production. It is necessary to have two copies due to
-// requirements by the Google Logs Privacy team regarding the location of
-// of .proto files used in logs processing pipelines. Any changes to this
-// file must be replicated in the other copy of the file.
+// NOTE: The encrypted_message.proto is used by the Cobalt client and the Cobalt
+// Shuffler and Analyzers. The canonical version of this file is located in
+// Google's internal code repository, and the file is automatically copied to
+// Cobalt's open source Git repo where it is used by the Cobalt client code. Do
+// not edit the copy of this file in the open-source Cobalt Git repo as those
+// edits will be overwritten when the file is next copied. It is necessary to
+// have two copies due to requirements of the Google Logs Privacy team regarding
+// the location of .proto files used in logs processing pipelines, and because
+// one copy must be open source.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -25,6 +28,7 @@ option go_package = "cobalt";
 // message is encrypted to the Analyzer that will process it. Second each
 // Envelope containing many observations is encrypted to the Shuffler. We use
 // the EncryptedMessage proto to carry the ciphertext in both cases.
+//
 message EncryptedMessage {
   // The different schemes used in Cobalt to encrypt a message.
   enum EncryptionScheme {
@@ -57,10 +61,10 @@ message EncryptedMessage {
   // The |ciphertext| field contains the bytes of the encryption of the standard
   // serialization of one of the following types of proto messages:
   //
-  // - A cobalt.Envelope, as defined in envelope.proto.
+  // - A cobalt.Envelope, as defined in Cobalt's envelope.proto.
   //   EncryptedMessages containing Envelopes are the input to the Shuffler.
   //
-  // - A cobalt.Observation2, as defined in observation2.proto.
+  // - A cobalt.Observation2, as defined in Cobalt's observation2.proto.
   //   An ObservationBatch (defined in observation_batch.proto) contains
   //   EncryptedMessages of this type. ObservationBatches are output from the
   //   Shuffler.

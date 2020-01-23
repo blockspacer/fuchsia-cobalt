@@ -1,22 +1,24 @@
-// Copyright 2018 The Fuchsia Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
 syntax = "proto3";
 
 package cobalt;
 
+import "src/pb/encrypted_message.proto";
+
+
 option go_package = "cobalt";
 
-import "src/pb/encrypted_message.proto";
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// NOTE: This copy of observation_batch.proto is used by the Cobalt client.
-// A second copy of this file is used by the Cobalt Shuffler and Analyzer
-// running in Google production. It is necessary to have two copies due to
-// requirements by the Google Logs Privacy team regarding the location of
-// of .proto files used in logs processing pipelines. Any changes to this
-// file must be replicated in the other copy of the file.
+// NOTE: The observation_batch.proto is used by the Cobalt client and the Cobalt
+// Shuffler and Analyzers. The canonical version of this file is located in
+// Google's internal code repository, and the file is automatically copied to
+// Cobalt's open source Git repo where it is used by the Cobalt client code. Do
+// not edit the copy of this file in the open-source Cobalt Git repo as those
+// edits will be overwritten when the file is next copied. It is necessary to
+// have two copies due to requirements of the Google Logs Privacy team regarding
+// the location of .proto files used in logs processing pipelines, and because
+// one copy must be open source.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -120,21 +122,24 @@ message ObservationMetadata {
   // The profile of the client system on which the Observation was collected.
   SystemProfile system_profile = 5;
 
-  // We used to have  a field called |backend|.
+  // We used to have a field called |backend|.
   reserved 6;
   reserved "backend";
 }
 
 // A batch of encrypted Observations with common metadata.
 // The Observations are encrypted to the public key of an Analyzer so the
-// Shuffler cannot read them. |Observation| is defined in observation.proto.
+// Shuffler cannot read them. |Observation2| is defined in Cobalt's
+// observation2.proto.
 //
 // ObservationBatches are used for both input to and output from the Shuffler.
 // As input they are organized into Envelopes, each Envelope coming from some
-// client device. |Envelope| is defined in envelope.proto
+// client device. |Envelope| is defined in Cobalt's envelope.proto.
 //
-// The output from the Shuffler consists of shuffled ObservationBatches, each
-// ObservationBatch consisting of Observations from many clients.
+// The output from the Shuffler consists of shuffled
+// ObservationBatches, each ObservationBatch consisting of Observations
+// from many clients.
+//
 message ObservationBatch {
   // The common Metadata for all of the encrypted observations in this batch.
   ObservationMetadata meta_data = 1;
