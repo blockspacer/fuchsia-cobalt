@@ -234,7 +234,7 @@ message UniqueActivesReportRow {
   float active_count = 5;
 
   // An estimate of the standard error in the value of |active_count|. This will
-  // be zero if |local_privacy_noise_level| in the ReportDefintion is NONE.
+  // be zero if |local_privacy_noise_level| in the ReportDefinition is NONE.
   // Multiply this value by z_{alpha/2} to obtain the radius of an approximate
   // 100(1 - alpha)% confidence interval. For example an approximate 95%
   // confidence interval for the count is given by
@@ -247,7 +247,7 @@ message UniqueActivesReportRow {
   // over all reporting devices with the |system_profile|. This is equal to
   // the total number of Fuchsia devices with |system_profile| which were
   // awake at a time that locally aggregated Observations for this
-  // ReportDefinition and this aggregation window were created and and uploaded,
+  // ReportDefinition and this aggregation window were created and uploaded,
   // whether or not |event_code| occurred on the device during the window.
   int64 sample_size = 7;
 }
