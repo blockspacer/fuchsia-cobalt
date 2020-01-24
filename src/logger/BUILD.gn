@@ -383,6 +383,7 @@ source_set("project_context_test") {
   public_deps = [
     ":project_context",
     "$cobalt_root/src/pb",
+    "test_registries:empty_test_registry",
     "test_registries:multiple_project_context_test_registry_directories",
     "test_registries:project_context_test_registry",
     "//third_party/abseil-cpp/absl/strings",

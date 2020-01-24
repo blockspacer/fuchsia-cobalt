@@ -14,17 +14,18 @@ import (
 )
 
 var (
-	addFileSuffix = flag.Bool("add_file_suffix", false, "Append the out_format to the out_file, even if there is only one out_format specified")
-	outFile       = flag.String("output_file", "", "File to which the serialized config should be written. Defaults to stdout. When multiple output formats are specified, it will append the format to the filename")
-	outFilename   = flag.String("out_filename", "", "The base name to use for writing files. Should not be used with output_file.")
-	outDir        = flag.String("out_dir", "", "The directory into which files should be written.")
-	outFormat     = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) 'dart' (a Dart library), 'json' (a JSON object), and 'rust' (a rust crate)")
-	forTesting    = flag.Bool("for_testing", false, "Generates a constant for each report ID. Report names should be unique in the registry.")
-	namespace     = flag.String("namespace", "", "When using the 'cpp', 'rust', or 'go' output format, this will specify the period-separated namespace within which the config variable must be placed (this will be transformed into an underscore-separated package name for go).")
-	goPackageName = flag.String("go_package", "", "When using the 'go' output format, this will specify the package for generated code.")
-	dartOutDir    = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
-	varName       = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
-	checkOnly     = flag.Bool("check_only", false, "Only check that the configuration is valid.")
+	addFileSuffix    = flag.Bool("add_file_suffix", false, "Append the out_format to the out_file, even if there is only one out_format specified")
+	outFile          = flag.String("output_file", "", "File to which the serialized config should be written. Defaults to stdout. When multiple output formats are specified, it will append the format to the filename")
+	outFilename      = flag.String("out_filename", "", "The base name to use for writing files. Should not be used with output_file.")
+	outDir           = flag.String("out_dir", "", "The directory into which files should be written.")
+	outFormat        = flag.String("out_format", "bin", "Specifies the output formats (separated by ' '). Supports 'bin' (serialized proto), 'b64' (serialized proto to base 64), 'cpp' (a C++ file containing a variable with a base64-encoded serialized proto.) 'dart' (a Dart library), 'json' (a JSON object), and 'rust' (a rust crate)")
+	forTesting       = flag.Bool("for_testing", false, "Generates a constant for each report ID. Report names should be unique in the registry.")
+	namespace        = flag.String("namespace", "", "When using the 'cpp', 'rust', or 'go' output format, this will specify the period-separated namespace within which the config variable must be placed (this will be transformed into an underscore-separated package name for go).")
+	goPackageName    = flag.String("go_package", "", "When using the 'go' output format, this will specify the package for generated code.")
+	dartOutDir       = flag.String("dart_out_dir", "", "The directory to write dart files to (if different from out_dir)")
+	varName          = flag.String("var_name", "config", "When using the 'cpp' or 'dart' output format, this will specify the variable name to be used in the output.")
+	checkOnly        = flag.Bool("check_only", false, "Only check that the configuration is valid.")
+	allowEmptyOutput = flag.Bool("allow_empty_output", false, "Relax the requirement that the cobalt registry output not be empty.")
 )
 
 // checkFlags verifies that the specified flags are compatible with each other.
@@ -95,11 +96,11 @@ func WriteConfigFromFlags(c, filtered *config.CobaltRegistry) error {
 		}
 
 		// Check that the output file is not empty.
-		if len(configBytes) == 0 {
+		if !*allowEmptyOutput && len(configBytes) == 0 {
 			return fmt.Errorf("Output file is empty.")
 		}
 
-		// If no errors have occured yet and checkOnly was set, we don't need to write anything.
+		// If no errors have occurred yet and checkOnly was set, we don't need to write anything.
 		if *checkOnly {
 			continue
 		}

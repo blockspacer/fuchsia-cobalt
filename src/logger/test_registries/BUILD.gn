@@ -121,3 +121,15 @@ metrics_registry("multiple_project_context_test_registry_directories") {
   generate_binarypb = false
   generate_cc = true
 }
+
+metrics_registry("empty_test_registry") {
+  global = true
+  allow_empty_output = true
+  skip_validation = true
+  for_testing = true
+  directories = [ "empty_test_registry" ]
+  namespace = "cobalt.logger"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = true
+}

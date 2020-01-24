@@ -18,6 +18,7 @@
 #   generate_rust: (default: false) Should we generate a rust crate.
 #   v1_project: (default: true) Is this a v1 project.
 #   directories: (default: [//third_party/cobalt_config]) The directories to parse.
+#   allow_empty_output: (default: false) Should we allow the output file to be empty.
 #
 # Note: Other args are forwarded to dart_library when generate_dart is true.
 #
@@ -133,6 +134,12 @@ template("metrics_registry") {
     cobalt_config_dirs = [ "//third_party/cobalt_config" ]
   }
 
+  if (defined(invoker.allow_empty_output)) {
+    allow_empty_output = invoker.allow_empty_output
+  } else {
+    allow_empty_output = false
+  }
+
   out_format = ""
   generated_files = []
   if (generate_binarypb) {
@@ -226,6 +233,10 @@ template("metrics_registry") {
           rebase_path(config_dir, root_build_dir),
         ]
       }
+    }
+
+    if (allow_empty_output) {
+      args += [ "-allow_empty_output" ]
     }
 
     if (defined(customer_id)) {
