@@ -65,6 +65,21 @@ class LocalPipeline : public TargetPipelineInterface {
   ~LocalPipeline() override = default;
 };
 
+class ExtraPipeline : public TargetPipelineInterface {
+ public:
+  ExtraPipeline(system_data::Environment environment, std::string shuffler_encryption_key)
+      : TargetPipelineInterface(environment),
+        shuffler_encryption_key_(std::move(shuffler_encryption_key)) {}
+  ~ExtraPipeline() override = default;
+
+  [[nodiscard]] std::optional<std::string> shuffler_encryption_key() const override {
+    return shuffler_encryption_key_;
+  }
+
+ private:
+  std::string shuffler_encryption_key_;
+};
+
 class TargetPipeline : public TargetPipelineInterface {
  public:
   TargetPipeline(system_data::Environment environment, std::string shuffler_encryption_key,
@@ -176,6 +191,9 @@ struct CobaltConfig {
 
   // |target_pipeline|: Used to determine where to send observations, and how to encrypt them.
   std::unique_ptr<TargetPipelineInterface> target_pipeline;
+
+  // |extra_pipelines|: A list of extra pipelines where observations should be sent.
+  std::vector<std::unique_ptr<TargetPipelineInterface>> extra_pipelines;
 
   // |local_shipping_manager_path|: If |environments| is equal to {LOCAL}, the observations will be
   // written to this path, instead of being shipped to clearcut.

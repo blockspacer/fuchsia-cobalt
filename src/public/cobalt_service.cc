@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "src/lib/clearcut/http_client.h"
 #include "src/lib/util/clock.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/logger/project_context.h"
@@ -58,21 +59,44 @@ std::unique_ptr<util::EncryptedMessageMaker> GetEncryptToShuffler(
   return util::EncryptedMessageMaker::MakeUnencrypted();
 }
 
+std::vector<std::unique_ptr<util::EncryptedMessageMaker>> GetExtraEncryptToShufflers(
+    const std::vector<std::unique_ptr<TargetPipelineInterface>> &pipelines) {
+  std::vector<std::unique_ptr<util::EncryptedMessageMaker>> retval;
+
+  retval.reserve(pipelines.size());
+  for (const auto &pipeline : pipelines) {
+    retval.emplace_back(GetEncryptToShuffler(pipeline.get()));
+  }
+
+  return retval;
+}
+
 std::unique_ptr<uploader::ShippingManager> NewShippingManager(
     CobaltConfig *cfg, util::FileSystem *fs, observation_store::ObservationStore *observation_store,
     util::EncryptedMessageMaker *encrypt_to_analyzer,
-    const std::unique_ptr<util::EncryptedMessageMaker> &encrypt_to_shuffler) {
+    const std::unique_ptr<util::EncryptedMessageMaker> &encrypt_to_shuffler,
+    const std::vector<std::unique_ptr<util::EncryptedMessageMaker>> &extra_encrypt_to_shufflers) {
   if (cfg->target_pipeline->environment() == system_data::Environment::LOCAL) {
+    CHECK(cfg->extra_pipelines.empty())
+        << "Only one backend environment is supported if one is LOCAL.";
     return std::make_unique<uploader::LocalShippingManager>(observation_store,
                                                             cfg->local_shipping_manager_path, fs);
   }
   auto shipping_manager = std::make_unique<uploader::ClearcutV1ShippingManager>(
       uploader::UploadScheduler(cfg->target_interval, cfg->min_interval, cfg->initial_interval),
-      observation_store, encrypt_to_shuffler.get(), encrypt_to_analyzer,
+      observation_store, encrypt_to_analyzer,
       std::make_unique<lib::clearcut::ClearcutUploader>(cfg->target_pipeline->clearcut_endpoint(),
                                                         cfg->target_pipeline->TakeHttpClient()),
-      system_data::ConfigurationData(cfg->target_pipeline->environment()).GetLogSourceId(), nullptr,
-      cfg->target_pipeline->clearcut_max_retries(), cfg->api_key);
+      nullptr, cfg->target_pipeline->clearcut_max_retries(), cfg->api_key);
+
+  shipping_manager->AddClearcutDestination(
+      encrypt_to_shuffler.get(),
+      system_data::ConfigurationData(cfg->target_pipeline->environment()).GetLogSourceId());
+  for (int i = 0; i < cfg->extra_pipelines.size(); i++) {
+    shipping_manager->AddClearcutDestination(
+        extra_encrypt_to_shufflers[i].get(),
+        system_data::ConfigurationData(cfg->extra_pipelines[i]->environment()).GetLogSourceId());
+  }
 
   return std::move(shipping_manager);
 }
@@ -85,8 +109,10 @@ CobaltService::CobaltService(CobaltConfig cfg)
       observation_store_(NewObservationStore(cfg, fs_.get())),
       encrypt_to_analyzer_(GetEncryptToAnalyzer(&cfg)),
       encrypt_to_shuffler_(GetEncryptToShuffler(cfg.target_pipeline.get())),
+      extra_encrypt_to_shufflers_(GetExtraEncryptToShufflers(cfg.extra_pipelines)),
       shipping_manager_(NewShippingManager(&cfg, fs_.get(), observation_store_.get(),
-                                           encrypt_to_analyzer_.get(), encrypt_to_shuffler_)),
+                                           encrypt_to_analyzer_.get(), encrypt_to_shuffler_,
+                                           extra_encrypt_to_shufflers_)),
       logger_encoder_(cfg.client_secret, &system_data_),
       observation_writer_(observation_store_.get(), shipping_manager_.get(),
                           encrypt_to_analyzer_.get()),

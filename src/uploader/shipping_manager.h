@@ -245,9 +245,34 @@ class ClearcutV1ShippingManager : public ShippingManager {
       size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
       std::string api_key = "cobalt-default-api-key");
 
+  // Create a shipping manager that can upload data to Clearcut.
+  //
+  // Call AddClearcutDestination to add Clearcut log sources to write to and the encryption key to
+  // use when doing so.
+  //
+  // TODO(camrdale): remove this once the log source transition is complete.
+  ClearcutV1ShippingManager(const UploadScheduler& upload_scheduler,
+                            observation_store::ObservationStore* observation_store,
+                            util::EncryptedMessageMaker* encrypt_to_analyzer,
+                            std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+                            logger::LoggerInterface* internal_logger = nullptr,
+                            size_t max_attempts_per_upload = lib::clearcut::kMaxRetries,
+                            std::string api_key = "cobalt-default-api-key");
+
   // The destructor will stop the worker thread and wait for it to stop
   // before exiting.
   ~ClearcutV1ShippingManager() override = default;
+
+  // Add a Clearcut log source to write to, and the encryption key to use when doing so.
+  //
+  // encrypt_to_shuffler: An EncryptedMessageMaker used to encrypt
+  // Envelopes to the shuffler.
+  //
+  // log_source_id: the Clearcut log source to write to.
+  //
+  // TODO(camrdale): remove this once the log source transition is complete.
+  void AddClearcutDestination(util::EncryptedMessageMaker* encrypt_to_shuffler,
+                              int32_t log_source_id);
 
   // Resets the internal metrics for the ShippingManager and the ClearcutUploader to use the
   // provided logger.
@@ -258,7 +283,13 @@ class ClearcutV1ShippingManager : public ShippingManager {
       std::unique_ptr<observation_store::ObservationStore::EnvelopeHolder> envelope_to_send)
       override;
 
-  util::Status SendEnvelopeToClearcutDestination(const Envelope& envelope, size_t envelope_size);
+  struct ClearcutDestination {
+    util::EncryptedMessageMaker* encrypt_to_shuffler_;
+    const int32_t log_source_id_;
+  };
+
+  util::Status SendEnvelopeToClearcutDestination(const Envelope& envelope, size_t envelope_size,
+                                                 const ClearcutDestination& clearcut_destination);
 
   [[nodiscard]] std::string name() const override { return "ClearcutV1ShippingManager"; }
 
@@ -268,8 +299,7 @@ class ClearcutV1ShippingManager : public ShippingManager {
   std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut_;
   std::unique_ptr<logger::InternalMetrics> internal_metrics_;
   const std::string api_key_;
-  util::EncryptedMessageMaker* encrypt_to_shuffler_;
-  const int32_t log_source_id_;
+  std::vector<ClearcutDestination> clearcut_destinations_;
 };
 
 // A concrete subclass of ShippingManager for capturing data locally to a file.

@@ -304,13 +304,27 @@ ClearcutV1ShippingManager::ClearcutV1ShippingManager(
     util::EncryptedMessageMaker* encrypt_to_analyzer,
     std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut, int32_t log_source_id,
     logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
+    : ClearcutV1ShippingManager(upload_scheduler, observation_store, encrypt_to_analyzer,
+                                std::move(clearcut), internal_logger, max_attempts_per_upload,
+                                std::move(api_key)) {
+  AddClearcutDestination(encrypt_to_shuffler, log_source_id);
+}
+
+ClearcutV1ShippingManager::ClearcutV1ShippingManager(
+    const UploadScheduler& upload_scheduler, ObservationStore* observation_store,
+    util::EncryptedMessageMaker* encrypt_to_analyzer,
+    std::unique_ptr<lib::clearcut::ClearcutUploader> clearcut,
+    logger::LoggerInterface* internal_logger, size_t max_attempts_per_upload, std::string api_key)
     : ShippingManager(upload_scheduler, observation_store, encrypt_to_analyzer),
       max_attempts_per_upload_(max_attempts_per_upload),
       clearcut_(std::move(clearcut)),
       internal_metrics_(logger::InternalMetrics::NewWithLogger(internal_logger)),
-      api_key_(std::move(api_key)),
-      encrypt_to_shuffler_(encrypt_to_shuffler),
-      log_source_id_(log_source_id) {}
+      api_key_(std::move(api_key)) {}
+
+void ClearcutV1ShippingManager::AddClearcutDestination(
+    util::EncryptedMessageMaker* encrypt_to_shuffler, int32_t log_source_id) {
+  clearcut_destinations_.emplace_back(ClearcutDestination({encrypt_to_shuffler, log_source_id}));
+}
 
 void ClearcutV1ShippingManager::ResetInternalMetrics(logger::LoggerInterface* internal_logger) {
   internal_metrics_ = logger::InternalMetrics::NewWithLogger(internal_logger);
@@ -322,21 +336,29 @@ std::unique_ptr<EnvelopeHolder> ClearcutV1ShippingManager::SendEnvelopeToBackend
   auto envelope = envelope_to_send->GetEnvelope(encrypt_to_analyzer_);
   envelope.set_api_key(api_key_);
 
-  util::Status status = SendEnvelopeToClearcutDestination(envelope, envelope_to_send->Size());
-  if (!status.ok()) {
-    VLOG(4) << name() << ": Cobalt send to Shuffler failed: (" << status.error_code() << ") "
-            << status.error_message() << ". Observations have been re-enqueued for later.";
+  bool error_occurred = false;
+  for (const auto& clearcut_destination : clearcut_destinations_) {
+    util::Status status =
+        SendEnvelopeToClearcutDestination(envelope, envelope_to_send->Size(), clearcut_destination);
+    if (!status.ok()) {
+      error_occurred = true;
+      VLOG(4) << name() << ": Cobalt send to Shuffler failed: (" << status.error_code() << ") "
+              << status.error_message() << ". Observations have been re-enqueued for later.";
+    }
+  }
+  if (error_occurred) {
     return envelope_to_send;
   }
   return nullptr;
 }
 
-util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(const Envelope& envelope,
-                                                                          size_t envelope_size) {
+util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(
+    const Envelope& envelope, size_t envelope_size,
+    const ClearcutDestination& clearcut_destination) {
   auto log_extension = std::make_unique<LogEventExtension>();
 
-  if (!encrypt_to_shuffler_->Encrypt(envelope,
-                                     log_extension->mutable_cobalt_encrypted_envelope())) {
+  if (!clearcut_destination.encrypt_to_shuffler_->Encrypt(
+          envelope, log_extension->mutable_cobalt_encrypted_envelope())) {
     // TODO(rudominer) log
     // Drop on floor.
     return util::Status::OK;
@@ -353,7 +375,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(const 
           << " bytes to clearcut.";
 
   lib::clearcut::LogRequest request;
-  request.set_log_source(log_source_id_);
+  request.set_log_source(clearcut_destination.log_source_id_);
   request.add_log_event()->SetAllocatedExtension(LogEventExtension::ext, log_extension.release());
 
   util::Status status;
