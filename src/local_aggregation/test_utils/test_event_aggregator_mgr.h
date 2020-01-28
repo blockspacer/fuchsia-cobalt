@@ -21,7 +21,12 @@ class TestEventAggregatorManager : public EventAggregatorManager {
       std::chrono::seconds gc_interval = std::chrono::hours(24))
       : EventAggregatorManager(encoder, observation_writer, local_aggregate_proto_store,
                                obs_history_proto_store, backfill_days, aggregate_backup_interval,
-                               generate_obs_interval, gc_interval){};
+                               generate_obs_interval, gc_interval) {}
+
+  TestEventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
+                             const logger::Encoder* encoder,
+                             const logger::ObservationWriter* observation_writer)
+      : EventAggregatorManager(cfg, fs, encoder, observation_writer) {}
 
   // Triggers an out of schedule run of GenerateObservations(). This does not change the schedule
   // of future runs.

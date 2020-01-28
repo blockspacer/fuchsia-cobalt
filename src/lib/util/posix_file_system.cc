@@ -78,7 +78,8 @@ lib::statusor::StatusOr<FileSystem::ProtoInputStreamPtr> PosixFileSystem::NewPro
   if (fs == -1) {
     std::stringstream ss;
     ss << "Unable to open file [" << file << "] in read mode.";
-    return Status(StatusCode::DATA_LOSS, ss.str(), std::strerror(errno));
+    return Status(ErrnoToStatusCode(errno).value_or(StatusCode::DATA_LOSS), ss.str(),
+                  std::strerror(errno));
   }
   auto stream = std::make_unique<google::protobuf::io::FileInputStream>(fs, block_size);
   stream->SetCloseOnDelete(true);
@@ -95,7 +96,8 @@ lib::statusor::StatusOr<FileSystem::ProtoOutputStreamPtr> PosixFileSystem::NewPr
   if (fs == -1) {
     std::stringstream ss;
     ss << "Unable to open file [" << file << "] in write mode.";
-    return Status(StatusCode::DATA_LOSS, ss.str(), std::strerror(errno));
+    return Status(ErrnoToStatusCode(errno).value_or(StatusCode::DATA_LOSS), ss.str(),
+                  std::strerror(errno));
   }
   auto stream = std::make_unique<google::protobuf::io::FileOutputStream>(fs, block_size);
   stream->SetCloseOnDelete(true);

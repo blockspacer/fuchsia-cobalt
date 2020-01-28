@@ -50,6 +50,9 @@ EventAggregatorManager::EventAggregatorManager(const CobaltConfig& cfg, util::Fi
     : encoder_(encoder),
       observation_writer_(observation_writer),
       backfill_days_(cfg.local_aggregation_backfill_days),
+      aggregate_backup_interval_(kDefaultAggregateBackupInterval),
+      generate_obs_interval_(kDefaultGenerateObsInterval),
+      gc_interval_(kDefaultGCInterval),
       owned_local_aggregate_proto_store_(
           new ConsistentProtoStore(cfg.local_aggregate_proto_store_path, fs)),
       owned_obs_history_proto_store_(

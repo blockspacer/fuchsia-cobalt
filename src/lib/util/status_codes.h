@@ -5,8 +5,11 @@
 #ifndef COBALT_SRC_LIB_UTIL_STATUS_CODES_H_
 #define COBALT_SRC_LIB_UTIL_STATUS_CODES_H_
 
-namespace cobalt {
-namespace util {
+#include <errno.h>
+
+#include <optional>
+
+namespace cobalt::util {
 
 enum StatusCode {
   OK = 0,
@@ -30,7 +33,12 @@ enum StatusCode {
   DO_NOT_USE = -1,
 };
 
-}  // namespace util
-}  // namespace cobalt
+// Tries to map a unix errno to a StatusCode.
+//
+// If the errno is 0, this will return StatusCode::OK. If there is no known mapping for the provided
+// errno, std::nullopt will be returned.
+std::optional<StatusCode> ErrnoToStatusCode(int error_number);
+
+}  // namespace cobalt::util
 
 #endif  // COBALT_SRC_LIB_UTIL_STATUS_CODES_H_

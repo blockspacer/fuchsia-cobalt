@@ -170,6 +170,7 @@ static_library("status") {
   sources = [
     "status.cc",
     "status.h",
+    "status_codes.cc",
     "status_codes.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]

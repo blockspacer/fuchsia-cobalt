@@ -54,9 +54,27 @@ constexpr int kYear = kSecondsInOneDay * 365;
 constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
 constexpr char kObsHistoryFilename[] = "obs_history_backup";
 
-class EventAggregatorManagerTest : public ::testing::Test {
+namespace {
+std::string MakeTestFolder(util::FileSystem* fs) {
+  std::stringstream fname;
+  fname << "/tmp/eamt_"
+        << std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+               .count();
+
+  auto ret = fname.str();
+
+  fs->MakeDirectory(ret);
+
+  return ret;
+}
+}  // namespace
+
+class EventAggregatorManagerTest : public ::testing::Test,
+                                   public ::testing::WithParamInterface<bool> {
  protected:
   void SetUp() override {
+    test_folder_ = MakeTestFolder(&fs_);
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
@@ -66,6 +84,12 @@ class EventAggregatorManagerTest : public ::testing::Test {
     local_aggregate_proto_store_ =
         std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
     obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
+  }
+
+  void TearDown() override {
+    fs_.Delete(aggregate_store_path());
+    fs_.Delete(obs_history_path());
+    fs_.Delete(test_folder_);
   }
 
   std::unique_ptr<IncrementingSystemClock> GetTestSystemClock() {
@@ -81,13 +105,28 @@ class EventAggregatorManagerTest : public ::testing::Test {
     return test_steady_clock_ptr_;
   }
 
+  std::string aggregate_store_path() { return test_folder_ + "/" + kAggregateStoreFilename; }
+  std::string obs_history_path() { return test_folder_ + "/" + kObsHistoryFilename; }
+
   std::unique_ptr<TestEventAggregatorManager> GetEventAggregatorManager(
       IncrementingSteadyClock* steady_clock) {
-    auto event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
-    event_aggregator_mgr_->SetSteadyClock(steady_clock);
-    return event_aggregator_mgr_;
+    std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr;
+    if (GetParam()) {
+      CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+      cfg.local_aggregation_backfill_days = 0;
+      cfg.local_aggregate_proto_store_path = aggregate_store_path();
+      cfg.obs_history_proto_store_path = obs_history_path();
+
+      event_aggregator_mgr = std::make_unique<TestEventAggregatorManager>(
+          cfg, &fs_, encoder_.get(), observation_writer_.get());
+    } else {
+      event_aggregator_mgr = std::make_unique<TestEventAggregatorManager>(
+          encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
+          obs_history_proto_store_.get());
+    }
+    event_aggregator_mgr->SetSteadyClock(steady_clock);
+    return event_aggregator_mgr;
   }
 
   void ShutDown(EventAggregatorManager* event_aggregator_mgr) { event_aggregator_mgr->ShutDown(); }
@@ -115,7 +154,13 @@ class EventAggregatorManagerTest : public ::testing::Test {
                           time_zone);
   }
 
-  bool BackUpHappened() { return local_aggregate_proto_store_->write_count_ >= 1; }
+  bool BackUpHappened() {
+    if (GetParam()) {
+      return fs_.FileExists(aggregate_store_path());
+    }
+
+    return local_aggregate_proto_store_->write_count_ >= 1;
+  }
 
   uint32_t NumberOfKVPairsInStore(EventAggregatorManager* event_aggregator_mgr) {
     return event_aggregator_mgr->aggregate_store_->CopyLocalAggregateStore().by_report_key().size();
@@ -233,6 +278,8 @@ class EventAggregatorManagerTest : public ::testing::Test {
   IncrementingSystemClock* test_system_clock_ptr_;  // used for determing CurrentDayIndex
   IncrementingSteadyClock* test_steady_clock_ptr_;  // used for scheduling events.
 
+  std::string test_folder_;
+  util::PosixFileSystem fs_;
   std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
   std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
@@ -243,7 +290,12 @@ class EventAggregatorManagerTest : public ::testing::Test {
   std::unique_ptr<SystemDataInterface> system_data_;
 };
 
-TEST_F(EventAggregatorManagerTest, StartWorkerThread) {
+INSTANTIATE_TEST_SUITE_P(ByConstructor, EventAggregatorManagerTest, ::testing::Values(false, true),
+                         [](const ::testing::TestParamInfo<bool>& info) {
+                           return info.param ? "New" : "Old";
+                         });
+
+TEST_P(EventAggregatorManagerTest, StartWorkerThread) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   EXPECT_TRUE(IsInShutdownState(event_aggregator_mgr.get()));
 
@@ -251,7 +303,7 @@ TEST_F(EventAggregatorManagerTest, StartWorkerThread) {
   EXPECT_TRUE(IsInRunState(event_aggregator_mgr.get()));
 }
 
-TEST_F(EventAggregatorManagerTest, StartAndShutDownWorkerThread) {
+TEST_P(EventAggregatorManagerTest, StartAndShutDownWorkerThread) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
 
   EXPECT_TRUE(IsInShutdownState(event_aggregator_mgr.get()));
@@ -263,7 +315,7 @@ TEST_F(EventAggregatorManagerTest, StartAndShutDownWorkerThread) {
   EXPECT_TRUE(IsInShutdownState(event_aggregator_mgr.get()));
 }
 
-TEST_F(EventAggregatorManagerTest, BackUpBeforeShutdown) {
+TEST_P(EventAggregatorManagerTest, BackUpBeforeShutdown) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -273,7 +325,7 @@ TEST_F(EventAggregatorManagerTest, BackUpBeforeShutdown) {
 
 // Starts the worker thread and calls
 // EventAggregator::UpdateAggregationConfigs() on the main thread.
-TEST_F(EventAggregatorManagerTest, UpdateAggregationConfigs) {
+TEST_P(EventAggregatorManagerTest, UpdateAggregationConfigs) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -288,7 +340,7 @@ TEST_F(EventAggregatorManagerTest, UpdateAggregationConfigs) {
             NumberOfKVPairsInStore(event_aggregator_mgr.get()));
 }
 
-TEST_F(EventAggregatorManagerTest, LogEventsAfterDelete) {
+TEST_P(EventAggregatorManagerTest, LogEventsAfterDelete) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -325,7 +377,7 @@ TEST_F(EventAggregatorManagerTest, LogEventsAfterDelete) {
   EXPECT_TRUE(BackUpHappened());
 }
 
-TEST_F(EventAggregatorManagerTest, DeleteData) {
+TEST_P(EventAggregatorManagerTest, DeleteData) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -350,7 +402,7 @@ TEST_F(EventAggregatorManagerTest, DeleteData) {
   EXPECT_EQ(0, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
 }
 
-TEST_F(EventAggregatorManagerTest, Disable) {
+TEST_P(EventAggregatorManagerTest, Disable) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -388,7 +440,7 @@ TEST_F(EventAggregatorManagerTest, Disable) {
   EXPECT_EQ(3, GetNumberOfUniqueActivesAggregates(event_aggregator_mgr.get()));
 }
 
-TEST_F(EventAggregatorManagerTest, LogEvents) {
+TEST_P(EventAggregatorManagerTest, LogEvents) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
@@ -444,7 +496,7 @@ TEST_F(EventAggregatorManagerTest, LogEvents) {
 // ------------------------------------------------------
 // (1)                           1, 2, 3, 4
 // (7)                           1, 2, 3, 4
-TEST_F(EventAggregatorManagerTest, Run) {
+TEST_P(EventAggregatorManagerTest, Run) {
   auto event_aggregator_mgr = GetEventAggregatorManager(GetTestSteadyClock());
   event_aggregator_mgr->Start(GetTestSystemClock());
 
