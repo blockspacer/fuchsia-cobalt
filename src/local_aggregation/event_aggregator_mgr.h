@@ -125,6 +125,10 @@ class EventAggregatorManager {
   logger::Status GenerateObservationsNoWorker(uint32_t final_day_index_utc,
                                               uint32_t final_day_index_local = 0u);
 
+  // Returns a count of the number of times the loop in the Run function has run. This is likely
+  // only useful in testing to verify that the worker thread is not running too frequently.
+  uint64_t num_runs() const { return num_runs_; }
+
   void Disable(bool is_disabled) { aggregate_store_->Disable(is_disabled); }
   void DeleteData() {
     aggregate_store_->DeleteData();
@@ -208,6 +212,8 @@ class EventAggregatorManager {
 
   std::thread worker_thread_;
   util::ProtectedFields<WorkerThreadController> protected_worker_thread_controller_;
+
+  uint64_t num_runs_ = 0;
 };
 
 }  // namespace local_aggregation

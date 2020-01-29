@@ -88,6 +88,8 @@ void EventAggregatorManager::Run(std::unique_ptr<util::SystemClockInterface> sys
   // Acquire the mutex protecting the shutdown flag and condition variable.
   auto locked = protected_worker_thread_controller_.lock();
   while (true) {
+    num_runs_++;
+
     // If shutdown has been requested, back up the LocalAggregateStore and
     // exit.
     if (locked->shut_down) {
