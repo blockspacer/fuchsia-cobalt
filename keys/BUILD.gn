@@ -6,7 +6,9 @@ import("//build/test.gni")
 
 copy("key_tests_files") {
   sources = [
+    "analyzer_prod_public.cobalt_key",
     "analyzer_public.cobalt_key",
+    "shuffler_prod_public.cobalt_key",
     "shuffler_public.cobalt_key",
   ]
   outputs = [

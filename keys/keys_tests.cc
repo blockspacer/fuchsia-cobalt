@@ -35,21 +35,7 @@ void EncryptSomething(cobalt::util::EncryptedMessageMaker* maker,
   ASSERT_TRUE(maker->Encrypt(observation, encrypted_message));
 }
 
-TEST(KeysTests, TestAnalyzerCobaltEncryptionKey) {
-  std::string key_bytes;
-  ReadKey("analyzer_public.cobalt_key", &key_bytes);
-
-  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
-  ASSERT_TRUE(maker_result.ok());
-
-  cobalt::EncryptedMessage encrypted_message;
-  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
-
-  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
-  EXPECT_GT(encrypted_message.key_index(), 0u);
-}
-
-TEST(KeysTests, TestShufflerCobaltEncryptionKey) {
+TEST(KeysTests, TestShufflerCobaltEncryptionDevKey) {
   std::string key_bytes;
   ReadKey("shuffler_public.cobalt_key", &key_bytes);
 
@@ -60,7 +46,48 @@ TEST(KeysTests, TestShufflerCobaltEncryptionKey) {
   EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
 
   EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
-  EXPECT_GT(encrypted_message.key_index(), 0u);
+  EXPECT_EQ(encrypted_message.key_index(), 1u);
+}
+
+TEST(KeysTests, TestAnalyzerCobaltEncryptionDevKey) {
+  std::string key_bytes;
+  ReadKey("analyzer_public.cobalt_key", &key_bytes);
+
+  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
+  EXPECT_EQ(encrypted_message.key_index(), 2u);
+}
+TEST(KeysTests, TestShufflerCobaltEncryptionProdKey) {
+  std::string key_bytes;
+  ReadKey("shuffler_prod_public.cobalt_key", &key_bytes);
+
+  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForEnvelopes(key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
+  EXPECT_EQ(encrypted_message.key_index(), 3u);
+}
+
+TEST(KeysTests, TestAnalyzerCobaltEncryptionProdKey) {
+  std::string key_bytes;
+  ReadKey("analyzer_prod_public.cobalt_key", &key_bytes);
+
+  auto maker_result = cobalt::util::EncryptedMessageMaker::MakeForObservations(key_bytes);
+  ASSERT_TRUE(maker_result.ok());
+
+  cobalt::EncryptedMessage encrypted_message;
+  EncryptSomething(maker_result.ValueOrDie().get(), &encrypted_message);
+
+  EXPECT_EQ(cobalt::EncryptedMessage::NONE, encrypted_message.scheme());
+  EXPECT_EQ(encrypted_message.key_index(), 4u);
 }
 
 }  // namespace
