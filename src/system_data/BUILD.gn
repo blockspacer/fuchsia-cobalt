@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+visibility = [ "$cobalt_root/*" ]
+
 #TODO(rudominer) Delete once the Fuchsia build does not depend on this target.
 group("encoder") {
   public_deps = [
@@ -21,6 +23,7 @@ source_set("configuration_data") {
     "configuration_data.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("system_data") {
@@ -38,6 +41,7 @@ source_set("system_data") {
     "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("client_secret") {

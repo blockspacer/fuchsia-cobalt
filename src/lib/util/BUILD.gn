@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+visibility = [ "$cobalt_root/*" ]
+
 import("//build/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
@@ -9,6 +11,8 @@ source_set("clock") {
   sources = [
     "clock.h",
   ]
+
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("sleeper") {
@@ -97,6 +101,7 @@ static_library("datetime_util") {
   public_deps = [
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("datetime_util_test") {
@@ -124,6 +129,7 @@ static_library("file_util") {
     "$cobalt_root/src/lib/statusor",
     "//third_party/abseil-cpp/absl/strings",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 test("file_util_test") {
@@ -164,6 +170,7 @@ static_library("pem_util") {
     "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/crypto_util",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 static_library("status") {
@@ -196,6 +203,7 @@ static_library("posix_file_system") {
   public_deps = [
     ":file_system",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 static_library("consistent_proto_store") {

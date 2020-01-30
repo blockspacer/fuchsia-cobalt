@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+visibility = [ "$cobalt_root/*" ]
+
 import("//build/go/go_library.gni")
 import("//third_party/protobuf/proto_library.gni")
 
@@ -37,6 +39,8 @@ proto_library("cobalt_registry_proto") {
     ":proto_config",
     "$cobalt_root:cobalt_config",
   ]
+
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 go_library("cobalt_registry_proto_go") {
@@ -64,6 +68,8 @@ source_set("buckets_config") {
   ]
 
   public_configs = [ "$cobalt_root:cobalt_config" ]
+  visibility = []
+  visibility = [ "*" ]
 }
 
 source_set("buckets_config_test") {

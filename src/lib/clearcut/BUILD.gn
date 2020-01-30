@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+visibility = [ "$cobalt_root/*" ]
+
 import("//third_party/protobuf/proto_library.gni")
 
 proto_library("clearcut_proto") {
@@ -30,6 +32,7 @@ source_set("clearcut") {
     "$cobalt_root/src/logger:internal_metrics",
     "//third_party/abseil-cpp",
   ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("uploader_test") {
