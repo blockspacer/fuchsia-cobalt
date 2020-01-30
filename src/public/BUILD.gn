@@ -38,6 +38,9 @@ source_set("cobalt_service") {
     "$cobalt_root/src/system_data",
     "$cobalt_root/src/system_data:client_secret",
     "$cobalt_root/src/system_data:configuration_data",
+  ]
+
+  public_deps = [
     "$cobalt_root/src/uploader:shipping_manager",
   ]
 }
