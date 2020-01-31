@@ -46,12 +46,22 @@ class FrequencyEstimator {
   // Creates and returns a vector of size (|max_index| + 1), where the k-th element is an unbiased
   // estimate of the number of occurrences of index k in |indices|. If an element of |indices| is
   // greater than |max_index|, it is disregarded.
-  std::vector<double> GetFrequencies(const std::vector<uint32_t>& indices);
+  std::vector<double> GetFrequenciesFromIndices(const std::vector<uint32_t>& indices);
+
+  // |histograms|: A vector of histograms, each of which has the form of a vector of length
+  // (|max_index| + 1), where the value in the k-th place of the vector is a count for the k-th
+  // bucket.
+  //
+  // Creates and returns a vector of size (|max_index| + 1), where the k-th element is an unbiased
+  // estimate of the total count for the k-th bucket index across all of the input histograms. If an
+  // element of |indices| is greater than |max_index|, it is disregarded.
+  std::vector<double> GetFrequenciesFromHistograms(
+      const std::vector<std::vector<uint64_t>>& histograms);
 
  private:
   // Given the frequency of each bucket index in the input encoded values, compute an unbiased
   // estimate of the true frequency of each bucket index.
-  std::vector<double> GetDebiasedFrequencies(std::vector<uint64_t> raw_frequencies,
+  std::vector<double> GetDebiasedFrequencies(const std::vector<uint64_t>& raw_frequencies,
                                              uint64_t input_size);
 
   uint32_t max_index_;

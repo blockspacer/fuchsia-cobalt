@@ -74,7 +74,7 @@ IntegerSumEstimator::IntegerSumEstimator(int64_t min_int, int64_t max_int, uint3
 }
 
 double IntegerSumEstimator::ComputeSum(const std::vector<uint32_t>& encoded_vals) {
-  std::vector<double> frequencies = frequency_estimator_->GetFrequencies(encoded_vals);
+  std::vector<double> frequencies = frequency_estimator_->GetFrequenciesFromIndices(encoded_vals);
   double sum = 0.0;
   for (uint32_t index = 0; index < frequencies.size(); index++) {
     sum += frequencies[index] * boundaries_[index];

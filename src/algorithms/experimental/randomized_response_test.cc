@@ -65,25 +65,40 @@ TEST_F(ResponseRandomizerTest, DISABLED_EncodeNonzeroP) {
 }
 
 // Compute the frequency of each index in a test vector when p = 0.
-TEST_F(ResponseRandomizerTest, EstimateFrequenciesZeroP) {
+TEST(FrequencyEstimatorTest, EstimateFrequenciesZeroP) {
   uint32_t max_index = 9;
   double p = 0.0;
   auto estimator = FrequencyEstimator(max_index, p);
   std::vector<uint32_t> indices = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
-  auto frequencies = estimator.GetFrequencies(indices);
+  auto frequencies = estimator.GetFrequenciesFromIndices(indices);
   std::vector<double> expected_frequencies = {3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   EXPECT_THAT(frequencies, Pointwise(FloatNear(0.0001), expected_frequencies));
 }
 
 // Compute the frequency of each index in a test vector when p != 0.
-TEST_F(ResponseRandomizerTest, EstimateFrequenciesNonzeroP) {
+TEST(FrequencyEstimatorTest, EstimateFrequenciesNonzeroP) {
   uint32_t max_index = 9;
   double p = 0.1;
   auto estimator = FrequencyEstimator(max_index, p);
   std::vector<uint32_t> indices = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
-  auto frequencies = estimator.GetFrequencies(indices);
+  auto frequencies = estimator.GetFrequenciesFromIndices(indices);
   std::vector<double> expected_frequencies = {3.1666,  3.1666,  3.1666,  3.1666,  3.1666,
                                               -0.1666, -0.1666, -0.1666, -0.1666, -0.1666};
+  EXPECT_THAT(frequencies, Pointwise(FloatNear(0.0001), expected_frequencies));
+}
+
+// Compute the frequency of each bucket in a sum of histograms.
+TEST(FrequencyEstimatorTest, EstimateFrequenciesFromHistograms) {
+  uint32_t max_index = 9;
+  double p = 0.1;
+  auto estimator = FrequencyEstimator(max_index, p);
+  std::vector<uint64_t> histogram_1 = {1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<uint64_t> histogram_2 = {1, 1, 1, 1, 1, 0, 0, 0, 0, 0};
+  std::vector<uint64_t> histogram_3 = {0, 0, 0, 0, 0, 2, 2, 2, 2, 2};
+  auto frequencies =
+      estimator.GetFrequenciesFromHistograms({histogram_1, histogram_2, histogram_3});
+  std::vector<double> expected_frequencies = {2.0333, 2.0333, 0.9222, 0.9222, 0.9222,
+                                              2.0333, 2.0333, 2.0333, 2.0333, 2.0333};
   EXPECT_THAT(frequencies, Pointwise(FloatNear(0.0001), expected_frequencies));
 }
 

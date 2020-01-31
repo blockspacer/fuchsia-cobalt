@@ -191,6 +191,7 @@ source_set("histogram_encoder") {
 
   deps = [
     ":integer_encoder",
+    ":randomized_response",
   ]
 
   configs += [ "$cobalt_root:cobalt_config" ]

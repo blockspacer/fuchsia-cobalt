@@ -26,7 +26,8 @@ uint32_t ResponseRandomizer::Encode(uint32_t index) {
 FrequencyEstimator::FrequencyEstimator(uint32_t max_index, double p)
     : max_index_(max_index), p_(p) {}
 
-std::vector<double> FrequencyEstimator::GetFrequencies(const std::vector<uint32_t>& indices) {
+std::vector<double> FrequencyEstimator::GetFrequenciesFromIndices(
+    const std::vector<uint32_t>& indices) {
   std::vector<uint64_t> raw_frequencies(max_index_ + 1, 0);
   for (uint32_t index : indices) {
     if (index <= max_index_) {
@@ -36,8 +37,21 @@ std::vector<double> FrequencyEstimator::GetFrequencies(const std::vector<uint32_
   return GetDebiasedFrequencies(raw_frequencies, indices.size());
 }
 
+std::vector<double> FrequencyEstimator::GetFrequenciesFromHistograms(
+    const std::vector<std::vector<uint64_t>>& histograms) {
+  uint64_t input_size = 0;
+  std::vector<uint64_t> raw_frequencies(max_index_ + 1, 0);
+  for (const auto& histogram : histograms) {
+    for (uint32_t i = 0; i <= max_index_; i++) {
+      raw_frequencies[i] += histogram[i];
+      input_size += histogram[i];
+    }
+  }
+  return GetDebiasedFrequencies(raw_frequencies, input_size);
+}
+
 std::vector<double> FrequencyEstimator::GetDebiasedFrequencies(
-    std::vector<uint64_t> raw_frequencies, uint64_t input_size) {
+    const std::vector<uint64_t>& raw_frequencies, uint64_t input_size) {
   double shift = (static_cast<double>(input_size) * p_) / (static_cast<double>(max_index_ + 1));
   double scale = (1.0 - p_);
   std::vector<double> debiased_frequencies(max_index_ + 1);
