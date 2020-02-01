@@ -67,19 +67,17 @@ class IntegerSumEstimator {
   // Computes an unbiased estimate of the sum of a vector of encoded integers
   //
   // The elements of |encoded_vals| are indices into the range [0, |partitions|] specified in the
-  // constructor. ComputeSum() first converts each index i to the following numeric value:
+  // constructor. First, an unbiased estimator of the frequency of each index is computed . Next,
+  // the frequency estimate for each index i is multiplied by the numeric value corresponding to
+  // that index, namely:
   //
-  // |min_int| + ( i * (|max_int| - |min_int|) / |partitions| )
+  // |min_int| + ( i * (|max_int| - |min_int|) / |partitions| ).
   //
-  // These numeric values are summed, and then the raw sum is debiased using GetDebiasedSum().
+  // The method returns the sum of these scaled frequencies over all indices in range [0,
+  // |partitions|].
   double ComputeSum(const std::vector<uint32_t>& encoded_vals);
 
  private:
-  // Given the |raw_sum| of the numeric values corresponding to a set of |input_size| encoded
-  // values, compute an unbiased estimate of sum of the true values.
-  double GetDebiasedSum(int64_t raw_sum, uint64_t input_size);
-
-  double p_;
   // The boundaries of the |partitions| equal subsegments of [|min_int|, |max_int|], sorted in
   // increasing order.
   std::vector<int64_t> boundaries_;

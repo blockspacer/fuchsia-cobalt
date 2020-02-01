@@ -39,17 +39,23 @@ class FrequencyEstimator {
  public:
   // |max_index|: The largest bucket index that may be contained in an input message. It is assumed
   // that the minimum bucket index is 0.
-  explicit FrequencyEstimator(uint32_t max_index);
+  explicit FrequencyEstimator(uint32_t max_index, double p);
   // |indices|: A vector of bucket indices, where indices may be repeated and need not be in any
   // particular order.
   //
-  // Creates and returns a vector of size (|max_index| + 1), where the k-th element is the number of
-  // occurrences of index k in |indices|. If an element of |indices| is greater than |max_index|, it
-  // is disregarded.
-  std::vector<uint64_t> GetFrequencies(const std::vector<uint32_t>& indices);
+  // Creates and returns a vector of size (|max_index| + 1), where the k-th element is an unbiased
+  // estimate of the number of occurrences of index k in |indices|. If an element of |indices| is
+  // greater than |max_index|, it is disregarded.
+  std::vector<double> GetFrequencies(const std::vector<uint32_t>& indices);
 
  private:
+  // Given the frequency of each bucket index in the input encoded values, compute an unbiased
+  // estimate of the true frequency of each bucket index.
+  std::vector<double> GetDebiasedFrequencies(std::vector<uint64_t> raw_frequencies,
+                                             uint64_t input_size);
+
   uint32_t max_index_;
+  double p_;
 };
 
 }  // namespace cobalt

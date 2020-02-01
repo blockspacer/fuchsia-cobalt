@@ -67,25 +67,19 @@ uint32_t IntegerEncoder::RandomRound(int64_t val, uint32_t left_index) {
 }
 
 IntegerSumEstimator::IntegerSumEstimator(int64_t min_int, int64_t max_int, uint32_t partitions,
-                                         double p)
-    : p_(p) {
+                                         double p) {
   PopulateBoundaries(min_int, max_int, partitions, &boundaries_);
   boundary_sum_ = GetBoundarySum(boundaries_);
-  frequency_estimator_ = std::make_unique<FrequencyEstimator>(partitions);
+  frequency_estimator_ = std::make_unique<FrequencyEstimator>(partitions, p);
 }
 
 double IntegerSumEstimator::ComputeSum(const std::vector<uint32_t>& encoded_vals) {
-  std::vector<uint64_t> frequencies = frequency_estimator_->GetFrequencies(encoded_vals);
-  int64_t raw_sum = 0;
+  std::vector<double> frequencies = frequency_estimator_->GetFrequencies(encoded_vals);
+  double sum = 0.0;
   for (uint32_t index = 0; index < frequencies.size(); index++) {
-    raw_sum += frequencies[index] * boundaries_[index];
+    sum += frequencies[index] * boundaries_[index];
   }
-  return GetDebiasedSum(raw_sum, encoded_vals.size());
-}
-
-double IntegerSumEstimator::GetDebiasedSum(int64_t raw_sum, uint64_t input_size) {
-  double coeff = (static_cast<double>(input_size) * p_) / (boundaries_.size());
-  return (static_cast<double>(raw_sum) - (coeff * boundary_sum_)) / (1.0 - p_);
+  return sum;
 }
 
 }  // namespace cobalt

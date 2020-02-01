@@ -4,7 +4,8 @@
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-using testing::ElementsAre;
+using testing::FloatNear;
+using testing::Pointwise;
 
 namespace cobalt {
 
@@ -63,13 +64,27 @@ TEST_F(ResponseRandomizerTest, DISABLED_EncodeNonzeroP) {
   EXPECT_LE(diff, 284);
 }
 
-// Compute the frequency of each index in a test vector.
-TEST_F(ResponseRandomizerTest, EstimateFrequencies) {
+// Compute the frequency of each index in a test vector when p = 0.
+TEST_F(ResponseRandomizerTest, EstimateFrequenciesZeroP) {
   uint32_t max_index = 9;
-  auto estimator = FrequencyEstimator(max_index);
+  double p = 0.0;
+  auto estimator = FrequencyEstimator(max_index, p);
   std::vector<uint32_t> indices = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
   auto frequencies = estimator.GetFrequencies(indices);
-  EXPECT_THAT(frequencies, ElementsAre(3, 3, 3, 3, 3, 0, 0, 0, 0, 0));
+  std::vector<double> expected_frequencies = {3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  EXPECT_THAT(frequencies, Pointwise(FloatNear(0.0001), expected_frequencies));
+}
+
+// Compute the frequency of each index in a test vector when p != 0.
+TEST_F(ResponseRandomizerTest, EstimateFrequenciesNonzeroP) {
+  uint32_t max_index = 9;
+  double p = 0.1;
+  auto estimator = FrequencyEstimator(max_index, p);
+  std::vector<uint32_t> indices = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+  auto frequencies = estimator.GetFrequencies(indices);
+  std::vector<double> expected_frequencies = {3.1666,  3.1666,  3.1666,  3.1666,  3.1666,
+                                              -0.1666, -0.1666, -0.1666, -0.1666, -0.1666};
+  EXPECT_THAT(frequencies, Pointwise(FloatNear(0.0001), expected_frequencies));
 }
 
 }  // namespace cobalt
