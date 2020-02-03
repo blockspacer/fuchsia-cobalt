@@ -62,6 +62,21 @@ func checkFlags() error {
 	return nil
 }
 
+// appendNewCustomers adds the new project configs to the list, verifying that
+// none of their customers overlap with existing customers.
+func appendNewCustomers(existingCustomers map[uint32]string, configs []ProjectConfig, newConfigs ...ProjectConfig) (map[uint32]string, []ProjectConfig, error) {
+	for _, config := range newConfigs {
+		if customerName, ok := existingCustomers[config.CustomerId]; ok {
+			return nil, nil, fmt.Errorf("Duplicate customer ID %v for customers %s and %s", config.CustomerId, customerName, config.CustomerName)
+		}
+	}
+	configs = append(configs, newConfigs...)
+	for _, config := range newConfigs {
+		existingCustomers[config.CustomerId] = config.CustomerName
+	}
+	return existingCustomers, configs, nil
+}
+
 // ParseConfigFromFlags uses the specified flags to find the specified registry,
 // read and parse it.
 func ParseConfigFromFlags() ([]ProjectConfig, error) {
@@ -69,6 +84,7 @@ func ParseConfigFromFlags() ([]ProjectConfig, error) {
 		return nil, err
 	}
 
+	existingCustomers := make(map[uint32]string)
 	configs := []ProjectConfig{}
 	var pc ProjectConfig
 	var err error
@@ -76,26 +92,42 @@ func ParseConfigFromFlags() ([]ProjectConfig, error) {
 		gitTimeout := time.Duration(*gitTimeoutSec) * time.Second
 		var repoConfigs []ProjectConfig
 		for _, repoUrl := range repoUrls {
-			repoConfigs, err = ReadConfigFromRepo(repoUrl, gitTimeout)
-			configs = append(configs, repoConfigs...)
+			if repoConfigs, err = ReadConfigFromRepo(repoUrl, gitTimeout); err != nil {
+				return nil, err
+			}
+			if existingCustomers, configs, err = appendNewCustomers(existingCustomers, configs, repoConfigs...); err != nil {
+				return nil, err
+			}
 		}
 	} else if *configFile != "" {
 		version := CobaltVersion0
 		if *v1Project {
 			version = CobaltVersion1
 		}
-		pc, err = ReadConfigFromYaml(*configFile, uint32(*customerId), uint32(*projectId), CobaltVersion(version))
-		configs = append(configs, pc)
+		if pc, err = ReadConfigFromYaml(*configFile, uint32(*customerId), uint32(*projectId), CobaltVersion(version)); err != nil {
+			return nil, err
+		}
+		if existingCustomers, configs, err = appendNewCustomers(existingCustomers, configs, pc); err != nil {
+			return nil, err
+		}
 	} else if *customerId >= 0 && *projectId >= 0 {
 		for _, configDir := range configDirs {
-			pc, err = ReadProjectConfigFromDir(configDir, uint32(*customerId), uint32(*projectId))
-			configs = append(configs, pc)
+			if pc, err = ReadProjectConfigFromDir(configDir, uint32(*customerId), uint32(*projectId)); err != nil {
+				return nil, err
+			}
+			if existingCustomers, configs, err = appendNewCustomers(existingCustomers, configs, pc); err != nil {
+				return nil, err
+			}
 		}
 	} else {
 		var dirConfigs []ProjectConfig
 		for _, configDir := range configDirs {
-			dirConfigs, err = ReadConfigFromDir(configDir)
-			configs = append(configs, dirConfigs...)
+			if dirConfigs, err = ReadConfigFromDir(configDir); err != nil {
+				return nil, err
+			}
+			if existingCustomers, configs, err = appendNewCustomers(existingCustomers, configs, dirConfigs...); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return configs, err
