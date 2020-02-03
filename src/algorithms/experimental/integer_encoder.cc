@@ -3,137 +3,89 @@
 #include "src/algorithms/experimental/distributions.h"
 #include "src/algorithms/experimental/random.h"
 #include "src/algorithms/experimental/randomized_response.h"
-#include "src/registry/buckets_config.h"
 
 namespace cobalt {
 
-using config::IntegerBucketConfig;
-
 namespace {
 
-IntegerBuckets MakeIntegerBuckets(int64_t min_int, uint32_t num_buckets, uint32_t step_size) {
-  IntegerBuckets buckets;
-  auto linear_buckets = buckets.mutable_linear();
-  linear_buckets->set_floor(min_int);
-  linear_buckets->set_num_buckets(num_buckets);
-  linear_buckets->set_step_size(step_size);
-  return buckets;
+void PopulateBoundaries(int64_t min_int, int64_t max_int, uint32_t partitions,
+                        std::vector<int64_t>* boundaries) {
+  boundaries->resize(partitions + 1);
+  int64_t step_size = (max_int - min_int) / partitions;
+  for (int64_t i = 0; i <= partitions; i++) {
+    (*boundaries)[i] = min_int + i * step_size;
+  }
 }
 
-double GetMultiplierSum(const std::vector<double>& multipliers) {
-  double sum = 0;
-  for (const double m : multipliers) {
-    sum += m;
+int64_t GetBoundarySum(const std::vector<int64_t>& boundaries) {
+  int64_t sum = 0;
+  for (const int64_t b : boundaries) {
+    sum += b;
   }
   return sum;
 }
 
 }  // namespace
 
-IntegerEncoder::IntegerEncoder(BitGeneratorInterface<uint32_t>* gen, const IntegerBuckets& buckets,
-                               double p, const RoundingStrategy& rounding_strategy)
-    : gen_(gen), rounding_strategy_(rounding_strategy) {
-  bucket_config_ = IntegerBucketConfig::CreateFromProto(buckets);
-  randomizer_ = std::make_unique<ResponseRandomizer>(gen, bucket_config_->OverflowBucket(), p);
-}
-
 IntegerEncoder::IntegerEncoder(BitGeneratorInterface<uint32_t>* gen, int64_t min_int,
-                               int64_t max_int, uint32_t partitions, double p,
-                               const RoundingStrategy& rounding_strategy)
-    : gen_(gen), rounding_strategy_(rounding_strategy) {
-  int64_t step_size = (max_int - min_int) / partitions;
-  auto buckets = MakeIntegerBuckets(min_int, partitions, step_size);
-  bucket_config_ = IntegerBucketConfig::CreateFromProto(buckets);
-  randomizer_ = std::make_unique<ResponseRandomizer>(gen, bucket_config_->OverflowBucket(), p);
+                               int64_t max_int, uint32_t partitions, double p)
+    : gen_(gen) {
+  PopulateBoundaries(min_int, max_int, partitions, &boundaries_);
+  randomizer_ = std::make_unique<ResponseRandomizer>(gen_, partitions + 1, p);
 }
 
-uint32_t IntegerEncoder::Encode(int64_t val) {
-  uint32_t bucket_index = bucket_config_->BucketIndex(val);
-  if (rounding_strategy_ == IntegerEncoder::kRandom) {
-    bucket_index = RandomRound(val, bucket_index);
+uint32_t IntegerEncoder::Encode(int64_t val) { return RandomRound(val, GetLeftIndex(val)); }
+
+uint32_t IntegerEncoder::GetLeftIndex(int64_t val) {
+  uint32_t left = 0;
+  uint32_t right = boundaries_.size() - 1;
+  if (val <= boundaries_[left]) {
+    return left;
   }
-  return randomizer_->Encode(bucket_index);
+  if (val >= boundaries_[right]) {
+    return right;
+  }
+  while (left + 1 < right) {
+    uint32_t mid = left + (right - left) / 2;
+    if (val < boundaries_[mid]) {
+      right = mid;
+    } else {
+      left = mid;
+    }
+  }
+  return left;
 }
 
-uint32_t IntegerEncoder::RandomRound(int64_t val, uint32_t bucket_index) {
-  if (bucket_index == bucket_config_->UnderflowBucket() ||
-      bucket_index == bucket_config_->OverflowBucket()) {
-    return bucket_index;
+uint32_t IntegerEncoder::RandomRound(int64_t val, uint32_t left_index) {
+  if (left_index == boundaries_.size() - 1) {
+    return left_index;
   }
-  int64_t lower_bound = bucket_config_->BucketFloor(bucket_index);
-  int64_t width = (bucket_config_->BucketFloor(bucket_index + 1) - lower_bound);
+  int64_t lower_bound = boundaries_[left_index];
+  int64_t width = (boundaries_[left_index + 1] - lower_bound);
   double pos = static_cast<double>(val - lower_bound) / width;
-  return bucket_index += BernoulliDistribution(gen_, pos).Sample();
-}
-
-IntegerSumEstimator::IntegerSumEstimator(const IntegerBuckets& buckets, double p,
-                                         const OutOfBoundsStrategy& underflow_strategy,
-                                         const OutOfBoundsStrategy& overflow_strategy)
-    : p_(p) {
-  bucket_config_ = IntegerBucketConfig::CreateFromProto(buckets);
-  frequency_estimator_ = std::make_unique<FrequencyEstimator>(bucket_config_->OverflowBucket());
-  GetBucketMultipliers(&multipliers_, underflow_strategy, overflow_strategy);
-  multiplier_sum_ = GetMultiplierSum(multipliers_);
+  return left_index += BernoulliDistribution(gen_, pos).Sample();
 }
 
 IntegerSumEstimator::IntegerSumEstimator(int64_t min_int, int64_t max_int, uint32_t partitions,
-                                         double p, const OutOfBoundsStrategy& underflow_strategy,
-                                         const OutOfBoundsStrategy& overflow_strategy)
+                                         double p)
     : p_(p) {
-  int64_t step_size = (max_int - min_int) / partitions;
-  auto buckets = MakeIntegerBuckets(min_int, partitions, step_size);
-  bucket_config_ = IntegerBucketConfig::CreateFromProto(buckets);
-  frequency_estimator_ = std::make_unique<FrequencyEstimator>(bucket_config_->OverflowBucket());
-  GetBucketMultipliers(&multipliers_, underflow_strategy, overflow_strategy);
-  multiplier_sum_ = GetMultiplierSum(multipliers_);
+  PopulateBoundaries(min_int, max_int, partitions, &boundaries_);
+  boundary_sum_ = GetBoundarySum(boundaries_);
+  frequency_estimator_ = std::make_unique<FrequencyEstimator>(partitions);
 }
 
-std::tuple<double, uint64_t, uint64_t> IntegerSumEstimator::ComputeSum(
-    const std::vector<uint32_t>& encoded_vals) {
+double IntegerSumEstimator::ComputeSum(const std::vector<uint32_t>& encoded_vals) {
   std::vector<uint64_t> frequencies = frequency_estimator_->GetFrequencies(encoded_vals);
-  double raw_sum = 0.0;
+  int64_t raw_sum = 0;
   for (uint32_t index = 0; index < frequencies.size(); index++) {
-    raw_sum += frequencies[index] * multipliers_[index];
+    raw_sum += frequencies[index] * boundaries_[index];
   }
-  auto underflow_count = frequencies[bucket_config_->UnderflowBucket()];
-  auto overflow_count = frequencies[bucket_config_->OverflowBucket()];
-  return {DebiasSum(raw_sum, encoded_vals.size()), underflow_count, overflow_count};
+  return GetDebiasedSum(raw_sum, encoded_vals.size());
 }
 
-void IntegerSumEstimator::GetBucketMultipliers(std::vector<double>* multipliers,
-                                               const OutOfBoundsStrategy& underflow_strategy,
-                                               const OutOfBoundsStrategy& overflow_strategy) {
-  uint32_t underflow_index = bucket_config_->UnderflowBucket();
-  uint32_t overflow_index = bucket_config_->OverflowBucket();
-  multipliers->resize(overflow_index + 1);
-  switch (underflow_strategy) {
-    case kClamp: {
-      (*multipliers)[underflow_index] = bucket_config_->BucketFloor(1);
-      break;
-    }
-    case kDiscard:
-    default: {
-      (*multipliers)[underflow_index] = 0;
-    }
-  }
-  switch (overflow_strategy) {
-    case kClamp: {
-      (*multipliers)[overflow_index] = bucket_config_->BucketFloor(overflow_index);
-      break;
-    }
-    case kDiscard:
-    default: {
-      (*multipliers)[overflow_index] = 0;
-    }
-  }
-  for (uint32_t index = 1; index < overflow_index; index++) {
-    (*multipliers)[index] = bucket_config_->BucketFloor(index);
-  }
-}
-
-double IntegerSumEstimator::DebiasSum(int64_t raw_sum, uint64_t input_size) {
-  double coeff = (static_cast<double>(input_size) * p_) / (bucket_config_->OverflowBucket() + 1);
-  return static_cast<double>(raw_sum) - (coeff * multiplier_sum_);
+double IntegerSumEstimator::GetDebiasedSum(int64_t raw_sum, uint64_t input_size) {
+  double coeff = (static_cast<double>(input_size) * p_) / (boundaries_.size());
+  return (static_cast<double>(raw_sum) - (coeff * boundary_sum_)) / (1.0 - p_);
 }
 
 }  // namespace cobalt

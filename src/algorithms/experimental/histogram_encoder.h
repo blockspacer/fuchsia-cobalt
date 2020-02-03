@@ -35,10 +35,8 @@ class HistogramSumEstimator {
   // |encoded_histograms| is a vector of encoded histograms, where each encoded histogram is a
   // vector of indices into the bucketing scheme of the IntegerSumEstimator used to construct this
   // HistogramSumEstimator. For each index n in the range [0, |num_buckets| - 1], ComputeSum()
-  // returns the estimated sum of the counts in the n-th buckets of the encoded histograms, together
-  // with the estimated underflow and overflow counts for that bucket.
-  std::vector<std::tuple<double, uint64_t, uint64_t>> ComputeSum(
-      const std::vector<std::vector<uint32_t>>& encoded_histograms);
+  // returns the estimated sum of the counts in the n-th buckets of the encoded histograms.
+  std::vector<double> ComputeSum(const std::vector<std::vector<uint32_t>>& encoded_histograms);
 
  private:
   uint32_t num_buckets_;

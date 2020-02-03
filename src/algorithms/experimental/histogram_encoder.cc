@@ -21,9 +21,9 @@ HistogramSumEstimator::HistogramSumEstimator(uint32_t num_buckets,
                                              IntegerSumEstimator* integer_sum_estimator)
     : num_buckets_(num_buckets), integer_sum_estimator_(integer_sum_estimator) {}
 
-std::vector<std::tuple<double, uint64_t, uint64_t>> HistogramSumEstimator::ComputeSum(
+std::vector<double> HistogramSumEstimator::ComputeSum(
     const std::vector<std::vector<uint32_t>>& encoded_histograms) {
-  std::vector<std::tuple<double, uint64_t, uint64_t>> decoded(num_buckets_);
+  std::vector<double> decoded(num_buckets_);
   for (uint32_t index = 0; index < num_buckets_; index++) {
     std::vector<uint32_t> encoded_counts(encoded_histograms.size());
     for (size_t k = 0; k < encoded_histograms.size(); k++) {
