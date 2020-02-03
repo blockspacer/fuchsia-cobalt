@@ -37,6 +37,7 @@ BitGeneratorInterface<T>::~BitGeneratorInterface() = default;
 class RandomNumberGenerator : public BitGeneratorInterface<uint32_t> {
  public:
   RandomNumberGenerator() { engine_ = std::mt19937(rd_()); };
+  explicit RandomNumberGenerator(uint32_t seed) { engine_ = std::mt19937(seed); };
   result_type operator()() override { return engine_(); }
 
  private:

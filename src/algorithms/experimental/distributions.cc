@@ -6,6 +6,13 @@
 
 namespace cobalt {
 
+PoissonDistribution::PoissonDistribution(BitGeneratorInterface<uint32_t>* gen, int mean)
+    : gen_(gen) {
+  dist_ = std::poisson_distribution<int>(mean);
+}
+
+int PoissonDistribution::Sample() { return dist_(*gen_); }
+
 DiscreteUniformDistribution::DiscreteUniformDistribution(BitGeneratorInterface<uint32_t>* gen,
                                                          uint32_t min, uint32_t max)
     : gen_(gen) {

@@ -7,20 +7,36 @@ namespace cobalt {
 
 class DistributionsTest : public ::testing::Test {
  protected:
-  void SetUp() override { gen_ = std::make_unique<RandomNumberGenerator>(); }
+  void SetUp() override { gen_ = std::make_unique<RandomNumberGenerator>(55); }
   RandomNumberGenerator* GetGenerator() { return gen_.get(); }
 
  private:
   std::unique_ptr<RandomNumberGenerator> gen_;
 };
 
+TEST_F(DistributionsTest, PoissonSample) {
+  int mean = 5;
+  int sigma = mean;
+  auto u = PoissonDistribution(GetGenerator(), mean);
+  int count_more_than_2_sigma = 0;
+  for (int i = 0; i < 1000; i++) {
+    auto sample = u.Sample();
+    if (sample > mean + 2 * sigma || sample < mean - 2 * sigma) {
+      count_more_than_2_sigma++;
+    }
+  }
+  EXPECT_LT(count_more_than_2_sigma, 50);
+}
+
 TEST_F(DistributionsTest, DiscreteUniformSample) {
   uint32_t min = 0;
   uint32_t max = 9;
   auto u = DiscreteUniformDistribution(GetGenerator(), min, max);
-  auto sample = u.Sample();
-  EXPECT_GE(sample, min);
-  EXPECT_LE(sample, max);
+  for (int i = 0; i < 1000; i++) {
+    auto sample = u.Sample();
+    EXPECT_GE(sample, min);
+    EXPECT_LE(sample, max);
+  }
 }
 
 TEST_F(DistributionsTest, BernoulliSample) {
