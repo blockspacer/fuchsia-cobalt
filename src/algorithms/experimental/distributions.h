@@ -16,6 +16,7 @@ template <typename sample_type>
 class DiscreteDistribution {
  public:
   virtual sample_type Sample() = 0;
+  virtual ~DiscreteDistribution() = default;
 };
 
 // Provides samples from the poisson distribution with mean |mean|.
