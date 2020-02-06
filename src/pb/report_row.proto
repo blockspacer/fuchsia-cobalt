@@ -73,7 +73,7 @@ message IntegerHistogramReportRow {
   // required: bucket_min_value <= bucket_max_value. The bucket consists
   // of integers in the interval [bucket_min_value, bucket_max_value].
   int64 bucket_min_value = 4;
-  int64 bucket_value = 5;
+  int64 bucket_max_value = 5;
 
   // The bucket index, which is useful for sorting the data in visualizations.
   int32 bucket_index = 6;
