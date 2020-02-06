@@ -4,11 +4,259 @@ package cobalt;
 
 import "src/pb/observation_batch.proto";
 
+// A row of output for reports that use the OCCURRENCE_COUNTS global aggregation
+// procedure: FLEETWIDE_OCCURRENCE_COUNTS and UNIQUE_DEVICE_COUNTS.
+//
+// This row gives a total count that is associated with a date, a system_profile
+// and an event_vector.
+//
+// This is part of Cobalt 1.1.
+message OccurrenceCountReportRow {
+  // The report date. This is the date on which the local aggregation period
+  // ended, as measured on the device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The event_vector labels for this row.
+  // There will be one event_label for each metric dimension
+  // that was included in the report, in the order the dimensions are declared
+  // in the ReportDefinition. If the ReportDefinition specifies no metric
+  // dimensions should be included then this string will be empty.
+  //
+  // For each dimension, if the event_code in that dimension of the event_vector
+  // has not been assigned a label, then this will be a string of the form
+  // "<event-code-42>".
+  repeated string event_labels = 3;
+
+  // The sum of the |counts|s associated with this row's event_vector, from all
+  // Observations included in the report from devices with the |system_profile|.
+  // Unless the report is configured to not use any local differential privacy
+  // noise, this value is an estimate. Also the value is truncated to
+  // MAX_DOUBLE.
+  double count = 4;
+}
+
+// A row of output for reports that use the INTEGER_HISTOGRAMS global
+// aggregation procedure: FLEETWIDE_HISTOGRAMS, UNIQUE_DEVICE_HISTOGRAMS,
+// HOURLY_VALUE_HISTOGRAMS.
+//
+// This row gives the count for one bucket of an int-range histogram
+// associated with a date, a system_profile and an event_vector.
+//
+// This is part of Cobalt 1.1.
+message IntegerHistogramReportRow {
+  // The report date. This is the date on which the local aggregation period
+  // ended, as measured on the device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The event_vector labels for this row.
+  // There will be one event_label for each metric dimension
+  // that was included in the report, in the order the dimensions are declared
+  // in the ReportDefinition. If the ReportDefinition specifies no metric
+  // dimensions should be included then this string will be empty.
+  //
+  // For each dimension, if the event_code in that dimension of the event_vector
+  // has not been assigned a label, then this will be a string of the form
+  // "<event-code-42>".
+  repeated string event_labels = 3;
+
+  // The *inclusive* upper and lower bounds for this bucket.
+  // required: bucket_min_value <= bucket_max_value. The bucket consists
+  // of integers in the interval [bucket_min_value, bucket_max_value].
+  int64 bucket_min_value = 4;
+  int64 bucket_value = 5;
+
+  // The bucket index, which is useful for sorting the data in visualizations.
+  int32 bucket_index = 6;
+
+  // The number of values that fall in this bucket. Unless the report is
+  // configured to not use any local differential privacy noise, this value is
+  // an estimate. Also the value is truncated to MAX_DOUBLE.
+  double count = 7;
+}
+
+// A row of output for reports that use the SUM_AND_COUNTS global aggregation
+// procedure, namely reports of type FLEETWIDE_MEAN. The goal of such a report
+// is to compute the mean of a set of event values when each device in the fleet
+// contributues a different number of event values. The fleetwide mean is
+// given by sum/count. We emit sum and count separately so that a
+// post-processing step (such as within a dashboard) may compute the mean over
+// larger populations such as multiple days, multiple system_profiles, or
+// multiple event_vectors.
+//
+// This row gives the sum and count associated with a date, a system_profile
+// and an event_vector.
+//
+// This is part of Cobalt 1.1.
+message SumAndCountReportRow {
+  // The report date. This is the date on which the local aggregation period
+  // ended, as measured on the device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The event_vector labels for this row.
+  // There will be one event_label for each metric dimension
+  // that was included in the report, in the order the dimensions are declared
+  // in the ReportDefinition. If the ReportDefinition specifies no metric
+  // dimensions should be included then this string will be empty.
+  //
+  // For each dimension, if the event_code in that dimension of the event_vector
+  // has not been assigned a label, then this will be a string of the form
+  // "<event-code-42>".
+  repeated string event_labels = 3;
+
+  // The sum of all of the |sum| fields from all of the Observations included
+  // in the report that are associated with this row's event_vector and from
+  // devices with the |system_profile|.
+  //
+  // Unless the report is configured to not use any local differential privacy
+  // noise, this value is an estimate. Also the value is truncated to
+  // MAX_DOUBLE.
+  double sum = 4;
+
+  // The sum of all of the |count| fields from all of the Observations included
+  // in the report that are associated with this row's event_vector and from
+  // devices with the |system_profile|.
+  //
+  // Unless the report is configured to not use any local differential privacy
+  // noise, this value is an estimate. Also the value is truncated to
+  // MAX_DOUBLE.
+  double count = 5;
+}
+
+// A row of output for reports that use the NUMERIC_STATS global aggregation
+// procedure: HOURLY_VALUE_NUMERIC_STATS and UNIQUE_DEVICE_NUMERIC_STATS.
+//
+// This row gives the numeric statistics associated with a date, a
+// system_profile and an event_vector.
+//
+// This is part of Cobalt 1.1.
+message NumericStatsReportRow {
+  // The report date. This is the date on which the local aggregation period
+  // ended, as measured on the device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The event_vector labels for this row.
+  // There will be one event_label for each metric dimension
+  // that was included in the report, in the order the dimensions are declared
+  // in the ReportDefinition. If the ReportDefinition specifies no metric
+  // dimensions should be included then this string will be empty.
+  //
+  // For each dimension, if the event_code in that dimension of the event_vector
+  // has not been assigned a label, then this will be a string of the form
+  // "<event-code-42>".
+  repeated string event_labels = 3;
+
+  // Each of the statistics below are computed over the set of all values
+  // that are associated with the event_vector for this row
+  // from all Observations that contributed to the report that are
+  // from devices with the |system_profile|. Unless the report is
+  // configured to not use any local differential privacy noise, each of these
+  // value is an estimate and has been truncated to fit in a double.
+
+  // The sum of all the values.
+  double sum = 4;
+
+  // The sum the squares of all of the values.
+  double sum_of_squares = 5;
+
+  // The count of the number of values.
+  double count = 6;
+
+  // The count of the number of values (already included in |count|) that are
+  // zero.
+  double zero_count = 7;
+
+  // 1st percentile.
+  double percentile_1 = 101;
+
+  // 5th percentile.
+  double percentile_5 = 105;
+
+  // 10th percentile.
+  double percentile_10 = 110;
+
+  // 25th percentile.
+  double percentile_25 = 125;
+
+  // 50th percentile.
+  double percentile_50 = 150;
+
+  // 75th percentile.
+  double percentile_75 = 175;
+
+  // 90th percentile.
+  double percentile_90 = 190;
+
+  // 95th percentile.
+  double percentile_95 = 195;
+
+  // 99th percentile.
+  double percentile_99 = 199;
+}
+
+// A row of output for reports that utilize the STRING_HISTOGRAMS
+// global aggregation procedure, namely the STRING_HISTOGRAM report type.
+//
+// This row gives one string and its associated count for the string histogram
+// associated with a date, a system_profile and an event_vector.
+//
+// This is part of Cobalt 1.1.
+message StringHistogramReportRow {
+  // The report date. This is the date on which the local aggregation period
+  // ended, as measured on the device. This is a string in yyyy-mm-dd format.
+  string date = 1;
+
+  // A profile of the system from which the events were logged. This will be
+  // populated with only the fields that are specified in the
+  // |system_profile_field| entry in the ReportDefinition for this report.
+  SystemProfile system_profile = 2;
+
+  // The event_vector labels for this row.
+  // There will be one event_label for each metric dimension
+  // that was included in the report, in the order the dimensions are declared
+  // in the ReportDefinition. If the ReportDefinition specifies no metric
+  // dimensions should be included then this string will be empty.
+  //
+  // For each dimension, if the event_code in that dimension of the event_vector
+  // has not been assigned a label, then this will be a string of the form
+  // "<event-code-42>".
+  repeated string event_labels = 3;
+
+  // The string value. One of the candidate strings, or the string "<other>".
+  string string_value = 4;
+
+  // The count for this string.  Unless the report is
+  // configured to not use any local differential privacy noise, each of these
+  // value is an estimate and has been truncated to fit in a double.
+  double count = 5;
+}
+
 // A row of output for a report of type SIMPLE_OCCURRENCE_COUNT.
 //
 // Gives the total daily, fleet-wide count of the number of occurrences of an
 // event with a particular event code, on a particular day, considering only
 // devices matching a particular system profile.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message SimpleOccurrenceCountReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
@@ -47,6 +295,8 @@ message SimpleOccurrenceCountReportRow {
 // event with a particular event code, for a particular component, on a
 // particular day, considering only devices matching a particular system
 // profile.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message EventComponentOccurrenceCountReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
@@ -90,6 +340,8 @@ message EventComponentOccurrenceCountReportRow {
 // considering only devices matching a particular system profile.  The
 // statistics include the number of observations, the mean, median, minimum,
 // maximum, and sum.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message NumericAggregationReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
@@ -158,6 +410,8 @@ message NumericAggregationReportRow {
 // over the fleet, for a particular event code, a particular component, on a
 // particular day, considering only devices matching a particular system
 // profile.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message IntRangeHistogramReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
@@ -201,6 +455,8 @@ message IntRangeHistogramReportRow {
 // Gives an estimate of the number of devices with a particular system profile
 // which experienced at least one event with a particular event code, during a
 // particular time window.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message UniqueActivesReportRow {
   // The date of the last day of the aggregation window, as measured on the
   // device. This is a string in yyyy-mm-dd format.
@@ -262,6 +518,8 @@ message UniqueActivesReportRow {
 // devices of the number of occurrences of an event on each device during the
 // window. If used with an ELAPSED_TIME metric, reports statistics over all
 // devices of the total amount of time logged on each device during the window.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message PerDeviceNumericStatsReportRow {
   // The date of the last day of the on-device aggregation window, as measured
   // on the device, using the time zone policy of the report's parent metric.
@@ -345,6 +603,8 @@ message PerDeviceNumericStatsReportRow {
 // over the fleet, for a particular event code, a particular component, on a
 // particular day with a particular aggregation_window, considering only devices
 // matching a particular system profile.
+//
+// TODO(b/148809626) Delete when all users are switched to Cobalt 1.1.
 message PerDeviceHistogramReportRow {
   // The date on which the logged events occurred, as measured on the device.
   // This is a string in yyyy-mm-dd format.
