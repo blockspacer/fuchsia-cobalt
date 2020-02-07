@@ -6,12 +6,20 @@
 
 namespace cobalt {
 
-PoissonDistribution::PoissonDistribution(BitGeneratorInterface<uint32_t>* gen, int mean)
+BernoulliDistribution::BernoulliDistribution(BitGeneratorInterface<uint32_t>* gen, double p)
     : gen_(gen) {
-  dist_ = std::poisson_distribution<int>(mean);
+  dist_ = std::bernoulli_distribution(p);
 }
 
-int PoissonDistribution::Sample() { return dist_(*gen_); }
+bool BernoulliDistribution::Sample() { return dist_(*gen_); }
+
+BinomialDistribution::BinomialDistribution(BitGeneratorInterface<uint32_t>* gen,
+                                           uint64_t num_trials, double p)
+    : gen_(gen) {
+  dist_ = std::binomial_distribution<uint64_t>(num_trials, p);
+}
+
+uint64_t BinomialDistribution::Sample() { return dist_(*gen_); }
 
 DiscreteUniformDistribution::DiscreteUniformDistribution(BitGeneratorInterface<uint32_t>* gen,
                                                          uint32_t min, uint32_t max)
@@ -21,11 +29,11 @@ DiscreteUniformDistribution::DiscreteUniformDistribution(BitGeneratorInterface<u
 
 uint32_t DiscreteUniformDistribution::Sample() { return dist_(*gen_); }
 
-BernoulliDistribution::BernoulliDistribution(BitGeneratorInterface<uint32_t>* gen, double p)
+PoissonDistribution::PoissonDistribution(BitGeneratorInterface<uint32_t>* gen, int mean)
     : gen_(gen) {
-  dist_ = std::bernoulli_distribution(p);
+  dist_ = std::poisson_distribution<int>(mean);
 }
 
-bool BernoulliDistribution::Sample() { return dist_(*gen_); }
+int PoissonDistribution::Sample() { return dist_(*gen_); }
 
 }  // namespace cobalt

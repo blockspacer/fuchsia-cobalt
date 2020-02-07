@@ -19,16 +19,29 @@ class DiscreteDistribution {
   virtual ~DiscreteDistribution() = default;
 };
 
-// Provides samples from the poisson distribution with mean |mean|.
-// Entropy is obtained from a uniform random bit generator |gen|.
-class PoissonDistribution : public DiscreteDistribution<int> {
+// Provides samples from the Bernoulli distribution with parameter |p|. Entropy is obtained from a
+// uniform random bit generator |gen|.
+class BernoulliDistribution : public DiscreteDistribution<bool> {
  public:
-  PoissonDistribution(BitGeneratorInterface<uint32_t>* gen, int mean);
-  int Sample() override;
+  BernoulliDistribution(BitGeneratorInterface<uint32_t>* gen, double p);
+  BernoulliDistribution() = default;
+  bool Sample() override;
 
  private:
   BitGeneratorInterface<uint32_t>* gen_;
-  std::poisson_distribution<int> dist_;
+  std::bernoulli_distribution dist_;
+};
+
+// Provides samples from the binomial distribution with parameters |num_trials| and |p|. Entropy is
+// obtained from a uniform random bit generator |gen|.
+class BinomialDistribution : public DiscreteDistribution<uint64_t> {
+ public:
+  BinomialDistribution(BitGeneratorInterface<uint32_t>* gen, uint64_t num_trials, double p);
+  uint64_t Sample() override;
+
+ private:
+  BitGeneratorInterface<uint32_t>* gen_;
+  std::binomial_distribution<uint64_t> dist_;
 };
 
 // Provides samples from the uniform distribution over the integers from |min| to |max|, inclusive.
@@ -44,17 +57,16 @@ class DiscreteUniformDistribution : public DiscreteDistribution<uint32_t> {
   std::uniform_int_distribution<uint32_t> dist_;
 };
 
-// Provides samples from the Bernoulli distribution with parameter |p|. Entropy is obtained from a
-// uniform random bit generator |gen|.
-class BernoulliDistribution : public DiscreteDistribution<bool> {
+// Provides samples from the poisson distribution with mean |mean|.
+// Entropy is obtained from a uniform random bit generator |gen|.
+class PoissonDistribution : public DiscreteDistribution<int> {
  public:
-  BernoulliDistribution(BitGeneratorInterface<uint32_t>* gen, double p);
-  BernoulliDistribution() = default;
-  bool Sample() override;
+  PoissonDistribution(BitGeneratorInterface<uint32_t>* gen, int mean);
+  int Sample() override;
 
  private:
   BitGeneratorInterface<uint32_t>* gen_;
-  std::bernoulli_distribution dist_;
+  std::poisson_distribution<int> dist_;
 };
 
 }  // namespace cobalt
