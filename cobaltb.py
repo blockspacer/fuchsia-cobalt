@@ -87,6 +87,7 @@ def out_dir(args):
 
 def _setup(args):
   subprocess.check_call(['git', 'submodule', 'init'])
+  subprocess.check_call(['git', 'submodule', 'sync'])
   subprocess.check_call(['git', 'submodule', 'update'])
   subprocess.check_call(['./setup.sh'])
 
