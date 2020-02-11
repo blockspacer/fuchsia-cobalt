@@ -26,8 +26,14 @@ class SystemDataInterface {
   // Returns the SystemProfile for the current system.
   [[nodiscard]] virtual const SystemProfile& system_profile() const = 0;
 
+  // Resets the experiment state to the one provided.
+  virtual void SetExperimentState(std::vector<Experiment> experiments) = 0;
+
   // Returns a vector with all experiments the system has a notion of.
   [[nodiscard]] virtual const std::vector<Experiment>& experiments() const = 0;
+
+  // Resets the current channel value.
+  virtual void SetChannel(const std::string& channel) = 0;
 
   // Returns the current channel.
   [[nodiscard]] virtual const std::string& channel() const = 0;
@@ -73,13 +79,13 @@ class SystemData : public SystemDataInterface {
   const SystemProfile& system_profile() const override { return system_profile_; }
 
   // Resets the experiment state to the one provided.
-  void SetExperimentState(std::vector<Experiment> experiments) {
+  void SetExperimentState(std::vector<Experiment> experiments) override {
     auto unprotected_experiments = protected_experiments_.lock();
     unprotected_experiments->experiments = std::move(experiments);
   }
 
   // Resets the current channel value.
-  void SetChannel(const std::string& channel);
+  void SetChannel(const std::string& channel) override;
 
   const std::string& channel() const override { return system_profile_.channel(); }
 

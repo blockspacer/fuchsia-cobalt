@@ -25,7 +25,13 @@ class FakeSystemData : public SystemDataInterface {
 
   const SystemProfile& system_profile() const override { return system_profile_; }
 
+  void SetExperimentState(std::vector<Experiment> experiments) override {
+    experiments_ = std::move(experiments);
+  }
+
   const std::vector<Experiment>& experiments() const override { return experiments_; }
+
+  void SetChannel(const std::string& channel) override { system_profile_.set_channel(channel); };
 
   const std::string& channel() const override { return system_profile_.channel(); }
 

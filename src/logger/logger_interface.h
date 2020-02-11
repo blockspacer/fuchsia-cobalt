@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/logger/internal_metrics_config.cb.h"
 #include "src/logger/status.h"
 #include "src/logger/types.h"
 #include "src/pb/observation2.pb.h"
@@ -181,6 +182,18 @@ class LoggerInterface {
   // therefore it is the client's responsibility to make sure the EventValues
   // contents match the proto defined.
   virtual Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) = 0;
+
+  // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
+  // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
+  // every call to Logger along with which method was called and the project
+  // that called it.
+  virtual void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) = 0;
+
+  // Pauses Cobalt's internal metrics collection.
+  virtual void PauseInternalLogging() = 0;
+
+  // Resumes Cobalt's internal metrics collection.
+  virtual void ResumeInternalLogging() = 0;
 };
 
 }  // namespace logger

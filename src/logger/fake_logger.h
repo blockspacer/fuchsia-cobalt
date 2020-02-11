@@ -51,6 +51,12 @@ class FakeLogger : public LoggerInterface {
 
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
+  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) override {}
+
+  void PauseInternalLogging() override {}
+
+  void ResumeInternalLogging() override {}
+
   uint32_t call_count() { return call_count_; }
   Event last_event_logged() { return last_event_logged_; }
 

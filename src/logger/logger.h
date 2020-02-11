@@ -150,15 +150,15 @@ class Logger : public LoggerInterface {
   // (cobalt_internal::metrics::per_project_logger_calls_made) are logged for
   // every call to Logger along with which method was called and the project
   // that called it.
-  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) {
+  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) override {
     internal_metrics_->LoggerCalled(method, project_context_->project());
   }
 
   // Pauses Cobalt's internal metrics collection.
-  void PauseInternalLogging();
+  void PauseInternalLogging() override;
 
   // Resumes Cobalt's internal metrics collection.
-  void ResumeInternalLogging();
+  void ResumeInternalLogging() override;
 
  private:
   friend class LoggerTest;

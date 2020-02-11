@@ -138,6 +138,7 @@ source_set("logger_interface") {
   public_configs = [ "$cobalt_root:cobalt_config" ]
 
   public_deps = [
+    ":internal_metrics_config_cc",
     ":status",
     "$cobalt_root/src/pb",
     "$cobalt_root/src/registry:cobalt_registry_proto",
