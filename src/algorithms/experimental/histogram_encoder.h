@@ -5,9 +5,8 @@
 #ifndef COBALT_SRC_ALGORITHMS_EXPERIMENTAL_HISTOGRAM_ENCODER_H_
 #define COBALT_SRC_ALGORITHMS_EXPERIMENTAL_HISTOGRAM_ENCODER_H_
 
-#include <tuple>
-
 #include "src/algorithms/experimental/integer_encoder.h"
+#include "src/algorithms/experimental/random.h"
 #include "src/algorithms/experimental/randomized_response.h"
 
 namespace cobalt {

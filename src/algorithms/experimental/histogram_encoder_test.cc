@@ -1,7 +1,5 @@
 #include "src/algorithms/experimental/histogram_encoder.h"
 
-#include <tuple>
-
 #include "src/algorithms/experimental/integer_encoder.h"
 #include "src/algorithms/experimental/random.h"
 #include "src/algorithms/experimental/randomized_response.h"

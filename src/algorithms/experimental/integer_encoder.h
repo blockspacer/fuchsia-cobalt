@@ -7,7 +7,6 @@
 
 #include "src/algorithms/experimental/random.h"
 #include "src/algorithms/experimental/randomized_response.h"
-#include "src/registry/report_definition.pb.h"
 
 namespace cobalt {
 

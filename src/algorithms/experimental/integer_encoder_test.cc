@@ -2,7 +2,6 @@
 
 #include "src/algorithms/experimental/random.h"
 #include "src/algorithms/experimental/randomized_response.h"
-#include "src/registry/buckets_config.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 

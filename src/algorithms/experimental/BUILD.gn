@@ -158,7 +158,6 @@ source_set("integer_encoder") {
     ":distributions",
     ":random",
     ":randomized_response",
-    "$cobalt_root/src/registry:buckets_config",
   ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
@@ -174,7 +173,6 @@ source_set("integer_encoder_test") {
     ":integer_encoder",
     ":random",
     ":randomized_response",
-    "$cobalt_root/src/registry:buckets_config",
     "//third_party/gflags",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
@@ -191,6 +189,7 @@ source_set("histogram_encoder") {
 
   deps = [
     ":integer_encoder",
+    ":random",
     ":randomized_response",
   ]
 
