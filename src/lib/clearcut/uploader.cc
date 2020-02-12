@@ -170,12 +170,13 @@ Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
 
   LogResponse log_response;
   if (!log_response.ParseFromString(response.response)) {
-    return Status(StatusCode::INTERNAL, "Unable to parse response from clearcut server");
-  }
-
-  if (log_response.next_request_wait_millis() >= 0) {
-    pause_uploads_until_ =
-        steady_clock_->now() + std::chrono::milliseconds(log_response.next_request_wait_millis());
+    // TODO(fxb/45751): add metric to capture how often this happens.
+    LOG(ERROR) << "Unable to parse response from clearcut server";
+  } else {
+    if (log_response.next_request_wait_millis() >= 0) {
+      pause_uploads_until_ =
+          steady_clock_->now() + std::chrono::milliseconds(log_response.next_request_wait_millis());
+    }
   }
 
   return Status::OK;
