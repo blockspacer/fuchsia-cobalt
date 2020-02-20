@@ -10,7 +10,6 @@
 #include <fstream>
 #include <memory>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -21,7 +20,6 @@
 #include "src/lib/util/file_util.h"
 #include "src/lib/util/posix_file_system.h"
 #include "src/lib/util/status.h"
-#include "src/local_aggregation/local_aggregation.pb.h"
 #include "src/logger/project_context.h"
 #include "src/logger/project_context_factory.h"
 #include "src/logger/status.h"
@@ -31,9 +29,7 @@
 #include "src/public/cobalt_service.h"
 #include "src/registry/cobalt_registry.pb.h"
 #include "src/registry/metric_definition.pb.h"
-#include "src/registry/project_configs.h"
 #include "src/registry/report_definition.pb.h"
-#include "src/uploader/shipping_manager.h"
 #include "src/uploader/upload_scheduler.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.h"
 
@@ -65,8 +61,11 @@ DEFINE_string(mode, "interactive",
               "This program may be used in 3 modes: 'interactive', "
               "'send-once', 'automatic'");
 
-DEFINE_string(customer_name, "fuchsia", "Customer name");
-DEFINE_string(project_name, "test_app2", "Project name");
+// Customer ID for Fuchsia is 1.
+DEFINE_uint32(customer_id, 1, "Customer ID");
+// This must match the ID of the test_app2 Cobalt project as specified in:
+// third_party/cobalt_config/projects.yaml
+DEFINE_uint32(project_id, 657579885, "Project ID");
 DEFINE_string(metric_name, "error_occurred", "Initial Metric name");
 
 DEFINE_string(analyzer_tink_keyset_file, "",
@@ -304,7 +303,7 @@ class RealLoggerFactory : public LoggerFactory {
 
   RealLoggerFactory(std::unique_ptr<CobaltService> cobalt_service,
                     std::unique_ptr<ProjectContextFactory> project_context_factory,
-                    std::string customer_name, std::string project_name);
+                    uint32_t customer_id, uint32_t project_id);
 
   std::unique_ptr<LoggerInterface> NewLogger(uint32_t day_index) override;
   size_t ObservationCount() override;
@@ -317,8 +316,8 @@ class RealLoggerFactory : public LoggerFactory {
  private:
   std::unique_ptr<CobaltService> cobalt_service_;
   std::unique_ptr<ProjectContextFactory> project_context_factory_;
-  std::string customer_name_;
-  std::string project_name_;
+  uint32_t customer_id_;
+  uint32_t project_id_;
   std::unique_ptr<ProjectContext> project_context_;
   std::unique_ptr<FakeValidatedClock> validated_clock_;
   std::unique_ptr<SystemClockInterface> mock_clock_;
@@ -326,13 +325,12 @@ class RealLoggerFactory : public LoggerFactory {
 
 RealLoggerFactory::RealLoggerFactory(std::unique_ptr<CobaltService> cobalt_service,
                                      std::unique_ptr<ProjectContextFactory> project_context_factory,
-                                     std::string customer_name, std::string project_name)
+                                     uint32_t customer_id, uint32_t project_id)
     : cobalt_service_(std::move(cobalt_service)),
       project_context_factory_(std::move(project_context_factory)),
-      customer_name_(std::move(customer_name)),
-      project_name_(std::move(project_name)),
-      project_context_(project_context_factory_->NewProjectContext(customer_name_, project_name_)) {
-}
+      customer_id_(customer_id),
+      project_id_(project_id),
+      project_context_(project_context_factory_->NewProjectContext(customer_id_, project_id_)) {}
 
 std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index) {
   if (day_index != 0u) {
@@ -346,7 +344,7 @@ std::unique_ptr<LoggerInterface> RealLoggerFactory::NewLogger(uint32_t day_index
   validated_clock_ = std::make_unique<FakeValidatedClock>(mock_clock_.get());
 
   return cobalt_service_->NewLogger(
-      project_context_factory_->NewProjectContext(customer_name_, project_name_));
+      project_context_factory_->NewProjectContext(customer_id_, project_id_));
 }
 
 size_t RealLoggerFactory::ObservationCount() {
@@ -419,9 +417,9 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
   auto project_context_factory = LoadCobaltRegistry(registry_pb_path);
   // Attempt to create a new ProjetContext here even though we don't need one
   // yet in order to confirm that the customer and project names are good.
-  CHECK(project_context_factory->NewProjectContext(FLAGS_customer_name, FLAGS_project_name))
-      << "The Cobalt Registry does not contain a project named: " << FLAGS_customer_name << "."
-      << FLAGS_project_name;
+  CHECK(project_context_factory->NewProjectContext(FLAGS_customer_id, FLAGS_project_id))
+      << "The Cobalt Registry does not contain a project named: " << FLAGS_customer_id << "."
+      << FLAGS_project_id;
 
   auto mode = ParseMode();
 
@@ -463,7 +461,7 @@ std::unique_ptr<TestApp> TestApp::CreateFromFlagsOrDie(char* argv[]) {
 
   std::unique_ptr<LoggerFactory> logger_factory(
       new internal::RealLoggerFactory(std::move(cobalt_service), std::move(project_context_factory),
-                                      FLAGS_customer_name, FLAGS_project_name));
+                                      FLAGS_customer_id, FLAGS_project_id));
 
   std::unique_ptr<TestApp> test_app(
       new TestApp(std::move(logger_factory), FLAGS_metric_name, mode, &std::cout));
@@ -1065,9 +1063,9 @@ void TestApp::ListParameters() {
   *ostream_ << std::endl;
   *ostream_ << "Values set by flag at startup." << std::endl;
   *ostream_ << "-----------------------------" << std::endl;
-  *ostream_ << "Customer: " << logger_factory_->project_context()->project().customer_name()
+  *ostream_ << "Customer: " << logger_factory_->project_context()->project().customer_id()
             << std::endl;
-  *ostream_ << "Project: " << logger_factory_->project_context()->project().project_name()
+  *ostream_ << "Project: " << logger_factory_->project_context()->project().project_id()
             << std::endl;
   *ostream_ << "Clearcut endpoint: " << FLAGS_clearcut_endpoint << std::endl;
   *ostream_ << std::endl;

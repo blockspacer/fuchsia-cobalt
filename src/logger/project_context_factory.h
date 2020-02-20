@@ -74,16 +74,6 @@ class ProjectContextFactory {
   }
 
   // Returns a ProjectContext for the project with the given
-  // (customer_name, project_name), if the factory's CobaltRegistry is valid and
-  // contains that project. Returns nullptr otherwise.
-  //
-  // Important: The returned ProjectContext contains a pointer into this
-  // factory's CobaltRegistry. This ProjectContextFactory must remain alive as
-  // long as the returned ProjectContext is being used.
-  std::unique_ptr<ProjectContext> NewProjectContext(const std::string& customer_name,
-                                                    const std::string& project_name);
-
-  // Returns a ProjectContext for the project with the given
   // (customer_id, project_id), if the factory's CobaltRegistry is valid and
   // contains that project. Returns nullptr otherwise.
   //

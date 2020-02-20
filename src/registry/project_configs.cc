@@ -86,13 +86,6 @@ std::unique_ptr<ProjectConfig> ProjectConfigs::TakeSingleProjectConfig() {
   return project_config;
 }
 
-const CustomerConfig* ProjectConfigs::GetCustomerConfig(const std::string& customer_name) const {
-  auto iter = customers_by_name_.find(customer_name);
-  if (iter == customers_by_name_.end()) {
-    return nullptr;
-  }
-  return iter->second;
-}
 const CustomerConfig* ProjectConfigs::GetCustomerConfig(uint32_t customer_id) const {
   auto iter = customers_by_id_.find(customer_id);
   if (iter == customers_by_id_.end()) {
@@ -101,14 +94,6 @@ const CustomerConfig* ProjectConfigs::GetCustomerConfig(uint32_t customer_id) co
   return iter->second;
 }
 
-const ProjectConfig* ProjectConfigs::GetProjectConfig(const std::string& customer_name,
-                                                      const std::string& project_name) const {
-  auto iter = projects_by_name_.find(std::make_tuple(customer_name, project_name));
-  if (iter == projects_by_name_.end()) {
-    return nullptr;
-  }
-  return iter->second;
-}
 const ProjectConfig* ProjectConfigs::GetProjectConfig(uint32_t customer_id,
                                                       uint32_t project_id) const {
   auto iter = projects_by_id_.find(std::make_tuple(customer_id, project_id));

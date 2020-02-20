@@ -5,9 +5,6 @@
 #include "src/logger/project_context_factory.h"
 
 #include <memory>
-#include <string>
-
-#include <google/protobuf/text_format.h>
 
 #include "src/logger/test_registries/project_context_factory_test_registry/a.cb.h"
 #include "src/logger/test_registries/project_context_factory_test_registry/b.cb.h"
@@ -53,9 +50,7 @@ TEST(ProjectContextFactoryTest, InvalidBytes) {
   ProjectContextFactory factory("Invalid bytes");
   EXPECT_FALSE(factory.is_valid());
   EXPECT_FALSE(factory.is_single_project());
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
   EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1));
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22"));
   EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1));
   EXPECT_EQ(nullptr, factory.TakeSingleProjectContext());
 }
@@ -72,9 +67,7 @@ TEST(ProjectContextFactoryTest, RegistryA) {
   EXPECT_TRUE(factory.is_single_project());
 
   // Registry A contains Cobalt 1.0 project 11, but no project 22
-  EXPECT_NE(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
   EXPECT_NE(nullptr, factory.NewProjectContext(11, 1).get());
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
   EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1).get());
 
   // Registry A does contain a single Cobalt 1.0 project.
@@ -86,7 +79,6 @@ TEST(ProjectContextFactoryTest, RegistryA) {
   EXPECT_EQ(nullptr, context->GetMetric("Metric22"));
 
   // The data has been removed from the factory.
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11"));
   EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1));
   EXPECT_FALSE(factory.is_valid());
 }
@@ -101,9 +93,7 @@ TEST(ProjectContextFactoryTest, RegistryB) {
   EXPECT_TRUE(factory.is_single_project());
 
   // Registry B contains Cobalt 1.0 project 22, but no project 11
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer11", "Project11").get());
   EXPECT_EQ(nullptr, factory.NewProjectContext(11, 1).get());
-  EXPECT_NE(nullptr, factory.NewProjectContext("Customer22", "Project22").get());
   EXPECT_NE(nullptr, factory.NewProjectContext(22, 1).get());
 
   // Registry B does contain a single Cobalt 1.0 project.
@@ -115,7 +105,6 @@ TEST(ProjectContextFactoryTest, RegistryB) {
   EXPECT_NE(nullptr, context->GetMetric("Metric22"));
 
   // The data has been removed from the factory.
-  EXPECT_EQ(nullptr, factory.NewProjectContext("Customer22", "Project22"));
   EXPECT_EQ(nullptr, factory.NewProjectContext(22, 1));
   EXPECT_FALSE(factory.is_valid());
 }
@@ -130,18 +119,8 @@ TEST(ProjectContextFactoryTest, RegistryC) {
   EXPECT_FALSE(factory.is_single_project());
 
   // Registry C contains Cobalt 1.0 projects 11 and 22.
-  auto context1 = factory.NewProjectContext("Customer11", "Project11");
-  auto context2 = factory.NewProjectContext("Customer22", "Project22");
-  EXPECT_NE(nullptr, context1.get());
-  EXPECT_NE(nullptr, context2.get());
-
-  EXPECT_NE(nullptr, context1->GetMetric("Metric11"));
-  EXPECT_EQ(nullptr, context1->GetMetric("Metric22"));
-  EXPECT_NE(nullptr, context2->GetMetric("Metric22"));
-  EXPECT_EQ(nullptr, context2->GetMetric("Metric11"));
-
-  context1 = factory.NewProjectContext(11, 1);
-  context2 = factory.NewProjectContext(22, 1);
+  auto context1 = factory.NewProjectContext(11, 1);
+  auto context2 = factory.NewProjectContext(22, 1);
   EXPECT_NE(nullptr, context1.get());
   EXPECT_NE(nullptr, context2.get());
 

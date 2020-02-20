@@ -367,7 +367,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetBad) {
 TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'ErrorOccurred'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("set metric CacheMiss"));
@@ -375,7 +375,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'CacheMiss'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("set metric update_duration"));
@@ -383,7 +383,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'update_duration'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("set metric game_frame_rate"));
@@ -391,7 +391,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'game_frame_rate'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("set metric application_memory"));
@@ -399,7 +399,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'application_memory'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("set metric power_usage"));
@@ -407,7 +407,7 @@ TEST_F(TestAppTest, ProcessCommandLineSetAndLs) {
 
   EXPECT_TRUE(test_app_->ProcessCommandLine("ls"));
   EXPECT_TRUE(OutputContains("Metric: 'power_usage'"));
-  EXPECT_TRUE(OutputContains("Customer: Fuchsia"));
+  EXPECT_TRUE(OutputContains("Customer: 1"));
   ClearOutput();
 }
 

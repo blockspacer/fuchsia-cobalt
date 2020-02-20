@@ -7,13 +7,8 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
-
-#include <google/protobuf/text_format.h>
 
 #include "src/logger/test_registries/project_context_test_registry.cb.h"
-#include "src/logging.h"
-#include "src/pb/observation2.pb.h"
 #include "src/registry/project_configs.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
@@ -26,6 +21,7 @@ namespace {
 constexpr char kCustomerA[] = "CustomerA";
 constexpr uint32_t kCustomerAId = 123;
 constexpr char kProjectA1[] = "ProjectA1";
+constexpr uint32_t kProjectA1Id = 1;
 constexpr char kMetricA1a[] = "MetricA1a";
 constexpr uint32_t kMetricA1aId = 1;
 
@@ -87,8 +83,8 @@ class ProjectContextTest : public ::testing::Test {
 // Test ProjectContext starting with constructing one that owns its
 // ProjectConfig.
 TEST_F(ProjectContextTest, ConstructWithOwnedProjectConfig) {
-  auto project_config =
-      std::make_unique<ProjectConfig>(*project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+  auto project_config = std::make_unique<ProjectConfig>(
+      *project_configs_->GetProjectConfig(kCustomerAId, kProjectA1Id));
   auto project_context =
       std::make_unique<ProjectContext>(kCustomerAId, kCustomerA, std::move(project_config));
   CheckProjectContextA1(*project_context);
@@ -98,7 +94,7 @@ TEST_F(ProjectContextTest, ConstructWithOwnedProjectConfig) {
 // ProjectConfig.
 TEST_F(ProjectContextTest, ConstructWithUnownedProjectConfig) {
   auto project_context = std::make_unique<ProjectContext>(
-      kCustomerAId, kCustomerA, project_configs_->GetProjectConfig(kCustomerA, kProjectA1));
+      kCustomerAId, kCustomerA, project_configs_->GetProjectConfig(kCustomerAId, kProjectA1Id));
   CheckProjectContextA1(*project_context);
 }
 

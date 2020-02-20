@@ -15,8 +15,7 @@
 #include "src/registry/metric_definition.pb.h"
 #include "src/registry/report_definition.pb.h"
 
-namespace cobalt {
-namespace config {
+namespace cobalt::config {
 
 // ProjectConfigs provides a convenient interface over a |CobaltRegistry|
 // that is intended to be used on Cobalt's client-side.
@@ -66,18 +65,9 @@ class ProjectConfigs {
   // Constructs a ProjectConfigs that contains the data from |cobalt_registry|.
   explicit ProjectConfigs(std::unique_ptr<CobaltRegistry> cobalt_registry);
 
-  // Returns the CustomerConfig for the customer with the given name, or
-  // nullptr if there is no such customer.
-  [[nodiscard]] const CustomerConfig* GetCustomerConfig(const std::string& customer_name) const;
-
   // Returns the CustomerConfig for the customer with the given ID, or
   // nullptr if there is no such customer.
   [[nodiscard]] const CustomerConfig* GetCustomerConfig(uint32_t customer_id) const;
-
-  // Returns the ProjectConfig for the project with the given
-  // (customer_name, project_name), or nullptr if there is no such project.
-  [[nodiscard]] const ProjectConfig* GetProjectConfig(const std::string& customer_name,
-                                                      const std::string& project_name) const;
 
   // Returns the ProjectConfig for the project with the given
   // (customer_id, project_id), or nullptr if there is no such project.
@@ -150,7 +140,6 @@ class ProjectConfigs {
   std::string single_project_name_;
 };
 
-}  // namespace config
-}  // namespace cobalt
+}  // namespace cobalt::config
 
 #endif  // COBALT_SRC_REGISTRY_PROJECT_CONFIGS_H_

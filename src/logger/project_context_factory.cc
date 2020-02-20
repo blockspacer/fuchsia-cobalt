@@ -7,8 +7,6 @@
 #include <utility>
 
 #include "src/logging.h"
-#include "src/registry/metric_definition.pb.h"
-#include "src/registry/project.pb.h"
 #include "src/registry/project_configs.h"
 #include "third_party/abseil-cpp/absl/strings/escaping.h"
 
@@ -45,23 +43,6 @@ ProjectContextFactory::ProjectContextFactory(std::unique_ptr<CobaltRegistry> cob
   CHECK(cobalt_registry);
   project_configs_ =
       config::ProjectConfigs::CreateFromCobaltRegistryProto(std::move(cobalt_registry));
-}
-
-std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
-    const std::string& customer_name, const std::string& project_name) {
-  if (project_configs_ == nullptr) {
-    return nullptr;
-  }
-  const auto* customer_config = project_configs_->GetCustomerConfig(customer_name);
-  if (!customer_config) {
-    return nullptr;
-  }
-  const auto* project_config = project_configs_->GetProjectConfig(customer_name, project_name);
-  if (!project_config) {
-    return nullptr;
-  }
-  return std::make_unique<ProjectContext>(customer_config->customer_id(), customer_name,
-                                          project_config);
 }
 
 std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(uint32_t customer_id,

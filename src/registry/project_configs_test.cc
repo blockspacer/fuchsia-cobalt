@@ -136,16 +136,8 @@ class ProjectConfigsTest : public ::testing::Test {
       std::string expected_customer_name = CustomerNameForId(customer_id);
       size_t expected_num_projects = NumProjectsForCustomer(customer_id);
 
-      // Check getting the customer by name.
-      bool success =
-          CheckCustomer(customer_id, project_configs.GetCustomerConfig(expected_customer_name));
-      EXPECT_TRUE(success);
-      if (!success) {
-        return false;
-      }
-
       // Check getting the customer by ID.
-      success = CheckCustomer(customer_id, project_configs.GetCustomerConfig(customer_id));
+      bool success = CheckCustomer(customer_id, project_configs.GetCustomerConfig(customer_id));
       EXPECT_TRUE(success);
       if (!success) {
         return false;
@@ -153,14 +145,6 @@ class ProjectConfigsTest : public ::testing::Test {
 
       for (uint32_t project_id = 1; project_id <= expected_num_projects; project_id++) {
         std::string project_name = ProjectNameForId(project_id);
-
-        // Check getting the project by name.
-        bool success = CheckProject(
-            project_id, project_configs.GetProjectConfig(expected_customer_name, project_name));
-        EXPECT_TRUE(success);
-        if (!success) {
-          return false;
-        }
 
         // Check getting the project by ID.
         success =
@@ -170,15 +154,9 @@ class ProjectConfigsTest : public ::testing::Test {
           return false;
         }
 
-        // Check using an invalid project name
-        auto* project = project_configs.GetProjectConfig(expected_customer_name, "InvalidName");
-        EXPECT_EQ(nullptr, project);
-        if (project != nullptr) {
-          return false;
-        }
-
         // Check using an invalid project_id.
-        project = project_configs.GetProjectConfig(customer_id, expected_num_projects + project_id);
+        auto* project =
+            project_configs.GetProjectConfig(customer_id, expected_num_projects + project_id);
         EXPECT_EQ(nullptr, project);
         if (project != nullptr) {
           return false;
@@ -339,13 +317,13 @@ TEST_F(ProjectConfigsTest, IsSingleProject) {
   EXPECT_EQ(1u, project_configs->single_project_id());
   EXPECT_EQ("Project-Name1", project_configs->single_project_name());
   // Test TakeSingleProjectConfg() in the case that there is a single project.
-  EXPECT_NE(project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"), nullptr);
+  EXPECT_NE(project_configs->GetProjectConfig(1, 1), nullptr);
   auto project_config = project_configs->TakeSingleProjectConfig();
   EXPECT_TRUE(project_config != nullptr);
   EXPECT_EQ("Project-Name1", project_config->project_name());
   EXPECT_FALSE(project_configs->is_single_project());
   EXPECT_TRUE(project_configs->is_empty());
-  EXPECT_EQ(project_configs->GetProjectConfig("Customer-Name1", "Project-Name1"), nullptr);
+  EXPECT_EQ(project_configs->GetProjectConfig(1, 1), nullptr);
 
   // A ProjectConfigs constructed from a CobaltRegistry with 1 customer with 2
   // projects is not empty and is not a single project.
