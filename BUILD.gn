@@ -43,6 +43,11 @@ test("cobalt_core_unittests") {
   ]
 
   configs -= [ "//build/config:no_exceptions" ]
+
+  if (is_fuchsia_tree) {
+    # TODO(fxb/46553): Fix the leaks and remove this.
+    deps += [ "//build/config/sanitizers:suppress-lsan.DO-NOT-USE-THIS" ]
+  }
 }
 
 if (is_fuchsia_tree) {
