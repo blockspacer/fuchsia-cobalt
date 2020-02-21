@@ -369,6 +369,7 @@ source_set("encoder_test") {
   public_deps = [
     ":encoder",
     "$cobalt_root/src/local_aggregation:aggregation_utils",
+    "$cobalt_root/src/system_data:fake_system_data",
     "test_registries:encoder_test_registry",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/googletest:gtest",

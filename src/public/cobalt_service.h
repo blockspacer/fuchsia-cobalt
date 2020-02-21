@@ -21,6 +21,7 @@
 #include "src/logger/undated_event_manager.h"
 #include "src/observation_store/observation_store.h"
 #include "src/public/cobalt_config.h"
+#include "src/public/cobalt_service_interface.h"
 #include "src/system_data/client_secret.h"
 #include "src/system_data/system_data.h"
 #include "src/uploader/shipping_manager.h"
@@ -46,13 +47,13 @@ namespace cobalt {
 // auto logger = service.NewLogger(project_context);
 // logger.LogEvent(Event);
 //
-class CobaltService {
+class CobaltService : public CobaltServiceInterface {
  public:
   explicit CobaltService(CobaltConfig cfg);
 
   // NewLogger returns a new instance of a Logger object based on the provided |project_context|.
-  std::unique_ptr<logger::Logger> NewLogger(
-      std::unique_ptr<logger::ProjectContext> project_context);
+  std::unique_ptr<logger::LoggerInterface> NewLogger(
+      std::unique_ptr<logger::ProjectContext> project_context) override;
 
  private:
   std::unique_ptr<logger::Logger> NewLogger(std::unique_ptr<logger::ProjectContext> project_context,
@@ -68,28 +69,46 @@ class CobaltService {
   // the events that were received before the system clock was made accurate. It is then given to
   // the EventAggregator if |start_event_aggregator_worker| is true.
   void SystemClockIsAccurate(std::unique_ptr<util::SystemClockInterface> system_clock,
-                             bool start_event_aggregator_worker);
+                             bool start_event_aggregator_worker) override;
 
   // system_data returns a pointer to the internal SystemData object. This should only be used for
   // updating the Expirement state or channel in SystemData.
-  system_data::SystemData *system_data() { return &system_data_; }
-
-  enum class DataCollectionPolicy {
-    // In COLLECT_AND_UPLOAD mode, we collect and upload data as normal.
-    COLLECT_AND_UPLOAD,
-
-    // In DO_NOT_UPLOAD mode, we collect data but do not upload it. This is intended to be a
-    // temporary state, and should be followed by setting the policy to either COLLECT_AND_UPLOAD or
-    // DO_NOT_COLLECT.
-    DO_NOT_UPLOAD,
-
-    // In DO_NOT_COLLECT mode, we silently drop all logged events. When switching to DO_NOT_COLLECT
-    // mode, all stored device-specific data will be deleted.
-    DO_NOT_COLLECT,
-  };
+  system_data::SystemDataInterface *system_data() override { return &system_data_; }
 
   // Sets the data collection policy.
-  void SetDataCollectionPolicy(DataCollectionPolicy policy);
+  void SetDataCollectionPolicy(DataCollectionPolicy policy) override;
+
+  logger::Status GenerateAggregatedObservations(uint32_t final_day_index_utc) override {
+    return event_aggregator_manager_.GenerateObservationsNoWorker(final_day_index_utc);
+  }
+
+  [[nodiscard]] uint64_t num_aggregator_runs() const override {
+    return event_aggregator_manager_.num_runs();
+  }
+
+  [[nodiscard]] uint64_t num_observations_added() const override {
+    return observation_store_->num_observations_added();
+  }
+
+  [[nodiscard]] std::vector<uint64_t> num_observations_added_for_reports(
+      const std::vector<uint32_t> &report_ids) const override {
+    return observation_store_->num_observations_added_for_reports(report_ids);
+  }
+
+  void ShippingRequestSendSoon(const SendCallback &send_callback) override {
+    shipping_manager_->RequestSendSoon(send_callback);
+  }
+
+  void WaitUntilShippingIdle(std::chrono::seconds max_wait) override {
+    shipping_manager_->WaitUntilIdle(max_wait);
+  }
+
+  [[nodiscard]] size_t num_shipping_send_attempts() const override {
+    return shipping_manager_->num_send_attempts();
+  }
+  [[nodiscard]] size_t num_shipping_failed_attempts() const override {
+    return shipping_manager_->num_failed_attempts();
+  }
 
  private:
   friend class internal::RealLoggerFactory;
@@ -102,10 +121,6 @@ class CobaltService {
   }
 
   uploader::ShippingManager *shipping_manager() { return shipping_manager_.get(); }
-
-  logger::UndatedEventManager *undated_event_manager() { return undated_event_manager_.get(); }
-
-  void ResetLocalAggregation() { event_aggregator_manager_.Reset(); }
 
   std::unique_ptr<util::FileSystem> fs_;
   system_data::SystemData system_data_;

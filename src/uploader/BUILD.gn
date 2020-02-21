@@ -39,6 +39,7 @@ source_set("tests") {
     "$cobalt_root/src/lib/util:posix_file_system",
     "$cobalt_root/src/lib/util:proto_serialization",
     "$cobalt_root/src/logger:fake_logger",
+    "$cobalt_root/src/system_data:fake_system_data",
     "//third_party/gflags",
     "//third_party/googletest:gtest",
   ]

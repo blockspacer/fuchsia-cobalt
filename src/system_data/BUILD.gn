@@ -55,6 +55,20 @@ source_set("client_secret") {
   ]
 }
 
+source_set("fake_system_data") {
+  testonly = true
+
+  sources = [
+    "fake_system_data.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    ":system_data",
+  ]
+}
+
 source_set("unittests") {
   testonly = true
 

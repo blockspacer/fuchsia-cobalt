@@ -21,6 +21,21 @@ source_set("cobalt_config") {
   ]
 }
 
+source_set("cobalt_service_interface") {
+  sources = [
+    "cobalt_service_interface.h",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+
+  deps = [
+    "$cobalt_root/src/lib/util:clock",
+    "$cobalt_root/src/logger:logger_interface",
+    "$cobalt_root/src/logger:project_context",
+    "$cobalt_root/src/system_data",
+  ]
+}
+
 source_set("cobalt_service") {
   sources = [
     "cobalt_service.cc",
@@ -31,6 +46,7 @@ source_set("cobalt_service") {
 
   deps = [
     ":cobalt_config",
+    ":cobalt_service_interface",
     "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
     "$cobalt_root/src/logger",
     "$cobalt_root/src/logger:undated_event_manager",

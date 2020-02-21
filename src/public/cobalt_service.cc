@@ -99,7 +99,7 @@ CobaltService::CobaltService(CobaltConfig cfg)
   shipping_manager_->Start();
 }
 
-std::unique_ptr<logger::Logger> CobaltService::NewLogger(
+std::unique_ptr<logger::LoggerInterface> CobaltService::NewLogger(
     std::unique_ptr<logger::ProjectContext> project_context) {
   return NewLogger(std::move(project_context), true);
 }
