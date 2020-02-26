@@ -28,6 +28,7 @@ rustc_test("source_generator_interop_test") {
   source_root = "tests/source_generator_interop_test.rs"
 
   deps = [
+    ":cobalt-client",
     ":rustc_registry_ns_rustlib",
     ":rustc_registry_rustlib",
   ]
