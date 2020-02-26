@@ -49,6 +49,10 @@ message Observation2 {
     UniqueActivesObservation unique_actives = 6;
     PerDeviceNumericObservation per_device_numeric = 7;
     PerDeviceHistogramObservation per_device_histogram = 8;
+    SumAndCountObservation sum_and_count = 9;
+    IntegerObservation integer = 10;
+    IndexHistogramObservation index_histogram = 11;
+    StringHistogramObservation string_histogram = 12;
     CustomObservation custom = 1000;
     ReportParticipationObservation report_participation = 10000;
   }
@@ -59,6 +63,101 @@ message Observation2 {
   // server to be idempotent: If the same Observation is transmitted twice then
   // the server will store the observation only once.
   bytes random_id = 1001;
+}
+
+// Cobalt 1.1
+// Observations of type SumAndCountObservation contain one or more triples of
+// event vectors, a signed integer recording a sum and an unsigned integer
+// recording a count.
+//
+// This type of observation is used only for the FLEETWIDE_MEANS report type.
+message SumAndCountObservation {
+  message SumAndCount {
+    // Event vector to which the sum and count are associated.
+    repeated uint32 event_codes = 1;
+
+    // The device-level sum.
+    sint64 sum = 2;
+
+    // the device-level count.
+    uint64 count = 3;
+  }
+
+  repeated SumAndCount sums_and_counts = 1;
+}
+
+// Cobalt 1.1
+// Observations of type IntegerObservation contain one or more pairs of
+// event vectors and signed integers.
+//
+// This type of observation is used for the following report types:
+// FLEETWIDE_OCCURRENCE_COUNTS
+// HOURLY_VALUE_NUMERIC_STATS
+// HOURLY_VALUE_HISTOGRAMS
+// UNIQUE_DEVICE_COUNTS
+// UNIQUE_DEVICE_NUMERIC_STATS
+// UNIQUE_DEVICE_HISTOGRAMS
+message IntegerObservation {
+  message Value {
+    // Event vector to which the value is associated.
+    repeated uint32 event_codes = 1;
+
+    // The value depends upon the report type.
+    //
+    // FLEETWIDE_OCCURRENCE_COUNTS
+    // Device-level count of events with the associated event vector.
+    // Value is between 0 and the configured maximum count (inclusive).
+    //
+    // UNIQUE_DEVICE_COUNTS
+    // 1 if the associated event vector was observed, 0 otherwise.
+    //
+    // HOURLY_VALUE_NUMERIC_STATS
+    // UNIQUE_DEVICE_NUMERIC_STATS
+    // HOURLY_VALUE_HISTOGRAMS
+    // UNIQUE_DEVICE_HISTOGRAMS
+    // Device-level aggregate value for the associated event vector.
+    sint64 value = 2;
+  }
+
+  repeated Value values = 1;
+}
+
+// IndexHistogram represents a list of counts for each bucket of a histogram
+// associated with a particular event vector.
+message IndexHistogram {
+  // Event vector to which the histogram is associated.
+  repeated uint32 event_codes = 1;
+
+  // If |bucket_indices| is not empty, bucket_counts[i] is the count for the
+  // bucket_indices[i]th index in the histogram.
+  // If |bucket_indices| is empty, bucket_counts[i] is the count for the ith
+  // index in the histogram.
+  repeated uint32 bucket_indices = 2;
+  repeated sint64 bucket_counts = 3;
+}
+
+// Cobalt 1.1
+// Observations of type IndexHistogramObservation contain one or more pairs of
+// event vectors and lists of bucket counts.
+//
+// This type of observation is used with the FLEETWIDE_HISTOGRAMS report type.
+message IndexHistogramObservation {
+  repeated IndexHistogram index_histograms = 1;
+}
+
+// Cobalt 1.1
+// Observations of the type StringHistogramObservation contain a list of strings
+// mapping string hashes to indices and one or more pairs of event vectors
+// and lists of bucket counts.
+//
+// This type of observation is used only with the STRING_HISTOGRAMS report type.
+message StringHistogramObservation {
+  // List of hashes of strings (hash function TBD).
+  // The string that hashes to the ith position in |string_hashes| corresponds
+  // to index i in |string_histograms|.
+  repeated bytes string_hashes = 1;
+
+  repeated IndexHistogram string_histograms = 2;
 }
 
 // Observations of type IntegerEventObservation contain an event type specified
