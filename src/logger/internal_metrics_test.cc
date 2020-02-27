@@ -36,8 +36,8 @@ TEST_F(InternalMetricsImplTest, LoggerCalled) {
                        GetTestProject());
 
   ASSERT_EQ(logger.call_count(), 2);
-  ASSERT_TRUE(logger.last_event_logged().has_count_event());
-  ASSERT_EQ(logger.last_event_logged().count_event().component(), "test/project");
+  ASSERT_TRUE(logger.last_event_logged().has_event_count_event());
+  ASSERT_EQ(logger.last_event_logged().event_count_event().component(), "test/project");
 }
 
 TEST_F(InternalMetricsImplTest, LoggerCalledPauseWorks) {
@@ -62,8 +62,8 @@ TEST_F(InternalMetricsImplTest, BytesUploaded) {
   metrics.BytesUploaded(PerDeviceBytesUploadedMetricDimensionStatus::Attempted, kNumBytes);
 
   ASSERT_EQ(logger.call_count(), 1);
-  ASSERT_TRUE(logger.last_event_logged().has_count_event());
-  ASSERT_EQ(logger.last_event_logged().count_event().count(), kNumBytes);
+  ASSERT_TRUE(logger.last_event_logged().has_event_count_event());
+  ASSERT_EQ(logger.last_event_logged().event_count_event().count(), kNumBytes);
 }
 
 TEST_F(InternalMetricsImplTest, BytesUploadedPauseWorks) {
@@ -87,8 +87,8 @@ TEST_F(InternalMetricsImplTest, MegaBytesUploaded) {
                         kTestCustomerId, kTestProjectId);
 
   ASSERT_EQ(logger.call_count(), 1);
-  ASSERT_TRUE(logger.last_event_logged().has_count_event());
-  ASSERT_EQ(logger.last_event_logged().count_event().count(), kNumBytes);
+  ASSERT_TRUE(logger.last_event_logged().has_event_count_event());
+  ASSERT_EQ(logger.last_event_logged().event_count_event().count(), kNumBytes);
 }
 
 TEST_F(InternalMetricsImplTest, MegaBytesUploadedPauseWorks) {

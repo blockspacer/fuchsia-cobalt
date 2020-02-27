@@ -253,11 +253,11 @@ TEST_F(ShippingManagerTest, SendOneLoggedMetrics) {
   EXPECT_EQ(4, logger.call_count());
 
   auto event = logger.last_event_logged();  // The last Succeed for an Observation Batch.
-  EXPECT_TRUE(event.has_count_event());
-  EXPECT_EQ(1, event.count_event().event_code_size());
-  EXPECT_EQ(Succeeded, event.count_event().event_code(0));
-  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.count_event().component());
-  EXPECT_LE(40, event.count_event().count());  // This is an estimate.
+  EXPECT_TRUE(event.has_event_count_event());
+  EXPECT_EQ(1, event.event_count_event().event_code_size());
+  EXPECT_EQ(Succeeded, event.event_count_event().event_code(0));
+  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.event_count_event().component());
+  EXPECT_LE(40, event.event_count_event().count());  // This is an estimate.
 }
 
 // We add two Observations, confirm that they are not immediately sent,
@@ -312,11 +312,11 @@ TEST_F(ShippingManagerTest, SendTwoLoggedMetrics) {
   EXPECT_EQ(4, logger.call_count());
 
   auto event = logger.last_event_logged();  // The last Succeed for an Observation Batch.
-  EXPECT_TRUE(event.has_count_event());
-  EXPECT_EQ(1, event.count_event().event_code_size());
-  EXPECT_EQ(Succeeded, event.count_event().event_code(0));
-  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.count_event().component());
-  EXPECT_LE(2 * 40, event.count_event().count());  // This is an estimate.
+  EXPECT_TRUE(event.has_event_count_event());
+  EXPECT_EQ(1, event.event_count_event().event_code_size());
+  EXPECT_EQ(Succeeded, event.event_count_event().event_code(0));
+  EXPECT_EQ(absl::StrCat(kCustomerId, "/", kProjectId), event.event_count_event().component());
+  EXPECT_LE(2 * 40, event.event_count_event().count());  // This is an estimate.
 }
 
 // Trys to add an Observation that is too big. Tests that kObservationTooBig

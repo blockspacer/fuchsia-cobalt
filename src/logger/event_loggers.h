@@ -147,10 +147,10 @@ class EventLogger {
 };
 
 // Implementation of EventLogger for metrics of type EVENT_OCCURRED.
-class OccurrenceEventLogger : public EventLogger {
+class EventOccurredEventLogger : public EventLogger {
  public:
   using EventLogger::EventLogger;
-  ~OccurrenceEventLogger() override = default;
+  ~EventOccurredEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;
@@ -162,10 +162,10 @@ class OccurrenceEventLogger : public EventLogger {
 };
 
 // Implementation of EventLogger for metrics of type EVENT_COUNT.
-class CountEventLogger : public EventLogger {
+class EventCountEventLogger : public EventLogger {
  public:
   using EventLogger::EventLogger;
-  ~CountEventLogger() override = default;
+  ~EventCountEventLogger() override = default;
 
  private:
   Status ValidateEvent(const EventRecord& event_record) override;

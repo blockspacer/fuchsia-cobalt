@@ -51,13 +51,13 @@ class EventAggregator {
   //
   // report_id: the ID of the report associated to the logged Event.
   //
-  // event_record: an EventRecord wrapping an Event of type OccurrenceEvent
+  // event_record: an EventRecord wrapping an Event of type EventOccurredEvent
   // and the MetricDefinition for which the Event is to be logged.
   //
   // Returns kOK if the LocalAggregateStore was successfully updated, and
   // kInvalidArguments if either a lookup key corresponding to |report_id| was
   // not found in the LocalAggregateStore, or if the Event wrapped by
-  // EventRecord is not of type OccurrenceEvent.
+  // EventRecord is not of type EventOccurredEvent.
   //
   // The EventAggregator does not explicitly validate the event code of
   // the logged Event, and if the event code is larger than the associated
@@ -69,7 +69,7 @@ class EventAggregator {
   // called.
   logger::Status AddUniqueActivesEvent(uint32_t report_id, const logger::EventRecord& event_record);
 
-  // AddCountEvent,AddElapsedTimeEvent:
+  // AddEventCountEvent,AddElapsedTimeEvent:
   //
   // Adds an Event associated to a report of type PER_DEVICE_NUMERIC_STATS to
   // the AggregateStore.
@@ -84,8 +84,8 @@ class EventAggregator {
   // not found in the LocalAggregateStore, or if the Event wrapped by
   // EventRecord is not of the expected type.
   //
-  // AddCountEvent: |event_record| should wrap a CountEvent.
-  logger::Status AddCountEvent(uint32_t report_id, const logger::EventRecord& event_record);
+  // AddEventCountEvent: |event_record| should wrap a EventCountEvent.
+  logger::Status AddEventCountEvent(uint32_t report_id, const logger::EventRecord& event_record);
   // AddElapsedTimeEvent: |event_record| should wrap an ElapsedTimeEvent.
   logger::Status AddElapsedTimeEvent(uint32_t report_id, const logger::EventRecord& event_record);
   // AddFrameRateEvent: |event_record| should wrap a FrameRateEvent.

@@ -17,13 +17,12 @@ message Event {
   // An Event has one of the following types. These types correspond to
   // the various Metric types defined in config/metric_definitions.proto.
   oneof type {
-    OccurrenceEvent occurrence_event = 1;
-    CountEvent count_event = 2;
+    EventOccurredEvent event_occurred_event = 1;
+    EventCountEvent event_count_event = 2;
     ElapsedTimeEvent elapsed_time_event = 3;
     FrameRateEvent frame_rate_event = 4;
     MemoryUsageEvent memory_usage_event = 5;
     IntHistogramEvent int_histogram_event = 6;
-    StringUsedEvent string_used_event = 7;
     CustomEvent custom_event = 999;
   }
 
@@ -37,16 +36,18 @@ message Event {
   uint32 day_index = 1003;
   // The hour index (between 0 and 23 inclusive) within the day on which this Event occurred.
   uint32 hour_index = 1004;
+
+  reserved 7;
 }
 
 // Records that an event has occurred.
-message OccurrenceEvent {
+message EventOccurredEvent {
   // The event code for the event that occurred.
   uint32 event_code = 1;
 }
 
 // Records that an event occurred a number of times.
-message CountEvent {
+message EventCountEvent {
   // The event codes for the event that occurred. There must be one event code
   // given for each dimension specified in the metric definition.
   repeated uint32 event_code = 1;
@@ -104,14 +105,6 @@ message IntHistogramEvent {
 
   // The set of bucket indices and their corresponding counts.
   repeated HistogramBucket buckets = 3;
-}
-
-// Records that a given string was used in a specific context. The semantics
-// of the Metric must be specified in comments near the MetricDefintion.
-//
-// See comments in metric_definion.proto for Metric type STRING_USED.
-message StringUsedEvent {
-  string str = 1;
 }
 
 // Allows users of Cobalt to define custom Metrics with custom semantics. Each

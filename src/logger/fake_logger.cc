@@ -36,7 +36,7 @@ Status FakeLogger::LogEvent(uint32_t metric_id, uint32_t event_code) {
 
   Event event;
   event.set_metric_id(metric_id);
-  event.mutable_occurrence_event()->set_event_code(event_code);
+  event.mutable_event_occurred_event()->set_event_code(event_code);
   last_event_logged_ = event;
 
   return Status::kOK;
@@ -49,10 +49,10 @@ Status FakeLogger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>
 
   Event event;
   event.set_metric_id(metric_id);
-  auto* count_event = event.mutable_count_event();
-  CopyEventCodesAndComponent(event_codes, component, count_event);
-  count_event->set_period_duration_micros(period_duration_micros);
-  count_event->set_count(count);
+  auto* event_count_event = event.mutable_event_count_event();
+  CopyEventCodesAndComponent(event_codes, component, event_count_event);
+  event_count_event->set_period_duration_micros(period_duration_micros);
+  event_count_event->set_count(count);
   last_event_logged_ = event;
 
   return Status::kOK;

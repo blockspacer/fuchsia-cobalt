@@ -72,29 +72,6 @@ message ValuePart {
   }
 }
 
-// Observations of this type contain an encoding of a string. The encoding uses
-// String RAPPOR to provide local differential privacy.
-//
-// This type of Observation is used in the following case:
-//
-// A MetricDefinition of type STRING_USED and Report of type
-// HIGH_FREQUENCY_STRING_COUNTS. In this case the Observation is
-// *immediate* meaning it is generated directly from a single
-// STRING_USED Event as soon as the Event is logged. The Event contains
-// the string that was used. The |data| field in this Observation contains
-// an encoding of that string. It contains a bit vector obtained by representing
-// the string as a bit vector using several hash functions and then adding
-// random noise by flipping bits.
-message RapporObservation {
-  // The client's cohort. Each client is assigned a random cohort. The cohorts
-  // are needed to recover the original string since the process of representing
-  // a string as a bit vector is lossy.
-  uint32 cohort = 1;
-
-  // A bit vector containing the encoding of the string.
-  bytes data = 2;
-}
-
 // Observations of this type contain an encoding of an element of an
 // an indexed set. The encoding uses Basic RAPPOR to provide local differential
 // privacy.
@@ -124,12 +101,10 @@ message UnencodedObservation {
 
 // The encoding of a ValuePart. This is produced by an Encoder.
 message ObservationPart {
-  reserved 2;
-  reserved "forculus";
+  reserved 2, 3;
 
   oneof value {
     UnencodedObservation unencoded = 1;
-    RapporObservation rappor = 3;
     BasicRapporObservation basic_rappor = 4;
   }
 

@@ -36,12 +36,12 @@ std::unique_ptr<EventLogger> EventLogger::Create(
     const system_data::SystemDataInterface* system_data) {
   switch (metric_type) {
     case MetricDefinition::EVENT_OCCURRED: {
-      return std::make_unique<internal::OccurrenceEventLogger>(encoder, event_aggregator,
-                                                               observation_writer, system_data);
+      return std::make_unique<internal::EventOccurredEventLogger>(encoder, event_aggregator,
+                                                                  observation_writer, system_data);
     }
     case MetricDefinition::EVENT_COUNT: {
-      return std::make_unique<internal::CountEventLogger>(encoder, event_aggregator,
-                                                          observation_writer, system_data);
+      return std::make_unique<internal::EventCountEventLogger>(encoder, event_aggregator,
+                                                               observation_writer, system_data);
     }
     case MetricDefinition::ELAPSED_TIME: {
       return std::make_unique<internal::ElapsedTimeEventLogger>(encoder, event_aggregator,
@@ -79,12 +79,12 @@ std::string EventLogger::TraceEvent(const EventRecord& event_record) {
 
   std::stringstream ss;
   ss << "Day index: " << event->day_index() << std::endl;
-  if (event->has_occurrence_event()) {
-    const auto& e = event->occurrence_event();
-    ss << "OccurrenceEvent: " << e.event_code() << std::endl;
-  } else if (event->has_count_event()) {
-    const auto& e = event->count_event();
-    ss << "CountEvent:" << std::endl;
+  if (event->has_event_occurred_event()) {
+    const auto& e = event->event_occurred_event();
+    ss << "EventOccurredEvent: " << e.event_code() << std::endl;
+  } else if (event->has_event_count_event()) {
+    const auto& e = event->event_count_event();
+    ss << "EventCountEvent:" << std::endl;
     ss << "EventCodes:";
     for (const auto& code : e.event_code()) {
       ss << " " << code;
@@ -392,10 +392,10 @@ Encoder::Result EventLogger::BadReportType(const std::string& full_metric_name,
   return encoder_result;
 }
 
-/////////////// OccurrenceEventLogger method implementations ///////////////////
+/////////////// EventOccurredEventLogger method implementations ///////////////////
 
-Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
-  CHECK(event_record.event()->has_occurrence_event());
+Status EventOccurredEventLogger::ValidateEvent(const EventRecord& event_record) {
+  CHECK(event_record.event()->has_event_occurred_event());
   if (event_record.metric()->metric_dimensions_size() != 1) {
     LOG(ERROR) << "The Metric "
                << event_record.project_context()->FullMetricName(*event_record.metric())
@@ -404,10 +404,10 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
     return kInvalidConfig;
   }
 
-  const auto& occurrence_event = event_record.event()->occurrence_event();
-  if (occurrence_event.event_code() >
+  const auto& event_occurred_event = event_record.event()->event_occurred_event();
+  if (event_occurred_event.event_code() >
       event_record.metric()->metric_dimensions(0).max_event_code()) {
-    LOG(ERROR) << "The event_code " << occurrence_event.event_code() << " exceeds "
+    LOG(ERROR) << "The event_code " << event_occurred_event.event_code() << " exceeds "
                << event_record.metric()->metric_dimensions(0).max_event_code()
                << ", the max_event_code for Metric "
                << event_record.project_context()->FullMetricName(*event_record.metric()) << ".";
@@ -416,20 +416,20 @@ Status OccurrenceEventLogger::ValidateEvent(const EventRecord& event_record) {
   return kOK;
 }
 
-Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
+Encoder::Result EventOccurredEventLogger::MaybeEncodeImmediateObservation(
     const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
-  TRACE_DURATION("cobalt_core", "OccurrenceEventLogger::MaybeEncodeImmediateObservation");
+  TRACE_DURATION("cobalt_core", "EventOccurredEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric());
   const Event& event = *(event_record->event());
-  CHECK(event.has_occurrence_event());
-  const auto& occurrence_event = event.occurrence_event();
+  CHECK(event.has_event_occurred_event());
+  const auto& event_occurred_event = event.event_occurred_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate
     // observations.
     case ReportDefinition::SIMPLE_OCCURRENCE_COUNT: {
       return encoder()->EncodeBasicRapporObservation(
           event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
-          occurrence_event.event_code(), RapporConfigHelper::BasicRapporNumCategories(metric));
+          event_occurred_event.event_code(), RapporConfigHelper::BasicRapporNumCategories(metric));
     }
       // Report type UNIQUE_N_DAY_ACTIVES is valid but should not result in
       // generation of an immediate observation.
@@ -446,8 +446,8 @@ Encoder::Result OccurrenceEventLogger::MaybeEncodeImmediateObservation(
   }
 }
 
-Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                          const EventRecord& event_record) {
+Status EventOccurredEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                                             const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::UNIQUE_N_DAY_ACTIVES: {
       return event_aggregator()->AddUniqueActivesEvent(report.id(), event_record);
@@ -457,23 +457,22 @@ Status OccurrenceEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition
   }
 }
 
-///////////// CountEventLogger method implementations //////////////////////////
+///////////// EventCountEventLogger method implementations //////////////////////////
 
-Status CountEventLogger::ValidateEvent(const EventRecord& event_record) {
+Status EventCountEventLogger::ValidateEvent(const EventRecord& event_record) {
   CHECK(event_record.metric());
   const auto& metric = *(event_record.metric());
-  return ValidateEventCodes(metric, event_record.event()->count_event().event_code(),
+  return ValidateEventCodes(metric, event_record.event()->event_count_event().event_code(),
                             event_record.project_context()->FullMetricName(metric));
 }
 
-Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDefinition& report,
-                                                                  bool /*may_invalidate*/,
-                                                                  EventRecord* event_record) {
-  TRACE_DURATION("cobalt_core", "CountEventLogger::MaybeEncodeImmediateObservation");
+Encoder::Result EventCountEventLogger::MaybeEncodeImmediateObservation(
+    const ReportDefinition& report, bool /*may_invalidate*/, EventRecord* event_record) {
+  TRACE_DURATION("cobalt_core", "EventCountEventLogger::MaybeEncodeImmediateObservation");
   const MetricDefinition& metric = *(event_record->metric());
   const Event& event = *(event_record->event());
-  CHECK(event.has_count_event());
-  auto* count_event = event_record->event()->mutable_count_event();
+  CHECK(event.has_event_count_event());
+  auto* event_count_event = event_record->event()->mutable_event_count_event();
   switch (report.report_type()) {
     // Each report type has its own logic for generating immediate observations.
     case ReportDefinition::EVENT_COMPONENT_OCCURRENCE_COUNT:
@@ -481,7 +480,8 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
     case ReportDefinition::NUMERIC_AGGREGATION: {
       return encoder()->EncodeIntegerEventObservation(
           event_record->project_context()->RefMetric(&metric), &report, event.day_index(),
-          count_event->event_code(), count_event->component(), count_event->count());
+          event_count_event->event_code(), event_count_event->component(),
+          event_count_event->count());
     }
     // Report type PER_DEVICE_NUMERIC_STATS and PER_DEVICE_HISTOGRAM are valid but should not result
     // in generation of an immediate observation.
@@ -499,12 +499,12 @@ Encoder::Result CountEventLogger::MaybeEncodeImmediateObservation(const ReportDe
   }
 }
 
-Status CountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
-                                                     const EventRecord& event_record) {
+Status EventCountEventLogger::MaybeUpdateLocalAggregation(const ReportDefinition& report,
+                                                          const EventRecord& event_record) {
   switch (report.report_type()) {
     case ReportDefinition::PER_DEVICE_NUMERIC_STATS:
     case ReportDefinition::PER_DEVICE_HISTOGRAM: {
-      return event_aggregator()->AddCountEvent(report.id(), event_record);
+      return event_aggregator()->AddEventCountEvent(report.id(), event_record);
     }
     default:
       return kOK;

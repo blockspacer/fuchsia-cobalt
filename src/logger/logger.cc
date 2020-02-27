@@ -77,8 +77,8 @@ Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
           << ") project=" << project_context_->FullyQualifiedName();
   auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
   internal_metrics_->LoggerCalled(LoggerMethod::LogEvent, project_context_->project());
-  auto* occurrence_event = event_record->event()->mutable_occurrence_event();
-  occurrence_event->set_event_code(event_code);
+  auto* event_occurred_event = event_record->event()->mutable_event_occurred_event();
+  event_occurred_event->set_event_code(event_code);
   return Log(metric_id, MetricDefinition::EVENT_OCCURRED, std::move(event_record));
 }
 
@@ -87,10 +87,10 @@ Status Logger::LogEventCount(uint32_t metric_id, const std::vector<uint32_t>& ev
                              uint32_t count) {
   internal_metrics_->LoggerCalled(LoggerMethod::LogEventCount, project_context_->project());
   auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
-  auto* count_event = event_record->event()->mutable_count_event();
-  CopyEventCodesAndComponent(event_codes, component, count_event);
-  count_event->set_period_duration_micros(period_duration_micros);
-  count_event->set_count(count);
+  auto* event_count_event = event_record->event()->mutable_event_count_event();
+  CopyEventCodesAndComponent(event_codes, component, event_count_event);
+  event_count_event->set_period_duration_micros(period_duration_micros);
+  event_count_event->set_count(count);
   return Log(metric_id, MetricDefinition::EVENT_COUNT, std::move(event_record));
 }
 

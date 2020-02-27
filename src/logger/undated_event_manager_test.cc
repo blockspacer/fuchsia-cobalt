@@ -120,7 +120,7 @@ TEST_F(UndatedEventManagerTest, DeletedProjectContext) {
   // Create an event and save it.
   auto event_record = std::make_unique<EventRecord>(
       project_context, testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(42);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(42);
   ASSERT_NE(nullptr, event_record->metric());
 
   // Drop the ProjectContext. If no one else has retained a copy, it will be deleted.
@@ -153,7 +153,7 @@ TEST_F(UndatedEventManagerTest, OneImmediatelyFlushedEvent) {
   // Create an event and save it.
   auto event_record = std::make_unique<EventRecord>(
       project_context, testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(42);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(42);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
 
@@ -182,7 +182,7 @@ TEST_F(UndatedEventManagerTest, OneDayDelayInSystemClockAccuracy) {
   // Create an event and save it.
   auto event_record = std::make_unique<EventRecord>(
       project_context, testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(42);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(42);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
 
@@ -213,22 +213,22 @@ TEST_F(UndatedEventManagerTest, TooManyEventsToStore) {
   // Create some events and save them. These will be dropped
   auto event_record = std::make_unique<EventRecord>(
       project_context, testing::all_report_types::kDeviceBootsMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(1);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(1);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
   event_record = std::make_unique<EventRecord>(project_context,
                                                testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(99);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(99);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
   event_record = std::make_unique<EventRecord>(project_context,
                                                testing::all_report_types::kFeaturesActiveMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(98);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(98);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
   event_record = std::make_unique<EventRecord>(project_context,
                                                testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(97);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(97);
   ASSERT_NE(nullptr, event_record->metric());
   ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
 
@@ -238,7 +238,7 @@ TEST_F(UndatedEventManagerTest, TooManyEventsToStore) {
     mock_steady_clock_->increment_by(std::chrono::hours(24));
     event_record = std::make_unique<EventRecord>(project_context,
                                                  testing::all_report_types::kErrorOccurredMetricId);
-    event_record->event()->mutable_occurrence_event()->set_event_code(i);
+    event_record->event()->mutable_event_occurred_event()->set_event_code(i);
     ASSERT_NE(nullptr, event_record->metric());
     ASSERT_EQ(kOK, undated_event_manager_->Save(std::move(event_record)));
   }
@@ -279,7 +279,7 @@ TEST_F(UndatedEventManagerTest, SaveAfterFlush) {
   // Create an event and try to save it.
   auto event_record = std::make_unique<EventRecord>(
       project_context, testing::all_report_types::kErrorOccurredMetricId);
-  event_record->event()->mutable_occurrence_event()->set_event_code(42);
+  event_record->event()->mutable_event_occurred_event()->set_event_code(42);
   ASSERT_NE(nullptr, event_record->metric());
 
   // One day later, the clock is finally accurate, try to save an event, this will generate

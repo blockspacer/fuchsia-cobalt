@@ -88,27 +88,28 @@ bool ValidateEventType(Event::TypeCase expected_event_type, const Event& event) 
 
 Status EventAggregator::AddUniqueActivesEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
-  if (!ValidateEventType(Event::kOccurrenceEvent, *event)) {
+  if (!ValidateEventType(Event::kEventOccurredEvent, *event)) {
     return kInvalidArguments;
   }
   auto* metric = event_record.metric();
   return aggregate_store_->SetActive(metric->customer_id(), metric->project_id(), metric->id(),
-                                     report_id, event->occurrence_event().event_code(),
+                                     report_id, event->event_occurred_event().event_code(),
                                      event->day_index());
 }
 
-Status EventAggregator::AddCountEvent(uint32_t report_id, const EventRecord& event_record) {
+Status EventAggregator::AddEventCountEvent(uint32_t report_id, const EventRecord& event_record) {
   auto* event = event_record.event();
-  if (!ValidateEventType(Event::kCountEvent, *event)) {
+  if (!ValidateEventType(Event::kEventCountEvent, *event)) {
     return kInvalidArguments;
   }
 
   auto* metric = event_record.metric();
-  const CountEvent& count_event = event->count_event();
+  const EventCountEvent& event_count_event = event->event_count_event();
 
   return aggregate_store_->UpdateNumericAggregate(
-      metric->customer_id(), metric->project_id(), metric->id(), report_id, count_event.component(),
-      config::PackEventCodes(count_event.event_code()), event->day_index(), count_event.count());
+      metric->customer_id(), metric->project_id(), metric->id(), report_id,
+      event_count_event.component(), config::PackEventCodes(event_count_event.event_code()),
+      event->day_index(), event_count_event.count());
 }
 
 Status EventAggregator::AddElapsedTimeEvent(uint32_t report_id, const EventRecord& event_record) {

@@ -178,7 +178,7 @@ class EventAggregatorTest : public ::testing::Test {
 
   // Given a ProjectContext |project_context| and the MetricReportId of a
   // UNIQUE_N_DAY_ACTIVES report in |project_context|, as well as a day index
-  // and an event code, logs an OccurrenceEvent to the EventAggregator for
+  // and an event code, logs an EventOccurredEvent to the EventAggregator for
   // that report, day index, and event code. If a non-null LoggedActivity map is
   // provided, updates the map with information about the logged Event.
   Status AddUniqueActivesEvent(std::shared_ptr<const ProjectContext> project_context,
@@ -186,7 +186,7 @@ class EventAggregatorTest : public ::testing::Test {
                                uint32_t event_code, LoggedActivity* logged_activity = nullptr) {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
-    event_record.event()->mutable_occurrence_event()->set_event_code(event_code);
+    event_record.event()->mutable_event_occurred_event()->set_event_code(event_code);
     auto status = event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
         metric_report_id.second, event_record);
     if (logged_activity == nullptr) {
@@ -204,20 +204,20 @@ class EventAggregatorTest : public ::testing::Test {
   // Given a ProjectContext |project_context| and the MetricReportId of an
   // EVENT_COUNT metric with a PER_DEVICE_NUMERIC_STATS report in
   // |project_context|, as well as a day index, a component string, and an event
-  // code, logs a CountEvent to the EventAggregator for that report, day
+  // code, logs a EventCountEvent to the EventAggregator for that report, day
   // index, component, and event code. If a non-null LoggedValues map is
   // provided, updates the map with information about the logged Event.
-  Status AddPerDeviceCountEvent(std::shared_ptr<const ProjectContext> project_context,
-                                const MetricReportId& metric_report_id, uint32_t day_index,
-                                const std::string& component, uint32_t event_code, int64_t count,
-                                LoggedValues* logged_values = nullptr) {
+  Status AddPerDeviceEventCountEvent(std::shared_ptr<const ProjectContext> project_context,
+                                     const MetricReportId& metric_report_id, uint32_t day_index,
+                                     const std::string& component, uint32_t event_code,
+                                     int64_t count, LoggedValues* logged_values = nullptr) {
     EventRecord event_record(std::move(project_context), metric_report_id.first);
     event_record.event()->set_day_index(day_index);
-    auto count_event = event_record.event()->mutable_count_event();
-    count_event->set_component(component);
-    count_event->add_event_code(event_code);
-    count_event->set_count(count);
-    auto status = event_aggregator_mgr_->GetEventAggregator()->AddCountEvent(
+    auto event_count_event = event_record.event()->mutable_event_count_event();
+    event_count_event->set_component(component);
+    event_count_event->add_event_code(event_code);
+    event_count_event->set_count(count);
+    auto status = event_aggregator_mgr_->GetEventAggregator()->AddEventCountEvent(
         metric_report_id.second, event_record);
     if (logged_values == nullptr) {
       return status;
@@ -704,7 +704,7 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
     event_aggregator_mgr_->GetEventAggregator()->UpdateAggregationConfigs(*project_context_);
   }
 
-  // Adds an OccurrenceEvent to the local aggregations for the MetricReportId of a locally
+  // Adds an EventOccurredEvent to the local aggregations for the MetricReportId of a locally
   // aggregated report of the ProjectContext. Overrides the method
   // EventAggregatorTest::AddUniqueActivesEvent.
   Status AddUniqueActivesEvent(const MetricReportId& metric_report_id, uint32_t day_index,
@@ -713,12 +713,13 @@ class EventAggregatorTestWithProjectContext : public EventAggregatorTest {
                                                       event_code, logged_activity);
   }
 
-  // Adds a CountEvent to the local aggregations for the MetricReportId of a locally aggregated
-  // report of the ProjectContext. Overrides the method EventAggregatorTest::AddPerDeviceCountEvent.
-  Status AddPerDeviceCountEvent(const MetricReportId& metric_report_id, uint32_t day_index,
-                                const std::string& component, uint32_t event_code, int64_t count,
-                                LoggedValues* logged_values = nullptr) {
-    return EventAggregatorTest::AddPerDeviceCountEvent(
+  // Adds a EventCountEvent to the local aggregations for the MetricReportId of a locally aggregated
+  // report of the ProjectContext. Overrides the method
+  // EventAggregatorTest::AddPerDeviceEventCountEvent.
+  Status AddPerDeviceEventCountEvent(const MetricReportId& metric_report_id, uint32_t day_index,
+                                     const std::string& component, uint32_t event_code,
+                                     int64_t count, LoggedValues* logged_values = nullptr) {
+    return EventAggregatorTest::AddPerDeviceEventCountEvent(
         project_context_, metric_report_id, day_index, component, event_code, count, logged_values);
   }
 
@@ -929,29 +930,29 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
   EventRecord bad_event_record(noise_free_project_context,
                                logger::testing::unique_actives_noise_free::kEventsOccurredMetricId);
   bad_event_record.event()->set_day_index(CurrentDayIndex());
-  bad_event_record.event()->mutable_occurrence_event()->set_event_code(0u);
+  bad_event_record.event()->mutable_event_occurred_event()->set_event_code(0u);
   EXPECT_EQ(kInvalidArguments, event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
                                    logger::testing::unique_actives_noise_free::
                                        kEventsOccurredEventsOccurredUniqueDevicesReportId,
                                    bad_event_record));
   // Attempt to call AddUniqueActivesEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not an
-  // OccurrenceEvent. Check that the result is |kInvalidArguments|.
+  // EventOccurredEvent. Check that the result is |kInvalidArguments|.
   EventRecord bad_event_record2(unique_actives_project_context,
                                 logger::testing::unique_actives::kFeaturesActiveMetricId);
-  bad_event_record2.event()->mutable_count_event();
+  bad_event_record2.event()->mutable_event_count_event();
   EXPECT_EQ(kInvalidArguments,
             event_aggregator_mgr_->GetEventAggregator()->AddUniqueActivesEvent(
                 logger::testing::unique_actives::kFeaturesActiveFeaturesActiveUniqueDevicesReportId,
                 bad_event_record2));
-  // Attempt to call AddPerDeviceCountEvent() with a valid metric and report
+  // Attempt to call AddPerDeviceEventCountEvent() with a valid metric and report
   // ID, but with an EventRecord wrapping an Event which is not a
-  // CountEvent. Check that the result is |kInvalidArguments|.
+  // EventCountEvent. Check that the result is |kInvalidArguments|.
   EventRecord bad_event_record3(
       noise_free_project_context,
       logger::testing::per_device_numeric_stats::kConnectionFailuresMetricReportId.first);
-  bad_event_record3.event()->mutable_occurrence_event();
-  EXPECT_EQ(kInvalidArguments, event_aggregator_mgr_->GetEventAggregator()->AddCountEvent(
+  bad_event_record3.event()->mutable_event_occurred_event();
+  EXPECT_EQ(kInvalidArguments, event_aggregator_mgr_->GetEventAggregator()->AddEventCountEvent(
                                    logger::testing::per_device_numeric_stats::
                                        kConnectionFailuresConnectionFailuresPerDeviceCountReportId,
                                    bad_event_record3));
@@ -961,7 +962,7 @@ TEST_F(EventAggregatorTest, LogBadEvents) {
 // EventAggregator::AddUniqueActivesEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
 // LocalAggregateStore, and with an EventRecord which wraps an
-// OccurrenceEvent.
+// EventOccurredEvent.
 //
 // Logs some valid events each day for 35 days, checking the contents of the
 // LocalAggregateStore each day.
@@ -1003,9 +1004,9 @@ TEST_F(UniqueActivesEventAggregatorTest, LogEvents) {
 }
 
 // Tests that the LocalAggregateStore is updated as expected when
-// EventAggregator::AddPerDeviceCountEvent() is called with valid arguments;
+// EventAggregator::AddPerDeviceEventCountEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
-// LocalAggregateStore, and with an EventRecord which wraps a CountEvent.
+// LocalAggregateStore, and with an EventRecord which wraps a EventCountEvent.
 //
 // Logs some valid events each day for 35 days, checking the contents of the
 // LocalAggregateStore each day.
@@ -1031,12 +1032,15 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
     for (const auto& id : count_metric_report_ids) {
       for (const auto& component : {"component_A", "component_B", "component_C"}) {
         // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
-        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 2, &logged_values));
-        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, component, 0u, 3, &logged_values));
+        EXPECT_EQ(kOK,
+                  AddPerDeviceEventCountEvent(id, day_index, component, 0u, 2, &logged_values));
+        EXPECT_EQ(kOK,
+                  AddPerDeviceEventCountEvent(id, day_index, component, 0u, 3, &logged_values));
       }
       if (offset < 3) {
         // Adds 1 event to the local aggregations for component D and event code 1.
-        EXPECT_EQ(kOK, AddPerDeviceCountEvent(id, day_index, "component_D", 1u, 4, &logged_values));
+        EXPECT_EQ(kOK,
+                  AddPerDeviceEventCountEvent(id, day_index, "component_D", 1u, 4, &logged_values));
       }
     }
     for (const auto& id : elapsed_time_metric_report_ids) {
@@ -1075,9 +1079,9 @@ TEST_F(PerDeviceNumericEventAggregatorTest, LogEvents) {
 }
 
 // Tests that the LocalAggregateStore is updated as expected when
-// EventAggregator::AddPerDeviceCountEvent() is called with valid arguments;
+// EventAggregator::AddPerDeviceEventCountEvent() is called with valid arguments;
 // i.e., with a report ID associated to an existing key of the
-// LocalAggregateStore, and with an EventRecord which wraps a CountEvent.
+// LocalAggregateStore, and with an EventRecord which wraps a EventCountEvent.
 //
 // Logs some valid events each day for 35 days, checking the contents of the
 // LocalAggregateStore each day.
@@ -1095,15 +1099,15 @@ TEST_F(PerDeviceHistogramEventAggregatorTest, LogEvents) {
     auto day_index = CurrentDayIndex();
     for (const auto& component : {"component_A", "component_B", "component_C"}) {
       // Adds 2 events to the local aggregations with event code 0, for each component A, B, C.
-      EXPECT_EQ(
-          kOK, AddPerDeviceCountEvent(event_count_id, day_index, component, 0u, 2, &logged_values));
-      EXPECT_EQ(
-          kOK, AddPerDeviceCountEvent(event_count_id, day_index, component, 0u, 3, &logged_values));
+      EXPECT_EQ(kOK, AddPerDeviceEventCountEvent(event_count_id, day_index, component, 0u, 2,
+                                                 &logged_values));
+      EXPECT_EQ(kOK, AddPerDeviceEventCountEvent(event_count_id, day_index, component, 0u, 3,
+                                                 &logged_values));
     }
     if (offset < 3) {
       // Adds 1 event to the local aggregations for component D and event code 1.
-      EXPECT_EQ(kOK, AddPerDeviceCountEvent(event_count_id, day_index, "component_D", 1u, 4,
-                                            &logged_values));
+      EXPECT_EQ(kOK, AddPerDeviceEventCountEvent(event_count_id, day_index, "component_D", 1u, 4,
+                                                 &logged_values));
     }
 
     for (const auto& component : {"component_A", "component_B", "component_C"}) {

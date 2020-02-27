@@ -37,15 +37,13 @@ import "src/registry/aggregation_window.proto";
 message Observation2 {
   // Next observation_type ID: 9
   // Next general ID: 1002;
-  reserved 5;
-  reserved "forculus";
+  reserved 4, 5;
 
   // An Observation has one of the following types.
   oneof observation_type {
     IntegerEventObservation numeric_event = 1;
     HistogramObservation histogram = 2;
     BasicRapporObservation basic_rappor = 3;
-    RapporObservation string_rappor = 4;
     UniqueActivesObservation unique_actives = 6;
     PerDeviceNumericObservation per_device_numeric = 7;
     PerDeviceHistogramObservation per_device_histogram = 8;
