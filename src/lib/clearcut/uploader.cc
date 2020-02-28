@@ -106,9 +106,7 @@ Status ClearcutUploader::TryUploadEvents(LogRequest* log_request,
                                      request_body_size);
 
     VLOG(5) << "ClearcutUploader: Sending POST request to " << url_ << ".";
-    auto response_future = client_->Post(std::move(request), deadline);
-
-    auto response_or = response_future.get();
+    auto response_or = client_->PostSync(std::move(request), deadline);
     if (!response_or.ok()) {
       const Status& status = response_or.status();
       VLOG(5) << "ClearcutUploader: Failed to send POST request: (" << status.error_code() << ") "

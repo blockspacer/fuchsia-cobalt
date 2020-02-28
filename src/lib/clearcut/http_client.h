@@ -59,11 +59,24 @@ class HTTPRequest {
   HTTPRequest& operator=(const HTTPRequest&) = delete;
 };
 
+// HTTPClient should implement *either* Post or PostSync. If one is implemented, the other will be
+// implemented based on the other.
 class HTTPClient {
  public:
   // Post an HTTPRequest which will timeout after |timeout_ms| milliseconds.
-  virtual std::future<StatusOr<HTTPResponse>> Post(
-      HTTPRequest request, std::chrono::steady_clock::time_point deadline) = 0;
+  virtual std::future<StatusOr<HTTPResponse>> Post(HTTPRequest request,
+                                                   std::chrono::steady_clock::time_point deadline) {
+    return std::async(
+        std::launch::async,
+        [this, request = std::move(request), deadline]() mutable -> StatusOr<HTTPResponse> {
+          return PostSync(std::move(request), deadline);
+        });
+  }
+
+  virtual StatusOr<HTTPResponse> PostSync(HTTPRequest request,
+                                          std::chrono::steady_clock::time_point deadline) {
+    return Post(std::move(request), deadline).get();
+  }
 
   virtual ~HTTPClient() = default;
 };
