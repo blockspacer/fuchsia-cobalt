@@ -48,6 +48,28 @@ var allowedReportTypes = map[config.MetricDefinition_MetricType]map[config.Repor
 	config.MetricDefinition_INT_HISTOGRAM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_INT_RANGE_HISTOGRAM: true,
 	},
+	config.MetricDefinition_OCCURRENCE: map[config.ReportDefinition_ReportType]bool{
+		config.ReportDefinition_FLEETWIDE_OCCURRENCE_COUNTS: true,
+		config.ReportDefinition_UNIQUE_DEVICE_COUNTS:        true,
+		config.ReportDefinition_UNIQUE_DEVICE_HISTOGRAMS:    true,
+		config.ReportDefinition_HOURLY_VALUE_HISTOGRAMS:     true,
+		config.ReportDefinition_UNIQUE_DEVICE_NUMERIC_STATS: true,
+		config.ReportDefinition_HOURLY_VALUE_NUMERIC_STATS:  true,
+	},
+	config.MetricDefinition_INTEGER: map[config.ReportDefinition_ReportType]bool{
+		config.ReportDefinition_UNIQUE_DEVICE_HISTOGRAMS:    true,
+		config.ReportDefinition_HOURLY_VALUE_HISTOGRAMS:     true,
+		config.ReportDefinition_FLEETWIDE_HISTOGRAMS:        true,
+		config.ReportDefinition_FLEETWIDE_MEANS:             true,
+		config.ReportDefinition_UNIQUE_DEVICE_NUMERIC_STATS: true,
+		config.ReportDefinition_HOURLY_VALUE_NUMERIC_STATS:  true,
+	},
+	config.MetricDefinition_INTEGER_HISTOGRAM: map[config.ReportDefinition_ReportType]bool{
+		config.ReportDefinition_FLEETWIDE_HISTOGRAMS: true,
+	},
+	config.MetricDefinition_STRING: map[config.ReportDefinition_ReportType]bool{
+		config.ReportDefinition_STRING_HISTOGRAMS: true,
+	},
 	config.MetricDefinition_CUSTOM: map[config.ReportDefinition_ReportType]bool{
 		config.ReportDefinition_CUSTOM_RAW_DUMP: true,
 	},
