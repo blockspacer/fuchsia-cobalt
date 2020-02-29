@@ -29,6 +29,13 @@ void CopyEventCodesAndComponent(const std::vector<uint32_t>& event_codes,
   event->set_component(component);
 }
 
+template <class EventType>
+void CopyEventCodes(const std::vector<uint32_t>& event_codes, EventType* event) {
+  for (auto event_code : event_codes) {
+    event->add_event_code(event_code);
+  }
+}
+
 }  // namespace
 
 Status FakeLogger::LogEvent(uint32_t metric_id, uint32_t event_code) {
@@ -110,6 +117,62 @@ Status FakeLogger::LogIntHistogram(uint32_t metric_id, const std::vector<uint32_
   auto* int_histogram_event = event.mutable_int_histogram_event();
   CopyEventCodesAndComponent(event_codes, component, int_histogram_event);
   int_histogram_event->mutable_buckets()->Swap(histogram.get());
+  last_event_logged_ = event;
+
+  return Status::kOK;
+}
+
+Status FakeLogger::LogOccurrence(uint32_t metric_id, uint64_t count,
+                                 const std::vector<uint32_t>& event_codes) {
+  call_count_ += 1;
+
+  Event event;
+  event.set_metric_id(metric_id);
+  auto* occurrence_event = event.mutable_occurrence_event();
+  CopyEventCodes(event_codes, occurrence_event);
+  occurrence_event->set_count(count);
+  last_event_logged_ = event;
+
+  return Status::kOK;
+}
+
+Status FakeLogger::LogInteger(uint32_t metric_id, int64_t value,
+                              const std::vector<uint32_t>& event_codes) {
+  call_count_ += 1;
+
+  Event event;
+  event.set_metric_id(metric_id);
+  auto* integer_event = event.mutable_integer_event();
+  CopyEventCodes(event_codes, integer_event);
+  integer_event->set_value(value);
+  last_event_logged_ = event;
+
+  return Status::kOK;
+}
+
+Status FakeLogger::LogIntegerHistogram(uint32_t metric_id, HistogramPtr histogram,
+                                       const std::vector<uint32_t>& event_codes) {
+  call_count_ += 1;
+
+  Event event;
+  event.set_metric_id(metric_id);
+  auto* integer_histogram_event = event.mutable_integer_histogram_event();
+  CopyEventCodes(event_codes, integer_histogram_event);
+  integer_histogram_event->mutable_buckets()->Swap(histogram.get());
+  last_event_logged_ = event;
+
+  return Status::kOK;
+}
+
+Status FakeLogger::LogString(uint32_t metric_id, const std::string& string_value,
+                             const std::vector<uint32_t>& event_codes) {
+  call_count_ += 1;
+
+  Event event;
+  event.set_metric_id(metric_id);
+  auto* string_event = event.mutable_string_event();
+  CopyEventCodes(event_codes, string_event);
+  string_event->set_string_value(string_value);
   last_event_logged_ = event;
 
   return Status::kOK;

@@ -17,12 +17,19 @@ message Event {
   // An Event has one of the following types. These types correspond to
   // the various Metric types defined in config/metric_definitions.proto.
   oneof type {
+    // These event types are for Cobalt 1.0.
+    // TODO(fxb/45463) Delete when all users move to Cobalt 1.1.
     EventOccurredEvent event_occurred_event = 1;
     EventCountEvent event_count_event = 2;
     ElapsedTimeEvent elapsed_time_event = 3;
     FrameRateEvent frame_rate_event = 4;
     MemoryUsageEvent memory_usage_event = 5;
     IntHistogramEvent int_histogram_event = 6;
+    // The remaining event types are for Cobalt 1.1.
+    OccurrenceEvent occurrence_event = 8;
+    IntegerEvent integer_event = 9;
+    IntegerHistogramEvent integer_histogram_event = 10;
+    StringEvent string_event = 11;
     CustomEvent custom_event = 999;
   }
 
@@ -103,6 +110,45 @@ message IntHistogramEvent {
   // The associated system component
   string component = 2;
 
+  // The set of bucket indices and their corresponding counts.
+  repeated HistogramBucket buckets = 3;
+}
+
+// Records that an event occurred a number of times.
+message OccurrenceEvent {
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
+  // The number of times the event occurred.
+  uint64 count = 2;
+}
+
+// Records that an event occurred a number of times.
+message IntegerEvent {
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
+  // The elapsed time in microseconds.
+  int64 value = 2;
+}
+
+// Records a frame-rate.
+message StringEvent {
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
+  // The associated system component
+  string string_value = 2;
+}
+
+// Records a histogram over a set of integer buckets. The semantics of the
+// Metric must be specified in comments near the Metric definition. The
+// numerical values of the buckets is specified in the |int_buckets|
+// field of the MetricDefinition.
+message IntegerHistogramEvent {
+  // The event codes for the event that occurred. There must be one event code
+  // given for each dimension specified in the metric definition.
+  repeated uint32 event_code = 1;
   // The set of bucket indices and their corresponding counts.
   repeated HistogramBucket buckets = 3;
 }

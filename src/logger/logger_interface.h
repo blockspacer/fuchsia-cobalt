@@ -15,8 +15,7 @@
 #include "src/logger/types.h"
 #include "src/pb/observation2.pb.h"
 
-namespace cobalt {
-namespace logger {
+namespace cobalt::logger {
 
 // Logger is the client-facing interface to Cobalt.
 //
@@ -25,6 +24,9 @@ namespace logger {
 class LoggerInterface {
  public:
   virtual ~LoggerInterface() = default;
+
+  // Old Logger Log* methods used in Cobalt 1.0.
+  // TODO(fxb/45463) Delete when all users move to Cobalt 1.1.
 
   // Logs the fact that an event has occurred.
   //
@@ -169,6 +171,68 @@ class LoggerInterface {
                            std::move(histogram));
   }
 
+  // New Logger Log* methods for use in Cobalt 1.1.
+
+  // Logs that an event has occurred a given number of times.
+  //
+  // |metric_id| ID of the Metric the logged Event will belong to. It must
+  // be one of the Metrics from the ProjectContext passed to the constructor,
+  // and it must be of type OCCURRENCE.
+  //
+  // |count| The number of times the event occurred. One may choose to
+  // always set this value to 1 if events are logged every time they occur.
+  //
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
+  virtual Status LogOccurrence(uint32_t metric_id, uint64_t count,
+                               const std::vector<uint32_t>& event_codes) = 0;
+
+  // Logs a measured integer value.
+  //
+  // |metric_id| ID of the Metric the logged Event will belong to. It must
+  // be one of the Metrics from the ProjectContext passed to the constructor,
+  // and it must be of type INTEGER.
+  //
+  // |value| The integer measured.
+  //
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
+  virtual Status LogInteger(uint32_t metric_id, int64_t value,
+                            const std::vector<uint32_t>& event_codes) = 0;
+
+  // Logs a histogram over a set of integer buckets. The meaning of the
+  // Metric and the buckets is specified in the Metric definition.
+  //
+  // |metric_id| ID of the Metric the logged Event will belong to. It must
+  // be one of the Metrics from the ProjectContext passed to the constructor,
+  // and it must be of type INTEGER_HISTOGRAM.
+  //
+  // |histogram| The histogram to log. Each HistogramBucket gives the count
+  //  for one bucket of the histogram. The definitions of the buckets is
+  //  given in the Metric definition.
+  //
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
+  virtual Status LogIntegerHistogram(uint32_t metric_id, HistogramPtr histogram,
+                                     const std::vector<uint32_t>& event_codes) = 0;
+
+  // Logs a string value that was observed.
+  //
+  // |metric_id| ID of the Metric the logged Event will belong to. It must
+  // be one of the Metrics from the ProjectContext passed to the constructor,
+  // and it must be of type ELAPSED_TIME.
+  //
+  // |string_value| The string that was observed.
+  //
+  // |event_codes| The event codes for the event that occurred. There must be
+  // one for each metric dimension specified in the MetricDefinition. Use the
+  // empty vector if no metric dimensions have been defined.
+  virtual Status LogString(uint32_t metric_id, const std::string& string_value,
+                           const std::vector<uint32_t>& event_codes) = 0;
+
   // Logs a custom event. The structure of the event is defined in a proto file
   // in the project's config folder.
   //
@@ -196,7 +260,6 @@ class LoggerInterface {
   virtual void ResumeInternalLogging() = 0;
 };
 
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger
 
 #endif  // COBALT_SRC_LOGGER_LOGGER_INTERFACE_H_

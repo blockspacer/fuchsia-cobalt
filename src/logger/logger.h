@@ -144,6 +144,24 @@ class Logger : public LoggerInterface {
   Status LogIntHistogram(uint32_t metric_id, const std::vector<uint32_t>& event_codes,
                          const std::string& component, HistogramPtr histogram) override;
 
+  // Unimplemented methods for Cobalt 1.1, always return errors.
+  Status LogOccurrence(uint32_t /*metric_id*/, uint64_t /*count*/,
+                       const std::vector<uint32_t>& /*event_codes*/) override {
+    return Status::kOther;
+  }
+  Status LogInteger(uint32_t /*metric_id*/, int64_t /*value*/,
+                    const std::vector<uint32_t>& /*event_codes*/) override {
+    return Status::kOther;
+  }
+  Status LogIntegerHistogram(uint32_t /*metric_id*/, HistogramPtr /*histogram*/,
+                             const std::vector<uint32_t>& /*event_codes*/) override {
+    return Status::kOther;
+  }
+  Status LogString(uint32_t /*metric_id*/, const std::string& /*string_value*/,
+                   const std::vector<uint32_t>& /*event_codes*/) override {
+    return Status::kOther;
+  }
+
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
   // LoggerCalled (cobalt_internal::metrics::logger_calls_made) and
