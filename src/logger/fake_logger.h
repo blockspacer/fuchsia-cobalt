@@ -22,9 +22,7 @@
 #include "src/registry/project_configs.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
-namespace cobalt {
-namespace logger {
-namespace testing {
+namespace cobalt::logger::testing {
 
 // An implementation of LoggerInterface that counts how many times the Log*
 // methods were called for purposes of testing that internal metrics are being
@@ -63,22 +61,29 @@ class FakeLogger : public LoggerInterface {
 
   Status LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) override;
 
-  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) override {}
+  void RecordLoggerCall(PerProjectLoggerCallsMadeMetricDimensionLoggerMethod method) override {
+    if (!internal_logging_paused_) {
+      internal_logger_calls_[method]++;
+    }
+  }
 
-  void PauseInternalLogging() override {}
+  void PauseInternalLogging() override { internal_logging_paused_ = true; }
 
-  void ResumeInternalLogging() override {}
+  void ResumeInternalLogging() override { internal_logging_paused_ = false; }
 
   uint32_t call_count() { return call_count_; }
   Event last_event_logged() { return last_event_logged_; }
+  std::map<PerProjectLoggerCallsMadeMetricDimensionLoggerMethod, uint32_t> internal_logger_calls() {
+    return internal_logger_calls_;
+  }
 
  private:
   Event last_event_logged_;
   uint32_t call_count_ = 0;
+  std::map<PerProjectLoggerCallsMadeMetricDimensionLoggerMethod, uint32_t> internal_logger_calls_;
+  bool internal_logging_paused_ = false;
 };
 
-}  // namespace testing
-}  // namespace logger
-}  // namespace cobalt
+}  // namespace cobalt::logger::testing
 
 #endif  //  COBALT_SRC_LOGGER_FAKE_LOGGER_H_
