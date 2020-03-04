@@ -28,6 +28,14 @@ var validNameRegexp = regexp.MustCompile("^[a-zA-Z][_a-zA-Z0-9]{1,65}$")
 // '.' for package names and '$' for '$team_name'.
 var validProtoNameRegexp = regexp.MustCompile("^[$a-zA-Z][_.$a-zA-Z0-9]{1,64}[a-zA-Z0-9]$")
 
+// Metrics introduced in Cobalt 1.1.
+var cobalt11MetricTypesSet = map[config.MetricDefinition_MetricType]bool{
+	config.MetricDefinition_OCCURRENCE:        true,
+	config.MetricDefinition_INTEGER:           true,
+	config.MetricDefinition_INTEGER_HISTOGRAM: true,
+	config.MetricDefinition_STRING:            true,
+}
+
 // Validate a list of MetricDefinitions.
 func validateConfiguredMetricDefinitions(metrics []*config.MetricDefinition) (err error) {
 	metricIds := map[uint32]int{}
@@ -73,8 +81,12 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 		return fmt.Errorf("in meta_data: %v", err)
 	}
 
-	if m.IntBuckets != nil && m.MetricType != config.MetricDefinition_INT_HISTOGRAM {
-		return fmt.Errorf("Metric %s has int_buckets set. int_buckets can only be set for metrics for metric type INT_HISTOGRAM.", m.MetricName)
+	if err := validateMetricUnits(m); err != nil {
+		return err
+	}
+
+	if m.IntBuckets != nil && m.MetricType != config.MetricDefinition_INT_HISTOGRAM && m.MetricType != config.MetricDefinition_INTEGER_HISTOGRAM {
+		return fmt.Errorf("Metric %s has int_buckets set. int_buckets can only be set for metrics for metric type INT_HISTOGRAM and INTEGER_HISTOGRAM.", m.MetricName)
 	}
 
 	// TODO(ninai): Remove when we have migrated metrics from using parts.
@@ -86,8 +98,24 @@ func validateMetricDefinition(m config.MetricDefinition) (err error) {
 		return fmt.Errorf("Metric %s has proto_name set. proto_name can only be set for metrics for metric type CUSTOM.", m.MetricName)
 	}
 
+	if cobalt11MetricTypesSet[m.MetricType] {
+		if m.MetricSemantics == nil || len(m.MetricSemantics) == 0 {
+			return fmt.Errorf("Metric %s does not have metric_semantics. metric_semantics is required for this metric.", m.MetricName)
+		}
+	} else {
+		if len(m.MetricSemantics) > 0 {
+			return fmt.Errorf("Metric %s has metric_semantics set. metric_semantics can only be set for Cobalt 1.1 metrics.", m.MetricName)
+		}
+	}
+
 	if err := validateMetricDefinitionForType(m); err != nil {
 		return fmt.Errorf("Metric %s: %v", m.MetricName, err)
+	}
+
+	if m.MetricType != config.MetricDefinition_CUSTOM {
+		if err := validateMetricDimensions(m); err != nil {
+			return fmt.Errorf("Metric %s: %v", m.MetricName, err)
+		}
 	}
 
 	return validateReportDefinitions(m)
@@ -130,12 +158,14 @@ func validateMetadata(m config.MetricDefinition_Metadata) (err error) {
 	}
 }
 
-// Validate the event_codes and max_event_code fields.
+// Validate the event_codes and max_event_code fields. Do not invoke on CUSTOM metrics.
 func validateMetricDimensions(m config.MetricDefinition) error {
 	if len(m.MetricDimensions) == 0 {
 		// A metric definition is allowed to not have any metric dimensions.
 		return nil
 	}
+
+	cobalt10MetricType := !(cobalt11MetricTypesSet[m.MetricType])
 
 	if len(m.MetricDimensions) > 5 {
 		return fmt.Errorf("there can be at most 5 dimensions in metric_dimensions")
@@ -188,7 +218,7 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 			numOptions *= int(md.MaxEventCode + 1)
 		} else {
 			for j, _ := range md.EventCodes {
-				if j >= 1024 && len(m.MetricDimensions) > 4 {
+				if cobalt10MetricType && j >= 1024 && len(m.MetricDimensions) > 4 {
 					return fmt.Errorf("event index %v in metric_dimension %v is greater than 1023, which means that this metric cannot support more than 4 metric_dimensions", j, name)
 				}
 				if j >= 32768 {
@@ -198,10 +228,26 @@ func validateMetricDimensions(m config.MetricDefinition) error {
 			numOptions *= len(md.EventCodes)
 		}
 	}
-	if numOptions >= 1024 {
-		return fmt.Errorf("metric_dimensions have too many possible representations: %v. May be no more than 1024", numOptions)
+	if cobalt10MetricType && numOptions >= 1024 {
+		return fmt.Errorf("metric_dimensions have too many possible representations: %v. May be no more than 1023", numOptions)
 	}
 
+	return nil
+}
+
+func validateMetricUnits(m config.MetricDefinition) error {
+	has_metric_unit := m.MetricUnits != config.MetricUnits_METRIC_UNITS_OTHER
+	has_other_metric_unit := len(m.MetricUnitsOther) > 0
+	if m.MetricType != config.MetricDefinition_INTEGER && m.MetricType != config.MetricDefinition_INTEGER_HISTOGRAM {
+		if has_metric_unit || has_other_metric_unit {
+			return fmt.Errorf("metric_units and metric_units_other must be set only for INTEGER and INTEGER_HISTOGRAM metrics.")
+		}
+		return nil
+	}
+
+	if has_metric_unit == has_other_metric_unit {
+		return fmt.Errorf("metrics of type INTEGER and INTEGER_HISTOGRAM must have exactly one of metric_unit or other_metric_unit specified.")
+	}
 	return nil
 }
 
@@ -213,18 +259,26 @@ func validateMetricDefinitionForType(m config.MetricDefinition) error {
 	switch m.MetricType {
 	case config.MetricDefinition_EVENT_OCCURRED:
 		return validateEventOccurred(m)
-	case config.MetricDefinition_EVENT_COUNT:
-		return validateMetricDimensions(m)
-	case config.MetricDefinition_ELAPSED_TIME:
-		return validateMetricDimensions(m)
-	case config.MetricDefinition_FRAME_RATE:
-		return validateMetricDimensions(m)
-	case config.MetricDefinition_MEMORY_USAGE:
-		return validateMetricDimensions(m)
 	case config.MetricDefinition_INT_HISTOGRAM:
 		return validateIntHistogram(m)
+	case config.MetricDefinition_EVENT_COUNT:
+		return nil
+	case config.MetricDefinition_FRAME_RATE:
+		return nil
+	case config.MetricDefinition_MEMORY_USAGE:
+		return nil
+	case config.MetricDefinition_ELAPSED_TIME:
+		return nil
 	case config.MetricDefinition_CUSTOM:
 		return validateCustom(m)
+	case config.MetricDefinition_OCCURRENCE:
+		return nil
+	case config.MetricDefinition_INTEGER:
+		return nil
+	case config.MetricDefinition_INTEGER_HISTOGRAM:
+		return validateIntHistogram(m)
+	case config.MetricDefinition_STRING:
+		return nil
 	}
 
 	return fmt.Errorf("Unknown MetricType: %v", m.MetricType)
@@ -245,7 +299,7 @@ func validateEventOccurred(m config.MetricDefinition) error {
 		}
 	}
 
-	return validateMetricDimensions(m)
+	return nil
 }
 
 func validateIntHistogram(m config.MetricDefinition) error {
@@ -261,7 +315,7 @@ func validateIntHistogram(m config.MetricDefinition) error {
 		}
 	}
 
-	return validateMetricDimensions(m)
+	return nil
 }
 
 // TODO(ninai): remove this function when Cobalt 1.0 is done.

@@ -47,10 +47,8 @@ func main() {
 
 	// Unless otherwise specified, validate the registry.
 	if !*skipValidation {
-		for _, c := range configs {
-			if err = config_validator.ValidateProjectConfig(&c); err != nil {
-				glog.Exit(err)
-			}
+		if err = config_validator.ValidateProjectConfigs(configs); err != nil {
+			glog.Exit(err)
 		}
 	}
 
