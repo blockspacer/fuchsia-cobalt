@@ -14,7 +14,7 @@ import (
 
 func TestConstructorsHandleNil(t *testing.T) {
 	r := makeJSONReport(nil)
-	if (r != jsonReport{}) {
+	if reflect.DeepEqual(r, (jsonReport{})) == false {
 		t.Errorf("makeJSONReport failed to return empty report got = %#v", r)
 	}
 	m := makeJSONMetric(nil)
@@ -38,18 +38,40 @@ func TestConstructorsHandleNil(t *testing.T) {
 func TestMakeJSONReport(t *testing.T) {
 	name := "test_name"
 	id := uint32(123456789)
+	candidate_file := "test_file_name"
+	candidate_list := []string{"candidate1", "candidate2"}
+	system_profile := []config.SystemProfileField{config.SystemProfileField_OS, config.SystemProfileField_ARCH}
+	aggregation_percentile := uint32(80)
+
 	r := config.ReportDefinition{
-		ReportName:             name,
-		Id:                     id,
-		ReportType:             config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT,
-		LocalPrivacyNoiseLevel: config.ReportDefinition_NOISE_LEVEL_UNSET,
+		ReportName:                           name,
+		Id:                                   id,
+		ReportType:                           config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT,
+		LocalPrivacyNoiseLevel:               config.ReportDefinition_NOISE_LEVEL_UNSET,
+		CandidateFile:                        candidate_file,
+		CandidateList:                        candidate_list,
+		SystemProfileField:                   system_profile,
+		AggregationType:                      config.ReportDefinition_SUM,
+		WindowSize:                           []config.WindowSize{config.WindowSize_WINDOW_7_DAYS},
+		LocalAggregationPeriod:               config.WindowSize_WINDOW_7_DAYS,
+		LocalAggregationProcedure:            config.ReportDefinition_LOCAL_AGGREGATION_PROCEDURE_SUM,
+		LocalAggregationProcedurePercentileN: aggregation_percentile,
 	}
 
 	want := jsonReport{
-		Name:                   name,
-		Id:                     id,
-		ReportType:             "SIMPLE_OCCURRENCE_COUNT",
-		LocalPrivacyNoiseLevel: "NOISE_LEVEL_UNSET",
+		Name:                                 name,
+		Id:                                   id,
+		ReportType:                           "SIMPLE_OCCURRENCE_COUNT",
+		ReportTypeId:                         int32(config.ReportDefinition_SIMPLE_OCCURRENCE_COUNT),
+		LocalPrivacyNoiseLevel:               "NOISE_LEVEL_UNSET",
+		CandidateFile:                        candidate_file,
+		CandidateList:                        candidate_list,
+		SystemProfileField:                   []string{"OS", "ARCH"},
+		AggregationType:                      "SUM",
+		WindowSize:                           []string{"WINDOW_7_DAYS"},
+		LocalAggregationPeriod:               7,
+		LocalAggregationProcedure:            "LOCAL_AGGREGATION_PROCEDURE_SUM",
+		LocalAggregationProcedurePercentileN: aggregation_percentile,
 	}
 
 	got := makeJSONReport(&r)
@@ -68,22 +90,54 @@ func TestMakeJSONMetric(t *testing.T) {
 		ExpirationDate: expirationDate,
 		Owner:          owners,
 	}
+	dimension := []*config.MetricDefinition_MetricDimension{
+		&config.MetricDefinition_MetricDimension{
+			Dimension:    "test_dimension",
+			MaxEventCode: 3,
+		},
+	}
+	eventCode := uint32(987654321)
+	metricUnitOther := "test_metric_unit"
+	candidateFile := "test_candidate_file_string"
+	stringBufferMax := uint32(1234)
+	protoName := "test_proto_name"
+
 	m := config.MetricDefinition{
-		MetricName: name,
-		Id:         id,
-		MetricType: config.MetricDefinition_EVENT_OCCURRED,
-		MetaData:   &meta,
-		Reports:    reports,
+		MetricName:       name,
+		Id:               id,
+		MetricType:       config.MetricDefinition_EVENT_OCCURRED,
+		MetaData:         &meta,
+		MetricDimensions: dimension,
+		MetricSemantics: []config.MetricSemantics{
+			config.MetricSemantics_CPU,
+			config.MetricSemantics_DATA_SIZE,
+		},
+		MetricUnits:         config.MetricUnits_NANOSECONDS,
+		MetricUnitsOther:    metricUnitOther,
+		EventCodeBufferMax:  eventCode,
+		StringCandidateFile: candidateFile,
+		StringBufferMax:     stringBufferMax,
+		ProtoName:           protoName,
+		Reports:             reports,
 	}
 
 	emptyReports := []jsonReport{jsonReport{}, jsonReport{}}
 	want := jsonMetric{
-		Name:           name,
-		Id:             id,
-		MetricType:     "EVENT_OCCURRED",
-		Owners:         owners,
-		ExpirationDate: expirationDate,
-		Reports:        emptyReports,
+		Name:                name,
+		Id:                  id,
+		MetricType:          "EVENT_OCCURRED",
+		Owners:              owners,
+		ExpirationDate:      expirationDate,
+		Dimensions:          []string{"test_dimension"},
+		MaxEventCode:        []uint32{3},
+		Semantics:           []string{"CPU", "DATA_SIZE"},
+		Units:               "NANOSECONDS",
+		UnitsOther:          metricUnitOther,
+		EventCodeBufferMax:  eventCode,
+		StringCandidateFile: candidateFile,
+		StringBufferMax:     stringBufferMax,
+		ProtoName:           protoName,
+		Reports:             emptyReports,
 	}
 
 	got := makeJSONMetric(&m)
@@ -94,25 +148,19 @@ func TestMakeJSONMetric(t *testing.T) {
 
 func TestMakeJSONMetricEmptyMetadata(t *testing.T) {
 	name := "test_name"
-	id := uint32(123456789)
 	reports := []*config.ReportDefinition{nil, nil}
 	m := config.MetricDefinition{
 		MetricName: name,
-		Id:         id,
-		MetricType: config.MetricDefinition_EVENT_OCCURRED,
 		MetaData:   nil,
 		Reports:    reports,
 	}
 
 	emptyReports := []jsonReport{jsonReport{}, jsonReport{}}
-	owners := []string(nil)
 	want := jsonMetric{
-		Name:           name,
-		Id:             id,
-		MetricType:     "EVENT_OCCURRED",
-		Owners:         owners,
-		ExpirationDate: "",
-		Reports:        emptyReports,
+		Name:       name,
+		MetricType: "UNSET",
+		Units:      "METRIC_UNITS_OTHER",
+		Reports:    emptyReports,
 	}
 
 	got := makeJSONMetric(&m)
