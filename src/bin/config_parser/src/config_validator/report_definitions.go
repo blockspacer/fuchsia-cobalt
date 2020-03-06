@@ -103,6 +103,10 @@ func validateReportDefinitionForMetric(m config.MetricDefinition, r config.Repor
 		return err
 	}
 
+	if err := validateIntBucketsForReport(m, r); err != nil {
+		return err
+	}
+
 	if err := validateReportDefinition(r); err != nil {
 		return err
 	}

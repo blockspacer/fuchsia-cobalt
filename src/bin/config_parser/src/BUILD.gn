@@ -64,6 +64,7 @@ go_test("config_parser_test") {
 go_library("config_validator") {
   source_dir = "config_validator"
   sources = [
+    "int_buckets.go",
     "metric_definitions.go",
     "report_definitions.go",
     "validator.go",
@@ -71,6 +72,7 @@ go_library("config_validator") {
 
   # Add test files
   sources += [
+    "int_buckets_test.go",
     "metric_definitions_test.go",
     "report_definitions_test.go",
   ]
