@@ -191,3 +191,18 @@ func TestValidateReportDefinitionForNumericAggregation(t *testing.T) {
 		t.Error("Accepted report definition of type NUMERIC_AGGREGATION with invalid percentiles.")
 	}
 }
+
+// Test that int_buckets is not set if the report type is STRING_HISTOGRAMS.
+func TestValidateReportDefinitionForStringHistograms(t *testing.T) {
+	r := makeValidReport()
+	r.ReportType = config.ReportDefinition_STRING_HISTOGRAMS
+
+	if err := validateReportDefinition(r); err != nil {
+		t.Errorf("Failed validation for valid report of type STRING_HISTOGRAMS: %v", err)
+	}
+
+	r.IntBuckets = &config.IntegerBuckets{}
+	if err := validateReportDefinition(r); err == nil {
+		t.Error("Accepted report definition of type STRING_HISTOGRAMS with int_buckets specified.")
+	}
+}

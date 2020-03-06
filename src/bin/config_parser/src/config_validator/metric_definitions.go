@@ -278,7 +278,7 @@ func validateMetricDefinitionForType(m config.MetricDefinition) error {
 	case config.MetricDefinition_INTEGER_HISTOGRAM:
 		return validateIntHistogram(m)
 	case config.MetricDefinition_STRING:
-		return nil
+		return validateString(m)
 	}
 
 	return fmt.Errorf("Unknown MetricType: %v", m.MetricType)
@@ -313,6 +313,17 @@ func validateIntHistogram(m config.MetricDefinition) error {
 		if m.IntBuckets != nil && r.IntBuckets != nil {
 			return fmt.Errorf("for report %q: both report and metric contain int_buckets stanzas, the stanza in %q will be ignored", r.ReportName, r.ReportName)
 		}
+	}
+
+	return nil
+}
+
+func validateString(m config.MetricDefinition) error {
+	if m.StringCandidateFile == "" {
+		return fmt.Errorf("No string_candidate_file specified for metric of type STRING.")
+	}
+	if m.StringBufferMax == 0 {
+		return fmt.Errorf("No string_buffer_max specified for metric of type STRING.")
 	}
 
 	return nil

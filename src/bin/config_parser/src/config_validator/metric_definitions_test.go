@@ -444,6 +444,29 @@ func TestValidateIntBucketsRequiredForIntegerHistogramsOnly(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Tests concerning STRING metrics.
+////////////////////////////////////////////////////////////////////////////////
+
+func TestStringMetrics(t *testing.T) {
+	m := makeValidStringMetric()
+	if err := validateMetricDefinition(m); err != nil {
+		t.Errorf("Rejected valid STRING metric definition: %v", err)
+	}
+
+	m = makeValidStringMetric()
+	m.StringCandidateFile = ""
+	if err := validateMetricDefinition(m); err == nil {
+		t.Error("Accepted STRING metric definition with string_candidate_file not set.")
+	}
+
+	m = makeValidStringMetric()
+	m.StringBufferMax = 0
+	if err := validateMetricDefinition(m); err == nil {
+		t.Error("Accepted STRING metric definition with string_buffer_max not set.")
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Tests concerning CUSTOM metrics.
 ////////////////////////////////////////////////////////////////////////////////
 

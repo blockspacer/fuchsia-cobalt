@@ -162,6 +162,8 @@ func validateReportDefinitionForType(r config.ReportDefinition) error {
 		return validatePerDeviceHistogramReportDef(r)
 	case config.ReportDefinition_NUMERIC_AGGREGATION:
 		return validateNumericAggregationReportDef(r)
+	case config.ReportDefinition_STRING_HISTOGRAMS:
+		return validateStringHistogramsReportDef(r)
 	}
 
 	return nil
@@ -209,6 +211,14 @@ func validatePerDeviceHistogramReportDef(r config.ReportDefinition) error {
 func validateNumericAggregationReportDef(r config.ReportDefinition) error {
 	if err := validatePercentiles(r); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func validateStringHistogramsReportDef(r config.ReportDefinition) error {
+	if r.IntBuckets != nil {
+		return fmt.Errorf("int_buckets can not be specified for report of type %s.", r.ReportType)
 	}
 
 	return nil
