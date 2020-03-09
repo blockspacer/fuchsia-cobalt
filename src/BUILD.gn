@@ -11,6 +11,7 @@ group("tests") {
     "local_aggregation:tests",
     "logger:tests",
     "observation_store:tests",
+    "public:tests",
     "registry:tests",
     "system_data:unittests",
     "uploader:tests",

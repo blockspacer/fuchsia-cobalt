@@ -9,7 +9,6 @@
 
 #include "src/lib/clearcut/http_client.h"
 #include "src/lib/util/clock.h"
-#include "src/lib/util/encrypted_message_util.h"
 #include "src/lib/util/file_system.h"
 #include "src/logger/project_context.h"
 #include "src/registry/metric_definition.pb.h"
@@ -19,6 +18,7 @@
 namespace cobalt {
 
 constexpr char kDefaultClearcutEndpoint[] = "https://play.googleapis.com/staging/log";
+constexpr char kProductionClearcutEndpoint[] = "https://play.googleapis.com/log";
 constexpr size_t kDefaultClearcutMaxRetries = 5;
 
 class TargetPipelineInterface {
@@ -70,13 +70,11 @@ class TargetPipeline : public TargetPipelineInterface {
   TargetPipeline(system_data::Environment environment, std::string shuffler_encryption_key,
                  std::string analyzer_encryption_key,
                  std::unique_ptr<lib::clearcut::HTTPClient> http_client,
-                 size_t clearcut_max_retries = kDefaultClearcutMaxRetries,
-                 std::string clearcut_endpoint = kDefaultClearcutEndpoint)
+                 size_t clearcut_max_retries = kDefaultClearcutMaxRetries)
       : TargetPipelineInterface(environment),
         shuffler_encryption_key_(std::move(shuffler_encryption_key)),
         analyzer_encryption_key_(std::move(analyzer_encryption_key)),
         http_client_(std::move(http_client)),
-        clearcut_endpoint_(std::move(clearcut_endpoint)),
         clearcut_max_retries_(clearcut_max_retries) {}
   ~TargetPipeline() override = default;
 
@@ -87,7 +85,12 @@ class TargetPipeline : public TargetPipelineInterface {
     return analyzer_encryption_key_;
   }
 
-  [[nodiscard]] std::string clearcut_endpoint() const override { return clearcut_endpoint_; };
+  [[nodiscard]] std::string clearcut_endpoint() const override {
+    if (environment() == system_data::Environment::PROD) {
+      return kProductionClearcutEndpoint;
+    }
+    return kDefaultClearcutEndpoint;
+  };
   [[nodiscard]] std::unique_ptr<lib::clearcut::HTTPClient> TakeHttpClient() override {
     return std::move(http_client_);
   }
@@ -97,7 +100,6 @@ class TargetPipeline : public TargetPipelineInterface {
   std::string shuffler_encryption_key_;
   std::string analyzer_encryption_key_;
   std::unique_ptr<lib::clearcut::HTTPClient> http_client_;
-  std::string clearcut_endpoint_;
   size_t clearcut_max_retries_;
 };
 
