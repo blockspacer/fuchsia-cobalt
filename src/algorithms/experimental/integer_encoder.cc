@@ -31,10 +31,12 @@ IntegerEncoder::IntegerEncoder(BitGeneratorInterface<uint32_t>* gen, int64_t min
                                int64_t max_int, uint32_t partitions, double p)
     : gen_(gen) {
   PopulateBoundaries(min_int, max_int, partitions, &boundaries_);
-  randomizer_ = std::make_unique<ResponseRandomizer>(gen_, partitions + 1, p);
+  randomizer_ = std::make_unique<ResponseRandomizer>(gen_, partitions, p);
 }
 
-uint32_t IntegerEncoder::Encode(int64_t val) { return RandomRound(val, GetLeftIndex(val)); }
+uint32_t IntegerEncoder::Encode(int64_t val) {
+  return randomizer_->Encode(RandomRound(val, GetLeftIndex(val)));
+}
 
 uint32_t IntegerEncoder::GetLeftIndex(int64_t val) {
   uint32_t left = 0;

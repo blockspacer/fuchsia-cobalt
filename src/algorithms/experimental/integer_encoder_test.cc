@@ -12,12 +12,17 @@ namespace cobalt {
 
 class IntegerEncoderTest : public ::testing::Test {
  protected:
-  void SetUp() override { gen_ = std::make_unique<RandomNumberGenerator>(); }
+  void SetUp() override {
+    gen_ = std::make_unique<RandomNumberGenerator>();
+    seeded_gen_ = std::make_unique<RandomNumberGenerator>(1);
+  }
 
   RandomNumberGenerator* GetGenerator() { return gen_.get(); }
+  RandomNumberGenerator* GetSeededGenerator() { return seeded_gen_.get(); }
 
  private:
   std::unique_ptr<RandomNumberGenerator> gen_;
+  std::unique_ptr<RandomNumberGenerator> seeded_gen_;
 };
 
 // Encode when the number of partitions is equal to the width of the range, and when the probability
@@ -65,6 +70,54 @@ TEST_F(IntegerEncoderTest, EncodeWithCoarseBuckets) {
   EXPECT_EQ(encoder.Encode(8), 4u);
   EXPECT_THAT(encoder.Encode(9), AnyOf(Eq(4u), Eq(5u)));
   EXPECT_EQ(encoder.Encode(10), 5u);
+  EXPECT_EQ(encoder.Encode(20), 5u);
+}
+
+// Encode when the number of partitions is equal to the width of the range, and when the probability
+// of a data-independent response is not 0.
+TEST_F(IntegerEncoderTest, EncodeWithIntegerBucketsNonzeroP) {
+  int64_t min_int = 0;
+  int64_t max_int = 10;
+  uint32_t partitions = 10;
+  double p = 0.1;
+  auto encoder = IntegerEncoder(GetSeededGenerator(), min_int, max_int, partitions, p);
+
+  EXPECT_EQ(encoder.Encode(-1), 0u);
+  EXPECT_EQ(encoder.Encode(0), 0u);
+  EXPECT_EQ(encoder.Encode(1), 1u);
+  EXPECT_EQ(encoder.Encode(2), 2u);
+  EXPECT_EQ(encoder.Encode(3), 10u);
+  EXPECT_EQ(encoder.Encode(4), 4u);
+  EXPECT_EQ(encoder.Encode(5), 5u);
+  EXPECT_EQ(encoder.Encode(6), 6u);
+  EXPECT_EQ(encoder.Encode(7), 7u);
+  EXPECT_EQ(encoder.Encode(8), 8u);
+  EXPECT_EQ(encoder.Encode(9), 9u);
+  EXPECT_EQ(encoder.Encode(10), 10u);
+  EXPECT_EQ(encoder.Encode(20), 10u);
+}
+
+// Encode when the probability of a data-independent response is not 0, and each partition has
+// width 2.
+TEST_F(IntegerEncoderTest, EncodeWithCoarseBucketsNonzeroP) {
+  int64_t min_int = 0;
+  int64_t max_int = 10;
+  uint32_t partitions = 5;
+  double p = 0.1;
+  auto encoder = IntegerEncoder(GetSeededGenerator(), min_int, max_int, partitions, p);
+
+  EXPECT_EQ(encoder.Encode(-1), 4u);
+  EXPECT_EQ(encoder.Encode(0), 0u);
+  EXPECT_EQ(encoder.Encode(1), 1u);
+  EXPECT_EQ(encoder.Encode(2), 1u);
+  EXPECT_EQ(encoder.Encode(3), 2u);
+  EXPECT_EQ(encoder.Encode(4), 2u);
+  EXPECT_EQ(encoder.Encode(5), 2u);
+  EXPECT_EQ(encoder.Encode(6), 3u);
+  EXPECT_EQ(encoder.Encode(7), 4u);
+  EXPECT_EQ(encoder.Encode(8), 4u);
+  EXPECT_EQ(encoder.Encode(9), 3u);
+  EXPECT_EQ(encoder.Encode(10), 1u);
   EXPECT_EQ(encoder.Encode(20), 5u);
 }
 
