@@ -114,8 +114,8 @@ std::unique_ptr<logger::Logger> CobaltService::NewLogger(
   if (undated_event_manager_) {
     return std::make_unique<logger::Logger>(std::move(project_context), &logger_encoder_,
                                             event_aggregator_manager_.GetEventAggregator(),
-                                            &observation_writer_, &system_data_,
-                                            validated_clock_.get(), undated_event_manager_, logger);
+                                            &observation_writer_, &system_data_, validated_clock_,
+                                            undated_event_manager_, logger);
   }
   return std::make_unique<logger::Logger>(std::move(project_context), &logger_encoder_,
                                           event_aggregator_manager_.GetEventAggregator(),

@@ -132,7 +132,7 @@ class CobaltService : public CobaltServiceInterface {
   logger::ObservationWriter observation_writer_;
   local_aggregation::EventAggregatorManager event_aggregator_manager_;
   std::shared_ptr<logger::UndatedEventManager> undated_event_manager_;
-  std::unique_ptr<util::ValidatedClockInterface> validated_clock_;
+  util::ValidatedClockInterface *validated_clock_;
   std::unique_ptr<logger::LoggerInterface> internal_logger_;
 };
 
