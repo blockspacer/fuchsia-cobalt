@@ -11,16 +11,12 @@ copy("key_tests_files") {
     "shuffler_prod_public.cobalt_key",
     "shuffler_public.cobalt_key",
   ]
-  outputs = [
-    "$root_out_dir/tests/cpp/keys/{{source_file_part}}",
-  ]
+  outputs = [ "$root_out_dir/tests/cpp/keys/{{source_file_part}}" ]
 }
 
 test("keys_tests") {
   testonly = true
-  sources = [
-    "keys_tests.cc",
-  ]
+  sources = [ "keys_tests.cc" ]
   deps = [
     ":key_tests_files",
     "$cobalt_root/src:logging",
@@ -42,7 +38,5 @@ test("keys_tests") {
 
 group("tests") {
   testonly = true
-  deps = [
-    ":keys_tests",
-  ]
+  deps = [ ":keys_tests" ]
 }

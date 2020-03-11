@@ -7,15 +7,11 @@ visibility = [ "$cobalt_root/*" ]
 import("//third_party/protobuf/proto_library.gni")
 
 source_set("observation_store_update_recipient") {
-  sources = [
-    "observation_store_update_recipient.h",
-  ]
+  sources = [ "observation_store_update_recipient.h" ]
 }
 
 proto_library("observation_store_internal_proto") {
-  sources = [
-    "observation_store_internal.proto",
-  ]
+  sources = [ "observation_store_internal.proto" ]
   extra_configs = [ "$cobalt_root:cobalt_config" ]
   import_dirs = [
     "//third_party/protobuf/src",

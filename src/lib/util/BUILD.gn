@@ -8,27 +8,19 @@ import("//build/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 source_set("clock") {
-  sources = [
-    "clock.h",
-  ]
+  sources = [ "clock.h" ]
 
   visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("sleeper") {
-  sources = [
-    "sleeper.h",
-  ]
-  public_deps = [
-    ":clock",
-  ]
+  sources = [ "sleeper.h" ]
+  public_deps = [ ":clock" ]
 }
 
 source_set("sleeper_test") {
   testonly = true
-  sources = [
-    "sleeper_test.cc",
-  ]
+  sources = [ "sleeper_test.cc" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":sleeper",
@@ -44,9 +36,7 @@ source_set("proto_serialization") {
     "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.cc",
     "//third_party/protobuf/src/google/protobuf/util/delimited_message_util.h",
   ]
-  public_deps = [
-    "//third_party/protobuf:protobuf_lite",
-  ]
+  public_deps = [ "//third_party/protobuf:protobuf_lite" ]
 }
 
 source_set("encrypted_message_util") {
@@ -77,9 +67,7 @@ source_set("encrypted_message_util") {
 
 source_set("encrypted_message_util_test") {
   testonly = true
-  sources = [
-    "encrypted_message_util_test.cc",
-  ]
+  sources = [ "encrypted_message_util_test.cc" ]
   configs -= [ "//build/config:no_rtti" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
@@ -98,17 +86,13 @@ static_library("datetime_util") {
     "datetime_util.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
-  public_deps = [
-    "$cobalt_root/src/registry:cobalt_registry_proto",
-  ]
+  public_deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
   visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("datetime_util_test") {
   testonly = true
-  sources = [
-    "datetime_util_test.cc",
-  ]
+  sources = [ "datetime_util_test.cc" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":datetime_util",
@@ -134,9 +118,7 @@ static_library("file_util") {
 
 test("file_util_test") {
   testonly = true
-  sources = [
-    "file_util_test.cc",
-  ]
+  sources = [ "file_util_test.cc" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":file_util",
@@ -154,9 +136,8 @@ copy("file_util_test_files") {
     "test_data/hex_too_short",
     "test_data/hex_wrong_char",
   ]
-  outputs = [
-    "$root_out_dir/tests/cpp/file_util_test_files/{{source_file_part}}",
-  ]
+  outputs =
+      [ "$root_out_dir/tests/cpp/file_util_test_files/{{source_file_part}}" ]
 }
 
 static_library("pem_util") {
@@ -184,9 +165,7 @@ static_library("status") {
 }
 
 source_set("file_system") {
-  sources = [
-    "file_system.h",
-  ]
+  sources = [ "file_system.h" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   public_deps = [
     ":proto_serialization",
@@ -200,9 +179,7 @@ static_library("posix_file_system") {
     "posix_file_system.h",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
-  public_deps = [
-    ":file_system",
-  ]
+  public_deps = [ ":file_system" ]
   visibility += [ "//src/cobalt/bin/*" ]
 }
 
@@ -218,15 +195,11 @@ static_library("consistent_proto_store") {
     "$cobalt_root/src/lib/statusor",
     "$cobalt_root/src/lib/util:posix_file_system",
   ]
-  public_deps = [
-    "//third_party/protobuf:protobuf_lite",
-  ]
+  public_deps = [ "//third_party/protobuf:protobuf_lite" ]
 }
 
 proto_library("consistent_proto_store_test_proto") {
-  sources = [
-    "consistent_proto_store_test.proto",
-  ]
+  sources = [ "consistent_proto_store_test.proto" ]
   cc_generator_options = "lite"
   extra_configs = [
     "$cobalt_root/src/registry:proto_config",
@@ -236,9 +209,7 @@ proto_library("consistent_proto_store_test_proto") {
 
 source_set("consistent_proto_store_test") {
   testonly = true
-  sources = [
-    "consistent_proto_store_test.cc",
-  ]
+  sources = [ "consistent_proto_store_test.cc" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":consistent_proto_store",
@@ -262,17 +233,13 @@ static_library("proto_util") {
 }
 
 source_set("protected_fields") {
-  sources = [
-    "protected_fields.h",
-  ]
+  sources = [ "protected_fields.h" ]
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("protected_fields_test") {
   testonly = true
-  sources = [
-    "protected_fields_test.cc",
-  ]
+  sources = [ "protected_fields_test.cc" ]
   configs += [ "$cobalt_root:cobalt_config" ]
   deps = [
     ":protected_fields",

@@ -7,15 +7,15 @@ fuchsia/clang/${platform} git_revision:2eacf698802b5c8bc3c9e0031ac11cd0d79f9eae
 fuchsia/sysroot/linux-amd64 git_revision:a4aaacde9d37ccf91a0f8dc8267cb7ad5d9be283
 
 # Rust
-fuchsia/rust/${platform} git_revision:3964a55ba59bb6c3d4badcbddc49f6929ef76862
+fuchsia/rust/${platform} git_revision:be493fe8cc40c3d3f6030a1313c1ff747fce770d
 
 # Ninja
 @Subdir bin
-infra/ninja/${platform} version:1.8.2
+infra/ninja/${platform} version:1.9.0
 
 # GN
-gn/gn/${platform} git_revision:5624679422865c7126aaa90355caafe1e4848971
-fuchsia/tools/buildidtool/${platform} git_revision:699fade2611740d319b552ae0813b4e63816e87c
+gn/gn/${platform} git_revision:239533d2d91a04b3317ca9101cf7189f4e651e4d
+fuchsia/tools/buildidtool/${platform} git_revision:5c546d2e55ae0a2afe565333c6118a48780f8017
 
 # Go
 @Subdir golang

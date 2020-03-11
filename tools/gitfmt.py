@@ -184,6 +184,8 @@ IGNORED_FILES = [
     "third_party",
     "build",
     "src/bin/config_parser/src/source_generator/source_generator_test_files",
+    "src/pb/encrypted_message.proto",
+    "src/pb/observation_batch.proto",
 ]
 
 

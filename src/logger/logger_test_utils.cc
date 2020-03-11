@@ -196,7 +196,7 @@ bool FetchObservations(std::vector<Observation2>* observations,
     const auto& message = *observation_store->messages_received[i];
     if (message.has_encrypted()) {
       bool successfullyDeserialized =
-        observations->at(i).ParseFromString(message.encrypted().ciphertext());
+          observations->at(i).ParseFromString(message.encrypted().ciphertext());
       EXPECT_TRUE(successfullyDeserialized);
       if (!successfullyDeserialized) {
         return false;
@@ -267,7 +267,7 @@ bool FetchAggregatedObservations(std::vector<Observation2>* observations,
     const auto& message = *observation_store->messages_received[i];
     if (message.has_encrypted()) {
       bool successfullyDeserialized =
-        observations->at(i).ParseFromString(message.encrypted().ciphertext());
+          observations->at(i).ParseFromString(message.encrypted().ciphertext());
       EXPECT_TRUE(successfullyDeserialized);
       if (!successfullyDeserialized) {
         return false;

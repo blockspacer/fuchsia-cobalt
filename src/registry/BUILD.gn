@@ -52,9 +52,7 @@ go_library("cobalt_registry_proto_go") {
   foreach(name, _registry_protos) {
     sources += [ "${name}.pb.go" ]
   }
-  deps = [
-    "//garnet/public/go/third_party:github.com/golang/protobuf",
-  ]
+  deps = [ "//garnet/public/go/third_party:github.com/golang/protobuf" ]
 }
 
 source_set("buckets_config") {
@@ -74,9 +72,7 @@ source_set("buckets_config") {
 
 source_set("buckets_config_test") {
   testonly = true
-  sources = [
-    "buckets_config_test.cc",
-  ]
+  sources = [ "buckets_config_test.cc" ]
   deps = [
     ":buckets_config",
     ":cobalt_registry_proto",
@@ -107,9 +103,7 @@ source_set("project_configs") {
 
 source_set("project_configs_test") {
   testonly = true
-  sources = [
-    "project_configs_test.cc",
-  ]
+  sources = [ "project_configs_test.cc" ]
   deps = [
     ":project_configs",
     "//third_party/abseil-cpp/absl/strings",
@@ -129,9 +123,7 @@ source_set("packed_event_codes") {
 source_set("packed_event_codes_test") {
   testonly = true
 
-  sources = [
-    "packed_event_codes_test.cc",
-  ]
+  sources = [ "packed_event_codes_test.cc" ]
 
   deps = [
     ":packed_event_codes",

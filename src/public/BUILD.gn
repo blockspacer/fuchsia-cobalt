@@ -21,9 +21,7 @@ source_set("cobalt_config") {
 }
 
 source_set("cobalt_service_interface") {
-  sources = [
-    "cobalt_service_interface.h",
-  ]
+  sources = [ "cobalt_service_interface.h" ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
 
@@ -55,17 +53,13 @@ source_set("cobalt_service") {
     "$cobalt_root/src/system_data:configuration_data",
   ]
 
-  public_deps = [
-    "$cobalt_root/src/uploader:shipping_manager",
-  ]
+  public_deps = [ "$cobalt_root/src/uploader:shipping_manager" ]
 }
 
 source_set("cobalt_config_test") {
   testonly = true
 
-  sources = [
-    "cobalt_config_test.cc",
-  ]
+  sources = [ "cobalt_config_test.cc" ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
 
@@ -78,7 +72,5 @@ source_set("cobalt_config_test") {
 group("tests") {
   testonly = true
 
-  deps = [
-    ":cobalt_config_test",
-  ]
+  deps = [ ":cobalt_config_test" ]
 }

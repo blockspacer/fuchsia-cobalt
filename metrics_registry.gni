@@ -274,9 +274,7 @@ template("metrics_registry") {
       ]
     }
 
-    deps = [
-      config_parser_target,
-    ]
+    deps = [ config_parser_target ]
   }
 
   if (generate_cc) {
@@ -286,13 +284,9 @@ template("metrics_registry") {
     source_set(cclib) {
       output_name = cclib
 
-      sources = [
-        cc_source_file,
-      ]
+      sources = [ cc_source_file ]
 
-      public_deps = [
-        ":$gen_target_name",
-      ]
+      public_deps = [ ":$gen_target_name" ]
     }
   }
 
@@ -306,23 +300,15 @@ template("metrics_registry") {
     copy_options_target_name = "${dartlib}_copy_options"
 
     copy(copy_pubspec_target_name) {
-      sources = [
-        "//build/dart/empty_pubspec.yaml",
-      ]
+      sources = [ "//build/dart/empty_pubspec.yaml" ]
 
-      outputs = [
-        "$dart_out_dir/pubspec.yaml",
-      ]
+      outputs = [ "$dart_out_dir/pubspec.yaml" ]
     }
 
     copy(copy_options_target_name) {
-      sources = [
-        "//topaz/tools/analysis_options.yaml",
-      ]
+      sources = [ "//topaz/tools/analysis_options.yaml" ]
 
-      outputs = [
-        "$dart_out_dir/analysis_options.yaml",
-      ]
+      outputs = [ "$dart_out_dir/analysis_options.yaml" ]
     }
 
     dart_library(dartlib) {
@@ -337,9 +323,7 @@ template("metrics_registry") {
 
       package_name = dart_library_name
 
-      sources = [
-        rebase_path(dart_source_file, dart_src_dir),
-      ]
+      sources = [ rebase_path(dart_source_file, dart_src_dir) ]
 
       if (defined(invoker.deps)) {
         deps += invoker.deps
@@ -370,9 +354,7 @@ template("metrics_registry") {
       edition = "2018"
       source_root = rust_source_file
 
-      deps = [
-        "$cobalt_root/src/lib/client/rust:cobalt-client",
-      ]
+      deps = [ "$cobalt_root/src/lib/client/rust:cobalt-client" ]
 
       non_rust_deps = [ ":$gen_target_name" ]
     }

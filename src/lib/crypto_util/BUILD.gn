@@ -15,9 +15,7 @@ static_library("crypto_util") {
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
 
-  public_deps = [
-    "//third_party/boringssl",
-  ]
+  public_deps = [ "//third_party/boringssl" ]
 }
 
 source_set("tests") {

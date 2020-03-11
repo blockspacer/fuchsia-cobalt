@@ -8,15 +8,11 @@ import("//third_party/protobuf/proto_library.gni")
 
 proto_library("cobalt_local_aggregation_proto") {
   proto_in_dir = "$cobalt_root"
-  sources = [
-    "local_aggregation.proto",
-  ]
+  sources = [ "local_aggregation.proto" ]
   import_dirs = [ "//third_party/protobuf/src" ]
   generate_python = false
   cc_generator_options = "lite"
-  deps = [
-    "$cobalt_root/src/registry:cobalt_registry_proto",
-  ]
+  deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
 
   extra_configs = [
     "$cobalt_root:cobalt_config",
@@ -124,9 +120,7 @@ source_set("aggregate_store") {
 source_set("aggregation_utils_test") {
   testonly = true
 
-  sources = [
-    "aggregation_utils_test.cc",
-  ]
+  sources = [ "aggregation_utils_test.cc" ]
 
   public_deps = [
     ":aggregation_utils",
@@ -138,9 +132,7 @@ source_set("aggregation_utils_test") {
 
 source_set("event_aggregator_test") {
   testonly = true
-  sources = [
-    "event_aggregator_test.cc",
-  ]
+  sources = [ "event_aggregator_test.cc" ]
   public_deps = [
     ":aggregation_utils",
     ":event_aggregator_mgr",
@@ -152,9 +144,7 @@ source_set("event_aggregator_test") {
 
 source_set("aggregate_store_test") {
   testonly = true
-  sources = [
-    "aggregate_store_test.cc",
-  ]
+  sources = [ "aggregate_store_test.cc" ]
   public_deps = [
     ":aggregate_store",
     ":aggregation_utils",
@@ -167,9 +157,7 @@ source_set("aggregate_store_test") {
 
 source_set("event_aggregator_mgr_test") {
   testonly = true
-  sources = [
-    "event_aggregator_mgr_test.cc",
-  ]
+  sources = [ "event_aggregator_mgr_test.cc" ]
   public_deps = [
     ":event_aggregator_mgr",
     "$cobalt_root/src/logger:logger_test_utils",

@@ -41,9 +41,7 @@ go_test("validator_test") {
 go_library("main") {
   name = "main"
 
-  sources = [
-    "config_change_validator_main.go",
-  ]
+  sources = [ "config_change_validator_main.go" ]
   source_dir = "."
 }
 
@@ -63,7 +61,5 @@ go_binary("bin") {
 group("tests") {
   testonly = true
 
-  deps = [
-    ":validator_test",
-  ]
+  deps = [ ":validator_test" ]
 }

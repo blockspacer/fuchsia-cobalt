@@ -771,7 +771,6 @@ message ReportDefinition {
   // This field is part of Cobalt 1.1. Do not use it yet.
   WindowSize local_aggregation_period = 19;
 
-
   ///////////////////  Fields used by all report types ///////////////////
   // Next id: 103
 

@@ -479,10 +479,10 @@ enum MetricUnits {
 
   // Units of data size
   BYTES = 6;
-  KIBIBYTES = 7; // 2^10 bytes
-  KILOBYTES = 8; // 10^3 bytes
-  MEBIBYTES = 9; // 2^20 bytes
-  MEGABYTES = 10; // 10^6 bytes
+  KIBIBYTES = 7;   // 2^10 bytes
+  KILOBYTES = 8;   // 10^3 bytes
+  MEBIBYTES = 9;   // 2^20 bytes
+  MEGABYTES = 10;  // 10^6 bytes
 }
 
 enum MetricSemantics {

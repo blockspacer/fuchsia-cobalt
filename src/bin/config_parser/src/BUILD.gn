@@ -13,9 +13,7 @@ proto_library("yamlpb_test_proto") {
   generate_cc = false
   generate_go = true
   generate_python = false
-  sources = [
-    "yamlpb/yamlpb_test.proto",
-  ]
+  sources = [ "yamlpb/yamlpb_test.proto" ]
 
   extra_configs = [
     "$cobalt_root:cobalt_config",
@@ -27,9 +25,7 @@ go_library("yamlpb_test_lib") {
   name = "config/config_parser/src/yamlpb"
   source_dir = "$root_gen_dir/go-proto-gen/src/$cobalt_root/src/bin/config_parser/src/yamlpb"
   non_go_deps = [ ":yamlpb_test_proto" ]
-  sources = [
-    "yamlpb_test.pb.go",
-  ]
+  sources = [ "yamlpb_test.pb.go" ]
 }
 
 go_library("config_parser") {
@@ -62,9 +58,7 @@ go_library("config_parser") {
 go_test("config_parser_test") {
   gopackages = [ "config_parser" ]
 
-  deps = [
-    ":config_parser",
-  ]
+  deps = [ ":config_parser" ]
 }
 
 go_library("config_validator") {
@@ -81,9 +75,7 @@ go_library("config_validator") {
     "report_definitions_test.go",
   ]
 
-  deps = [
-    ":config_parser",
-  ]
+  deps = [ ":config_parser" ]
 }
 go_test("config_validator_test") {
   gopackages = [ "config_validator" ]
@@ -121,9 +113,7 @@ go_library("source_generator") {
     "utils_test.go",
   ]
 
-  deps = [
-    "$cobalt_root/src/registry:cobalt_registry_proto_go",
-  ]
+  deps = [ "$cobalt_root/src/registry:cobalt_registry_proto_go" ]
 }
 
 go_test("source_generator_test") {
@@ -166,9 +156,7 @@ go_library("main") {
   name = "main"
 
   source_dir = "."
-  sources = [
-    "config_parser_main.go",
-  ]
+  sources = [ "config_parser_main.go" ]
 
   deps = [
     ":config_parser",
@@ -184,9 +172,7 @@ go_binary("bin") {
   gopackage = "main"
   output_name = "config_parser"
 
-  deps = [
-    ":main",
-  ]
+  deps = [ ":main" ]
 }
 
 group("tests") {

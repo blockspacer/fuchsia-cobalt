@@ -7,9 +7,7 @@ visibility = [ "$cobalt_root/*" ]
 executable("test_app") {
   testonly = true
 
-  sources = [
-    "test_app_main.cc",
-  ]
+  sources = [ "test_app_main.cc" ]
 
   deps = [
     ":lib",
@@ -20,9 +18,7 @@ executable("test_app") {
 source_set("lib") {
   testonly = true
 
-  sources = [
-    "test_app.cc",
-  ]
+  sources = [ "test_app.cc" ]
 
   configs += [ "$cobalt_root/src/registry:proto_config" ]
 
@@ -55,9 +51,7 @@ source_set("lib") {
 source_set("tests") {
   testonly = true
 
-  sources = [
-    "test_app_test.cc",
-  ]
+  sources = [ "test_app_test.cc" ]
 
   deps = [
     ":lib",

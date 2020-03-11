@@ -5,12 +5,8 @@
 visibility = [ "$cobalt_root/*" ]
 
 copy("test_stable_config_parser") {
-  sources = [
-    "test_stable_config_parser.py",
-  ]
-  outputs = [
-    "$root_out_dir/tests/other/{{source_file_part}}",
-  ]
+  sources = [ "test_stable_config_parser.py" ]
+  outputs = [ "$root_out_dir/tests/other/{{source_file_part}}" ]
 }
 
 group("tests") {

@@ -16,16 +16,12 @@ source_set("hash") {
 
   configs += [ "$cobalt_root:cobalt_config" ]
 
-  public_deps = [
-    "//third_party/boringssl",
-  ]
+  public_deps = [ "//third_party/boringssl" ]
 }
 
 source_set("hash_test") {
   testonly = true
-  sources = [
-    "hash_test.cc",
-  ]
+  sources = [ "hash_test.cc" ]
 
   deps = [
     ":hash",
@@ -52,9 +48,7 @@ source_set("count_min") {
 
 source_set("count_min_test") {
   testonly = true
-  sources = [
-    "count_min_test.cc",
-  ]
+  sources = [ "count_min_test.cc" ]
 
   deps = [
     ":count_min",
@@ -66,18 +60,14 @@ source_set("count_min_test") {
 }
 
 source_set("random") {
-  sources = [
-    "random.h",
-  ]
+  sources = [ "random.h" ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("random_test") {
   testonly = true
-  sources = [
-    "random_test.cc",
-  ]
+  sources = [ "random_test.cc" ]
 
   deps = [
     ":random",
@@ -94,18 +84,14 @@ source_set("distributions") {
     "distributions.h",
   ]
 
-  deps = [
-    ":random",
-  ]
+  deps = [ ":random" ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
 source_set("distributions_test") {
   testonly = true
-  sources = [
-    "distributions_test.cc",
-  ]
+  sources = [ "distributions_test.cc" ]
 
   deps = [
     ":distributions",
@@ -133,9 +119,7 @@ source_set("randomized_response") {
 
 source_set("randomized_response_test") {
   testonly = true
-  sources = [
-    "randomized_response_test.cc",
-  ]
+  sources = [ "randomized_response_test.cc" ]
 
   deps = [
     ":random",
@@ -165,9 +149,7 @@ source_set("integer_encoder") {
 
 source_set("integer_encoder_test") {
   testonly = true
-  sources = [
-    "integer_encoder_test.cc",
-  ]
+  sources = [ "integer_encoder_test.cc" ]
 
   deps = [
     ":integer_encoder",
@@ -198,9 +180,7 @@ source_set("histogram_encoder") {
 
 source_set("histogram_encoder_test") {
   testonly = true
-  sources = [
-    "histogram_encoder_test.cc",
-  ]
+  sources = [ "histogram_encoder_test.cc" ]
 
   deps = [
     ":histogram_encoder",

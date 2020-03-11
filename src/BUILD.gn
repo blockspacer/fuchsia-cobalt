@@ -19,28 +19,18 @@ group("tests") {
 }
 
 source_set("logging") {
-  sources = [
-    "logging.h",
-  ]
+  sources = [ "logging.h" ]
 
   if (is_fuchsia_tree) {
-    public_deps = [
-      "//garnet/public/lib/syslog/cpp",
-    ]
+    public_deps = [ "//garnet/public/lib/syslog/cpp" ]
   } else {
-    public_deps = [
-      "//third_party/glog",
-    ]
+    public_deps = [ "//third_party/glog" ]
   }
 }
 
 source_set("tracing") {
-  sources = [
-    "tracing.h",
-  ]
+  sources = [ "tracing.h" ]
   if (is_fuchsia_tree) {
-    public_deps = [
-      "//zircon/public/lib/trace",
-    ]
+    public_deps = [ "//zircon/public/lib/trace" ]
   }
 }

@@ -5,9 +5,7 @@
 source_set("fake_cobalt_service") {
   testonly = true
 
-  sources = [
-    "fake_cobalt_service.h",
-  ]
+  sources = [ "fake_cobalt_service.h" ]
 
   configs += [ "$cobalt_root:cobalt_config" ]
 

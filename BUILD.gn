@@ -54,9 +54,7 @@ if (is_fuchsia_tree) {
   import("//build/test/test_package.gni")
 
   test_package("cobalt_core_tests") {
-    deps = [
-      ":cobalt_core_unittests",
-    ]
+    deps = [ ":cobalt_core_unittests" ]
 
     tests = [
       {

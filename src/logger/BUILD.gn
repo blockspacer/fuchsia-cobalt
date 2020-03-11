@@ -17,15 +17,11 @@ metrics_registry("internal_metrics_config") {
 }
 
 source_set("status") {
-  sources = [
-    "status.h",
-  ]
+  sources = [ "status.h" ]
 }
 
 source_set("event_record") {
-  sources = [
-    "event_record.h",
-  ]
+  sources = [ "event_record.h" ]
 
   public_configs = [
     "$cobalt_root:cobalt_config",
@@ -77,9 +73,7 @@ source_set("project_context_factory") {
     "//third_party/abseil-cpp/absl/strings",
   ]
 
-  public_deps = [
-    ":project_context",
-  ]
+  public_deps = [ ":project_context" ]
 }
 
 source_set("encoder") {
@@ -232,13 +226,9 @@ source_set("undated_event_manager") {
 source_set("testing_constants") {
   testonly = true
 
-  sources = [
-    "testing_constants.h",
-  ]
+  sources = [ "testing_constants.h" ]
 
-  deps = [
-    "$cobalt_root/src/logger:logger_test_utils",
-  ]
+  deps = [ "$cobalt_root/src/logger:logger_test_utils" ]
 
   public_deps = [
     "test_registries:all_report_types_test_registry",
@@ -298,13 +288,9 @@ source_set("logger_test_utils") {
 source_set("event_loggers_test") {
   testonly = true
 
-  sources = [
-    "event_loggers_test.cc",
-  ]
+  sources = [ "event_loggers_test.cc" ]
 
-  deps = [
-    "$cobalt_root/src/system_data:client_secret",
-  ]
+  deps = [ "$cobalt_root/src/system_data:client_secret" ]
 
   public_deps = [
     ":event_loggers",
@@ -319,9 +305,7 @@ source_set("event_loggers_test") {
 source_set("logger_test") {
   testonly = true
 
-  sources = [
-    "logger_test.cc",
-  ]
+  sources = [ "logger_test.cc" ]
 
   deps = [
     "$cobalt_root/src/logger:fake_logger",
@@ -340,9 +324,7 @@ source_set("logger_test") {
 source_set("undated_event_manager_test") {
   testonly = true
 
-  sources = [
-    "undated_event_manager_test.cc",
-  ]
+  sources = [ "undated_event_manager_test.cc" ]
 
   deps = [
     "$cobalt_root/src/logger:fake_logger",
@@ -360,12 +342,8 @@ source_set("undated_event_manager_test") {
 
 source_set("encoder_test") {
   testonly = true
-  sources = [
-    "encoder_test.cc",
-  ]
-  deps = [
-    "$cobalt_root/src/logger:project_context_factory",
-  ]
+  sources = [ "encoder_test.cc" ]
+  deps = [ "$cobalt_root/src/logger:project_context_factory" ]
   public_deps = [
     ":encoder",
     "$cobalt_root/src/local_aggregation:aggregation_utils",
@@ -379,9 +357,7 @@ source_set("encoder_test") {
 
 source_set("project_context_test") {
   testonly = true
-  sources = [
-    "project_context_test.cc",
-  ]
+  sources = [ "project_context_test.cc" ]
   public_deps = [
     ":project_context",
     "$cobalt_root/src/pb",
@@ -395,9 +371,7 @@ source_set("project_context_test") {
 
 source_set("project_context_factory_test") {
   testonly = true
-  sources = [
-    "project_context_factory_test.cc",
-  ]
+  sources = [ "project_context_factory_test.cc" ]
   public_deps = [
     ":project_context_factory",
     "test_registries/project_context_factory_test_registry:a",
@@ -411,13 +385,9 @@ source_set("project_context_factory_test") {
 source_set("internal_metrics_test") {
   testonly = true
 
-  sources = [
-    "internal_metrics_test.cc",
-  ]
+  sources = [ "internal_metrics_test.cc" ]
 
-  deps = [
-    ":fake_logger",
-  ]
+  deps = [ ":fake_logger" ]
 
   public_deps = [
     ":internal_metrics",

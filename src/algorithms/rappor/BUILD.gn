@@ -13,13 +13,9 @@ config("rappor_config") {
 }
 
 source_set("rappor_config_validator") {
-  sources = [
-    "rappor_config_validator.cc",
-  ]
+  sources = [ "rappor_config_validator.cc" ]
 
-  deps = [
-    "$cobalt_root/src:logging",
-  ]
+  deps = [ "$cobalt_root/src:logging" ]
 
   public_deps = [
     "$cobalt_root/src/pb",
@@ -32,9 +28,7 @@ source_set("rappor_config_validator") {
 }
 
 source_set("rappor_encoder") {
-  sources = [
-    "rappor_encoder.cc",
-  ]
+  sources = [ "rappor_encoder.cc" ]
 
   deps = [
     ":rappor_config_validator",
@@ -50,15 +44,9 @@ source_set("rappor_encoder") {
 }
 
 source_set("rappor_config_helper") {
-  sources = [
-    "rappor_config_helper.cc",
-  ]
-  public_deps = [
-    "$cobalt_root/src/registry:cobalt_registry_proto",
-  ]
-  deps = [
-    "$cobalt_root/src:logging",
-  ]
+  sources = [ "rappor_config_helper.cc" ]
+  public_deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
+  deps = [ "$cobalt_root/src:logging" ]
   configs += [ ":rappor_config" ]
 }
 
@@ -83,7 +71,5 @@ test("rappor_tests") {
 
 group("tests") {
   testonly = true
-  deps = [
-    ":rappor_tests",
-  ]
+  deps = [ ":rappor_tests" ]
 }
