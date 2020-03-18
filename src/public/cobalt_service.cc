@@ -8,6 +8,7 @@
 
 #include "src/lib/util/clock.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/logger/internal_metrics_config.cb.h"
 #include "src/logger/project_context.h"
 #include "src/observation_store/file_observation_store.h"
 #include "src/observation_store/memory_observation_store.h"
@@ -82,6 +83,10 @@ std::unique_ptr<uploader::ShippingManager> NewShippingManager(
 CobaltService::CobaltService(CobaltConfig cfg)
     : fs_(std::move(cfg.file_system)),
       system_data_(cfg.product_name, cfg.board_name_suggestion, cfg.release_stage, cfg.version),
+      global_project_context_factory_(
+          cfg.global_registry
+              ? std::make_unique<logger::ProjectContextFactory>(std::move(cfg.global_registry))
+              : nullptr),
       observation_store_(NewObservationStore(cfg, fs_.get())),
       encrypt_to_analyzer_(GetEncryptToAnalyzer(&cfg)),
       encrypt_to_shuffler_(GetEncryptToShuffler(cfg.target_pipeline.get())),
@@ -95,13 +100,36 @@ CobaltService::CobaltService(CobaltConfig cfg)
           &logger_encoder_, event_aggregator_manager_.GetEventAggregator(), &observation_writer_,
           &system_data_)),
       validated_clock_(cfg.validated_clock),
-      internal_logger_(NewLogger(std::move(cfg.internal_logger_project_context), false)) {
+      internal_logger_(
+          // TODO(zmbush): Clean up once internal_logger_project_context is no longer used.
+          (cfg.internal_logger_project_context != nullptr)
+              ? NewLogger(std::move(cfg.internal_logger_project_context), false)
+              : (global_project_context_factory_)
+                    ? NewLogger(cobalt::logger::kCustomerId, cobalt::logger::kProjectId, false)
+                    : nullptr) {
+  if (!internal_logger_) {
+    LOG(ERROR) << "The global_registry provided does not include the expected internal metrics "
+                  "project. Cobalt-measuring-cobalt will be disabled.";
+  }
   shipping_manager_->Start();
 }
 
 std::unique_ptr<logger::LoggerInterface> CobaltService::NewLogger(
     std::unique_ptr<logger::ProjectContext> project_context) {
   return NewLogger(std::move(project_context), true);
+}
+
+std::unique_ptr<logger::LoggerInterface> CobaltService::NewLogger(uint32_t customer_id,
+                                                                  uint32_t project_id) {
+  return NewLogger(customer_id, project_id, true);
+}
+
+std::unique_ptr<logger::Logger> CobaltService::NewLogger(uint32_t customer_id, uint32_t project_id,
+                                                         bool include_internal_logger) {
+  CHECK(global_project_context_factory_)
+      << "No global_registry provided. NewLogger with customer/project id is not supported";
+  return NewLogger(global_project_context_factory_->NewProjectContext(customer_id, project_id),
+                   include_internal_logger);
 }
 
 std::unique_ptr<logger::Logger> CobaltService::NewLogger(

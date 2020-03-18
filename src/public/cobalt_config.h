@@ -190,9 +190,14 @@ struct CobaltConfig {
   // |client_secret|: The ClientSecret for this device.
   system_data::ClientSecret client_secret;
 
-  // |internal_logger_project_context|: A ProjectContext that can be used to construct the internal
-  // Logger.
+  // DEPRECATED: |internal_logger_project_context|: A ProjectContext that can be used to construct
+  // the internal Logger.
+  //
+  // TODO(zmbush): Remove once this is no longer used.
   std::unique_ptr<logger::ProjectContext> internal_logger_project_context;
+
+  // |global_registry|: The complete registry of all customers, projects, metrics, and reports.
+  std::unique_ptr<CobaltRegistry> global_registry = nullptr;
 
   // |local_aggregation_backfill_days|: The number of past days for which the AggregateStore
   // generates and sends Observations, in addition to a requested day index.

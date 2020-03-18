@@ -41,6 +41,15 @@ class FakeCobaltService : public CobaltServiceInterface {
   // Returns a new instance of a FakeLogger object for use in testing.
   std::unique_ptr<logger::LoggerInterface> NewLogger(
       std::unique_ptr<logger::ProjectContext> project_context) override {
+    return NewLogger(0, 0);
+  }
+
+  std::unique_ptr<logger::LoggerInterface> NewLogger(uint32_t customer_id,
+                                                     uint32_t project_id) override {
+    if (fail_next_new_logger_) {
+      fail_next_new_logger_ = false;
+      return nullptr;
+    }
     auto logger = std::make_unique<cobalt::logger::testing::FakeLogger>();
     last_logger_created_ = logger.get();
     return std::move(logger);
@@ -51,6 +60,8 @@ class FakeCobaltService : public CobaltServiceInterface {
                              bool start_event_aggregator_worker) override {
     system_clock_is_accurate_ = true;
   }
+
+  void FailNextNewLogger() { fail_next_new_logger_ = true; }
 
   // Records the data collection policy for testing.
   void SetDataCollectionPolicy(DataCollectionPolicy policy) override {
@@ -99,6 +110,7 @@ class FakeCobaltService : public CobaltServiceInterface {
   DataCollectionPolicy data_collection_policy_;
   cobalt::logger::testing::FakeLogger* last_logger_created_;
   bool system_clock_is_accurate_ = false;
+  bool fail_next_new_logger_ = false;
 };
 
 }  // namespace cobalt::testing

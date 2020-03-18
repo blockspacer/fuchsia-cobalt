@@ -18,6 +18,7 @@
 #include "src/logger/logger.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
+#include "src/logger/project_context_factory.h"
 #include "src/logger/undated_event_manager.h"
 #include "src/observation_store/observation_store.h"
 #include "src/public/cobalt_config.h"
@@ -55,8 +56,14 @@ class CobaltService : public CobaltServiceInterface {
   std::unique_ptr<logger::LoggerInterface> NewLogger(
       std::unique_ptr<logger::ProjectContext> project_context) override;
 
+  std::unique_ptr<logger::LoggerInterface> NewLogger(uint32_t customer_id,
+                                                     uint32_t project_id) override;
+
  private:
   std::unique_ptr<logger::Logger> NewLogger(std::unique_ptr<logger::ProjectContext> project_context,
+                                            bool include_internal_logger);
+
+  std::unique_ptr<logger::Logger> NewLogger(uint32_t customer_id, uint32_t project_id,
                                             bool include_internal_logger);
 
  public:
@@ -110,6 +117,8 @@ class CobaltService : public CobaltServiceInterface {
     return shipping_manager_->num_failed_attempts();
   }
 
+  bool has_internal_logger() const { return internal_logger_ != nullptr; }
+
  private:
   friend class internal::RealLoggerFactory;
   friend class CobaltControllerImpl;
@@ -124,6 +133,7 @@ class CobaltService : public CobaltServiceInterface {
 
   std::unique_ptr<util::FileSystem> fs_;
   system_data::SystemData system_data_;
+  std::unique_ptr<logger::ProjectContextFactory> global_project_context_factory_;
   std::unique_ptr<observation_store::ObservationStore> observation_store_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_to_analyzer_;
   std::unique_ptr<util::EncryptedMessageMaker> encrypt_to_shuffler_;

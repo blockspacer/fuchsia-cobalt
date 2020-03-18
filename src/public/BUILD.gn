@@ -46,6 +46,7 @@ source_set("cobalt_service") {
     ":cobalt_service_interface",
     "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
     "$cobalt_root/src/logger",
+    "$cobalt_root/src/logger:project_context_factory",
     "$cobalt_root/src/logger:undated_event_manager",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/system_data",
@@ -69,8 +70,22 @@ source_set("cobalt_config_test") {
   ]
 }
 
+source_set("cobalt_service_test") {
+  testonly = true
+  sources = [ "cobalt_service_test.cc" ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+  deps = [
+    ":cobalt_service",
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 group("tests") {
   testonly = true
 
-  deps = [ ":cobalt_config_test" ]
+  deps = [
+    ":cobalt_config_test",
+    ":cobalt_service_test",
+  ]
 }

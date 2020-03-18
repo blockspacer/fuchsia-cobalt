@@ -21,6 +21,12 @@ class CobaltServiceInterface {
   virtual std::unique_ptr<logger::LoggerInterface> NewLogger(
       std::unique_ptr<logger::ProjectContext> project_context) = 0;
 
+  // NewLogger returns a new instance of a Logger object using the customer_id and project_id based
+  // on the registry provided in the config. If the project is not found, this will return nullptr.
+  // If no registry was provided, this will crash.
+  virtual std::unique_ptr<logger::LoggerInterface> NewLogger(uint32_t customer_id,
+                                                             uint32_t project_id) = 0;
+
   // SystemClockIsAccurate lets CobaltService know that it no longer needs to maintain an
   // UndatedEventManager, and can flush the data from it into the observation store.
   //
