@@ -84,7 +84,7 @@ func toStrMap(i map[interface{}]interface{}) (o map[string]interface{}, err erro
 func UnmarshalString(s string, pb proto.Message) error {
 	// First, we unmarshal the yaml string into go types.
 	var m interface{}
-	if err := yaml.Unmarshal([]byte(s), &m); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(s), &m); err != nil {
 		return fmt.Errorf("Cannot unmarshal yaml string: %v", err)
 	}
 

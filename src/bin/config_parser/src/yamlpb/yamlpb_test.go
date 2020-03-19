@@ -215,3 +215,15 @@ uint32_r:
 		t.Errorf("%v != %v", m, e)
 	}
 }
+
+func TestUnmarshalStringWithDuplicateEntry(t *testing.T) {
+	s := `
+uint32_v: 11
+uint32_v: 12
+  `
+
+	m := test_pb.TestMessage{}
+	if err := UnmarshalString(s, &m); err == nil {
+		t.Error("No error returned when unmarshalling string with duplicate keys.")
+	}
+}
