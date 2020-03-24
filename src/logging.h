@@ -18,7 +18,7 @@
 #include "lib/syslog/cpp/logger.h"
 #include "src/lib/fxl/logging.h"
 
-#define INIT_LOGGING(val)
+#define INIT_LOGGING(val) { syslog::InitLogger(); }
 
 #define VLOG(verboselevel) FX_VLOGST(verboselevel, "core")
 #define LOG(level) FX_LOGST(level, "core")
