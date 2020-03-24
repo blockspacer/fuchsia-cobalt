@@ -142,4 +142,70 @@ std::vector<double> TwoDimRapporHistogramSumEstimator::ComputeSum(
   return sum;
 }
 
+SinglePassTwoDimRapporHistogramEncoder::SinglePassTwoDimRapporHistogramEncoder(
+    BitGeneratorInterface<uint32_t>* gen, uint32_t num_buckets, uint64_t max_count, double p)
+    : gen_(gen), num_buckets_(num_buckets), max_count_(max_count), p_(p) {}
+
+std::vector<std::pair<uint32_t, uint64_t>> SinglePassTwoDimRapporHistogramEncoder::Encode(
+    const std::vector<uint64_t>& histogram) {
+  std::vector<uint64_t> clipped_histogram(num_buckets_);
+  for (uint32_t bucket_index = 0u; bucket_index < num_buckets_; bucket_index++) {
+    clipped_histogram[bucket_index] = std::min(histogram[bucket_index], max_count_);
+  }
+  std::vector<std::pair<uint32_t, uint64_t>> encoded;
+  auto flip_bit = BernoulliDistribution(gen_, p_);
+  for (uint32_t bucket_index = 0u; bucket_index < num_buckets_; bucket_index++) {
+    for (uint64_t bucket_count = 1u; bucket_count <= max_count_; bucket_count++) {
+      if ((bucket_count == clipped_histogram[bucket_index]) != flip_bit.Sample()) {
+        encoded.emplace_back(std::pair<uint32_t, uint64_t>(bucket_index, bucket_count));
+      }
+    }
+  }
+
+  return encoded;
+}
+
+SinglePassTwoDimRapporHistogramSumEstimator::SinglePassTwoDimRapporHistogramSumEstimator(
+    uint32_t num_buckets, uint64_t max_count, double p)
+    : num_buckets_(num_buckets), max_count_(max_count), p_(p) {}
+
+std::vector<double> SinglePassTwoDimRapporHistogramSumEstimator::ComputeSum(
+    const std::vector<std::vector<std::pair<uint32_t, uint64_t>>>& encoded_histograms,
+    uint64_t num_participants) {
+  // Compute the number of occurrences of each bit ID in |encoded_histograms|.
+  std::map<std::pair<uint32_t, uint64_t>, uint64_t> raw_bit_counts;
+  for (const auto& hist : encoded_histograms) {
+    for (auto bit_id : hist) {
+      raw_bit_counts[bit_id]++;
+    }
+  }
+
+  std::vector<double> sum(num_buckets_);
+  for (uint32_t bucket_index = 0; bucket_index < num_buckets_; bucket_index++) {
+    double total_count_for_bucket = 0.0;
+    for (uint64_t bucket_count = 0; bucket_count <= max_count_; bucket_count++) {
+      // Estimate the true number of occurrences of the bit with ID (|bucket_count|, |bucket_index|)
+      // among the |num_participants| encoded bitvectors. (See Erlingsson, Pihur, Korolova, "RAPPOR:
+      // Randomized Aggregatable Privacy-Preserving Ordinal Response" section 4, taking f = 1.)
+      double estimated_bit_count =
+          (static_cast<double>(raw_bit_counts[{bucket_index, bucket_count}]) -
+           p_ * num_participants) /
+          (1.0 - 2 * p_);
+      // Clip the estimate into the range of possible true values.
+      if (estimated_bit_count < 0.0) {
+        estimated_bit_count = 0.0;
+      }
+      if (estimated_bit_count > num_participants) {
+        estimated_bit_count = num_participants;
+      }
+      // Compute the contribution of the (estimated number of) bits with true ID (|bucket_index|,
+      // |bucket_count|) to the total count for bucket |bucket_index|.
+      total_count_for_bucket += static_cast<double>(bucket_count) * estimated_bit_count;
+    }
+    sum[bucket_index] = total_count_for_bucket;
+  }
+
+  return sum;
+}
+
 }  // namespace cobalt

@@ -124,12 +124,65 @@ class TwoDimRapporHistogramSumEstimator {
  public:
   // |num_buckets| is the number of histogram buckets, |max_count| is the maximum contribution of an
   // individual user to each bucket count, and |p| is a noise parameter. These should be equal to
-  // the arguments that were used to construct the OccurrenceWiseHistogramEncoder which produced the
+  // the arguments that were used to construct the TwoDimRapporHistogramSumEstimator which produced the
   // encoded histograms.
   TwoDimRapporHistogramSumEstimator(uint32_t num_buckets, uint64_t max_count, double p);
 
   // |encoded_histograms| is a vector of encoded histograms produced by an
-  // OccurrenceWiseHistogramEncoder, and |num_participants| is the number of users contributing to
+  // TwoDimRapporHistogramSumEstimator, and |num_participants| is the number of users contributing to
+  // the report. For each index n in the range [0, |num_buckets| - 1], ComputeSum()
+  // returns an unbiased estimate of the sum of the counts in the n-th buckets of the encoded
+  // histograms.
+  std::vector<double> ComputeSum(
+      const std::vector<std::vector<std::pair<uint32_t, uint64_t>>>& encoded_histograms,
+      uint64_t num_participants);
+
+ private:
+  uint32_t num_buckets_;
+  uint64_t max_count_;
+  double p_;
+};
+
+// An encoder that operates on histograms. The histogram is represented as a
+// bit vector of length L = |num_buckets| * (|max_count| + 1).
+// For each bucket, the kth bit is set to 1 where
+// k = |bucket_index| * |max_count| + |bucket_count|.
+// All other bits are set to 0. Then, the bit vector is encoded using Basic RAPPOR;
+// i.e., each bit is flipped with probability |p|. The encoder then returns
+// the set of pairs (bucket_index, bucket_count) corresponding to the "1" bits
+// in the encoded vector. Pairs of the form (bucket_index, 0) are not included in the result.
+class SinglePassTwoDimRapporHistogramEncoder {
+ public:
+  // |num_buckets| is the number of buckets in each input histogram, |max_count| is the maximum
+  // count that should be reported for any bucket, and |p| is the probability of a bit flip during
+  // Basic RAPPOR encoding.
+  SinglePassTwoDimRapporHistogramEncoder(BitGeneratorInterface<uint32_t>* gen, uint32_t num_buckets,
+                                         uint64_t max_count, double p);
+
+  // |histogram| is a vector of length |num_buckets|, where the n-th element is the count for that
+  // bucket. Counts should be in the range [0, |max_count|] inclusive; larger bucket counts are
+  // clipped to |max_count| before encoding.
+  std::vector<std::pair<uint32_t, uint64_t>> Encode(const std::vector<uint64_t>& histogram);
+
+ private:
+  BitGeneratorInterface<uint32_t>* gen_;
+  uint32_t num_buckets_;
+  uint64_t max_count_;
+  double p_;
+};
+
+// Estimates the true sum of a collection of histograms, each of which was encoded with a
+// SinglePassTwoDimRapporHistogramEncoder.
+class SinglePassTwoDimRapporHistogramSumEstimator {
+ public:
+  // |num_buckets| is the number of histogram buckets, |max_count| is the maximum contribution of an
+  // individual user to each bucket count, and |p| is a noise parameter. These should be equal to
+  // the arguments that were used to construct SinglePassTwoDimRapporHistogramSumEstimator the which produced the
+  // encoded histograms.
+  SinglePassTwoDimRapporHistogramSumEstimator(uint32_t num_buckets, uint64_t max_count, double p);
+
+  // |encoded_histograms| is a vector of encoded histograms produced by an
+  // SinglePassTwoDimRapporHistogramSumEstimator, and |num_participants| is the number of users contributing to
   // the report. For each index n in the range [0, |num_buckets| - 1], ComputeSum()
   // returns an unbiased estimate of the sum of the counts in the n-th buckets of the encoded
   // histograms.
