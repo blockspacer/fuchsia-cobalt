@@ -7,8 +7,6 @@ import "src/pb/encrypted_message.proto";
 
 option go_package = "cobalt";
 
-option go_api_flag = "OPEN_TO_OPAQUE_HYBRID";
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // NOTE: The observation_batch.proto is used by the Cobalt client and the Cobalt
