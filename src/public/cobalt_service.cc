@@ -101,12 +101,9 @@ CobaltService::CobaltService(CobaltConfig cfg)
           &system_data_)),
       validated_clock_(cfg.validated_clock),
       internal_logger_(
-          // TODO(zmbush): Clean up once internal_logger_project_context is no longer used.
-          (cfg.internal_logger_project_context != nullptr)
-              ? NewLogger(std::move(cfg.internal_logger_project_context), false)
-              : (global_project_context_factory_)
-                    ? NewLogger(cobalt::logger::kCustomerId, cobalt::logger::kProjectId, false)
-                    : nullptr) {
+          (global_project_context_factory_)
+              ? NewLogger(cobalt::logger::kCustomerId, cobalt::logger::kProjectId, false)
+              : nullptr) {
   if (!internal_logger_) {
     LOG(ERROR) << "The global_registry provided does not include the expected internal metrics "
                   "project. Cobalt-measuring-cobalt will be disabled.";
