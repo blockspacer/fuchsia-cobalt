@@ -14,6 +14,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/lib/util/testing/test_with_files.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
 #include "src/logger/encoder.h"
@@ -47,7 +48,6 @@ using testing::FakeObservationStore;
 using testing::FetchObservations;
 using testing::FetchSingleObservation;
 using testing::GetTestProject;
-using testing::MockConsistentProtoStore;
 using testing::TestUpdateRecipient;
 using util::EncryptedMessageMaker;
 using util::FakeValidatedClock;
@@ -60,13 +60,9 @@ constexpr int kDay = 60 * 60 * 24;
 // Number of seconds in an ideal year
 constexpr int kYear = kDay * 365;
 
-// Filenames for constructors of ConsistentProtoStores
-constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-constexpr char kObsHistoryFilename[] = "obs_history_backup";
-
 }  // namespace
 
-class LoggerTest : public ::testing::Test {
+class LoggerTest : public util::testing::TestWithFiles {
  protected:
   void SetUp() override {
     SetUpFromMetrics(testing::all_report_types::kCobaltRegistryBase64,
@@ -76,6 +72,7 @@ class LoggerTest : public ::testing::Test {
   // Set up LoggerTest using a base64-encoded registry.
   void SetUpFromMetrics(const std::string& registry_base64,
                         const ExpectedAggregationParams& expected_aggregation_params) {
+    MakeTestFolder();
     expected_aggregation_params_ = expected_aggregation_params;
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
@@ -83,12 +80,15 @@ class LoggerTest : public ::testing::Test {
     observation_writer_ = std::make_unique<ObservationWriter>(
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
     encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
-    local_aggregate_proto_store_ =
-        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
-    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+
+    CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+    cfg.local_aggregation_backfill_days = 0;
+    cfg.local_aggregate_proto_store_path = aggregate_store_path();
+    cfg.obs_history_proto_store_path = obs_history_path();
+
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(cfg, fs(), encoder_.get(),
+                                                                         observation_writer_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
     // Create a mock clock which does not increment by default when called.
@@ -142,8 +142,6 @@ class LoggerTest : public ::testing::Test {
   std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<IncrementingSystemClock> mock_clock_;
 };
 
@@ -549,21 +547,24 @@ TEST_F(LoggerTest, ClockBecomesAccurateRaceCondition) {
   CHECK_EQ(0, undated_event_manager_->NumSavedEvents());
 }
 
-class NoValidatedClockLoggerTest : public ::testing::Test {
+class NoValidatedClockLoggerTest : public util::testing::TestWithFiles {
  protected:
   void SetUp() override {
+    MakeTestFolder();
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
     observation_writer_ = std::make_unique<ObservationWriter>(
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
     encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
-    local_aggregate_proto_store_ =
-        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
-    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+    CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+    cfg.local_aggregation_backfill_days = 0;
+    cfg.local_aggregate_proto_store_path = aggregate_store_path();
+    cfg.obs_history_proto_store_path = obs_history_path();
+
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(cfg, fs(), encoder_.get(),
+                                                                         observation_writer_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
     logger_ = std::make_unique<Logger>(
@@ -588,8 +589,6 @@ class NoValidatedClockLoggerTest : public ::testing::Test {
   std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
 };
 
 // Tests the events are logged to the event loggers.

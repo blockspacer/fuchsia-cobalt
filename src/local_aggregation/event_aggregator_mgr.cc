@@ -25,25 +25,6 @@ const std::chrono::seconds EventAggregatorManager::kDefaultGenerateObsInterval =
     std::chrono::hours(1);
 const std::chrono::seconds EventAggregatorManager::kDefaultGCInterval = std::chrono::hours(24);
 
-EventAggregatorManager::EventAggregatorManager(const logger::Encoder* encoder,
-                                               const logger::ObservationWriter* observation_writer,
-                                               ConsistentProtoStore* local_aggregate_proto_store,
-                                               ConsistentProtoStore* obs_history_proto_store,
-                                               const size_t backfill_days,
-                                               const std::chrono::seconds aggregate_backup_interval,
-                                               const std::chrono::seconds generate_obs_interval,
-                                               const std::chrono::seconds gc_interval)
-    : backfill_days_(backfill_days),
-      aggregate_backup_interval_(aggregate_backup_interval),
-      generate_obs_interval_(generate_obs_interval),
-      gc_interval_(gc_interval) {
-  aggregate_store_ =
-      std::make_unique<AggregateStore>(encoder, observation_writer, local_aggregate_proto_store,
-                                       obs_history_proto_store, backfill_days);
-  event_aggregator_ = std::make_unique<EventAggregator>(aggregate_store_.get());
-  steady_clock_ = std::make_unique<SteadyClock>();
-}
-
 EventAggregatorManager::EventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
                                                const logger::Encoder* encoder,
                                                const logger::ObservationWriter* observation_writer)

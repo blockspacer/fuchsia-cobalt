@@ -17,6 +17,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
+#include "src/lib/util/testing/test_with_files.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
@@ -43,7 +44,6 @@ using logger::testing::FakeObservationStore;
 using logger::testing::GetTestProject;
 using logger::testing::MakeAggregationConfig;
 using logger::testing::MakeAggregationKey;
-using logger::testing::MockConsistentProtoStore;
 using logger::testing::TestUpdateRecipient;
 using system_data::ClientSecret;
 using system_data::SystemDataInterface;
@@ -71,10 +71,6 @@ std::string SerializeAsStringDeterministic(const T& message) {
   return s;
 }
 
-// Filenames for constructors of ConsistentProtoStores
-constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-constexpr char kObsHistoryFilename[] = "obs_history_backup";
-
 // A map keyed by base64-encoded, serialized ReportAggregationKeys. The value at
 // a key is a map of event codes to sets of day indices. Used in tests as
 // a record, external to the LocalAggregateStore, of the activity logged for
@@ -95,9 +91,10 @@ using LoggedValues =
 // EventAggregatorTest creates an EventAggregator which sends its Observations
 // to a FakeObservationStore. The EventAggregator is not pre-populated with
 // aggregation configurations.
-class EventAggregatorTest : public ::testing::Test {
+class EventAggregatorTest : public util::testing::TestWithFiles {
  protected:
   void SetUp() override {
+    MakeTestFolder();
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
@@ -105,16 +102,18 @@ class EventAggregatorTest : public ::testing::Test {
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
     encoder_ = std::make_unique<Encoder>(system_data::ClientSecret::GenerateNewSecret(),
                                          system_data_.get());
-    local_aggregate_proto_store_ =
-        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
-    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
     ResetEventAggregator();
   }
 
   void ResetEventAggregator() {
-    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+    CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+    cfg.local_aggregation_backfill_days = 0;
+    cfg.local_aggregate_proto_store_path = aggregate_store_path();
+    cfg.obs_history_proto_store_path = obs_history_path();
+
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(cfg, fs(), encoder_.get(),
+                                                                         observation_writer_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
     test_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     // Initilize it to 10 years after the beginning of time.
@@ -670,8 +669,6 @@ class EventAggregatorTest : public ::testing::Test {
   }
 
   std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;

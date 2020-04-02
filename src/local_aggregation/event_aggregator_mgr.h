@@ -55,42 +55,13 @@ class EventAggregatorManager {
   // Encoder to generate Observations for rolling windows ending on a specified day index, and
   // writes the Observations to an ObservationStore using an ObservationWriter.
   //
-  // encoder: the singleton instance of an Encoder on the system.
+  // cfg: The CobaltConfig with information for constructing the EventAggregatorManager.
   //
-  // local_aggregate_proto_store: A ConsistentProtoStore to be used by the EventAggregator to store
-  // snapshots of its in-memory store of event aggregates.
+  // fs: An instance of util::FileSystem used for interacting with the filesystem.
   //
-  // obs_history_proto_store: A ConsistentProtoStore to be used by the EventAggregator to store
-  // snapshots of its in-memory history of generated Observations.
+  // encoder: The singleton instance of an Encoder on the system.
   //
-  // backfill_days: the number of past days for which the EventAggregator generates and sends
-  // Observations, in addition to a requested day index. See the comment above
-  // EventAggregator::GenerateObservations for more detail. The constructor CHECK-fails if a value
-  // larger than |kEventAggregatorMaxAllowedBackfillDays| is passed.
-  //
-  // aggregate_backup_interval: the interval in seconds at which a snapshot of the in-memory store
-  // of event aggregates should be written to |local_aggregate_proto_store|.
-  //
-  // generate_obs_interval: the interval in seconds at which the EventAggregator should generate
-  // Observations.
-  //
-  // gc_interval: the interval in seconds at which the LocalAggregateStore should be
-  // garbage-collected.
-  //
-  // The constructor CHECK-fails if the value of |aggregate_backup_interval| is larger than either
-  // of |generate_obs_interval| or |gc_interval|. In practice, the value of
-  // |aggregate_backup_interval| should be small relative to the values of |generate_obs_interval|
-  // and |gc_interval|, since each of Observation generation and garbage collection will be done at
-  // the smallest multiple of |aggregate_backup_interval| which is greater than or equal to its
-  // specified interval.
-  EventAggregatorManager(
-      const logger::Encoder* encoder, const logger::ObservationWriter* observation_writer,
-      util::ConsistentProtoStore* local_aggregate_proto_store,
-      util::ConsistentProtoStore* obs_history_proto_store, size_t backfill_days = 0,
-      std::chrono::seconds aggregate_backup_interval = kDefaultAggregateBackupInterval,
-      std::chrono::seconds generate_obs_interval = kDefaultGenerateObsInterval,
-      std::chrono::seconds gc_interval = kDefaultGCInterval);
-
+  // observation_writer: The interface EventAggregator can use to write aggregated observations.
   EventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
                          const logger::Encoder* encoder,
                          const logger::ObservationWriter* observation_writer);

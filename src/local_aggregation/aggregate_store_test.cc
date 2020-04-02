@@ -17,6 +17,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/proto_util.h"
+#include "src/lib/util/testing/test_with_files.h"
 #include "src/local_aggregation/aggregation_utils.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/local_aggregation/test_utils/test_event_aggregator_mgr.h"
@@ -52,7 +53,6 @@ using logger::testing::GetTestProject;
 using logger::testing::MakeAggregationKey;
 using logger::testing::MakeExpectedReportParticipationObservations;
 using logger::testing::MakeNullExpectedUniqueActivesObservations;
-using logger::testing::MockConsistentProtoStore;
 using logger::testing::TestUpdateRecipient;
 using util::EncryptedMessageMaker;
 using util::IncrementingSteadyClock;
@@ -79,10 +79,6 @@ std::string SerializeAsStringDeterministic(const T& message) {
   }
   return s;
 }
-
-// Filenames for constructors of ConsistentProtoStores
-constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-constexpr char kObsHistoryFilename[] = "obs_history_backup";
 
 constexpr uint32_t kTestCustomerId = 34;
 constexpr uint32_t kTestProjectId = 123;
@@ -189,25 +185,28 @@ std::tuple<MetricDefinition, ReportDefinition> GetNotLocallyAggregatedMetricAndR
 // AggregateStoreTest creates an EventAggregator which sends its Observations
 // to a FakeObservationStore. The EventAggregator is not pre-populated with
 // aggregation configurations.
-class AggregateStoreTest : public ::testing::Test {
+class AggregateStoreTest : public util::testing::TestWithFiles {
  protected:
   void SetUp() override {
+    MakeTestFolder();
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
     observation_writer_ = std::make_unique<ObservationWriter>(
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
     encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
-    local_aggregate_proto_store_ =
-        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
-    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
     ResetEventAggregator();
   }
 
   void ResetEventAggregator() {
-    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+    CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+    cfg.local_aggregation_backfill_days = 0;
+    cfg.local_aggregate_proto_store_path = aggregate_store_path();
+    cfg.obs_history_proto_store_path = obs_history_path();
+
+    event_aggregator_mgr_ = std::make_unique<TestEventAggregatorManager>(cfg, fs(), encoder_.get(),
+                                                                         observation_writer_.get());
     // Pass this clock to the EventAggregator::Start method, if it is called.
     test_clock_ = std::make_unique<IncrementingSystemClock>(std::chrono::system_clock::duration(0));
     // Initilize it to 10 years after the beginning of time.
@@ -876,8 +875,6 @@ class AggregateStoreTest : public ::testing::Test {
   }
 
   std::unique_ptr<TestEventAggregatorManager> event_aggregator_mgr_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
   std::unique_ptr<ObservationWriter> observation_writer_;
   std::unique_ptr<Encoder> encoder_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
@@ -1037,8 +1034,8 @@ class AggregateStoreWorkerTest : public AggregateStoreTest {
 // Tests that the Read() method of each ConsistentProtoStore is called once
 // during construction of the EventAggregator.
 TEST_F(AggregateStoreTest, ReadProtosFromFiles) {
-  EXPECT_EQ(1, local_aggregate_proto_store_->read_count_);
-  EXPECT_EQ(1, obs_history_proto_store_->read_count_);
+  EXPECT_EQ(1, fs()->TimesRead(aggregate_store_path()));
+  EXPECT_EQ(1, fs()->TimesRead(obs_history_path()));
 }
 
 // Tests that the BackUp*() methods return a positive status, and checks that
@@ -1047,8 +1044,8 @@ TEST_F(AggregateStoreTest, ReadProtosFromFiles) {
 TEST_F(AggregateStoreTest, BackUpProtos) {
   EXPECT_EQ(kOK, BackUpLocalAggregateStore());
   EXPECT_EQ(kOK, BackUpObservationHistory());
-  EXPECT_EQ(1, local_aggregate_proto_store_->write_count_);
-  EXPECT_EQ(1, obs_history_proto_store_->write_count_);
+  EXPECT_EQ(1, fs()->TimesWritten(aggregate_store_path()));
+  EXPECT_EQ(1, fs()->TimesWritten(obs_history_path()));
 }
 
 // MaybeUpgradeLocalAggregateStore should return an OK status if the version is current. The store
@@ -1371,7 +1368,8 @@ TEST_F(AggregateStoreTest, GenerateObservationsTwice) {
 TEST_F(AggregateStoreTest, GenerateObservationsFromBadStore) {
   auto bad_store = std::make_unique<LocalAggregateStore>();
   (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
-  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  auto stream = fs()->NewProtoOutputStream(aggregate_store_path()).ConsumeValueOrDie();
+  EXPECT_TRUE(bad_store->SerializeToZeroCopyStream(stream.get()));
   // Read the bad store in to the EventAggregator.
   ResetEventAggregator();
   EXPECT_EQ(kOK, GenerateObservations(CurrentDayIndex()));
@@ -1384,7 +1382,8 @@ TEST_F(AggregateStoreTest, GenerateObservationsFromBadStore) {
 TEST_F(AggregateStoreTest, GenerateObservationsFromBadStoreMultiReport) {
   auto bad_store = std::make_unique<LocalAggregateStore>();
   (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
-  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  auto stream = fs()->NewProtoOutputStream(aggregate_store_path()).ConsumeValueOrDie();
+  EXPECT_TRUE(bad_store->SerializeToZeroCopyStream(stream.get()));
   // Read the bad store in to the EventAggregator.
   ResetEventAggregator();
   // Provide the all_report_types test registry to the EventAggregator.
@@ -1403,7 +1402,8 @@ TEST_F(AggregateStoreTest, GenerateObservationsFromBadStoreMultiReport) {
 TEST_F(AggregateStoreTest, GarbageCollectBadStore) {
   auto bad_store = std::make_unique<LocalAggregateStore>();
   (*bad_store->mutable_by_report_key())["some_key"] = ReportAggregates();
-  local_aggregate_proto_store_->set_stored_proto(std::move(bad_store));
+  auto stream = fs()->NewProtoOutputStream(aggregate_store_path()).ConsumeValueOrDie();
+  EXPECT_TRUE(bad_store->SerializeToZeroCopyStream(stream.get()));
   // Read the bad store in to the EventAggregator.
   ResetEventAggregator();
   EXPECT_EQ(kOK, GarbageCollect(CurrentDayIndex()));

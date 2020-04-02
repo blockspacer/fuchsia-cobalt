@@ -15,6 +15,7 @@
 #include "src/lib/util/clock.h"
 #include "src/lib/util/datetime_util.h"
 #include "src/lib/util/encrypted_message_util.h"
+#include "src/lib/util/testing/test_with_files.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
 #include "src/logger/encoder.h"
 #include "src/logger/fake_logger.h"
@@ -35,7 +36,6 @@ using system_data::ClientSecret;
 using system_data::SystemDataInterface;
 using testing::FakeObservationStore;
 using testing::GetTestProject;
-using testing::MockConsistentProtoStore;
 using testing::TestUpdateRecipient;
 using util::EncryptedMessageMaker;
 using util::IncrementingSteadyClock;
@@ -56,27 +56,26 @@ constexpr int kDayIndex = 18110;  // 2019-08-02
 // Use a smaller max saved size for testing.
 constexpr size_t kMaxSavedEvents = 10;
 
-// Filenames for constructors of ConsistentProtoStores
-constexpr char kAggregateStoreFilename[] = "local_aggregate_store_backup";
-constexpr char kObsHistoryFilename[] = "obs_history_backup";
-
 }  // namespace
 
-class UndatedEventManagerTest : public ::testing::Test {
+class UndatedEventManagerTest : public util::testing::TestWithFiles {
  protected:
   void SetUp() override {
+    MakeTestFolder();
     observation_store_ = std::make_unique<FakeObservationStore>();
     update_recipient_ = std::make_unique<TestUpdateRecipient>();
     observation_encrypter_ = EncryptedMessageMaker::MakeUnencrypted();
     observation_writer_ = std::make_unique<ObservationWriter>(
         observation_store_.get(), update_recipient_.get(), observation_encrypter_.get());
     encoder_ = std::make_unique<Encoder>(ClientSecret::GenerateNewSecret(), system_data_.get());
-    local_aggregate_proto_store_ =
-        std::make_unique<MockConsistentProtoStore>(kAggregateStoreFilename);
-    obs_history_proto_store_ = std::make_unique<MockConsistentProtoStore>(kObsHistoryFilename);
-    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(
-        encoder_.get(), observation_writer_.get(), local_aggregate_proto_store_.get(),
-        obs_history_proto_store_.get());
+    CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
+
+    cfg.local_aggregation_backfill_days = 0;
+    cfg.local_aggregate_proto_store_path = aggregate_store_path();
+    cfg.obs_history_proto_store_path = obs_history_path();
+
+    event_aggregator_mgr_ = std::make_unique<EventAggregatorManager>(cfg, fs(), encoder_.get(),
+                                                                     observation_writer_.get());
     internal_logger_ = std::make_unique<testing::FakeLogger>();
 
     mock_system_clock_ =
@@ -108,8 +107,6 @@ class UndatedEventManagerTest : public ::testing::Test {
   std::unique_ptr<EventAggregatorManager> event_aggregator_mgr_;
   std::unique_ptr<EncryptedMessageMaker> observation_encrypter_;
   std::unique_ptr<SystemDataInterface> system_data_;
-  std::unique_ptr<MockConsistentProtoStore> local_aggregate_proto_store_;
-  std::unique_ptr<MockConsistentProtoStore> obs_history_proto_store_;
 };
 
 // Test that the UndatedEventManager can outlive the source of the ProjectContext.

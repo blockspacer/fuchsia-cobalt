@@ -39,8 +39,13 @@ test("cobalt_core_unittests") {
   deps = [
     ":tests",
     "//third_party/boringssl:crypto",
-    "//third_party/googletest:gtest_main",
   ]
+
+  if (is_fuchsia_tree) {
+    deps += [ "//src/lib/fxl/test:gtest_main" ]
+  } else {
+    deps += [ "//third_party/googletest:gtest_main" ]
+  }
 
   configs -= [ "//build/config:no_exceptions" ]
 

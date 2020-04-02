@@ -1,0 +1,15 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("test_with_files") {
+  testonly = true
+  sources = [
+    "test_posix_file_system.h",
+    "test_with_files.h",
+  ]
+  deps = [
+    "$cobalt_root/src/lib/util:posix_file_system",
+    "//third_party/googletest:gtest",
+  ]
+}

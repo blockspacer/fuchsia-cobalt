@@ -136,6 +136,7 @@ source_set("event_aggregator_test") {
   public_deps = [
     ":aggregation_utils",
     ":event_aggregator_mgr",
+    "$cobalt_root/src/lib/util/testing:test_with_files",
     "$cobalt_root/src/logger:logger_test_utils",
     "$cobalt_root/src/logger:testing_constants",
     "//third_party/googletest:gtest",
@@ -149,6 +150,7 @@ source_set("aggregate_store_test") {
     ":aggregate_store",
     ":aggregation_utils",
     ":event_aggregator_mgr",
+    "$cobalt_root/src/lib/util/testing:test_with_files",
     "$cobalt_root/src/logger:logger_test_utils",
     "$cobalt_root/src/logger:testing_constants",
     "//third_party/googletest:gtest",
@@ -160,6 +162,7 @@ source_set("event_aggregator_mgr_test") {
   sources = [ "event_aggregator_mgr_test.cc" ]
   public_deps = [
     ":event_aggregator_mgr",
+    "$cobalt_root/src/lib/util/testing:test_with_files",
     "$cobalt_root/src/logger:logger_test_utils",
     "$cobalt_root/src/logger:testing_constants",
     "//third_party/googletest:gtest",

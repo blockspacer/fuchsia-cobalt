@@ -12,17 +12,6 @@ namespace cobalt::local_aggregation {
 // Class to be used in testing to access the internal state of the tested objects.
 class TestEventAggregatorManager : public EventAggregatorManager {
  public:
-  TestEventAggregatorManager(
-      const logger::Encoder* encoder, const logger::ObservationWriter* observation_writer,
-      util::ConsistentProtoStore* local_aggregate_proto_store,
-      util::ConsistentProtoStore* obs_history_proto_store, size_t backfill_days = 0,
-      std::chrono::seconds aggregate_backup_interval = std::chrono::minutes(1),
-      std::chrono::seconds generate_obs_interval = std::chrono::hours(1),
-      std::chrono::seconds gc_interval = std::chrono::hours(24))
-      : EventAggregatorManager(encoder, observation_writer, local_aggregate_proto_store,
-                               obs_history_proto_store, backfill_days, aggregate_backup_interval,
-                               generate_obs_interval, gc_interval) {}
-
   TestEventAggregatorManager(const CobaltConfig& cfg, util::FileSystem* fs,
                              const logger::Encoder* encoder,
                              const logger::ObservationWriter* observation_writer)
