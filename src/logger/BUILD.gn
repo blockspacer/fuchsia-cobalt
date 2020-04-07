@@ -5,6 +5,8 @@
 import("//third_party/protobuf/proto_library.gni")
 import("$cobalt_root/metrics_registry.gni")
 
+visibility = [ "$cobalt_root/*" ]
+
 metrics_registry("internal_metrics_config") {
   # This must match the IDs of our Cobalt project as specified in:
   # third_party/cobalt_config/projects.yaml
@@ -157,6 +159,7 @@ source_set("internal_metrics") {
 }
 
 source_set("event_loggers") {
+  visibility = []
   visibility = [
     ":event_loggers_test",
     ":logger",
@@ -199,6 +202,8 @@ source_set("logger") {
     ":undated_event_manager",
     "$cobalt_root/src/lib/util:clock",
   ]
+
+  visibility += [ "//src/cobalt/bin/app:lib" ]
 }
 
 source_set("undated_event_manager") {
@@ -259,6 +264,8 @@ source_set("fake_logger") {
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
+
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("logger_test_utils") {
@@ -283,6 +290,7 @@ source_set("logger_test_utils") {
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "$cobalt_root:cobalt_config" ]
+  visibility += [ "//src/cobalt/bin/*" ]
 }
 
 source_set("event_loggers_test") {
