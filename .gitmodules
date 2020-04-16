@@ -14,9 +14,6 @@
 [submodule "third_party/go/src/golang.org/x/net"]
 	path = third_party/go/src/golang.org/x/net
 	url = https://fuchsia.googlesource.com/third_party/golang/net
-[submodule "third_party/go/src/google.golang.org/grpc"]
-	path = third_party/go/src/google.golang.org/grpc
-	url = https://fuchsia.googlesource.com/third_party/grpc/grpc-go
 [submodule "third_party/go/src/github.com/golang/glog"]
 	path = third_party/go/src/github.com/golang/glog
 	url = https://fuchsia.googlesource.com/third_party/golang/glog
