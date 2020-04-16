@@ -66,9 +66,6 @@
 [submodule "third_party/go/src/golang.org/x/oauth2"]
 	path = third_party/go/src/golang.org/x/oauth2
 	url = https://fuchsia.googlesource.com/third_party/golang.org/x/oauth2
-[submodule "third_party/go/src/cloud.google.com/go"]
-	path = third_party/go/src/cloud.google.com/go
-	url = https://code.googlesource.com/gocloud
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
 	url = https://fuchsia.googlesource.com/third_party/abseil-cpp/
