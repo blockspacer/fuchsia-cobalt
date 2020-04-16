@@ -26,8 +26,6 @@
 #include "src/system_data/configuration_data.h"
 #include "src/uploader/upload_scheduler.h"
 
-#include "grpc++/grpc++.h"
-
 namespace cobalt::uploader {
 
 // ShippingManager is the client-side component of Cobalt responsible for
@@ -117,7 +115,7 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
   // may possibly prove useful in production also.
   size_t num_send_attempts() const;
   size_t num_failed_attempts() const;
-  grpc::Status last_send_status() const;
+  cobalt::util::Status last_send_status() const;
 
   // Disable allows enabling/disabling the ShippingManager. When the ShippingManager is disabled,
   // all calls to SendAllEnvelopes will return immediately without uploading any data.
@@ -201,7 +199,7 @@ class ShippingManager : public observation_store::ObservationStoreUpdateRecipien
     // may possibly prove useful in production also.
     size_t num_send_attempts = 0;
     size_t num_failed_attempts = 0;
-    grpc::Status last_send_status;
+    cobalt::util::Status last_send_status;
 
     bool is_disabled = false;
     observation_store::ObservationStore* observation_store;

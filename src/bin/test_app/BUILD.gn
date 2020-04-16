@@ -42,7 +42,6 @@ source_set("lib") {
     "$cobalt_root/src/public:cobalt_service",
     "$cobalt_root/src/uploader:shipping_manager",
     "//third_party/abseil-cpp",
-    "//third_party/grpc:grpc++",
     "//third_party/protobuf:protobuf_lite",
     "//third_party/tink/cc/util:status",
   ]

@@ -30,11 +30,6 @@ std::string ToString(const std::chrono::system_clock::time_point& t) {
   return std::ctime(&time_struct);
 }
 
-grpc::Status CobaltStatusToGrpcStatus(const util::Status& status) {
-  return grpc::Status(static_cast<grpc::StatusCode>(status.error_code()), status.error_message(),
-                      status.error_details());
-}
-
 }  // namespace
 
 ShippingManager::ShippingManager(const UploadScheduler& upload_scheduler,
@@ -147,7 +142,7 @@ size_t ShippingManager::num_failed_attempts() const {
   return protected_fields_.const_lock()->num_failed_attempts;
 }
 
-grpc::Status ShippingManager::last_send_status() const {
+cobalt::util::Status ShippingManager::last_send_status() const {
   return protected_fields_.const_lock()->last_send_status;
 }
 
@@ -367,7 +362,7 @@ util::Status ClearcutV1ShippingManager::SendEnvelopeToClearcutDestination(const 
     if (!status.ok()) {
       locked->num_failed_attempts++;
     }
-    locked->last_send_status = CobaltStatusToGrpcStatus(status);
+    locked->last_send_status = status;
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";
@@ -438,7 +433,7 @@ std::unique_ptr<EnvelopeHolder> LocalShippingManager::SendEnvelopeToBackend(
     if (!status.ok()) {
       locked->num_failed_attempts++;
     }
-    locked->last_send_status = CobaltStatusToGrpcStatus(status);
+    locked->last_send_status = status;
   }
   if (status.ok()) {
     VLOG(4) << name() << "::SendEnvelopeToBackend: OK";

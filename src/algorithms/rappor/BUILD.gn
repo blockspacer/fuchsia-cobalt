@@ -64,7 +64,6 @@ test("rappor_tests") {
     "//third_party/gflags",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
-    "//third_party/grpc:grpc++",
   ]
   configs += [ ":rappor_config" ]
 }

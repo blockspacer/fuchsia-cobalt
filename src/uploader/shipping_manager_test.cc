@@ -187,7 +187,7 @@ TEST_F(ShippingManagerTest, SendOne) {
   // Confirm it has been sent.
   EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 1);
 }
 
@@ -224,7 +224,7 @@ TEST_F(ShippingManagerTest, DisallowUploading) {
   // Confirm it has been sent.
   EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 1);
 }
 
@@ -245,7 +245,7 @@ TEST_F(ShippingManagerTest, SendOneLoggedMetrics) {
   // Same checks as the pervious test.
   EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 1);
 
   // Attempt and Succeed in the Shipping Manager for a project and Attempt and
@@ -282,7 +282,7 @@ TEST_F(ShippingManagerTest, SendTwo) {
   // Confirm the two Observations were sent together in a single Envelope.
   EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 2);
 }
 
@@ -304,7 +304,7 @@ TEST_F(ShippingManagerTest, SendTwoLoggedMetrics) {
   // Same checks as the pervious test.
   EXPECT_EQ(1u, shipping_manager_->num_send_attempts());
   EXPECT_EQ(0u, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   CheckCallCount(1, 2);
 
   // Attempt and Succeed in the Shipping Manager and Attempt and Succeed in Clearcut Uploader for
@@ -350,7 +350,7 @@ TEST_F(ShippingManagerTest, ScheduledSend) {
   // would be flaky. Just check that all 3 Observations were sent.
   std::unique_lock<std::mutex> lock(http_client_->mutex);
   EXPECT_EQ(2, http_client_->observation_count);
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
 }
 
 // Tests the ShippingManager in the case that the ObservationStore returns
@@ -390,7 +390,7 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   auto num_send_attempts = shipping_manager_->num_send_attempts();
   EXPECT_GT(num_send_attempts, 0u);
   EXPECT_EQ(num_send_attempts, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::UNKNOWN, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::UNKNOWN, shipping_manager_->last_send_status().error_code());
 
   // We can add 10 more Observations bringing the total to 26,
   // without the ObservationStore being full.
@@ -404,7 +404,7 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   EXPECT_GT(shipping_manager_->num_send_attempts(), num_send_attempts);
   num_send_attempts = shipping_manager_->num_send_attempts();
   EXPECT_EQ(num_send_attempts, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::UNKNOWN, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::UNKNOWN, shipping_manager_->last_send_status().error_code());
 
   // The 27th Observation will be rejected with kStoreFull.
   EXPECT_EQ(ObservationStore::kStoreFull, AddObservation(40));
@@ -425,18 +425,18 @@ TEST_F(ShippingManagerTest, ExceedMaxBytesTotal) {
   // All 26 successfully-added Observations should have been sent in six
   // envelopes
   CheckCallCount(6, 26);  // NOLINT readability-magic-numbers
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
   EXPECT_GT(shipping_manager_->num_send_attempts(), num_send_attempts);
   num_send_attempts = shipping_manager_->num_send_attempts();
   EXPECT_GT(num_send_attempts, shipping_manager_->num_failed_attempts());
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
 
   // Now we can add a 27th Observation and send it.
   EXPECT_EQ(ObservationStore::kOk, AddObservation(40));
   shipping_manager_->RequestSendSoon();
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
   CheckCallCount(7, 27);  // NOLINT readability-magic-numbers
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
 }
 
 // Tests that when the total amount of accumulated Observation data exceeds
@@ -676,7 +676,7 @@ TEST_F(LocalShippingManagerTest, ScheduledSave) {
   shipping_manager_->WaitUntilIdle(kMaxSeconds);
 
   CheckObservationCount(2);
-  EXPECT_EQ(grpc::OK, shipping_manager_->last_send_status().error_code());
+  EXPECT_EQ(util::OK, shipping_manager_->last_send_status().error_code());
 }
 
 }  // namespace cobalt::uploader

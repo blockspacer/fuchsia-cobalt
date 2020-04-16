@@ -35,9 +35,6 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://fuchsia.googlesource.com/third_party/protobuf/
-[submodule "third_party/grpc"]
-	path = third_party/grpc
-	url = https://fuchsia.googlesource.com/third_party/grpc
 [submodule "third_party/cares"]
 	path = third_party/cares
 	url = https://fuchsia.googlesource.com/third_party/c-ares

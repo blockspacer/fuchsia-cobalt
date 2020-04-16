@@ -24,7 +24,6 @@ source_set("shipping_manager") {
     "$cobalt_root/src/logger:logger_interface",
     "$cobalt_root/src/observation_store",
     "$cobalt_root/src/observation_store:observation_store_update_recipient",
-    "//third_party/grpc:grpc++",
   ]
 }
 

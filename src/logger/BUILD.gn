@@ -406,7 +406,6 @@ source_set("internal_metrics_test") {
     "$cobalt_root/src/local_aggregation:cobalt_local_aggregation_proto",
     "//third_party/abseil-cpp",
     "//third_party/googletest:gtest",
-    "//third_party/grpc:grpc++",
     "//third_party/tink/cc/util:status",
   ]
 }

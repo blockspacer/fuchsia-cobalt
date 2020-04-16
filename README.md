@@ -99,7 +99,7 @@ of *EncryptedMessage.* Observations are the basic units of data captured by
 a Cobalt client application. Each Observation is encrypted and the bytes are
 stored in an *EncryptedMessage.* Multiple EncryptedMessages are stored in an
 *ObservationBatch*. Multiple ObservationBatches are stored in an Envelope.
-Envelopes are sent via gRPC from the *Encoder* to the *Shuffler*.
+Envelopes are sent via HTTP from the *Encoder* to the *Shuffler*.
 
 ### build
 This directory contains GN files needed for building Cobalt. Most of these files
@@ -131,7 +131,7 @@ decode Observations.
 ### src/system_data
 This directory contains the code for Cobalt's Encoder, which is a
 client library whose job is to encode Observations using one of several
-privacy-preserving encodings, and send Envelopes to the Shuffler using gRPC.
+privacy-preserving encodings, and send Envelopes to the Shuffler using HTTP.
 
 ### src/logger
 This directory contains the code for Cobalt 1.0's Logger, which is a client

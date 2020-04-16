@@ -125,7 +125,7 @@ class ObservationStore : public ObservationStoreWriterInterface {
   //
   // max_bytes_per_envelope. When pooling together observations into an Envelope, the
   // ObservationStore will try not to form envelopes larger than this size. This should be used to
-  // avoid sending messages over gRPC or HTTP that are too large.
+  // avoid sending messages over HTTP that are too large.
   //
   // max_bytes_total. This is the maximum size of the Observations in the store.  If the size of the
   // accumulated Observation data reaches this value then ObservationStore will not accept any more
