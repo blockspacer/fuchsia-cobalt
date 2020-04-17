@@ -71,20 +71,33 @@ message SystemProfile {
   // string that depends on the system. For example on Fuchsia some possible
   // values are "qa-daily" and "fishfood".
   //
-  // If cobalt is not able to determine the value of this field at startup (as
-  // is the case with Fuchsia), it will be set to '<unset>'.
+  // The value '<unset>' means the system did not notify Cobalt of the current
+  // channel.
   //
-  // If cobalt is notified that the system itself can't determine the channel,
-  // the value will instead be '<unknown>'.
-  //
-  // Otherwise, this will be the value of the device's channel.
+  // The value '<unknown>' means the system explicitly notified Cobalt it did
+  // not know the channel.
+
   string channel = 9;
+
+  // This is a string representation of the current realm. Realm is a software-
+  // distribution identifier that is more general than |channel|. A realm
+  // corresponds to one or more channels. The values are system-specific. For
+  // example on Fuchsia the "Dogfood" realm might contain the "fishood_release",
+  // "teamfood_release", and "dogfood_release" channels.
+  //
+  // The value '<unset>' means the system did not notify Cobalt of the current
+  // channel.
+  //
+  // The value '<unknown>' means the system explicitly notified Cobalt it did
+  // not know the channel.
+  //
+  string realm = 10;
 
   // Contains all the experiments the device has a notion of and the experiment
   // state the device belongs to.
   repeated Experiment experiments = 7;
 
-  // We used to have  a field called |build_level|.
+  // We used to have a field called |build_level|.
   reserved 6;
   reserved "build_level";
 }
