@@ -26,9 +26,6 @@
 [submodule "third_party/go/src/github.com/golang/snappy"]
 	path = third_party/go/src/github.com/golang/snappy
 	url = https://fuchsia.googlesource.com/third_party/golang/snappy
-[submodule "third_party/go/src/golang.org/x/crypto"]
-	path = third_party/go/src/golang.org/x/crypto
-	url = https://fuchsia.googlesource.com/third_party/golang/crypto
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://fuchsia.googlesource.com/third_party/protobuf/
