@@ -29,9 +29,6 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://fuchsia.googlesource.com/third_party/zlib
-[submodule "third_party/benchmark"]
-	path = third_party/benchmark
-	url = https://fuchsia.googlesource.com/third_party/benchmark
 [submodule "third_party/eigen"]
 	path = third_party/eigen
 	url = https://fuchsia.googlesource.com/third_party/eigen
