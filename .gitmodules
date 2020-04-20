@@ -39,9 +39,6 @@
 	path = third_party/go/src/github.com/go-yaml/yaml
 	url = https://fuchsia.googlesource.com/third_party/github.com/go-yaml/yaml
 	branch = v2
-[submodule "third_party/rapidjson"]
-	path = third_party/rapidjson
-	url = https://fuchsia.googlesource.com/third_party/rapidjson
 [submodule "third_party/curl"]
 	path = third_party/curl
 	url = https://fuchsia.googlesource.com/third_party/curl
