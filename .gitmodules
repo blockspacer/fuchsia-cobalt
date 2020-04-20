@@ -11,9 +11,6 @@
 [submodule "third_party/go/src/github.com/golang/protobuf"]
 	path = third_party/go/src/github.com/golang/protobuf
 	url = https://fuchsia.googlesource.com/third_party/github.com/golang/protobuf/
-[submodule "third_party/go/src/golang.org/x/net"]
-	path = third_party/go/src/golang.org/x/net
-	url = https://fuchsia.googlesource.com/third_party/golang/net
 [submodule "third_party/go/src/github.com/golang/glog"]
 	path = third_party/go/src/github.com/golang/glog
 	url = https://fuchsia.googlesource.com/third_party/golang/glog
