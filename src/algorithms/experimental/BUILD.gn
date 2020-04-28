@@ -2,9 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Since this is experimental code, we restrict the visibility to this build file
-# only.
-visibility = [ ":*" ]
+# Since this is experimental code, we restrict the visibility to this build file and to the
+# archived build targets.
+visibility = [
+  ":*",
+  "archived:*",
+]
 
 import("//build/test.gni")
 
@@ -204,6 +207,7 @@ group("tests") {
     ":integer_encoder_test",
     ":random_test",
     ":randomized_response_test",
+    "archived:tests",
   ]
 
   # Allow src/algorithms:tests to depend on this group.

@@ -1,0 +1,171 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Since this is archived code, we restrict the visibility to this build file
+# only.
+
+visibility = [ ":*" ]
+import("//build/test.gni")
+
+source_set("response_randomizer") {
+  sources = [
+    "response_randomizer.cc",
+    "response_randomizer.h",
+  ]
+
+  deps = [
+    "$cobalt_root/src/algorithms/experimental:distributions",
+    "$cobalt_root/src/algorithms/experimental:random",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("response_randomizer_test") {
+  testonly = true
+  sources = [ "response_randomizer_test.cc" ]
+
+  deps = [
+    ":response_randomizer",
+    "$cobalt_root/src/algorithms/experimental:random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("krr_integer_encoder") {
+  sources = [
+    "krr_integer_encoder.cc",
+    "krr_integer_encoder.h",
+  ]
+
+  public_deps = [
+    ":response_randomizer",
+    "$cobalt_root/src/algorithms/experimental:distributions",
+    "$cobalt_root/src/algorithms/experimental:random",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("krr_integer_encoder_test") {
+  testonly = true
+  sources = [ "krr_integer_encoder_test.cc" ]
+
+  deps = [
+    ":krr_integer_encoder",
+    ":response_randomizer",
+    "$cobalt_root/src/algorithms/experimental:random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("bucket_wise_histogram_encoder") {
+  sources = [
+    "bucket_wise_histogram_encoder.cc",
+    "bucket_wise_histogram_encoder.h",
+  ]
+
+  deps = [ ":krr_integer_encoder" ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("bucket_wise_histogram_encoder_test") {
+  testonly = true
+  sources = [ "bucket_wise_histogram_encoder_test.cc" ]
+
+  deps = [
+    ":bucket_wise_histogram_encoder",
+    ":krr_integer_encoder",
+    "$cobalt_root/src/algorithms/experimental:random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("occurrence_wise_histogram_encoder") {
+  sources = [
+    "occurrence_wise_histogram_encoder.cc",
+    "occurrence_wise_histogram_encoder.h",
+  ]
+
+  deps = [
+    ":krr_integer_encoder",
+    ":response_randomizer",
+    "$cobalt_root/src/algorithms/experimental:random",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("occurrence_wise_histogram_encoder_test") {
+  testonly = true
+  sources = [ "occurrence_wise_histogram_encoder_test.cc" ]
+
+  deps = [
+    ":krr_integer_encoder",
+    ":occurrence_wise_histogram_encoder",
+    "$cobalt_root/src/algorithms/experimental:random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("two_dim_rappor_histogram_encoder") {
+  sources = [
+    "two_dim_rappor_histogram_encoder.cc",
+    "two_dim_rappor_histogram_encoder.h",
+  ]
+
+  deps = [
+    "$cobalt_root/src/algorithms/experimental:distributions",
+    "$cobalt_root/src/algorithms/experimental:random",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("two_dim_rappor_histogram_encoder_test") {
+  testonly = true
+  sources = [ "two_dim_rappor_histogram_encoder_test.cc" ]
+
+  deps = [
+    ":two_dim_rappor_histogram_encoder",
+    "$cobalt_root/src/algorithms/experimental:random",
+    "//third_party/gflags",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":bucket_wise_histogram_encoder_test",
+    ":krr_integer_encoder_test",
+    ":occurrence_wise_histogram_encoder_test",
+    ":response_randomizer_test",
+    ":two_dim_rappor_histogram_encoder_test",
+  ]
+
+  # Allow src/algorithms/experimental:tests to depend on this group.
+  visibility = []
+  visibility = [ "$cobalt_root/src/algorithms/experimental:tests" ]
+}
