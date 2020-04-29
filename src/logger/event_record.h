@@ -38,6 +38,10 @@ class EventRecord {
     return absl::StrCat("project_id:", metric_->project_id(), " metric_id:", metric_->id());
   }
 
+  [[nodiscard]] std::string FullMetricName() const {
+    return project_context_->FullMetricName(*metric_);
+  }
+
  private:
   const std::shared_ptr<const ProjectContext> project_context_;
   const MetricDefinition* metric_;

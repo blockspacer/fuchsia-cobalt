@@ -198,6 +198,10 @@ class Logger : public LoggerInterface {
   std::unique_ptr<util::ValidatedClockInterface> local_validated_clock_;
   std::weak_ptr<UndatedEventManager> undated_event_manager_;
 
+  // Is this instance of Logger associated with Cobalt's own
+  // internal logging, a.k.a Cobalt-measuring-Cobalt.
+  bool is_internal_logger_;
+
   std::unique_ptr<InternalMetrics> internal_metrics_;
 };
 

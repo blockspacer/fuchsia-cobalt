@@ -61,9 +61,12 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* e
     validated_clock_ = local_validated_clock_.get();
   }
   if (internal_logger) {
+    // If we were passed an internal Logger then we are not an internal Logger.
+    is_internal_logger_ = false;
     internal_metrics_ = std::make_unique<InternalMetricsImpl>(internal_logger);
   } else {
-    // We were not provided with a metrics logger. We must create one.
+    // If we were not passed an internal Logger then we are an internal Logger.
+    is_internal_logger_ = true;
     internal_metrics_ = std::make_unique<NoOpInternalMetrics>();
   }
   if (event_aggregator_->UpdateAggregationConfigs(*project_context_) != kOK) {
@@ -73,8 +76,6 @@ Logger::Logger(std::unique_ptr<ProjectContext> project_context, const Encoder* e
 }
 
 Status Logger::LogEvent(uint32_t metric_id, uint32_t event_code) {
-  VLOG(4) << "Logger::LogEvent(" << metric_id << ", " << event_code
-          << ") project=" << project_context_->FullyQualifiedName();
   auto event_record = std::make_unique<EventRecord>(project_context_, metric_id);
   internal_metrics_->LoggerCalled(LoggerMethod::LogEvent, project_context_->project());
   auto* event_occurred_event = event_record->event()->mutable_event_occurred_event();
@@ -145,6 +146,8 @@ Status Logger::LogCustomEvent(uint32_t metric_id, EventValuesPtr event_values) {
 
 Status Logger::Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
                    std::unique_ptr<EventRecord> event_record) {
+  const int kVerboseLoggingLevel = (is_internal_logger_ ? 9 : 7);
+  VLOG(kVerboseLoggingLevel) << "Received logged event for " << event_record->FullMetricName();
   auto event_logger = internal::EventLogger::Create(metric_type, encoder_, event_aggregator_,
                                                     observation_writer_, system_data_);
   Status validation_result =
@@ -155,6 +158,8 @@ Status Logger::Log(uint32_t metric_id, MetricDefinition::MetricType metric_type,
 
   auto now = validated_clock_->now();
   if (!now) {
+    VLOG(kVerboseLoggingLevel)
+        << "Buffering logged event because we don't yet have an accurate clock. ";
     // Missing system time means that the clock is not valid, so save the event until it is.
     auto undated_event_manager = undated_event_manager_.lock();
     if (undated_event_manager) {
