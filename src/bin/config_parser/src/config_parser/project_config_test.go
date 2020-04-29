@@ -97,8 +97,8 @@ metric_definitions:
 		},
 	}
 
-	if !proto.Equal(&e, &c.ProjectConfig) {
-		t.Errorf("%v\n!=\n%v", proto.MarshalTextString(&e), proto.MarshalTextString(&c.ProjectConfig))
+	if !proto.Equal(&e, c.ProjectConfig) {
+		t.Errorf("%v\n!=\n%v", proto.MarshalTextString(&e), proto.MarshalTextString(c.ProjectConfig))
 	}
 
 }

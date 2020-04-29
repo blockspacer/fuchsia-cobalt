@@ -58,7 +58,10 @@ go_library("config_parser") {
 go_test("config_parser_test") {
   gopackages = [ "config_parser" ]
 
-  deps = [ ":config_parser" ]
+  deps = [
+    ":config_parser",
+    "//garnet/public/go/third_party:github.com/google/go-cmp",
+  ]
 }
 
 go_library("config_validator") {

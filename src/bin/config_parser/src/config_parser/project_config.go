@@ -42,13 +42,14 @@ type ProjectConfig struct {
 	ProjectId     uint32
 	Contact       string
 	CobaltVersion CobaltVersion
-	ProjectConfig config.ProjectConfigFile
+	ProjectConfig *config.ProjectConfigFile
 }
 
 // Parse the configuration for one project from the yaml string provided into
 // the config field in ProjectConfig.
 func parseProjectConfig(y string, c *ProjectConfig) (err error) {
-	if err := yamlpb.UnmarshalString(y, &c.ProjectConfig); err != nil {
+	c.ProjectConfig = &config.ProjectConfigFile{}
+	if err := yamlpb.UnmarshalString(y, c.ProjectConfig); err != nil {
 		return fmt.Errorf("Error while parsing yaml: %v", err)
 	}
 

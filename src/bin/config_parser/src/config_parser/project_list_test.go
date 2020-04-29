@@ -15,10 +15,11 @@
 package config_parser
 
 import (
-	"reflect"
 	"testing"
 
 	yaml "github.com/go-yaml/yaml"
+	"github.com/golang/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 )
 
 // Basic test case for parseCustomerList.
@@ -62,7 +63,7 @@ func TestParseCustomerList(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !reflect.DeepEqual(e, l) {
+	if !cmp.Equal(e, l, cmp.Comparer(proto.Equal)) {
 		t.Errorf("%v != %v", e, l)
 	}
 }
@@ -237,7 +238,7 @@ func TestPopulateProjectList(t *testing.T) {
 			CobaltVersion: CobaltVersion1,
 		},
 	}
-	if !reflect.DeepEqual(e, l) {
+	if !cmp.Equal(e, l, cmp.Comparer(proto.Equal)) {
 		t.Errorf("%v != %v", e, l)
 	}
 }
