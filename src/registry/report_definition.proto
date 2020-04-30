@@ -731,20 +731,22 @@ message ReportDefinition {
     // Numerical statistic aggregation procedures to be used with reports
     // of type UNIQUE_DEVICE_HISTOGRAMS, HOURLY_VALUE_HISTOGRAMS,
     // UNIQUE_DEVICE_NUMERIC_STATS and HOURLY_VALUE_NUMERIC_STATS.
-    LOCAL_AGGREGATION_PROCEDURE_SUM = 1;
-    LOCAL_AGGREGATION_PROCEDURE_MIN = 2;
-    LOCAL_AGGREGATION_PROCEDURE_MAX = 3;
-    LOCAL_AGGREGATION_PROCEDURE_MEAN = 4;
-    LOCAL_AGGREGATION_PROCEDURE_MEDIAN = 5;
+    // TODO(zmbush): Rename these to remove the '_PROCEDURE' suffix once the
+    //               'OnDeviceAggregationType' enum is removed.
+    SUM_PROCEDURE = 1;
+    MIN_PROCEDURE = 2;
+    MAX_PROCEDURE = 3;
+    MEAN = 4;
+    MEDIAN = 5;
     // The value of N is set in the field
     //    |local_aggregation_procedure_percentile_n|.
-    LOCAL_AGGREGATION_PROCEDURE_PERCENTILE_N = 6;
+    PERCENTILE_N = 6;
 
     // Logical aggregation procedures to be used with reports of type
     // UNIQUE_DEVICE_COUNTS
-    LOCAL_AGGREGATION_PROCEDURE_AT_LEAST_ONCE = 7;
-    LOCAL_AGGREGATION_PROCEDURE_SELECT_FIRST = 8;
-    LOCAL_AGGREGATION_PROCEDURE_SELECT_MOST_COMMON = 9;
+    AT_LEAST_ONCE = 7;
+    SELECT_FIRST = 8;
+    SELECT_MOST_COMMON = 9;
   }
 
   // This field is part of Cobalt 1.1. Do not use it yet.

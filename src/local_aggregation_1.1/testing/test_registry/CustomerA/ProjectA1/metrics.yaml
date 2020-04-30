@@ -11,3 +11,4 @@ metric_definitions:
       - id: 1
         report_name: "ReportA1repA"
         report_type: UNIQUE_DEVICE_COUNTS
+        local_aggregation_procedure: AT_LEAST_ONCE

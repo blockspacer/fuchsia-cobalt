@@ -54,7 +54,7 @@ func TestMakeJSONReport(t *testing.T) {
 		AggregationType:                      config.ReportDefinition_SUM,
 		WindowSize:                           []config.WindowSize{config.WindowSize_WINDOW_7_DAYS},
 		LocalAggregationPeriod:               config.WindowSize_WINDOW_7_DAYS,
-		LocalAggregationProcedure:            config.ReportDefinition_LOCAL_AGGREGATION_PROCEDURE_SUM,
+		LocalAggregationProcedure:            config.ReportDefinition_SUM_PROCEDURE,
 		LocalAggregationProcedurePercentileN: aggregation_percentile,
 	}
 
@@ -70,7 +70,7 @@ func TestMakeJSONReport(t *testing.T) {
 		AggregationType:                      "SUM",
 		WindowSize:                           []string{"WINDOW_7_DAYS"},
 		LocalAggregationPeriod:               7,
-		LocalAggregationProcedure:            "LOCAL_AGGREGATION_PROCEDURE_SUM",
+		LocalAggregationProcedure:            "SUM_PROCEDURE",
 		LocalAggregationProcedurePercentileN: aggregation_percentile,
 	}
 

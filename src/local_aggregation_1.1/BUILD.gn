@@ -24,6 +24,7 @@ proto_library("proto") {
 source_set("tests") {
   testonly = true
   deps = [
+    ":aggregation_procedures",
     ":local_aggregate_storage",
     "$cobalt_root/src/lib/util/testing:test_with_files",
     "$cobalt_root/src/local_aggregation_1.1/testing:test_registry",
@@ -31,7 +32,10 @@ source_set("tests") {
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
-  sources = [ "local_aggregate_storage_test.cc" ]
+  sources = [
+    "aggregation_procedure_test.cc",
+    "local_aggregate_storage_test.cc",
+  ]
 }
 
 source_set("local_aggregate_storage") {
@@ -47,4 +51,20 @@ source_set("local_aggregate_storage") {
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
   configs += [ "$cobalt_root:cobalt_config" ]
+}
+
+source_set("aggregation_procedures") {
+  sources = [
+    "aggregation_procedure.cc",
+    "aggregation_procedure.h",
+  ]
+
+  deps = [
+    ":proto",
+    "$cobalt_root/src:logging",
+    "$cobalt_root/src/logger:encoder",
+    "$cobalt_root/src/logger:event_record",
+    "$cobalt_root/src/pb",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
 }
