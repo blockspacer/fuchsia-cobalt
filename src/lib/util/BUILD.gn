@@ -192,8 +192,10 @@ static_library("consistent_proto_store") {
   deps = [
     ":proto_serialization",
     ":status",
+    "$cobalt_root/src:logging",
     "$cobalt_root/src/lib/statusor",
     "$cobalt_root/src/lib/util:posix_file_system",
+    "//third_party/abseil-cpp/absl/strings",
   ]
   public_deps = [ "//third_party/protobuf:protobuf_lite" ]
 }

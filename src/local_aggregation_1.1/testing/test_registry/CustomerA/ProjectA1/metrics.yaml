@@ -1,0 +1,13 @@
+metric_definitions:
+  - id: 1
+    metric_name: "MetricA1a"
+    metric_type: OCCURRENCE
+    metric_semantics: [NETWORK_COMMUNICATION]
+    meta_data:
+      expiration_date: "2021/01/01"
+      max_release_stage: GA
+
+    reports:
+      - id: 1
+        report_name: "ReportA1repA"
+        report_type: UNIQUE_DEVICE_COUNTS

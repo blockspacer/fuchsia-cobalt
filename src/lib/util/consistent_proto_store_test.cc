@@ -44,36 +44,39 @@ class TestConsistentProtoStore : public ConsistentProtoStore {
   void FailNextMoveOverrideToPrimary() { fail_move_override_to_primary_ = true; }
 
  private:
-  Status WriteToTmp(const google::protobuf::MessageLite &proto) override {
+  Status WriteToTmp(const std::string &tmp_filename,
+                    const google::protobuf::MessageLite &proto) override {
     if (fail_write_tmp_) {
       fail_write_tmp_ = false;
       return fake_fail;
     }
-    return ConsistentProtoStore::WriteToTmp(proto);
+    return ConsistentProtoStore::WriteToTmp(tmp_filename, proto);
   }
 
-  Status MoveTmpToOverride() override {
+  Status MoveTmpToOverride(const std::string &tmp_filename,
+                           const std::string &override_filename) override {
     if (fail_move_tmp_) {
       fail_move_tmp_ = false;
       return fake_fail;
     }
-    return ConsistentProtoStore::MoveTmpToOverride();
+    return ConsistentProtoStore::MoveTmpToOverride(tmp_filename, override_filename);
   }
 
-  Status DeletePrimary() override {
+  Status DeletePrimary(const std::string &primary_filename) override {
     if (fail_delete_primary_) {
       fail_delete_primary_ = false;
       return fake_fail;
     }
-    return ConsistentProtoStore::DeletePrimary();
+    return ConsistentProtoStore::DeletePrimary(primary_filename);
   }
 
-  Status MoveOverrideToPrimary() override {
+  Status MoveOverrideToPrimary(const std::string &override_filename,
+                               const std::string &primary_filename) override {
     if (fail_move_override_to_primary_) {
       fail_move_override_to_primary_ = false;
       return fake_fail;
     }
-    return ConsistentProtoStore::MoveOverrideToPrimary();
+    return ConsistentProtoStore::MoveOverrideToPrimary(override_filename, primary_filename);
   }
 
   PosixFileSystem fs_;
@@ -142,6 +145,32 @@ TEST_F(ConsistentProtoStoreTest, Normal) {
   EXPECT_EQ(stat.error_details(), "");
 
   stat = store_.Read(&pout);
+  EXPECT_TRUE(stat.ok());
+  EXPECT_EQ(stat.error_message(), "");
+  EXPECT_EQ(stat.error_details(), "");
+
+  EXPECT_EQ(pout.b(), true);
+  EXPECT_EQ(pout.i(), 42);
+  EXPECT_EQ(pout.s(), "Data!");
+}
+
+TEST_F(ConsistentProtoStoreTest, OverriddenPrimaryFilename) {
+  Mkdir();
+  TestProto pin, pout;
+  pin.set_b(true);
+  pin.set_i(42);
+  pin.set_s("Data!");
+  auto stat = store_.Write(directory_ + "/Proto2", pin);
+  EXPECT_TRUE(stat.ok());
+  EXPECT_EQ(stat.error_message(), "");
+  EXPECT_EQ(stat.error_details(), "");
+
+  // Can't read from default directory.
+  stat = store_.Read(&pout);
+  EXPECT_FALSE(stat.ok());
+
+  // Can read from the alternate.
+  stat = store_.Read(directory_ + "/Proto2", &pout);
   EXPECT_TRUE(stat.ok());
   EXPECT_EQ(stat.error_message(), "");
   EXPECT_EQ(stat.error_details(), "");

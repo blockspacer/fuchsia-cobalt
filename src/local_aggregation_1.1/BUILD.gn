@@ -1,0 +1,50 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+visibility = [ "$cobalt_root/*" ]
+
+import("//third_party/protobuf/proto_library.gni")
+
+proto_library("proto") {
+  proto_in_dir = "$cobalt_root"
+  sources = [ "local_aggregation.proto" ]
+  import_dirs = [ "//third_party/protobuf/src" ]
+  generate_python = false
+  cc_generator_options = "lite"
+
+  # deps = [ "$cobalt_root/src/registry:cobalt_registry_proto" ]
+
+  extra_configs = [
+    "$cobalt_root:cobalt_config",
+    "$cobalt_root/src/registry:proto_config",
+  ]
+}
+
+source_set("tests") {
+  testonly = true
+  deps = [
+    ":local_aggregate_storage",
+    "$cobalt_root/src/lib/util/testing:test_with_files",
+    "$cobalt_root/src/local_aggregation_1.1/testing:test_registry",
+    "$cobalt_root/src/logger:project_context_factory",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+  sources = [ "local_aggregate_storage_test.cc" ]
+}
+
+source_set("local_aggregate_storage") {
+  sources = [
+    "local_aggregate_storage.cc",
+    "local_aggregate_storage.h",
+  ]
+  public_deps = [ "$cobalt_root/src/lib/util:file_system" ]
+  deps = [
+    ":proto",
+    "$cobalt_root/src/lib/util:consistent_proto_store",
+    "$cobalt_root/src/logger:project_context_factory",
+    "$cobalt_root/src/registry:cobalt_registry_proto",
+  ]
+  configs += [ "$cobalt_root:cobalt_config" ]
+}

@@ -123,4 +123,15 @@ const ReportDefinition* ProjectConfigs::GetReportDefinition(uint32_t customer_id
   return iter->second;
 }
 
+std::vector<std::tuple<uint32_t, uint32_t>> ProjectConfigs::ListProjects() {
+  std::vector<std::tuple<uint32_t, uint32_t>> out;
+  out.reserve(projects_by_id_.size());
+
+  for (auto& project : projects_by_id_) {
+    out.push_back(project.first);
+  }
+
+  return out;
+}
+
 }  // namespace cobalt::config

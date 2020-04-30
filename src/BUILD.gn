@@ -9,6 +9,7 @@ group("tests") {
     "bin:tests",
     "lib:tests",
     "local_aggregation:tests",
+    "local_aggregation_1.1:tests",
     "logger:tests",
     "observation_store:tests",
     "public:tests",

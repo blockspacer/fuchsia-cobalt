@@ -45,8 +45,8 @@ ProjectContextFactory::ProjectContextFactory(std::unique_ptr<CobaltRegistry> cob
       config::ProjectConfigs::CreateFromCobaltRegistryProto(std::move(cobalt_registry));
 }
 
-std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(uint32_t customer_id,
-                                                                         uint32_t project_id) {
+std::unique_ptr<ProjectContext> ProjectContextFactory::NewProjectContext(
+    uint32_t customer_id, uint32_t project_id) const {
   if (project_configs_ == nullptr) {
     return nullptr;
   }
@@ -71,6 +71,10 @@ std::unique_ptr<ProjectContext> ProjectContextFactory::TakeSingleProjectContext(
       project_configs_->TakeSingleProjectConfig());
   project_configs_.reset();
   return project_context;
+}
+
+std::vector<std::tuple<uint32_t, uint32_t>> ProjectContextFactory::ListProjects() const {
+  return project_configs_->ListProjects();
 }
 
 }  // namespace cobalt::logger

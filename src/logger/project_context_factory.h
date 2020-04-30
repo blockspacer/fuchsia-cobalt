@@ -80,7 +80,12 @@ class ProjectContextFactory {
   // Important: The returned ProjectContext contains a pointer into this
   // factory's CobaltRegistry. This ProjectContextFactory must remain alive as
   // long as the returned ProjectContext is being used.
-  std::unique_ptr<ProjectContext> NewProjectContext(uint32_t customer_id, uint32_t project_id);
+  [[nodiscard]] std::unique_ptr<ProjectContext> NewProjectContext(uint32_t customer_id,
+                                                                  uint32_t project_id) const;
+
+  // ListProjects returns a list of tuples of the form (customer_id, project_id) for all of the
+  // projects in the registry.
+  [[nodiscard]] std::vector<std::tuple<uint32_t, uint32_t>> ListProjects() const;
 
   // If is_single_project() is true, then this returns a
   // ProjectContext for the unique Cobalt 1.0 project contained in the factory's

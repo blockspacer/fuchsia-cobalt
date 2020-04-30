@@ -1,0 +1,7 @@
+- customer_name: CustomerA
+  customer_id: 123
+
+  projects:
+    - project_name: ProjectA1
+      project_id: 1
+      project_contact: nobody@example.com

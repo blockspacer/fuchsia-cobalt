@@ -17,6 +17,8 @@ CobaltConfig MinConfigForTesting() {
 
   cfg.file_system = std::make_unique<util::PosixFileSystem>();
   cfg.observation_store_directory = "/tmp/a";
+  cfg.local_aggregate_proto_store_path = "/tmp/b";
+  cfg.obs_history_proto_store_path = "/tmp/c";
   cfg.target_pipeline = std::make_unique<LocalPipeline>();
 
   return cfg;

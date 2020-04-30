@@ -1,0 +1,19 @@
+// Copyright 2020 The Fuchsia Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package cobalt;
+
+message MetricAggregate {
+  uint32 version = 1;
+
+  map<uint32, ReportAggregate> by_report_id = 2;
+}
+
+message ReportAggregate {
+  ObservationHistory history = 999;
+}
+
+message ObservationHistory {}

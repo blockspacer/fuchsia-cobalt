@@ -22,22 +22,14 @@ namespace cobalt::config {
 //
 // A CobaltRegistry can be in one of three states:
 //
-// (1) It can contain data for a single Cobalt 0.1 project.
-// (2) It can contain data for a single Cobalt 1.0 project.
-// (3) It can contain data for multiple Cobalt projects. In this case it
-//     may contain data for some Cobalt 0.1 projects and some Cobalt 1.0
-//     projects.
+// (1) It can contain data for a single Cobalt 1.* project.
+// (2) It can contain data for multiple Cobalt projects.
 //
-// This class is part of Cobalt 1.0. and as such it ignores the Cobalt 0.1
-// data in a |CobaltRegistry| and gives access only to the Cobalt 1.0 data.
-// So an instance of this class can be in one of three states corresponding
-// to the three states above:
+// So an instance of this class can be in one of two states corresponding
+// to the two states above:
 //
-// (1) It can be empty
-// (2) It can contain data for a single Cobalt 1.0 project.
-// (3) It can contain data for multiple Cobalt 1.0 projects.
-//
-// See the class |ClientConfig| for the Cobalt 0.1 analogue of this class.
+// (1) It can contain data for a single Cobalt 1.* project.
+// (2) It can contain data for multiple Cobalt 1.* projects.
 class ProjectConfigs {
  public:
   // Constructs and returns an instance of ProjectConfigs by first parsing
@@ -115,6 +107,10 @@ class ProjectConfigs {
   // ProjectConfig from the data owned by this object leaving this object
   // empty. Otherwise returns nullptr.
   std::unique_ptr<ProjectConfig> TakeSingleProjectConfig();
+
+  // ListProjects returns a list of tuples of the form (customer_id, project_id) for all of the
+  // projects in the registry.
+  std::vector<std::tuple<uint32_t, uint32_t>> ListProjects();
 
  private:
   std::unique_ptr<CobaltRegistry> cobalt_registry_;

@@ -123,6 +123,9 @@ class ProjectContext {
   // <customer_name>(<id>).<project_name>(<id>).<metric_name>(<id>)
   std::string FullMetricName(const MetricDefinition& metric_definition) const;
 
+  // ListMetrics returns a list of metric_ids that are present in this project.
+  std::vector<uint32_t> ListMetrics() const;
+
  private:
   // Constructs an instance of ProjectContext that may or may not own the
   // underlying |ProjectConfig|.

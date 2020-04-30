@@ -1,0 +1,16 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("$cobalt_root/metrics_registry.gni")
+
+metrics_registry("test_registry") {
+  global = true
+  for_testing = true
+  directories = [ "test_registry" ]
+  namespace = "cobalt.local_aggregation"
+  var_name = "cobalt_registry_base64"
+
+  generate_binarypb = false
+  generate_cc = true
+}

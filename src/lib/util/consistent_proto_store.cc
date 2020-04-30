@@ -10,6 +10,8 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "src/lib/statusor/status_macros.h"
+#include "src/logging.h"
+#include "third_party/abseil-cpp/absl/strings/str_cat.h"
 
 namespace cobalt::util {
 
@@ -18,19 +20,10 @@ using google::protobuf::MessageLite;
 constexpr char kTmpSuffix[] = ".tmp";
 constexpr char kOverrideSuffix[] = ".override";
 
-ConsistentProtoStore::ConsistentProtoStore(std::string filename,
-                                           std::unique_ptr<FileSystem> owned_fs)
-    : primary_file_(std::move(filename)),
-      tmp_file_(primary_file_ + kTmpSuffix),
-      override_file_(primary_file_ + kOverrideSuffix),
-      owned_fs_(std::move(owned_fs)),
-      fs_(owned_fs_.get()) {}
-
 ConsistentProtoStore::ConsistentProtoStore(std::string filename, FileSystem *fs)
-    : primary_file_(std::move(filename)),
-      tmp_file_(primary_file_ + kTmpSuffix),
-      override_file_(primary_file_ + kOverrideSuffix),
-      fs_(fs) {}
+    : primary_filename_(std::move(filename)), fs_(fs) {}
+
+ConsistentProtoStore::ConsistentProtoStore(FileSystem *fs) : fs_(fs) {}
 
 // Write uses a series of operations to write new data. The goal of each of
 // these operations is that if the operation is interrupted or fails, the
@@ -63,12 +56,16 @@ ConsistentProtoStore::ConsistentProtoStore(std::string filename, FileSystem *fs)
 //      fails, the file should still exist at override_file_ so the store
 //      should continue reading it successfully.
 //
-Status ConsistentProtoStore::Write(const MessageLite &proto) {
+
+Status ConsistentProtoStore::Write(const std::string &primary_filename, const MessageLite &proto) {
+  auto tmp_filename = absl::StrCat(primary_filename, kTmpSuffix);
+  auto override_filename = absl::StrCat(primary_filename, kOverrideSuffix);
+
   // Check if override_file_ exists
   {
-    if (fs_->FileExists(override_file_)) {
-      DeletePrimary();  // Ignore errors since primary_file_ might not exist
-      auto status = MoveOverrideToPrimary();
+    if (fs_->FileExists(override_filename)) {
+      DeletePrimary(primary_filename);  // Ignore errors since primary_file_ might not exist
+      auto status = MoveOverrideToPrimary(override_filename, primary_filename);
       if (!status.ok()) {
         // If renaming override_file_ to primary_file_ fails, we should bail
         // since a write operation is not safe.
@@ -78,17 +75,25 @@ Status ConsistentProtoStore::Write(const MessageLite &proto) {
     }
   }
 
-  RETURN_IF_ERROR(WriteToTmp(proto));
-  RETURN_IF_ERROR(MoveTmpToOverride());
-  RETURN_IF_ERROR(DeletePrimary());
-  RETURN_IF_ERROR(MoveOverrideToPrimary());
+  RETURN_IF_ERROR(WriteToTmp(tmp_filename, proto));
+  RETURN_IF_ERROR(MoveTmpToOverride(tmp_filename, override_filename));
+  RETURN_IF_ERROR(DeletePrimary(primary_filename));
+  RETURN_IF_ERROR(MoveOverrideToPrimary(override_filename, primary_filename));
 
   return Status::OK;
 }
 
-Status ConsistentProtoStore::Read(MessageLite *proto) {
+Status ConsistentProtoStore::Write(const MessageLite &proto) {
+  CHECK(!primary_filename_.empty());
+  return Write(primary_filename_, proto);
+}
+
+Status ConsistentProtoStore::Read(const std::string &primary_filename, MessageLite *proto) {
+  auto tmp_filename = absl::StrCat(primary_filename, kTmpSuffix);
+  auto override_filename = absl::StrCat(primary_filename, kOverrideSuffix);
+
   {
-    auto istream_or = fs_->NewProtoInputStream(override_file_);
+    auto istream_or = fs_->NewProtoInputStream(override_filename);
     if (istream_or.ok()) {
       auto istream = istream_or.ConsumeValueOrDie();
       if (proto->ParseFromZeroCopyStream(istream.get())) {
@@ -97,7 +102,7 @@ Status ConsistentProtoStore::Read(MessageLite *proto) {
     }
   }
 
-  CB_ASSIGN_OR_RETURN(auto istream, fs_->NewProtoInputStream(primary_file_));
+  CB_ASSIGN_OR_RETURN(auto istream, fs_->NewProtoInputStream(primary_filename));
   if (!proto->ParseFromZeroCopyStream(istream.get())) {
     return Status(StatusCode::INVALID_ARGUMENT,
                   "Unable to parse the protobuf from the store. Data is corrupt.");
@@ -106,42 +111,49 @@ Status ConsistentProtoStore::Read(MessageLite *proto) {
   return Status::OK;
 }
 
-Status ConsistentProtoStore::WriteToTmp(const MessageLite &proto) {
-  CB_ASSIGN_OR_RETURN(auto outstream, fs_->NewProtoOutputStream(tmp_file_));
+Status ConsistentProtoStore::Read(MessageLite *proto) {
+  CHECK(!primary_filename_.empty());
+  return Read(primary_filename_, proto);
+}
+
+Status ConsistentProtoStore::WriteToTmp(const std::string &tmp_filename, const MessageLite &proto) {
+  CB_ASSIGN_OR_RETURN(auto outstream, fs_->NewProtoOutputStream(tmp_filename));
   if (!proto.SerializeToZeroCopyStream(outstream.get())) {
     return Status(StatusCode::DATA_LOSS, "Unable to serialize proto to the output stream.");
   }
   return Status::OK;
 }
 
-Status ConsistentProtoStore::MoveTmpToOverride() {
-  if (!fs_->Rename(tmp_file_, override_file_)) {
+Status ConsistentProtoStore::MoveTmpToOverride(const std::string &tmp_filename,
+                                               const std::string &override_filename) {
+  if (!fs_->Rename(tmp_filename, override_filename)) {
     return Status(StatusCode::DATA_LOSS,
-                  "Unable to rename `" + tmp_file_ + "` => `" + override_file_ + "`.",
+                  "Unable to rename `" + tmp_filename + "` => `" + override_filename + "`.",
                   strerror(errno));
   }
 
   return Status::OK;
 }
 
-Status ConsistentProtoStore::DeletePrimary() {
+Status ConsistentProtoStore::DeletePrimary(const std::string &primary_filename) {
   // If the primary file doesn't exist. We don't care.
-  if (!fs_->FileExists(primary_file_)) {
+  if (!fs_->FileExists(primary_filename)) {
     return Status::OK;
   }
 
-  if (!fs_->Delete(primary_file_)) {
-    return Status(StatusCode::ABORTED, "Unable to remove old file `" + primary_file_ + "`.",
+  if (!fs_->Delete(primary_filename)) {
+    return Status(StatusCode::ABORTED, "Unable to remove old file `" + primary_filename + "`.",
                   strerror(errno));
   }
 
   return Status::OK;
 }
 
-Status ConsistentProtoStore::MoveOverrideToPrimary() {
-  if (!fs_->Rename(override_file_, primary_file_)) {
+Status ConsistentProtoStore::MoveOverrideToPrimary(const std::string &override_filename,
+                                                   const std::string &primary_filename) {
+  if (!fs_->Rename(override_filename, primary_filename)) {
     return Status(StatusCode::ABORTED,
-                  "Unable to rename `" + override_file_ + "` => `" + primary_file_ + "`.",
+                  "Unable to rename `" + override_filename + "` => `" + primary_filename + "`.",
                   strerror(errno));
   }
 

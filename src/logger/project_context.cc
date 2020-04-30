@@ -125,4 +125,15 @@ std::string ProjectContext::FullMetricName(const MetricDefinition& metric_defini
   return FullMetricName(project_, metric_definition);
 }
 
+std::vector<uint32_t> ProjectContext::ListMetrics() const {
+  std::vector<uint32_t> out;
+  out.reserve(metrics_by_id_.size());
+
+  for (const auto& metric : metrics_by_id_) {
+    out.push_back(metric.first);
+  }
+
+  return out;
+}
+
 }  // namespace cobalt::logger
