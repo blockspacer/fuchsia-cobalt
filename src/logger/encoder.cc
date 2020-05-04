@@ -293,6 +293,9 @@ Encoder::Result Encoder::MakeObservation(MetricRef metric, const ReportDefinitio
         case SystemProfileField::CHANNEL:
           metadata->mutable_system_profile()->set_channel(profile.channel());
           break;
+        case SystemProfileField::REALM:
+          metadata->mutable_system_profile()->set_realm(profile.channel());
+          break;
       }
     }
   }
