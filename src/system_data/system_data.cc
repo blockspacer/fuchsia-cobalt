@@ -97,10 +97,13 @@ SystemData::SystemData(const std::string& product_name, const std::string& board
   system_profile_.set_board_name(board_name_suggestion);
   system_profile_.set_system_version(version);
   SetChannel("<unset>");
+  SetRealm("<unset>");
   PopulateSystemProfile();
 }
 
 void SystemData::SetChannel(const std::string& channel) { system_profile_.set_channel(channel); }
+
+void SystemData::SetRealm(const std::string& realm) { system_profile_.set_realm(realm); }
 
 void SystemData::OverrideSystemProfile(const SystemProfile& profile) { system_profile_ = profile; }
 

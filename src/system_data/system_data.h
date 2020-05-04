@@ -35,8 +35,14 @@ class SystemDataInterface {
   // Resets the current channel value.
   virtual void SetChannel(const std::string& channel) = 0;
 
+  // Resets the current realm value.
+  virtual void SetRealm(const std::string& realm) = 0;
+
   // Returns the current channel.
   [[nodiscard]] virtual const std::string& channel() const = 0;
+
+  // Returns the current realm.
+  [[nodiscard]] virtual const std::string& realm() const = 0;
 
   // Returns the current ReleaseStage.
   [[nodiscard]] virtual const ReleaseStage& release_stage() const = 0;
@@ -88,6 +94,11 @@ class SystemData : public SystemDataInterface {
   void SetChannel(const std::string& channel) override;
 
   const std::string& channel() const override { return system_profile_.channel(); }
+
+  // Resets the current realm value.
+  void SetRealm(const std::string& realm) override;
+
+  const std::string& realm() const override { return system_profile_.realm(); }
 
   const ReleaseStage& release_stage() const override { return release_stage_; }
 

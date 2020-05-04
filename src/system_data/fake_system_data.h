@@ -33,7 +33,11 @@ class FakeSystemData : public SystemDataInterface {
 
   void SetChannel(const std::string& channel) override { system_profile_.set_channel(channel); };
 
+  void SetRealm(const std::string& channel) override { system_profile_.set_realm(channel); };
+
   const std::string& channel() const override { return system_profile_.channel(); }
+
+  const std::string& realm() const override { return system_profile_.realm(); }
 
   const ReleaseStage& release_stage() const override { return release_stage_; }
 

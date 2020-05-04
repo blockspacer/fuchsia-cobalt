@@ -76,4 +76,13 @@ TEST(SystemDataTest, SetChannelTest) {
   EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
 }
 
+TEST(SystemDataTest, SetRealmTest) {
+  SystemData system_data("test_product", "", ReleaseStage::DEBUG, "test_version");
+  EXPECT_EQ(system_data.realm(), "<unset>");
+  EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
+  system_data.SetChannel("Dogfood");
+  EXPECT_EQ(system_data.channel(), "Dogfood");
+  EXPECT_EQ(system_data.release_stage(), ReleaseStage::DEBUG);
+}
+
 }  // namespace cobalt::system_data
