@@ -45,7 +45,6 @@ source_set("cobalt_service") {
     ":cobalt_config",
     ":cobalt_service_interface",
     "$cobalt_root/src/local_aggregation:event_aggregator_mgr",
-    "$cobalt_root/src/local_aggregation_1.1:local_aggregation",
     "$cobalt_root/src/logger",
     "$cobalt_root/src/logger:project_context_factory",
     "$cobalt_root/src/logger:undated_event_manager",

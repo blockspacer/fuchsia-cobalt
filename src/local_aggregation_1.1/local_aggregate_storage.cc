@@ -18,9 +18,6 @@ LocalAggregateStorage::LocalAggregateStorage(
       fs_(fs),
       proto_store_(fs_),
       global_project_context_factory_(global_project_context_factory) {
-  CHECK(global_project_context_factory_)
-      << "No global_project_context_factory provided. Cannot initialize store!";
-
   InitializePersistentStore();
 
   // TODO(zmbush): Look into lazy-loading

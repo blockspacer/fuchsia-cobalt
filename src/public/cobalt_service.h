@@ -15,7 +15,6 @@
 #include "src/lib/util/consistent_proto_store.h"
 #include "src/lib/util/encrypted_message_util.h"
 #include "src/local_aggregation/event_aggregator_mgr.h"
-#include "src/local_aggregation_1.1/local_aggregation.h"
 #include "src/logger/logger.h"
 #include "src/logger/observation_writer.h"
 #include "src/logger/project_context.h"
@@ -142,7 +141,6 @@ class CobaltService : public CobaltServiceInterface {
   logger::Encoder logger_encoder_;
   logger::ObservationWriter observation_writer_;
   local_aggregation::EventAggregatorManager event_aggregator_manager_;
-  local_aggregation::LocalAggregation local_aggregation_;
   std::shared_ptr<logger::UndatedEventManager> undated_event_manager_;
   util::ValidatedClockInterface *validated_clock_;
   std::unique_ptr<logger::LoggerInterface> internal_logger_;

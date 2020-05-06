@@ -16,22 +16,21 @@ CobaltConfig MinConfigForTesting() {
   CobaltConfig cfg = {.client_secret = system_data::ClientSecret::GenerateNewSecret()};
 
   cfg.file_system = std::make_unique<util::PosixFileSystem>();
-  cfg.target_pipeline = std::make_unique<LocalPipeline>();
-
   cfg.observation_store_directory = "/tmp/a";
   cfg.local_aggregate_proto_store_path = "/tmp/b";
   cfg.obs_history_proto_store_path = "/tmp/c";
-  cfg.local_aggregate_store_dir = "/tmp/d";
+  cfg.target_pipeline = std::make_unique<LocalPipeline>();
 
   return cfg;
 }
 
 }  // namespace
 
-TEST(CobaltService, CrashesWhenConstructingWithNoGlobalRegistry) {
+TEST(CobaltService, DoesNotCreateInternalLoggerWithNoGlobalRegistry) {
   auto cfg = MinConfigForTesting();
   cfg.global_registry = nullptr;
-  ASSERT_DEATH(CobaltService service(std::move(cfg)), "Cannot initialize store");
+  CobaltService service(std::move(cfg));
+  EXPECT_FALSE(service.has_internal_logger());
 }
 
 TEST(CobaltService, DoesNotCreateInternalLoggerWithEmptyGlobalRegistry) {

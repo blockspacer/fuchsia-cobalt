@@ -26,7 +26,6 @@ source_set("tests") {
   deps = [
     ":aggregation_procedures",
     ":local_aggregate_storage",
-    ":local_aggregation",
     ":observation_generator",
     "$cobalt_root/src/lib/util/testing:test_with_files",
     "$cobalt_root/src/local_aggregation_1.1/testing:test_registry",
@@ -38,7 +37,6 @@ source_set("tests") {
     "aggregation_procedure_test.cc",
     "local_aggregate_storage_test.cc",
     "observation_generator_test.cc",
-    "test.cc",
   ]
 }
 
@@ -54,24 +52,6 @@ source_set("local_aggregate_storage") {
     "$cobalt_root/src/logger:project_context_factory",
     "$cobalt_root/src/registry:cobalt_registry_proto",
   ]
-  configs += [ "$cobalt_root:cobalt_config" ]
-}
-
-source_set("local_aggregation") {
-  sources = [
-    "local_aggregation.cc",
-    "local_aggregation.h",
-  ]
-  deps = [
-    ":aggregation_procedures",
-    ":local_aggregate_storage",
-    ":observation_generator",
-    "$cobalt_root/src/logger:encoder",
-    "$cobalt_root/src/logger:event_record",
-    "$cobalt_root/src/logger:project_context_factory",
-    "$cobalt_root/src/public:cobalt_config",
-  ]
-  public_deps = [ "$cobalt_root/src/logger:observation_writer" ]
   configs += [ "$cobalt_root:cobalt_config" ]
 }
 
