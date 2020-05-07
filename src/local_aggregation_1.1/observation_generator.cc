@@ -92,7 +92,7 @@ logger::Status ObservationGenerator::GenerateObservations(
         for (auto& report : metric->reports()) {
           auto procedure = AggregationProcedure::Get(*metric, report);
 
-          if (procedure) {
+          if (procedure && aggregate->mutable_by_report_id()->count(report.id())) {
             // Current time needs to be passed to MaybeGenerateObservation.
             auto encoded_observation = procedure->MaybeGenerateObservation(
                 time_info, encoder_, &aggregate->mutable_by_report_id()->at(report.id()));

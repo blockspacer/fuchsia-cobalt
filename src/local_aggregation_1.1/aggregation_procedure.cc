@@ -50,7 +50,7 @@ std::unique_ptr<AggregationProcedure> AggregationProcedure::Get(const MetricDefi
     case ReportDefinition::STRING_HISTOGRAMS:
       return std::make_unique<UnimplementedAggregationProcedure>("STRING_HISTOGRAM");
     default:
-      LOG(ERROR) << "Report doesn't seem to be a cobalt 1.1 report";
+      VLOG(10) << "Report doesn't seem to be a cobalt 1.1 report";
       return nullptr;
   }
 }

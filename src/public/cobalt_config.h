@@ -161,6 +161,10 @@ struct CobaltConfig {
   // stored.
   std::string obs_history_proto_store_path;
 
+  // |local_aggregate_store_dir|: The absolute path to the directory where the local aggregate store
+  // for Cobalt 1.1 should be stored.
+  std::string local_aggregate_store_dir;
+
   // These three values are provided to the UploadScheduler of the shipping manager.
   //
   // |target_interval|: How frequently should ShippingManager perform regular periodic sends to the

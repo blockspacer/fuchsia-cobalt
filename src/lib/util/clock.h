@@ -23,6 +23,21 @@ class SystemClockInterface {
   virtual std::chrono::system_clock::time_point now() = 0;
 };
 
+// A wrapper around another SystemClockInterface.
+//
+// The SystemClockInterface used in the constructor must remain valid for the entire lifetime of
+// this class.
+//
+// TODO(zmbush): Remove this once it is no longer used.
+class SystemClockRef : public SystemClockInterface {
+ public:
+  explicit SystemClockRef(SystemClockInterface* ref) : ref_(ref) {}
+  std::chrono::system_clock::time_point now() override { return ref_->now(); }
+
+ private:
+  SystemClockInterface* ref_;
+};
+
 // A clock that returns the real system time.
 class SystemClock : public SystemClockInterface {
  public:

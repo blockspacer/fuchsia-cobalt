@@ -96,6 +96,8 @@ CobaltService::CobaltService(CobaltConfig cfg)
       observation_writer_(observation_store_.get(), shipping_manager_.get(),
                           encrypt_to_analyzer_.get()),
       event_aggregator_manager_(cfg, fs_.get(), &logger_encoder_, &observation_writer_),
+      local_aggregation_(cfg, global_project_context_factory_.get(), fs_.get(), &logger_encoder_,
+                         &observation_writer_),
       undated_event_manager_(new logger::UndatedEventManager(
           &logger_encoder_, event_aggregator_manager_.GetEventAggregator(), &observation_writer_,
           &system_data_)),
@@ -155,6 +157,7 @@ void CobaltService::SystemClockIsAccurate(std::unique_ptr<util::SystemClockInter
   }
 
   if (start_event_aggregator_worker) {
+    local_aggregation_.Start(std::make_unique<util::SystemClockRef>(system_clock.get()));
     event_aggregator_manager_.Start(std::move(system_clock));
   }
 }
